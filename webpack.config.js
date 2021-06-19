@@ -9,7 +9,7 @@ module.exports = {
   entry: {
     index: "./frontend/index.ts"
   },
-  target: "web",
+  devtool: 'inline-source-map',
   module: {
     rules: [
       {
@@ -22,29 +22,32 @@ module.exports = {
         test: /\.tsx?$/,
         use: "ts-loader",
         exclude: /node_modules/,
-      },
+      }
     ],
   },
   resolve: {
     extensions: [".tsx", ".ts", ".js", "wasm"],
   },
   output: {
+    publicPath:'',
     path: dist,
     filename: "[name].js"
   },
   devServer: {
     contentBase: dist,
   },
-  experiments: {
-    asyncWebAssembly: true
-  },
+  // Using URL loader
+  // experiments: {
+  //   syncWebAssembly: true
+  // },
   plugins: [
     new CopyPlugin([
       path.resolve(__dirname, "static")
     ]),
 
     new WasmPackPlugin({
-      crateDirectory: path.resolve(__dirname, "backend")
+      crateDirectory: path.resolve(__dirname, "backend"),
+      extraArgs: "--target web"
     }),
   ]
 };

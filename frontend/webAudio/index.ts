@@ -1,14 +1,15 @@
-import noiseGeneratorUrl from "worklet-loader!./noise.worklet.ts";
+import { NoiseGeneratorNode } from "./noise.node";
 
 export const startAudio = async () => {
   const context = new AudioContext();
-  await context.audioWorklet.addModule(noiseGeneratorUrl);
+
   const modulator = new OscillatorNode(context);
   const modGain = new GainNode(context);
-  const noiseGenerator = new AudioWorkletNode(context, "noise-generator");
-  noiseGenerator.connect(context.destination);
 
-  // Connect the oscillator to 'amplitude' AudioParam.
+  const noiseGenerator = await NoiseGeneratorNode.register(context);
+
+  noiseGenerator.connect(context.destination)
+
   // @ts-ignore
   const paramAmp = noiseGenerator.parameters.get("amplitude");
   modulator.connect(modGain).connect(paramAmp);
