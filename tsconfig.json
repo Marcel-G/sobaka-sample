@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "module": "esnext",
+    "lib": ["dom", "es2015"],
+    "strict": true,
+    "esModuleInterop": true,
+    "allowJs": true,
+    "target": "es6",
+    "moduleResolution": "node",
+    "importHelpers": true,
+  },
+  "exclude": ["node_modules"],
+  "include": ["frontend"]
+}
