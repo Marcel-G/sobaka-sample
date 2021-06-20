@@ -1,13 +1,10 @@
 import './TextEncoder'
 import { Message, MessageType } from "./interface";
-import init, { InitOutput } from '../../backend/pkg';
+import init, { AudioProcessor } from '../../backend/pkg';
 
 class NoiseGeneratorProcessor extends AudioWorkletProcessor {
   FRAME_SIZE = 128;
-  BYTES_PER_F32 = 32 / 8;
-  buffers: Float32Array[] | null = null
-  buffersPtrs: number[] | null = null
-  _instance: InitOutput | null = null
+  _instance: AudioProcessor | null = null
   static get parameterDescriptors() {
     return [
       { name: "amplitude", defaultValue: 0.25, minValue: 0, maxValue: 1 }
@@ -30,26 +27,13 @@ class NoiseGeneratorProcessor extends AudioWorkletProcessor {
   }
   private async init(data: ArrayBuffer) {
     const module = await WebAssembly.compile(data);
-    const instance = await init(module)
+    await init(module);
 
     const message: Message  = {
       type: MessageType.WasmLoaded,
     }
 
-    this._instance = instance;
-
-    this.buffersPtrs = new Array(2) // Allocate buffers for two channels
-      .fill(0)
-      .map(() => this._instance!.alloc(this.FRAME_SIZE))
-
-    this.buffers = this.buffersPtrs
-      .map((ptr) =>
-        new Float32Array(
-          this._instance!.memory.buffer,
-          ptr,
-          this.FRAME_SIZE
-        )
-      )
+    this._instance = new AudioProcessor();
 
     this.port.postMessage(message)
   }
@@ -63,19 +47,22 @@ class NoiseGeneratorProcessor extends AudioWorkletProcessor {
     outputs: Float32Array[][],
     parameters: Record<string, Float32Array>
   ): boolean {
-    if (!outputs[0]?.[0] || !this.buffers || !this._instance || !this.buffersPtrs) {
+    if (!outputs[0]?.[0] || !this._instance) {
       return true;
     }
-    let output = outputs[0];
 
-    this._instance.process(
-      this.buffersPtrs[0],
-      this.buffersPtrs[1],
-      this.FRAME_SIZE
-    )
+    // Transfer input data to wasm instance
+    inputs[0].forEach((input, index) => {
+      this._instance!.set_buffer(index, input)
+    })
 
-    output[0]?.set(this.buffers[0])
-    output[1]?.set(this.buffers[1])
+    // Process data in buffers
+    this._instance!.process()
+
+    // Transfer data to AudioWorkletProcessor output
+    outputs[0].forEach((output, index) => {
+      output.set(this._instance!.get_buffer(index))
+    })
 
     return true;
   }

@@ -1,6 +1,6 @@
 import noiseGeneratorUrl from "worklet-loader!./noise.worklet.ts";
 //@ts-ignore
-import wasmSrcUrl from 'url-loader!../../backend/pkg/index_bg.wasm'
+import wasmSrcUrl from 'file-loader!../../backend/pkg/index_bg.wasm'
 import { Message, MessageType } from "./interface";
 
 export class NoiseGeneratorNode extends AudioWorkletNode {
