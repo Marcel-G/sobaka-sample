@@ -1,11 +1,12 @@
-import noiseGeneratorUrl from "worklet-loader!./noise.worklet.ts";
+import samplerWorkletUrl from "worklet-loader!./sampler.worklet.ts";
 //@ts-ignore
-import wasmSrcUrl from 'file-loader!../../backend/pkg/index_bg.wasm'
+import samplerWasmUrl from 'file-loader!../../backend/pkg/index_bg.wasm'
 import { Message, MessageType } from "./interface";
+import { SAMPLER_WORKLET } from "./constants";
 
-export class NoiseGeneratorNode extends AudioWorkletNode {
+export class SamplerNode extends AudioWorkletNode {
   constructor(context: AudioContext) {
-    super(context, "noise-generator");
+    super(context, SAMPLER_WORKLET);
 
     this.port.onmessage = (event) => this.onmessage(event.data);
   }
@@ -21,14 +22,14 @@ export class NoiseGeneratorNode extends AudioWorkletNode {
    * 2. use postMessage to transfer the data as arrayBuffer to the Processor
    * 3. instantiate a WebAssembly instance from the buffer
    */
-  static async register(context: AudioContext): Promise<NoiseGeneratorNode> {
+  static async register(context: AudioContext): Promise<SamplerNode> {
     // Fetch WASM source
-    const src = await fetch(wasmSrcUrl);
+    const src = await fetch(samplerWasmUrl);
 
     // Register AudioWorkletProcessor
-    await context.audioWorklet.addModule(noiseGeneratorUrl);
+    await context.audioWorklet.addModule(samplerWorkletUrl);
 
-    const node = new NoiseGeneratorNode(context);
+    const node = new SamplerNode(context);
 
     await node.init(await src.arrayBuffer())
 

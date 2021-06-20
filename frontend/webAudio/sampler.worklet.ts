@@ -1,14 +1,10 @@
 import './TextEncoder'
 import { Message, MessageType } from "./interface";
 import init, { AudioProcessor } from '../../backend/pkg';
+import { SAMPLER_WORKLET } from './constants';
 
-class NoiseGeneratorProcessor extends AudioWorkletProcessor {
+class SamplerProcessor extends AudioWorkletProcessor {
   _instance: AudioProcessor | null = null
-  static get parameterDescriptors() {
-    return [
-      { name: "amplitude", defaultValue: 0.25, minValue: 0, maxValue: 1 }
-    ];
-  }
   constructor(options?: AudioWorkletNodeOptions) {
     super(options);
     this.port.onmessage = (event) => this.handleMessage(event.data);
@@ -69,4 +65,4 @@ class NoiseGeneratorProcessor extends AudioWorkletProcessor {
   }
 }
 
-registerProcessor("noise-generator", NoiseGeneratorProcessor);
+registerProcessor(SAMPLER_WORKLET, SamplerProcessor);

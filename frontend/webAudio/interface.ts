@@ -1,9 +1,9 @@
 export enum MessageType {
   SendWasm = "SEND_WASM",
-  WasmLoaded = "WASM_Loaded"
+  WasmLoaded = "WASM_LOADER"
 }
 
 export interface Message {
-	type: MessageType,
+  type: MessageType,
   data?: any
 }

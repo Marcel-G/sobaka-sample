@@ -1,11 +1,11 @@
-import { NoiseGeneratorNode } from "./noise.node";
+import { SamplerNode } from "./sampler.node";
 
 export const startAudio = async () => {
   const context = new AudioContext();
 
-  const noiseGenerator = await NoiseGeneratorNode.register(context);
+  const node = await SamplerNode.register(context);
 
-  noiseGenerator.connect(context.destination)
+  node.connect(context.destination)
 
   return context;
 };
