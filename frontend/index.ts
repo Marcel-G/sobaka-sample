@@ -3,7 +3,7 @@ import { startAudio } from './webAudio';
 let context: AudioContext | null = null;
 
 const button = document.createElement("button");
-button.innerHTML = "Listen to a 100hz sine wave";
+button.innerHTML = "Start";
 button.addEventListener("click", async () => {
   if (context) {
     context.close()

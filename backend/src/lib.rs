@@ -1,5 +1,8 @@
 mod utils;
-// Export processor
+
+mod instrument;
+mod sequencer;
+
 pub mod processor;
 
   
