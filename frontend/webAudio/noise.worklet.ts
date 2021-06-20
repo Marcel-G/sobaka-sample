@@ -3,7 +3,6 @@ import { Message, MessageType } from "./interface";
 import init, { AudioProcessor } from '../../backend/pkg';
 
 class NoiseGeneratorProcessor extends AudioWorkletProcessor {
-  FRAME_SIZE = 128;
   _instance: AudioProcessor | null = null
   static get parameterDescriptors() {
     return [
@@ -64,6 +63,8 @@ class NoiseGeneratorProcessor extends AudioWorkletProcessor {
       output.set(this._instance!.get_buffer(index))
     })
 
+    // @todo return false when isShutdown
+    // How to cleanup wasm instance?
     return true;
   }
 }
