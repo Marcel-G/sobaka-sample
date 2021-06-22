@@ -3,29 +3,33 @@ use web_sys::console;
 
 use crate::instrument::{ get_instrument, InstrumentType };
 
+const STATIC_SEQUENCE: [Option<InstrumentType>; 16] = [
+  // Static sequence for testing
+  // @todo should support multiple instruments on the same location
+  Some(InstrumentType::Hat), Some(InstrumentType::Hat), Some(InstrumentType::Hat), Some(InstrumentType::Hat),
+  Some(InstrumentType::Hat), Some(InstrumentType::Hat), Some(InstrumentType::Hat), Some(InstrumentType::Hat),
+  Some(InstrumentType::Hat), Some(InstrumentType::Hat), Some(InstrumentType::Hat), Some(InstrumentType::Hat),
+  Some(InstrumentType::Hat), Some(InstrumentType::Hat), Some(InstrumentType::Hat), Some(InstrumentType::Hat),
+];
+
 // 16 spot sequencer for instruments
 pub struct Sequencer {
   tick: usize,
   tempo: usize, // Tempo on bpm
-  step: usize, // 8 steps
-  sequence: [Option<InstrumentType>; 16],
+  sequence: Box<dyn Iterator<Item=Option<InstrumentType>>>,
   active_instruments: Vec<Box<dyn Signal<Frame=f32>>>
 }
 
 impl Sequencer {
   pub fn new() -> Self {
+    let sequence = STATIC_SEQUENCE
+      .iter()
+      .cycle();
+
     Self {
       tempo: 140,
       tick: 0,
-      step: 0,
-      sequence: [
-        // Static sequence for testing
-        // @todo should support multiple instruments on the same location
-        Some(InstrumentType::Hat), Some(InstrumentType::Hat), Some(InstrumentType::Hat), Some(InstrumentType::Hat),
-        Some(InstrumentType::Hat), Some(InstrumentType::Hat), Some(InstrumentType::Hat), Some(InstrumentType::Hat),
-        Some(InstrumentType::Hat), Some(InstrumentType::Hat), Some(InstrumentType::Hat), Some(InstrumentType::Hat),
-        Some(InstrumentType::Hat), Some(InstrumentType::Hat), Some(InstrumentType::Hat), Some(InstrumentType::Hat),
-      ],
+      sequence: Box::new(sequence.cloned()),
       active_instruments: vec![]
     }
   }
@@ -44,18 +48,12 @@ impl Sequencer {
   }
 
   fn step(&mut self) {
-    if let Some(instrument) = self.sequence[self.step] {
+    if let Some(Some(instrument)) = self.sequence.next() {
       self.active_instruments.push(get_instrument(instrument));
     }
 
     self.active_instruments
       .retain(|instrument| !instrument.is_exhausted());
-
-    if self.step >= 15 {
-      self.step = 0
-    } else {
-      self.step += 1;
-    }
   }
 }
 

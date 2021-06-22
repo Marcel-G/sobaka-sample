@@ -56,6 +56,8 @@ class SamplerProcessor extends AudioWorkletProcessor {
 
     // Transfer data to AudioWorkletProcessor output
     outputs[0].forEach((output, index) => {
+      // Is get_buffer allocating a new Float32Array each cycle?
+      // Could cause some GC
       output.set(this._instance!.get_buffer(index))
     })
 

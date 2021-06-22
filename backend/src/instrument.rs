@@ -43,6 +43,9 @@ fn snare() -> impl Signal<Frame=f32> {
   signal::from_iter(sig)
 }
 
+// @todo look into dasp `boxed` feature:
+// The boxed feature (or signal-boxed feature if using dasp) provides
+// a Signal implementation for Box<dyn Signal>.
 pub fn get_instrument(instrument: InstrumentType) -> Box<dyn Signal<Frame = f32>> {
   match instrument {
     InstrumentType::Hat => Box::new(hat()),
