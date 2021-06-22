@@ -1,4 +1,3 @@
-import './TextEncoder'
 import { Message, MessageType } from "./interface";
 import init, { AudioProcessor } from '../../backend/pkg';
 import { SAMPLER_WORKLET } from './constants';

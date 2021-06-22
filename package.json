@@ -12,6 +12,7 @@
     "file-loader": "^6.2.0",
     "rimraf": "^3.0.0",
     "source-map-loader": "^3.0.0",
+    "text-encoding": "^0.7.0",
     "ts-loader": "^9.2.3",
     "webpack": "^5.39.1",
     "webpack-cli": "^4.7.2",
