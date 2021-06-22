@@ -1,5 +1,6 @@
+import 'fastestsmallesttextencoderdecoder'; // Add missing TextDecoder/TextEncoder in worklet env
 import { Message, MessageType } from "./interface";
-import init, { AudioProcessor } from '../../backend/pkg';
+import init, { AudioProcessor } from '../pkg';
 import { SAMPLER_WORKLET } from './constants';
 
 class SamplerProcessor extends AudioWorkletProcessor {

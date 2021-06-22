@@ -3,23 +3,25 @@
   "name": "sobaka-sample",
   "version": "0.1.0",
   "scripts": {
+    "prebuild": "cd web-audio && npm run build",
     "build": "rimraf dist pkg && webpack",
-    "start": "rimraf dist pkg && webpack serve --open"
+    "start": "rimraf dist pkg && webpack serve --open",
+    "postinstall": "cd web-audio && npm install"
   },
   "devDependencies": {
-    "@wasm-tool/wasm-pack-plugin": "^1.1.0",
     "copy-webpack-plugin": "^5.1.2",
     "file-loader": "^6.2.0",
     "rimraf": "^3.0.0",
     "source-map-loader": "^3.0.0",
-    "text-encoding": "^0.7.0",
     "ts-loader": "^9.2.3",
     "webpack": "^5.39.1",
     "webpack-cli": "^4.7.2",
     "webpack-dev-server": "^3.11.2",
+    "webpack-merge": "^5.8.0",
     "worklet-loader": "^1.0.0"
   },
   "dependencies": {
+    "sobaka-sample-web-audio": "file:web-audio",
     "tslib": "^2.3.0",
     "typescript": "^4.3.4"
   }

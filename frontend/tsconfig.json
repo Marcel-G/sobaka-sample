@@ -11,5 +11,5 @@
     "sourceMap": true
   },
   "exclude": ["node_modules"],
-  "include": ["frontend"]
+  "include": ["src"]
 }

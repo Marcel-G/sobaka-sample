@@ -1,6 +1,6 @@
-import samplerWorkletUrl from "worklet-loader!./sampler.worklet.ts";
-//@ts-ignore
-import samplerWasmUrl from 'file-loader!../../backend/pkg/index_bg.wasm'
+// @ts-ignore
+import samplerWorkletUrl from "./sampler.worklet";
+import samplerWasmUrl from '../pkg/sobaka_sample_web_audio_bg.wasm'
 import { Message, MessageType } from "./interface";
 import { SAMPLER_WORKLET } from "./constants";
 
@@ -24,6 +24,7 @@ export class SamplerNode extends AudioWorkletNode {
    */
   static async register(context: AudioContext): Promise<SamplerNode> {
     // Fetch WASM source
+    // @ts-ignore @todo should use wasm-loader.d.ts
     const src = await fetch(samplerWasmUrl);
 
     // Register AudioWorkletProcessor

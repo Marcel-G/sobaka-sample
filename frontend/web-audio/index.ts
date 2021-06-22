@@ -1,0 +1,1 @@
+export { SamplerNode } from './lib/sampler.node';

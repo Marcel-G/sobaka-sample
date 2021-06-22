@@ -25,7 +25,7 @@ fn hat() -> impl Signal<Frame=f32> {
 
 fn kick() -> impl Signal<Frame=f32> {
   let sig = signal::rate(44100.)
-    .const_hz(200.)
+    .const_hz(300.)
     .sine()
     .take(44100 / 5)
     .map(|s| s.to_sample());

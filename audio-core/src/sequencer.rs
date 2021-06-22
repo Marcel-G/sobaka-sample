@@ -1,5 +1,4 @@
 use dasp::{ Signal };
-use web_sys::console;
 
 use crate::instrument::{ get_instrument, InstrumentType };
 
@@ -35,16 +34,19 @@ impl Sequencer {
   }
 
   // Tick will be called each
-  // @todo might be better to base stepping on a real timer
-  pub fn tick(&mut self, size: usize) {
+  pub fn tick(&mut self, size: usize) -> Vec<f32> {
     const SAMPLE_RATE: usize = 44100; // samples per second
     self.tick += size;
     let hz = 60. / self.tempo as f32;
 
+    // @todo might be better to base stepping on a real timer
     if self.tick as f32 / SAMPLE_RATE as f32 >= hz {
       self.tick = 0;
       self.step();
     }
+
+    // Return n samples
+    self.take(size).collect()
   }
 
   fn step(&mut self) {

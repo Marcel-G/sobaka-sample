@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "module": "es6",
+    "lib": ["dom", "es2017"],
+    "strict": true,
+    "esModuleInterop": true,
+    "allowJs": true,
+    "target": "es2017",
+    "moduleResolution": "node",
+    "importHelpers": true,
+    "outDir": "dist",
+    "sourceMap": true,
+    "declaration": true,
+  },
+  "exclude": ["node_modules"],
+  "include": ["lib", "index.ts"]
+}

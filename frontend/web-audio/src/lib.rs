@@ -1,6 +1,5 @@
-use dasp::{ Signal };
 use wasm_bindgen::prelude::*;
-use crate::{sequencer::Sequencer};
+use sobaka_sample_audio_core::{sequencer::Sequencer};
 
 const FRAME_SIZE: usize = 128;
 // AudioProcessor is the rust entry-point for Web Audio AudioWorkletProcessor
@@ -32,10 +31,7 @@ impl AudioProcessor {
   pub fn process(&mut self) {
     self.sequencer.tick(128);
 
-    let master: Vec<f32> = self.sequencer
-      .as_mut()
-      .take(128)
-      .collect();
+    let master: Vec<f32> = self.sequencer.tick(128);
 
     for channel in self.output_buffer.iter_mut() {
       *channel = master.clone()

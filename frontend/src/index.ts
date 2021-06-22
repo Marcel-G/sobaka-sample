@@ -1,4 +1,15 @@
-import { startAudio } from './webAudio';
+import { SamplerNode } from "sobaka-sample-web-audio";
+
+const startAudio = async () => {
+  const context = new AudioContext();
+
+  const node = await SamplerNode.register(context);
+
+  node.connect(context.destination)
+
+  return context;
+};
+
 
 let context: AudioContext | null = null;
 
