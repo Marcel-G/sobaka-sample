@@ -8,17 +8,29 @@ pub enum InstrumentType {
 }
 
 // Instrument produces some sound
+
+// https://www.soundonsound.com/techniques/synthesizing-bells
 fn hat() -> impl Signal<Frame=f32> {
-  let hz = signal::rate(44100.).const_hz(440.0);
-  let t = 44100 / 10;
-  let sig = hz
-    .clone()
-    .sine()
-    .take(t)
-    .chain(hz.clone().saw().take(t))
-    .chain(hz.clone().square().take(t))
-    .chain(hz.clone().noise_simplex().take(t))
-    .map(|s| s.to_sample());
+  const FUNDAMENTAL: f64 = 40.;
+  const OSCILATOR_RATIOS: [f64; 6] = [2., 3., 4.16, 5.43, 6.79, 8.21];
+  let mut oscilators = OSCILATOR_RATIOS
+    .iter()
+    .map(|ratio| {
+      signal::rate(44100.)
+        .const_hz(FUNDAMENTAL * ratio)
+        .sine()
+    })
+    .collect::<Vec<_>>();
+  
+  let sig = signal::equilibrium()
+    .map(move |_: f64| {
+      oscilators
+        .iter_mut()
+        .map(|sig| sig.next())
+        .sum()
+    })
+    .take(10000 * 2)
+    .map(|s: f64| s.to_sample::<f32>());
 
   signal::from_iter(sig)
 }
