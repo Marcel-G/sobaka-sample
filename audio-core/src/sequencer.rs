@@ -26,7 +26,7 @@ impl Sequencer {
       .cycle();
 
     Self {
-      tempo: 140,
+      tempo: 50,
       tick: 0,
       sequence: Box::new(sequence.cloned()),
       active_instruments: vec![]
@@ -41,6 +41,7 @@ impl Sequencer {
 
     // @todo might be better to base stepping on a real timer
     if self.tick as f32 / SAMPLE_RATE as f32 >= hz {
+      println!("tick");
       self.tick = 0;
       self.step();
     }
@@ -75,3 +76,6 @@ impl Signal for Sequencer {
     }
   }
 }
+
+// 😬
+unsafe impl Send for Sequencer {}
