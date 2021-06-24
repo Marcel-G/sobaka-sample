@@ -6,3 +6,4 @@ edition = "2018"
 
 [dependencies]
 dasp = { version = "0.11", features = ["all"] }
+splines = "4.0"

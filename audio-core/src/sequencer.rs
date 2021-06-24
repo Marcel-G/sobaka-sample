@@ -1,4 +1,4 @@
-use dasp::{ Signal };
+use dasp::{Sample, Signal};
 
 use crate::instrument::{ get_instrument, InstrumentType };
 
@@ -26,7 +26,7 @@ impl Sequencer {
       .cycle();
 
     Self {
-      tempo: 50,
+      tempo: 100,
       tick: 0,
       sequence: Box::new(sequence.cloned()),
       active_instruments: vec![]
@@ -68,8 +68,7 @@ impl Signal for Sequencer {
       self.active_instruments
         .iter_mut()
         .map(|i| i.as_mut().next())
-        // I'm sure this is not the right way to mix audio channels
-        .fold(0.0, |a, b| a + b)
+        .fold(Self::Frame::EQUILIBRIUM, Sample::add_amp)
 
     } else {
       0.0

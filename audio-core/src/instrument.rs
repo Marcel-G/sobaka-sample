@@ -1,4 +1,6 @@
-use dasp::{ Sample, Signal, signal };
+use dasp::{Sample, Signal, signal};
+
+use crate::{envelope::{ dumb }, filter::{ SignalFilter, Coefficients }};
 
 #[derive(Clone, Copy)]
 pub enum InstrumentType {
@@ -7,36 +9,67 @@ pub enum InstrumentType {
   Hat
 }
 
+// 😬
+const SAMPLE_RATE: f64 = 44100.;
+
 // Instrument produces some sound
 
 // https://www.soundonsound.com/techniques/synthesizing-bells
 fn hat() -> impl Signal<Frame=f32> {
   const FUNDAMENTAL: f64 = 40.;
   const OSCILATOR_RATIOS: [f64; 6] = [2., 3., 4.16, 5.43, 6.79, 8.21];
+
   let mut oscilators = OSCILATOR_RATIOS
     .iter()
     .map(|ratio| {
-      signal::rate(44100.)
+      signal::rate(SAMPLE_RATE)
         .const_hz(FUNDAMENTAL * ratio)
-        .sine()
+        .square()
     })
     .collect::<Vec<_>>();
+
+  let frames = 5000;
   
-  let sig = signal::equilibrium()
-    .map(move |_: f64| {
+  let sig = signal::gen_mut(move || {
       oscilators
         .iter_mut()
-        .map(|sig| sig.next())
-        .sum()
+        .map(Signal::next)
+        .fold(f64::EQUILIBRIUM, Sample::add_amp)
     })
-    .take(10000 * 2)
-    .map(|s: f64| s.to_sample::<f32>());
+    .mul_amp(dumb(frames));
 
-  signal::from_iter(sig)
+  // https://arachnoid.com/BiQuadDesigner/index.html
+  // freq: 10000z sr: 44100hz
+  let bandpass = Coefficients {
+    a1: -0.17123075,
+    a2: 0.17668821,
+    b0: 0.41165589,
+    b1: 0.0,
+    b2: -0.41165589,
+  };
+
+  // freq: 7000hz sr: 44100hz
+  let highpass = Coefficients {
+    a1: -0.68070239,
+    a2: 0.25464396,
+    b0: 0.48383659,
+    b1: -0.96767317,
+    b2: 0.48383659,
+  };
+
+  let filtered = sig
+    .filtered(bandpass)
+    .filtered(highpass);
+  
+  let output = filtered
+    .take(frames)
+    .map(Sample::to_sample::<f32>);
+
+  signal::from_iter(output)
 }
 
 fn kick() -> impl Signal<Frame=f32> {
-  let sig = signal::rate(44100.)
+  let sig = signal::rate(SAMPLE_RATE)
     .const_hz(300.)
     .sine()
     .take(44100 / 5)
@@ -46,7 +79,7 @@ fn kick() -> impl Signal<Frame=f32> {
 }
 
 fn snare() -> impl Signal<Frame=f32> {
-  let sig = signal::rate(44100.)
+  let sig = signal::rate(SAMPLE_RATE)
     .const_hz(500.)
     .saw()
     .take(44100 / 4)

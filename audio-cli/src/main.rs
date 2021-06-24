@@ -31,7 +31,7 @@ where T: cpal::Sample,
   let mut sequencer = Sequencer::new();
 
   let mut next_value = move || {
-    sequencer.tick(1)[0] * 0.01
+    sequencer.tick(1)[0]
   };
 
   let stream = device.build_output_stream(
