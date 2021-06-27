@@ -5,9 +5,9 @@ use crate::instrument::{ get_instrument, InstrumentType };
 const STATIC_SEQUENCE: [Option<InstrumentType>; 16] = [
   // Static sequence for testing
   // @todo should support multiple instruments on the same location
-  Some(InstrumentType::Kick), None, Some(InstrumentType::Hat), None,
+  Some(InstrumentType::Kick), Some(InstrumentType::Kick), Some(InstrumentType::Hat), None,
   Some(InstrumentType::Snare), None, Some(InstrumentType::Hat), None,
-  Some(InstrumentType::Kick), None, Some(InstrumentType::Hat), None,
+  Some(InstrumentType::Kick), None, Some(InstrumentType::Hat), Some(InstrumentType::Hat),
   Some(InstrumentType::Snare), None, Some(InstrumentType::Hat), None,
 ];
 
@@ -26,7 +26,7 @@ impl Sequencer {
       .cycle();
 
     Self {
-      tempo: 100,
+      tempo: 60,
       tick: 0,
       sequence: Box::new(sequence.cloned()),
       active_instruments: vec![]
@@ -37,7 +37,7 @@ impl Sequencer {
   pub fn tick(&mut self, size: usize) -> Vec<f32> {
     const SAMPLE_RATE: usize = 44100; // samples per second
     self.tick += size;
-    let hz = 60. / self.tempo as f32;
+    let hz = (60. / self.tempo as f32) / 8.0;
 
     // @todo might be better to base stepping on a real timer
     if self.tick as f32 / SAMPLE_RATE as f32 >= hz {

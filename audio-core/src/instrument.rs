@@ -80,11 +80,11 @@ fn kick() -> impl Signal<Frame=f32> {
     b2 : -0.00948853
   };
 
-  let detune = 100.0;
+  let detune = 65.41;
 
   let detune_a = signal::gen(move || detune)
     .mul_amp(dumb(frames / 2))
-    .map(|d| 54.0 + d);
+    .map(|d| 65.41 + d);
 
   let osc_a = signal::rate(SAMPLE_RATE)
     .hz(detune_a)
@@ -151,11 +151,11 @@ fn snare() -> impl Signal<Frame=f32> {
     .filtered(noise_high_pass);
 
   let frames = 6000;
-  let detune = 100.0;
+  let detune = 130.81;
 
   let detune_a = signal::gen(move || detune)
     .mul_amp(dumb(frames / 2))
-    .map(|d| 87.307 + d);
+    .map(|d| 130.81 + d);
 
   let osc_a = signal::rate(SAMPLE_RATE)
     .hz(detune_a)
@@ -164,7 +164,7 @@ fn snare() -> impl Signal<Frame=f32> {
 
   let detune_b = signal::gen(move || detune)
     .mul_amp(dumb(frames / 2))
-    .map(|d| 329.628 + d);
+    .map(|d| 130.81 * 2. + d);
 
   let osc_b = signal::rate(SAMPLE_RATE)
     .hz(detune_b)
