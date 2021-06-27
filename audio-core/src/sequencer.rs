@@ -5,10 +5,10 @@ use crate::instrument::{ get_instrument, InstrumentType };
 const STATIC_SEQUENCE: [Option<InstrumentType>; 16] = [
   // Static sequence for testing
   // @todo should support multiple instruments on the same location
-  Some(InstrumentType::Hat), Some(InstrumentType::Hat), Some(InstrumentType::Hat), Some(InstrumentType::Hat),
-  Some(InstrumentType::Hat), Some(InstrumentType::Hat), Some(InstrumentType::Hat), Some(InstrumentType::Hat),
-  Some(InstrumentType::Hat), Some(InstrumentType::Hat), Some(InstrumentType::Hat), Some(InstrumentType::Hat),
-  Some(InstrumentType::Hat), Some(InstrumentType::Hat), Some(InstrumentType::Hat), Some(InstrumentType::Hat),
+  Some(InstrumentType::Kick), None, Some(InstrumentType::Hat), None,
+  Some(InstrumentType::Snare), None, Some(InstrumentType::Hat), None,
+  Some(InstrumentType::Kick), None, Some(InstrumentType::Hat), None,
+  Some(InstrumentType::Snare), None, Some(InstrumentType::Hat), None,
 ];
 
 // 16 spot sequencer for instruments
