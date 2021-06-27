@@ -29,8 +29,6 @@ impl AudioProcessor {
     self.input_buffer[channel] = data
   }
   pub fn process(&mut self) {
-    self.sequencer.tick(128);
-
     let master: Vec<f32> = self.sequencer.tick(128);
 
     for channel in self.output_buffer.iter_mut() {

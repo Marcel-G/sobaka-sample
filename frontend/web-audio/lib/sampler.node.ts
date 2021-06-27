@@ -60,7 +60,7 @@ export class SamplerNode extends AudioWorkletNode {
           debugger;
           reject(new Error('Expecting initialisation message'))
         }
-      }, { once: true})
+      }, { once: true })
     })
   };
 
