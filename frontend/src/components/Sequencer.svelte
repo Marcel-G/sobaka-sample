@@ -1,5 +1,5 @@
 <script lang="ts">
-  // import { SamplerNode } from "sobaka-sample-web-audio";
+  import { SamplerNode } from "sobaka-sample-web-audio";
 
   export let grid = [3, 16];
 
@@ -24,16 +24,15 @@
   let context: AudioContext | null = null;
 
   async function handle_play() {
-    // @todo importing SamplerNode breaks the build
-    // if (!context) {
-    //   const context = new AudioContext();
+    if (!context) {
+      context = new AudioContext();
 
-    //   const node = await SamplerNode.register(context);
+      const node = await SamplerNode.register(context);
 
-    //   node.connect(context.destination);
-    // } else {
-    //   context.close();
-    // }
+      node.connect(context.destination);
+    } else {
+      context.close();
+    }
   }
 </script>
 
