@@ -1,4 +1,7 @@
-use dasp::{Frame, Sample, Signal, sample::{Duplex, FloatSample, FromSample, ToSample}};
+use dasp::{
+    sample::{Duplex, FloatSample, FromSample, ToSample},
+    Frame, Sample, Signal,
+};
 
 // Biquad filter from https://github.com/RustAudio/dasp/pull/148
 
@@ -18,6 +21,97 @@ where
     // Transfer function denominator coefficients.
     pub a1: S,
     pub a2: S,
+}
+
+// https://arachnoid.com/BiQuadDesigner/source_files/BiQuadraticFilter.java
+// Common filter constructors
+impl<S> Coefficients<S>
+where
+    S: FloatSample,
+{
+    pub fn highpass(center_freq: f64, sample_rate: f64, q: f64) -> Self {
+        let omega = 2. * std::f64::consts::PI * center_freq / sample_rate;
+        let sn = f64::sin(omega);
+        let cs = f64::cos(omega);
+        let alpha = sn / (2. * q);
+        let filter = Self {
+            b0: ((1. + cs) / 2.).to_sample(),
+            b1: (-(1. + cs)).to_sample(),
+            b2: ((1. + cs) / 2.).to_sample(),
+            a1: (-2. * cs).to_sample(),
+            a2: (1. - alpha).to_sample(),
+        };
+
+        let a0 = (1.0 + alpha).to_sample();
+
+        Self::normalise(filter, a0)
+    }
+
+    pub fn lowpass(center_freq: f64, sample_rate: f64, q: f64) -> Self {
+        let omega = 2. * std::f64::consts::PI * center_freq / sample_rate;
+        let sn = f64::sin(omega);
+        let cs = f64::cos(omega);
+        let alpha = sn / (2. * q);
+        let filter = Self {
+            b0: ((1. - cs) / 2.).to_sample(),
+            b1: (1. - cs).to_sample(),
+            b2: ((1. - cs) / 2.).to_sample(),
+            a1: (-2. * cs).to_sample(),
+            a2: (1. - alpha).to_sample(),
+        };
+
+        let a0 = (1.0 + alpha).to_sample();
+
+        Self::normalise(filter, a0)
+    }
+
+    pub fn bandpass(center_freq: f64, sample_rate: f64, q: f64) -> Self {
+        let omega = 2. * std::f64::consts::PI * center_freq / sample_rate;
+        let sn = f64::sin(omega);
+        let cs = f64::cos(omega);
+        let alpha = sn / (2. * q);
+        let filter = Self {
+            b0: alpha.to_sample(),
+            b1: (0.).to_sample(),
+            b2: (-alpha).to_sample(),
+            a1: (-2. * cs).to_sample(),
+            a2: (1. - alpha).to_sample(),
+        };
+
+        let a0 = (1.0 + alpha).to_sample();
+
+        Self::normalise(filter, a0)
+    }
+
+    pub fn peak(center_freq: f64, sample_rate: f64, q: f64, gain_db: f64) -> Self {
+        let omega = 2. * std::f64::consts::PI * center_freq / sample_rate;
+        let gain_abs = 10.0_f64.powf(gain_db / 40.);
+        let sn = f64::sin(omega);
+        let cs = f64::cos(omega);
+        let alpha = sn / (2. * q);
+
+        let filter = Self {
+            b0: (1. + (alpha * gain_abs)).to_sample(),
+            b1: (-2. * cs).to_sample(),
+            b2: (1. - (alpha * gain_abs)).to_sample(),
+            a1: (-2. * cs).to_sample(),
+            a2: (1. - (alpha / gain_abs)).to_sample(),
+        };
+
+        let a0 = (1.0 + (alpha / gain_abs)).to_sample();
+
+        Self::normalise(filter, a0)
+    }
+
+    fn normalise(coefs: Self, a0: S) -> Self {
+        Self {
+            b0: coefs.b0 / a0,
+            b1: coefs.b1 / a0,
+            b2: coefs.b2 / a0,
+            a1: coefs.a1 / a0,
+            a2: coefs.a2 / a0,
+        }
+    }
 }
 
 /// An implementation of a digital biquad filter, using the Direct Form 2
@@ -55,22 +149,22 @@ where
     /// use dasp_filter::{Coefficients, Biquad};
     ///
     /// fn main() {
-    ///     // Notch boost filter.
-    ///     let co = Coefficients {
-    ///         b0: 1.0469127398708575f64,
-    ///         b1: -0.27732002669854483,
-    ///         b2: 0.8588151488168104,
-    ///         a1: -0.27732002669854483,
-    ///         a2: 0.9057278886876682,
-    ///     };
+    ///   // Notch boost filter.
+    ///   let co = Coefficients {
+    ///     b0: 1.0469127398708575f64,
+    ///     b1: -0.27732002669854483,
+    ///     b2: 0.8588151488168104,
+    ///     a1: -0.27732002669854483,
+    ///     a2: 0.9057278886876682,
+    ///   };
     ///
-    ///     // Note that this type argument defines the format of the temporary
-    ///     // values, as well as the number of channels required for input
-    ///     // `Frame`s.
-    ///     let mut b = Biquad::<[f64; 2]>::new(co);
+    ///   // Note that this type argument defines the format of the temporary
+    ///   // values, as well as the number of channels required for input
+    ///   // `Frame`s.
+    ///   let mut b = Biquad::<[f64; 2]>::new(co);
     ///
-    ///     assert_eq!(b.apply([32i8, -64]), [33, -67]);
-    ///     assert_eq!(b.apply([0.1f32, -0.3]), [0.107943736, -0.32057875]);
+    ///   assert_eq!(b.apply([32i8, -64]), [33, -67]);
+    ///   assert_eq!(b.apply([0.1f32, -0.3]), [0.107943736, -0.32057875]);
     /// }
     /// ```
     pub fn apply<I>(&mut self, input: I) -> I
@@ -114,7 +208,6 @@ where
     }
 }
 
-
 /// An extension to the **Signal** trait that enables iterative filtering.
 ///
 /// # Example
@@ -125,20 +218,20 @@ where
 /// use dasp_signal::filter::SignalFilter;
 ///
 /// fn main() {
-///     let signal = signal::rate(48000.0).const_hz(997.0).sine();
-///     // Notch filter to attenuate 997 Hz.
-///     let coeff = Coefficients {
-///         b0: 0.9157328640471359f64,
-///         b1: -1.8158910212730535,
-///         b2: 0.9157328640471359,
-///         a1: -1.8158910212730535,
-///         a2: 0.831465728094272,
-///     };
-///     let mut filtered = signal.filtered(coeff);
-///     assert_eq!(
-///         filtered.take(4).collect::<Vec<_>>(),
-///         vec![0.0, 0.11917058366454024, 0.21640079287630784, 0.2938740006664008]
-///     );
+///   let signal = signal::rate(48000.0).const_hz(997.0).sine();
+///   // Notch filter to attenuate 997 Hz.
+///   let coeff = Coefficients {
+///     b0: 0.9157328640471359f64,
+///     b1: -1.8158910212730535,
+///     b2: 0.9157328640471359,
+///     a1: -1.8158910212730535,
+///     a2: 0.831465728094272,
+///   };
+///   let mut filtered = signal.filtered(coeff);
+///   assert_eq!(
+///     filtered.take(4).collect::<Vec<_>>(),
+///     vec![0.0, 0.11917058366454024, 0.21640079287630784, 0.2938740006664008]
+///   );
 /// }
 /// ```
 ///
@@ -147,22 +240,22 @@ where
 /// - When using `dasp_signal`, this item requires the **filter** feature to be enabled.
 /// - When using `dasp`, this item requires the **signal-filter** feature to be enabled.
 pub trait SignalFilter: Signal {
-  fn filtered(
-      self,
-      coeff: Coefficients<<<Self::Frame as Frame>::Sample as Sample>::Float>,
-  ) -> FilteredSignal<Self>
-  where
-      Self: Sized,
-      <Self::Frame as Frame>::Sample:
-          FromSample<<<Self::Frame as Frame>::Sample as Sample>::Float>,
-  {
-      let biquad = Biquad::from(coeff);
+    fn filtered(
+        self,
+        coeff: Coefficients<<<Self::Frame as Frame>::Sample as Sample>::Float>,
+    ) -> FilteredSignal<Self>
+    where
+        Self: Sized,
+        <Self::Frame as Frame>::Sample:
+            FromSample<<<Self::Frame as Frame>::Sample as Sample>::Float>,
+    {
+        let biquad = Biquad::from(coeff);
 
-      FilteredSignal {
-          signal: self,
-          biquad,
-      }
-  }
+        FilteredSignal {
+            signal: self,
+            biquad,
+        }
+    }
 }
 
 /// An adaptor that calculates and yields a filtered signal.
@@ -173,28 +266,28 @@ pub trait SignalFilter: Signal {
 /// - When using `dasp`, this item requires the **signal-filter** feature to be enabled.
 pub struct FilteredSignal<S>
 where
-  S: Signal,
-  <S::Frame as Frame>::Sample: FromSample<<<S::Frame as Frame>::Sample as Sample>::Float>,
+    S: Signal,
+    <S::Frame as Frame>::Sample: FromSample<<<S::Frame as Frame>::Sample as Sample>::Float>,
 {
-  signal: S,
-  biquad: Biquad<<S::Frame as Frame>::Float>,
+    signal: S,
+    biquad: Biquad<<S::Frame as Frame>::Float>,
 }
 
 impl<S> Signal for FilteredSignal<S>
 where
-  S: Signal,
-  <S::Frame as Frame>::Sample: FromSample<<<S::Frame as Frame>::Sample as Sample>::Float>,
+    S: Signal,
+    <S::Frame as Frame>::Sample: FromSample<<<S::Frame as Frame>::Sample as Sample>::Float>,
 {
-  // Output is the same type as the input.
-  type Frame = S::Frame;
+    // Output is the same type as the input.
+    type Frame = S::Frame;
 
-  fn next(&mut self) -> Self::Frame {
-      self.biquad.apply(self.signal.next())
-  }
+    fn next(&mut self) -> Self::Frame {
+        self.biquad.apply(self.signal.next())
+    }
 
-  fn is_exhausted(&self) -> bool {
-      self.signal.is_exhausted()
-  }
+    fn is_exhausted(&self) -> bool {
+        self.signal.is_exhausted()
+    }
 }
 
 // Impl this for all `Signal`s.
