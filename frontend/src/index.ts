@@ -1,26 +1,8 @@
-import { SamplerNode } from "sobaka-sample-web-audio";
+import 'svelte';
+import App from './App.svelte';
 
-const startAudio = async () => {
-  const context = new AudioContext();
-
-  const node = await SamplerNode.register(context);
-
-  node.connect(context.destination)
-
-  return context;
-};
-
-
-let context: AudioContext | null = null;
-
-const button = document.createElement("button");
-button.innerHTML = "Start";
-button.addEventListener("click", async () => {
-  if (context) {
-    context.close()
-    context = null;
-  } else {
-    context = await startAudio()
-  }
+const app = new App({
+  target: document.getElementById('root')!,
 });
-document.body.appendChild(button);
+
+export default app;

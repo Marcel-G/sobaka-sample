@@ -1,10 +1,13 @@
 const path = require("path");
 const { merge } = require("webpack-merge");
+const HtmlWebpackPlugin = require('html-webpack-plugin');
 const webAudioPartial = require("sobaka-sample-web-audio/webpack.partial");
-
-const CopyPlugin = require("copy-webpack-plugin");
+const sveltePreprocess = require("svelte-preprocess");
 
 const dist = path.resolve(__dirname, "dist");
+
+const mode = process.env.NODE_ENV || 'development';
+const prod = mode === 'production';
 
 module.exports = merge(webAudioPartial, {
   mode: "production",
@@ -15,6 +18,21 @@ module.exports = merge(webAudioPartial, {
   module: {
     rules: [
       {
+        test: /\.(html|svelte)$/,
+        use: {
+          loader: 'svelte-loader',
+          options: {
+            compilerOptions: {
+              dev: !prod
+            },
+            preprocess: sveltePreprocess({}),
+            emitCss: prod,
+            hotReload: !prod
+          }
+        },
+        exclude: /static/,
+      },
+      {
         test: /\.js$/,
         use: ["source-map-loader"],
         enforce: "pre",
@@ -24,18 +42,33 @@ module.exports = merge(webAudioPartial, {
         use: "ts-loader",
         exclude: /node_modules/,
       },
+      {
+        test: /node_modules\/svelte\/.*\.mjs$/,
+        resolve: {
+          fullySpecified: false
+        }
+      }
     ],
   },
   resolve: {
-    extensions: [".tsx", ".ts", ".js"],
+    alias: {
+      svelte: path.resolve('node_modules', 'svelte')
+    },
+    extensions: ['.ts', '.mjs', '.js', '.svelte'],
+    mainFields: ['svelte', 'browser', 'module', 'main'],
   },
   output: {
-    publicPath: "",
+    publicPath: "/",
     path: dist,
     filename: "[name].js",
   },
   devServer: {
     contentBase: dist,
+    hot: !prod 
   },
-  plugins: [new CopyPlugin([path.resolve(__dirname, "static")])],
+  plugins: [
+    new HtmlWebpackPlugin({
+      template: './static/index.html'
+    }),
+  ]
 });
