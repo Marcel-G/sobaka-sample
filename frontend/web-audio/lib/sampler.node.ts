@@ -37,6 +37,29 @@ export class SamplerNode extends AudioWorkletNode {
     return node
   }
 
+  public play() {
+    this.port.postMessage({
+      type: MessageType.Play,
+    })
+  }
+
+  public stop() {
+    this.port.postMessage({
+      type: MessageType.Stop,
+    })
+  }
+
+  public update_sample(track: number, sample: number, value: boolean) {
+    this.port.postMessage({
+      type: MessageType.UpdateSample,
+      data: {
+        track,
+        sample,
+        value
+      }
+    })
+  }
+
   private init(wasmSrc: ArrayBuffer): Promise<void> {
     const message: Message = {
       type: MessageType.SendWasm,

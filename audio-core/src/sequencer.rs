@@ -2,46 +2,61 @@ use dasp::{Sample, Signal};
 
 use crate::instrument::{ get_instrument, InstrumentType };
 
-const STATIC_SEQUENCE: [Option<InstrumentType>; 16] = [
-  // Static sequence for testing
-  // @todo should support multiple instruments on the same location
-  Some(InstrumentType::Kick), Some(InstrumentType::Kick), Some(InstrumentType::Hat), None,
-  Some(InstrumentType::Snare), None, Some(InstrumentType::Hat), None,
-  Some(InstrumentType::Kick), None, Some(InstrumentType::Hat), Some(InstrumentType::Hat),
-  Some(InstrumentType::Snare), None, Some(InstrumentType::Hat), None,
+const STATIC_SEQUENCE: [[bool; 16]; 3] = [
+  /* Hat   */ [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true],
+  /* Snare */ [true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false],
+  /* Kick  */ [false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false]
 ];
 
 // 16 spot sequencer for instruments
 pub struct Sequencer {
+  is_playing: bool,
   tick: usize,
   tempo: usize, // Tempo on bpm
-  sequence: Box<dyn Iterator<Item=Option<InstrumentType>>>,
+  head: usize,
+  tracks: [InstrumentType; 3],
+  sequence: [[bool; 16]; 3],
   active_instruments: Vec<Box<dyn Signal<Frame=f32>>>
 }
 
 impl Sequencer {
   pub fn new() -> Self {
-    let sequence = STATIC_SEQUENCE
-      .iter()
-      .cycle();
-
     Self {
+      is_playing: false,
+      tracks: [InstrumentType::Hat, InstrumentType::Snare, InstrumentType::Kick],
       tempo: 60,
       tick: 0,
-      sequence: Box::new(sequence.cloned()),
+      head: 0,
+      sequence: STATIC_SEQUENCE,
       active_instruments: vec![]
     }
+  }
+  pub fn play(&mut self) {
+    self.is_playing = true;
+    self.tick = 0;
+    self.head = 0;
+
+  }
+
+  pub fn stop(&mut self) {
+    self.is_playing = false;
+  }
+
+  pub fn update_sample(&mut self, track: usize, sample: usize, value: bool) {
+    self.sequence[track][sample] = value;
   }
 
   // Tick will be called each
   pub fn tick(&mut self, size: usize) -> Vec<f32> {
+    if !self.is_playing {
+      return vec![0.0; size]
+    }
     const SAMPLE_RATE: usize = 44100; // samples per second
     self.tick += size;
     let hz = (60. / self.tempo as f32) / 8.0;
 
     // @todo might be better to base stepping on a real timer
     if self.tick as f32 / SAMPLE_RATE as f32 >= hz {
-      println!("tick");
       self.tick = 0;
       self.step();
     }
@@ -51,8 +66,16 @@ impl Sequencer {
   }
 
   fn step(&mut self) {
-    if let Some(Some(instrument)) = self.sequence.next() {
-      self.active_instruments.push(get_instrument(instrument));
+    if self.head >= 15 {
+      self.head = 0;
+    } else {
+      self.head += 1;
+    }
+
+    for (track_sequence, instrument) in self.sequence.iter().zip(self.tracks.iter()) {
+      if track_sequence[self.head] {
+        self.active_instruments.push(get_instrument(*instrument));
+      }
     }
 
     self.active_instruments

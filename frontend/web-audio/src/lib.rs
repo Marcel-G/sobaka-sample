@@ -22,6 +22,18 @@ impl AudioProcessor {
       sequencer: Box::new(Sequencer::new()),
     }
   }
+  pub fn play(&mut self) {
+    self.sequencer.play();
+  }
+
+  pub fn stop(&mut self) {
+    self.sequencer.stop();
+  }
+
+  pub fn update_sample(&mut self, track: usize, sample: usize, value: bool) {
+    self.sequencer.update_sample(track, sample, value);
+  }
+
   pub fn get_buffer(&self, channel: usize) -> Vec<f32> {
     self.output_buffer[channel].clone()
   }

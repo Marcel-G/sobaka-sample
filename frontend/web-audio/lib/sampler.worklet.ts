@@ -15,6 +15,22 @@ class SamplerProcessor extends AudioWorkletProcessor {
         this.init(message.data);
         break;
       }
+      case MessageType.Play: {
+        this._instance?.play()
+        break;
+      }
+      case MessageType.Stop: {
+        this._instance?.stop()
+        break;
+      }
+      case MessageType.UpdateSample: {
+        this._instance?.update_sample(
+          message.data.track,
+          message.data.sample,
+          message.data.value
+        )
+        break;
+      }
       default: {
         throw new Error(`Command ${message.type} not recognised`);
       }

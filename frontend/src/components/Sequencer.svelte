@@ -9,29 +9,50 @@
   $: is_active = Array(grid[0]).fill(0).map(_ => Array(grid[1]).fill(false));
 
   let mouse_down = false;
+  let is_playing = false;
 
   function handle_mouse_down(i: number, j: number) {
     mouse_down = true;
     select(i, j);
   }
 
+  let context: AudioContext | null = null;
+  let sampler_node: SamplerNode | null = null;
+
   function select(i: number, j: number) {
     if (mouse_down) {
-      is_active[i][j] = !is_active[i][j];
+      let new_value = !is_active[i][j];
+      is_active[i][j] = new_value;
+      if (sampler_node) {
+        sampler_node.update_sample(i, j, new_value);
+      }
     }
   }
 
-  let context: AudioContext | null = null;
+  async function init_context() {
+    context = new AudioContext();
+    sampler_node = await SamplerNode.register(context);
+    sampler_node.connect(context.destination);
+
+    // Initialise all the sequence values
+    is_active.forEach((track, i) => {
+      track.forEach((value, j) => {
+        sampler_node.update_sample(i, j, value)
+      })
+    })
+  }
 
   async function handle_play() {
-    if (!context) {
-      context = new AudioContext();
+    if (!sampler_node)  {
+      await init_context();
+    }
 
-      const node = await SamplerNode.register(context);
-
-      node.connect(context.destination);
+    if (is_playing) {
+      is_playing = false;
+      sampler_node.stop();
     } else {
-      context.close();
+      is_playing = true;
+      sampler_node.play();
     }
   }
 </script>
