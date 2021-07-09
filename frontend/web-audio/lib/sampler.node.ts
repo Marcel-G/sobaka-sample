@@ -1,14 +1,17 @@
 // @ts-ignore
 import samplerWorkletUrl from "./sampler.worklet";
 import samplerWasmUrl from '../pkg/sobaka_sample_web_audio_bg.wasm'
-import { Message, MessageType } from "./interface";
+import { RPCAudioProcessorInterface } from "./interface";
 import { SAMPLER_WORKLET } from "./constants";
+import { RPC } from "./rpc";
 
-export class SamplerNode extends AudioWorkletNode {
+export class SamplerNode extends AudioWorkletNode implements RPCAudioProcessorInterface {
+  private rpc: RPC<RPCAudioProcessorInterface, MessagePort>
   constructor(context: AudioContext) {
     super(context, SAMPLER_WORKLET);
+    this.rpc = new RPC(this.port);
 
-    this.port.onmessage = (event) => this.onmessage(event.data);
+    this.addEventListener('processorerror', console.error)
   }
   /**
    * Workaround for WASM + AudioWorkletProcessor
@@ -32,62 +35,25 @@ export class SamplerNode extends AudioWorkletNode {
 
     const node = new SamplerNode(context);
 
-    await node.init(await src.arrayBuffer())
+    await node.send_wasm_program(await src.arrayBuffer())
 
     return node
   }
 
+  public send_wasm_program(data: ArrayBuffer): Promise<void> {
+    // @todo return types are nested
+    return this.rpc.call('send_wasm_program', [data]) as unknown as Promise<void>;
+  }
+
   public play() {
-    this.port.postMessage({
-      type: MessageType.Play,
-    })
+    this.rpc.call('play', []);
   }
 
   public stop() {
-    this.port.postMessage({
-      type: MessageType.Stop,
-    })
+    this.rpc.call('stop', []);
   }
 
   public update_sample(track: number, sample: number, value: boolean) {
-    this.port.postMessage({
-      type: MessageType.UpdateSample,
-      data: {
-        track,
-        sample,
-        value
-      }
-    })
-  }
-
-  private init(wasmSrc: ArrayBuffer): Promise<void> {
-    const message: Message = {
-      type: MessageType.SendWasm,
-      data: wasmSrc 
-    }
-
-    this.port.postMessage(message)
-
-    return new Promise((resolve, reject) => {
-      // Reject on processor initialisation error
-      this.addEventListener(
-        'processorerror',
-        reject,
-        { once: true}
-      )
-      // Resolve on successful processor load
-      this.port.addEventListener('message', (event) => {
-        if (event.data.type === MessageType.WasmLoaded) {
-          resolve()
-        } else {
-          debugger;
-          reject(new Error('Expecting initialisation message'))
-        }
-      }, { once: true })
-    })
-  };
-
-  onmessage = (event: Message) => {
-    // No messages yet
+    this.rpc.call('update_sample', [track, sample, value]);
   }
 }

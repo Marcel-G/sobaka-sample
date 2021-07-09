@@ -1,52 +1,27 @@
 import 'fastestsmallesttextencoderdecoder'; // Add missing TextDecoder/TextEncoder in worklet env
-import { Message, MessageType } from "./interface";
 import init, { AudioProcessor } from '../pkg';
 import { SAMPLER_WORKLET } from './constants';
+import { RPCAudioProcessorInterface } from './interface';
+import { RPC } from './rpc';
 
 class SamplerProcessor extends AudioWorkletProcessor {
-  _instance: AudioProcessor | null = null
+  private instance: AudioProcessor | null = null
+  private rpc: RPC<RPCAudioProcessorInterface, MessagePort>
   constructor(options?: AudioWorkletNodeOptions) {
     super(options);
-    this.port.onmessage = (event) => this.handleMessage(event.data);
-  }
-  private handleMessage(message: Message) {
-    switch (message.type) {
-      case MessageType.SendWasm: {
-        this.init(message.data);
-        break;
-      }
-      case MessageType.Play: {
-        this._instance?.play()
-        break;
-      }
-      case MessageType.Stop: {
-        this._instance?.stop()
-        break;
-      }
-      case MessageType.UpdateSample: {
-        this._instance?.update_sample(
-          message.data.track,
-          message.data.sample,
-          message.data.value
-        )
-        break;
-      }
-      default: {
-        throw new Error(`Command ${message.type} not recognised`);
-      }
-    }
+    this.rpc = new RPC(this.port);
+
+    this.rpc.expose('send_wasm_program', this.init.bind(this));
   }
   private async init(data: ArrayBuffer) {
     const module = await WebAssembly.compile(data);
     await init(module);
 
-    const message: Message  = {
-      type: MessageType.WasmLoaded,
-    }
+    this.instance = new AudioProcessor();
 
-    this._instance = new AudioProcessor();
-
-    this.port.postMessage(message)
+    this.rpc.expose('play', this.instance.play.bind(this.instance));
+    this.rpc.expose('stop', this.instance.stop.bind(this.instance));
+    this.rpc.expose('update_sample', this.instance.update_sample.bind(this.instance));
   }
   /**
    * Each channel has 128 samples. Inputs[n][m][i] will access n-th input,
@@ -58,23 +33,23 @@ class SamplerProcessor extends AudioWorkletProcessor {
     outputs: Float32Array[][],
     parameters: Record<string, Float32Array>
   ): boolean {
-    if (!outputs[0]?.[0] || !this._instance) {
+    if (!outputs[0]?.[0] || !this.instance) {
       return true;
     }
 
     // Transfer input data to wasm instance
     inputs[0].forEach((input, index) => {
-      this._instance!.set_buffer(index, input)
+      this.instance!.set_buffer(index, input)
     })
 
     // Process data in buffers
-    this._instance!.process()
+    this.instance!.process()
 
     // Transfer data to AudioWorkletProcessor output
     outputs[0].forEach((output, index) => {
       // Is get_buffer allocating a new Float32Array each cycle?
       // Could cause some GC
-      output.set(this._instance!.get_buffer(index))
+      output.set(this.instance!.get_buffer(index))
     })
 
     // @todo return false when isShutdown

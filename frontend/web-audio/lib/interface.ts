@@ -1,12 +1,12 @@
-export enum MessageType {
-  SendWasm = "SEND_WASM",
-  WasmLoaded = "WASM_LOADER",
-  Play = 'PLAY',
-  Stop = 'STOP',
-  UpdateSample = 'UPDATE_SAMPLE'
-}
+import { AudioProcessor } from "../pkg/sobaka_sample_web_audio";
 
-export interface Message {
-  type: MessageType,
-  data?: any
+/**
+ * Used for sending the wasm src code into the audio thread
+ */
+export type SendProgram = {
+  send_wasm_program(data: ArrayBuffer): Promise<void>
 }
+export interface RPCAudioProcessorInterface extends Omit<
+  AudioProcessor & SendProgram,
+  'free' | 'process' | 'get_buffer' | 'set_buffer'
+  > {}
