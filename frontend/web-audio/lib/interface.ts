@@ -6,7 +6,11 @@ import { AudioProcessor } from "../pkg/sobaka_sample_web_audio";
 export type SendProgram = {
   send_wasm_program(data: ArrayBuffer): Promise<void>
 }
+
+export type EventBus = {
+  on_sequence_step(step: number): void
+}
 export interface RPCAudioProcessorInterface extends Omit<
-  AudioProcessor & SendProgram,
+  AudioProcessor & SendProgram & EventBus,
   'free' | 'process' | 'get_buffer' | 'set_buffer'
   > {}

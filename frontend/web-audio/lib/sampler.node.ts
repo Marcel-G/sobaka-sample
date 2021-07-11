@@ -1,11 +1,12 @@
 // @ts-ignore
 import samplerWorkletUrl from "./sampler.worklet";
 import samplerWasmUrl from '../pkg/sobaka_sample_web_audio_bg.wasm'
-import { RPCAudioProcessorInterface } from "./interface";
+import { RPCAudioProcessorInterface, SendProgram } from "./interface";
 import { SAMPLER_WORKLET } from "./constants";
 import { RPC } from "./rpc";
+import { AudioProcessor } from "../pkg/sobaka_sample_web_audio";
 
-export class SamplerNode extends AudioWorkletNode implements RPCAudioProcessorInterface {
+export class SamplerNode extends AudioWorkletNode implements Partial<AudioProcessor>, SendProgram {
   private rpc: RPC<RPCAudioProcessorInterface, MessagePort>
   constructor(context: AudioContext) {
     super(context, SAMPLER_WORKLET);
@@ -38,6 +39,10 @@ export class SamplerNode extends AudioWorkletNode implements RPCAudioProcessorIn
     await node.send_wasm_program(await src.arrayBuffer())
 
     return node
+  }
+
+  public subscribe_sequence_step(callback: (step: number) => void): void {
+    this.rpc.expose('on_sequence_step', callback);
   }
 
   public send_wasm_program(data: ArrayBuffer): Promise<void> {

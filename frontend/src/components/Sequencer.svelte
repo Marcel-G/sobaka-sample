@@ -6,6 +6,8 @@
   $: col = `repeat(${grid[1]}, 1fr)`;
   $: row = `repeat(${grid[0]}, 1fr)`;
 
+  let active_step = 0;
+
   $: is_active = Array(grid[0]).fill(0).map(_ => Array(grid[1]).fill(false));
 
   let mouse_down = false;
@@ -33,6 +35,10 @@
     context = new AudioContext();
     sampler_node = await SamplerNode.register(context);
     sampler_node.connect(context.destination);
+
+    sampler_node.subscribe_sequence_step((step) => {
+      active_step = step;
+    })
 
     // Initialise all the sequence values
     is_active.forEach((track, i) => {
@@ -66,6 +72,8 @@
   {#each { length: grid[0] } as _, i (i)}
     {#each { length: grid[1] } as _, j (j)}
       <div
+        class="step"
+        class:active={j === active_step}
         class:selected={is_active[i][j]}
         on:mousedown={() => handle_mouse_down(i, j)}
         on:mouseover={() => select(i, j)}
@@ -93,8 +101,25 @@
     cursor: pointer;
     padding-top: 200%;
   }
-
-  div.selected {
+  .step.selected {
     background: black;
+  }
+
+  .step::after {
+    content: '';
+    display: block;
+    height: 1em;
+    width: 1em;
+
+    margin: 0.5rem auto;
+
+    background-color: hsl(0deg 100% 20%);
+    border-radius: 50%;
+
+    /* transition: background-color 0.1s ease-out; */
+  }
+
+  .step.active::after {
+    background-color: hsl(0deg 100% 50%);
   }
 </style>

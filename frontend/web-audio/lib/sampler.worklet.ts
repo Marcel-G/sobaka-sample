@@ -17,7 +17,11 @@ class SamplerProcessor extends AudioWorkletProcessor {
     const module = await WebAssembly.compile(data);
     await init(module);
 
-    this.instance = new AudioProcessor();
+    const on_step = (step: number) => {
+      this.rpc.call('on_sequence_step', [step]);
+    }
+
+    this.instance = new AudioProcessor(on_step);
 
     this.rpc.expose('play', this.instance.play.bind(this.instance));
     this.rpc.expose('stop', this.instance.stop.bind(this.instance));

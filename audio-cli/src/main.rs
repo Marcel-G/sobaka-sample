@@ -28,7 +28,7 @@ where T: cpal::Sample,
   println!("sample_rate: {}", sample_rate);
   println!("channels: {}", channels);
 
-  let mut sequencer = Sequencer::new();
+  let mut sequencer = Sequencer::new(Box::new(|_step: usize| {}));
 
   let mut next_value = move || {
     sequencer.tick(1)[0]

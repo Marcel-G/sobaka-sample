@@ -16,11 +16,12 @@ pub struct Sequencer {
   head: usize,
   tracks: [InstrumentType; 3],
   sequence: [[bool; 16]; 3],
-  active_instruments: Vec<Box<dyn Signal<Frame=f32>>>
+  active_instruments: Vec<Box<dyn Signal<Frame=f32>>>,
+  on_step: Box<dyn Fn(usize)>
 }
 
 impl Sequencer {
-  pub fn new() -> Self {
+  pub fn new(on_step: Box<dyn Fn(usize)>) -> Self {
     Self {
       is_playing: false,
       tracks: [InstrumentType::Hat, InstrumentType::Snare, InstrumentType::Kick],
@@ -28,14 +29,14 @@ impl Sequencer {
       tick: 0,
       head: 0,
       sequence: STATIC_SEQUENCE,
-      active_instruments: vec![]
+      active_instruments: vec![],
+      on_step: on_step
     }
   }
   pub fn play(&mut self) {
     self.is_playing = true;
     self.tick = 0;
     self.head = 0;
-
   }
 
   pub fn stop(&mut self) {
@@ -71,6 +72,9 @@ impl Sequencer {
     } else {
       self.head += 1;
     }
+
+    // Call on_step callback;
+    (self.on_step)(self.head);
 
     for (track_sequence, instrument) in self.sequence.iter().zip(self.tracks.iter()) {
       if track_sequence[self.head] {

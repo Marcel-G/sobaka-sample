@@ -1,5 +1,6 @@
 use wasm_bindgen::prelude::*;
 use sobaka_sample_audio_core::{sequencer::Sequencer};
+use js_sys;
 
 const FRAME_SIZE: usize = 128;
 // AudioProcessor is the rust entry-point for Web Audio AudioWorkletProcessor
@@ -14,12 +15,20 @@ pub struct AudioProcessor {
 #[wasm_bindgen]
 impl AudioProcessor {
   #[wasm_bindgen(constructor)]
-  pub fn new() -> Self {
-    // returns pointer to processor
+  pub fn new(on_step: js_sys::Function) -> Self {
+
+    // Convert js function to boxed closure
+    // @todo should this be a generic on_event callback?
+    let this = JsValue::null();
+    let cb = Box::new(move |step: usize| {
+      let step_js = JsValue::from(step as u32);
+      let _ = on_step.call1(&this, &step_js);
+    });
+
     AudioProcessor {
       input_buffer: [vec![0.0; FRAME_SIZE], vec![0.0; FRAME_SIZE]],
       output_buffer: [vec![0.0; FRAME_SIZE], vec![0.0; FRAME_SIZE]],
-      sequencer: Box::new(Sequencer::new()),
+      sequencer: Box::new(Sequencer::new(cb)),
     }
   }
   pub fn play(&mut self) {
