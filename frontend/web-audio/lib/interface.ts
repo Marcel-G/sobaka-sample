@@ -8,7 +8,10 @@ export type SendProgram = {
 }
 
 export type EventBus = {
-  on_sequence_step(step: number): void
+  on_active_step(step: number): void,
+  on_is_playing(is_playing: boolean): void,
+  on_sequence(sequence: any): void,
+  on_instruments(instruments: any): void
 }
 export interface RPCAudioProcessorInterface extends Omit<
   AudioProcessor & SendProgram & EventBus,

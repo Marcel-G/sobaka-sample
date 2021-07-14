@@ -1,7 +1,7 @@
 // @ts-ignore
 import samplerWorkletUrl from "./sampler.worklet";
 import samplerWasmUrl from '../pkg/sobaka_sample_web_audio_bg.wasm'
-import { RPCAudioProcessorInterface, SendProgram } from "./interface";
+import { EventBus, RPCAudioProcessorInterface, SendProgram } from "./interface";
 import { SAMPLER_WORKLET } from "./constants";
 import { RPC } from "./rpc";
 import { AudioProcessor } from "../pkg/sobaka_sample_web_audio";
@@ -41,8 +41,13 @@ export class SamplerNode extends AudioWorkletNode implements Partial<AudioProces
     return node
   }
 
-  public subscribe_sequence_step(callback: (step: number) => void): void {
-    this.rpc.expose('on_sequence_step', callback);
+  public subscribe<N extends keyof EventBus>(name: N): (set: EventBus[N]) => () => void {
+    return (set) => {
+      this.rpc.expose(name, set as any);
+      return () => {
+        // Cleanup
+      }
+    }
   }
 
   public send_wasm_program(data: ArrayBuffer): Promise<void> {
@@ -58,7 +63,23 @@ export class SamplerNode extends AudioWorkletNode implements Partial<AudioProces
     this.rpc.call('stop', []);
   }
 
-  public update_sample(track: number, sample: number, value: boolean) {
-    this.rpc.call('update_sample', [track, sample, value]);
+  public add_instrument() { // @todo fix type
+    this.rpc.call('add_instrument', []);
+  } 
+
+  public destroy_instrument(instrument_uuid: string) {
+    this.rpc.call('destroy_instrument', [instrument_uuid]);
+  }
+
+  public assign_instrument(step: number, instrument_uuid: string) {
+    this.rpc.call('assign_instrument', [step, instrument_uuid]);
+  }
+
+  public unassign_instrument(step: number, instrument_uuid: string) {
+    this.rpc.call('assign_instrument', [step, instrument_uuid]);
+  }
+
+  public trigger_instrument(instrument_uuid: string) {
+    this.rpc.call('trigger_instrument', [instrument_uuid]);
   }
 }

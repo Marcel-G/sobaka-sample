@@ -4,8 +4,8 @@
   "version": "0.1.0",
   "scripts": {
     "prebuild": "cd web-audio && npm run build",
-    "build": "rimraf dist pkg && webpack",
-    "start": "rimraf dist pkg && webpack serve --open",
+    "build": "rimraf dist pkg && webpack --stats-children",
+    "start": "rimraf dist pkg && webpack serve --stats-children --open",
     "postinstall": "cd web-audio && npm install"
   },
   "devDependencies": {

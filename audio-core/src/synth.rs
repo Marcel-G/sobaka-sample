@@ -3,7 +3,7 @@ use dasp::{Sample, Signal, signal};
 use crate::{envelope::{ dumb }, filter::{ SignalFilter, Coefficients }};
 
 #[derive(Clone, Copy)]
-pub enum InstrumentType {
+pub enum SynthKind {
   Kick,
   Snare,
   Hat
@@ -121,10 +121,10 @@ fn snare() -> impl Signal<Frame=f32> {
 // @todo look into dasp `boxed` feature:
 // The boxed feature (or signal-boxed feature if using dasp) provides
 // a Signal implementation for Box<dyn Signal>.
-pub fn get_instrument(instrument: InstrumentType) -> Box<dyn Signal<Frame = f32>> {
+pub fn get_synth(instrument: SynthKind) -> Box<dyn Signal<Frame = f32>> {
   match instrument {
-    InstrumentType::Hat => Box::new(hat()),
-    InstrumentType::Kick => Box::new(kick()),
-    InstrumentType::Snare => Box::new(snare())
+    SynthKind::Hat => Box::new(hat()),
+    SynthKind::Kick => Box::new(kick()),
+    SynthKind::Snare => Box::new(snare())
   }
 }

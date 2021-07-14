@@ -50,10 +50,10 @@ export class RPC<
     return this;
   }
 
-  public call<N extends keyof I>(
+  public async call<N extends keyof I>(
     method: N,
     args: Parameters<I[N]>
-  ): Promise<ReturnType<I[N]>> | void {
+  ): Promise<ReturnType<I[N]> | void>{
     const id = this.callCounter;
 
     const packet: RPCMethod<I, N> = {

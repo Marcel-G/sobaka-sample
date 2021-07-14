@@ -6,4 +6,9 @@ edition = "2018"
 
 [dependencies]
 dasp = { version = "0.11", features = ["all"] }
+serde = { version = "1.0", features = ["derive"] }
+# uuid = { version = "0.8", features = ["serde", "v4", "wasm-bindgen"]" }
+# waiting for https://github.com/uuid-rs/uuid/pull/512 to be released
+uuid = { features = ["serde", "v4"], git = "https://github.com/uuid-rs/uuid" }
+
 splines = "4.0"

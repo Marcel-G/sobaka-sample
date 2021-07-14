@@ -17,15 +17,20 @@ class SamplerProcessor extends AudioWorkletProcessor {
     const module = await WebAssembly.compile(data);
     await init(module);
 
-    const on_step = (step: number) => {
-      this.rpc.call('on_sequence_step', [step]);
-    }
-
-    this.instance = new AudioProcessor(on_step);
+    this.instance = new AudioProcessor(
+      (step: number)        => { this.rpc.call('on_active_step', [step])        .catch(() => {}) },
+      (is_playing: boolean) => { this.rpc.call('on_is_playing',  [is_playing])  .catch(() => {}) },
+      (sequence: any)       => { this.rpc.call('on_sequence',    [sequence])    .catch(() => {}) },
+      (instruments: any)    => { this.rpc.call('on_instruments', [instruments]) .catch(() => {}) },
+    );
 
     this.rpc.expose('play', this.instance.play.bind(this.instance));
     this.rpc.expose('stop', this.instance.stop.bind(this.instance));
-    this.rpc.expose('update_sample', this.instance.update_sample.bind(this.instance));
+    this.rpc.expose('add_instrument', this.instance.add_instrument.bind(this.instance));
+    this.rpc.expose('destroy_instrument', this.instance.destroy_instrument.bind(this.instance));
+    this.rpc.expose('assign_instrument', this.instance.assign_instrument.bind(this.instance));
+    this.rpc.expose('unassign_instrument', this.instance.unassign_instrument.bind(this.instance));
+    this.rpc.expose('trigger_instrument', this.instance.trigger_instrument.bind(this.instance));
   }
   /**
    * Each channel has 128 samples. Inputs[n][m][i] will access n-th input,
