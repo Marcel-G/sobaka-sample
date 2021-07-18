@@ -1,9 +1,10 @@
 <script lang="ts">
   import type { SamplerNode } from "sobaka-sample-web-audio";
-  import { setContext } from "svelte";
+  import { onMount, setContext } from "svelte";
   import { readable, writable } from "svelte/store";
   import SequencerPanel from './SequencerPanel.svelte'
   import InstrumentsPanel from "./InstrumentsPanel.svelte";
+  import { init_key_bindings } from "../key_bindings";
 
   export let sampler: SamplerNode;
 
@@ -20,6 +21,13 @@
     sampler.subscribe('on_sequence')
   );
 
+  onMount(() => {
+    return init_key_bindings(
+      sampler as any,
+      instruments,
+      selected_instrument
+    )
+  })
 
   function handle_play() {
     if ($is_playing) {
