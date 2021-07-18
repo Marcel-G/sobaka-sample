@@ -113,6 +113,7 @@
   }
 
   .assignment {
+    pointer-events: none;
     user-select: none;
     text-overflow: ellipsis;
     white-space: nowrap;
