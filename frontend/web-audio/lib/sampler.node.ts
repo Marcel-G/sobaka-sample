@@ -76,7 +76,7 @@ export class SamplerNode extends AudioWorkletNode implements Partial<AudioProces
   }
 
   public unassign_instrument(step: number, instrument_uuid: string) {
-    this.rpc.call('assign_instrument', [step, instrument_uuid]);
+    this.rpc.call('unassign_instrument', [step, instrument_uuid]);
   }
 
   public trigger_instrument(instrument_uuid: string) {

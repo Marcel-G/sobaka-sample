@@ -22,7 +22,12 @@
 
   function select(i: number) {
     if (mouse_down && $selected_instrument) {
-      sampler.assign_instrument(i, $selected_instrument);
+      if (sequence[i].find(({ uuid }) => $selected_instrument === uuid)) {
+        console.log(i, $selected_instrument);
+        sampler.unassign_instrument(i, $selected_instrument);
+      } else {
+        sampler.assign_instrument(i, $selected_instrument);
+      }
     }
   }
 </script>

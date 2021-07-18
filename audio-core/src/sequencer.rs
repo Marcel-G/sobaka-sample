@@ -204,7 +204,10 @@ impl Sequencer {
   pub fn assign_instrument(&mut self, step: usize, instrument: Weak<Instrument>) {
     // Check step is in range
 
-    // @todo prevent assignment of an instrument to a step multiple times
+    if self.sequence.inner[step].iter().any(|_instrument| instrument.ptr_eq(_instrument)) {
+      // Skip if intrument is already at step
+      return
+    }
 
     // Add instrument to step
     self.sequence.commit(|sequence| {
