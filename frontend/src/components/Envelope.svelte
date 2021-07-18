@@ -12,12 +12,14 @@
 
     const min = Math.min(...data);
     const max = Math.max(...data);
-    const scale = (height / (max - min));
+    const scale = (height / (max - min)) / 2;
 
     ctx.beginPath();
+    ctx.translate(0.5, 0.5); // Translate to fix sub-pixel rounding canvas blur
     data.forEach((y, x) => {
       ctx.rect(x, height / 2 - (y * scale), 1, y * scale * 2);
     });
+    ctx.translate(-0.5, -0.5); // Reset sub-pixel rounding canvas blur fix
     ctx.stroke();
   });
 </script>
@@ -26,7 +28,7 @@
 
 <style>
   canvas {
-    width: 100%;
     height: 100%;
+    display: block;
   }
 </style>

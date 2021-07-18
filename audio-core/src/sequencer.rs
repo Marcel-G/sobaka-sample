@@ -179,14 +179,17 @@ impl Sequencer {
     // @todo this will need to be re-rendered if instrument parameters change
     let attack = 1.0;
     let release = 1.0;
-    let ring_buffer = ring_buffer::Fixed::from([0f32; 50]);
+    let ring_buffer = ring_buffer::Fixed::from([0f32; 64]);
     let detector = envelope::Detector::rms(ring_buffer, attack, release);
 
     let envelope = self
       .get_voice(&new.kind)
       .as_mut()
       .detect_envelope(detector)
-      .take(5000)
+      .take(8000) // @todo Fix trait bounds; Signal should already be Sized at this point
+      .collect::<Vec<f32>>()
+      .chunks(64)
+      .map(|chunk| chunk.iter().sum::<f32>() / 64.)
       .collect();
 
     let instrument = Instrument {
