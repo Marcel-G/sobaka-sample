@@ -63,8 +63,8 @@ export class SamplerNode extends AudioWorkletNode implements Partial<AudioProces
     this.rpc.call('stop', []);
   }
 
-  public add_instrument() { // @todo fix type
-    this.rpc.call('add_instrument', []);
+  public add_instrument(new_instrument: any) { // @todo fix type
+    this.rpc.call('add_instrument', [new_instrument]);
   } 
 
   public destroy_instrument(instrument_uuid: string) {

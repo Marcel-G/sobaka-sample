@@ -60,13 +60,8 @@ impl AudioProcessor {
     self.sequencer.stop();
   }
 
-  pub fn add_instrument(&mut self) {
-    // @todo accept instrument options
-    // let new_instrument: NewInstrument = serde_wasm_bindgen::from_value(new_instrument).unwrap();
-    let new_instrument = NewInstrument {
-      kind: InstrumentKind::Synth,
-      data: None
-    };
+  pub fn add_instrument(&mut self, new_instrument: JsValue) {
+    let new_instrument: NewInstrument = serde_wasm_bindgen::from_value(new_instrument).unwrap();
     self.sequencer.add_instrument(new_instrument);
   }
 

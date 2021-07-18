@@ -6,7 +6,9 @@ use crate::synth::{SynthKind, get_synth};
 
 #[derive(Serialize, Deserialize)]
 pub enum InstrumentKind {
-  Synth
+  SynthHat,
+  SynthKick,
+  SynthSnare
 }
 
 type Voice = Box<dyn Signal<Frame=f32>>;
@@ -164,7 +166,9 @@ impl Sequencer {
 
   fn get_voice(&self, kind: &InstrumentKind) -> Voice {
     match kind {
-       InstrumentKind::Synth => get_synth(SynthKind::Hat)
+       InstrumentKind::SynthHat => get_synth(SynthKind::Hat),
+       InstrumentKind::SynthSnare => get_synth(SynthKind::Snare),
+       InstrumentKind::SynthKick => get_synth(SynthKind::Kick)
     }
   }
 

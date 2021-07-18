@@ -15,7 +15,19 @@
 </script>
 
 <div>
-  Instruments Panel
+  <h3>Instruments Panel</h3>
+  <button on:click={() => { sampler.add_instrument({ kind: 'SynthHat', data: null }) }}>
+    Add Hat
+  </button>
+
+  <button on:click={() => { sampler.add_instrument({ kind: 'SynthSnare', data: null }) }}>
+    Add Snare
+  </button>
+
+  <button on:click={() => { sampler.add_instrument({ kind: 'SynthKick', data: null }) }}>
+    Add Kick
+  </button>
+
   {#each instruments as instrument (instrument.uuid)}
     <div
       class="instrument"
@@ -40,10 +52,6 @@
     </div>
   {/each}
 </div>
-
-<button on:click={() => { sampler.add_instrument() }}>
-  Add instrument
-</button>
 
 <style>
   .instrument {

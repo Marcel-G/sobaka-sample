@@ -31,6 +31,13 @@
 </script>
 
 <div>
+  <button class="play" on:click={handle_play}>
+    {#if $is_playing}
+      Stop
+    {:else}
+      Play
+    {/if}
+  </button>
   <SequencerPanel
     active_step={$active_step}
     sequence={$sequence}
@@ -38,14 +45,11 @@
   <InstrumentsPanel
     instruments={$instruments}
   />
-  <button on:click={handle_play}>
-    {#if $is_playing}
-      Stop
-    {:else}
-      Play
-    {/if}
-  </button>
 </div>
 
 <style>
+  button.play {
+    display: block;
+    margin-left: auto;
+  }
 </style>
