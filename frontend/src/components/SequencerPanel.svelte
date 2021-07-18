@@ -6,19 +6,16 @@
   export let sequence: any[][];
   export let active_step: number;
 
-  const sampler: SamplerNode = getContext('sampler');
+  const sampler: SamplerNode = getContext("sampler");
 
   $: col = `repeat(${sequence.length}, 1fr)`;
-  $: row = `repeat(1, 1fr)`;
+  $: row = `repeat(2, 0fr)`;
 
-  const selected_instrument: Writable<string> = getContext('selected_instrument');
+  const selected_instrument: Writable<string> = getContext(
+    "selected_instrument"
+  );
 
   let mouse_down = false;
-
-  function handle_mouse_down(i: number) {
-    mouse_down = true;
-    select(i);
-  }
 
   function select(i: number) {
     if (mouse_down && $selected_instrument) {
@@ -30,9 +27,22 @@
       }
     }
   }
+
+  function handle_click(i) {
+    return (event) => {
+      if ("buttons" in event && event.buttons == 1) {
+        mouse_down = true;
+        select(i);
+      }
+    };
+  }
 </script>
 
-<svelte:window on:mouseup={() => { mouse_down = false }}/>
+<svelte:window
+  on:mouseup={() => {
+    mouse_down = false;
+  }}
+/>
 
 <div
   class="container"
@@ -42,18 +52,19 @@
     <div
       class="step"
       class:active={i === active_step}
-      class:selected={false}
-      on:mousedown={(event) => {
-        if ("buttons" in event && event.buttons == 1) {
-          handle_mouse_down(i)
-        }
-      }}
+      on:mousedown={handle_click(i)}
       on:mouseover={() => select(i)}
     >
-    {#each assignments as instrument (instrument.uuid)}
-      <span class="assignment">{instrument.uuid}</span>
-    {/each}
+      {#each assignments as instrument (instrument.uuid)}
+        <span class="assignment">{instrument.uuid}</span>
+      {/each}
     </div>
+    <div
+      class="indicator"
+      class:active={i === active_step}
+      on:mousedown={handle_click(i)}
+      on:mouseover={() => select(i)}
+    />
   {/each}
 </div>
 
@@ -61,23 +72,29 @@
   .container {
     width: 100%;
     display: grid;
+    grid-auto-flow: column;
     border: 1px solid #999;
-    border-radius: 2px;
-    grid-gap: 1px;
-    background: #999;
+    border-left: none;
+    min-width: 0;
   }
-
-  .container div {
-    background: #fff;
+  .step,
+  .indicator {
     cursor: pointer;
-    padding-top: 200%;
-  }
-  .step.selected {
-    background: black;
+    border-left: 1px solid #999;
+    min-width: 0;
   }
 
-  .step::after {
-    content: '';
+  .step {
+    overflow: hidden;
+    min-height: 4rem;
+    border-bottom: none;
+  }
+
+  .indicator {
+    border-top: none;
+  }
+  .indicator::after {
+    content: "";
     display: block;
     height: 1em;
     width: 1em;
@@ -90,16 +107,16 @@
     /* transition: background-color 0.1s ease-out; */
   }
 
-  .step.active::after {
+  .indicator.active::after {
     background-color: hsl(0deg 100% 50%);
   }
 
   .assignment {
+    user-select: none;
     text-overflow: ellipsis;
     white-space: nowrap;
     overflow: hidden;
     font-size: 12px;
     display: block;
-    width: 50px;
   }
 </style>
