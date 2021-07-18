@@ -2,6 +2,7 @@
   import type { SamplerNode } from "sobaka-sample-web-audio";
   import type { Writable } from "svelte/store";
   import { getContext } from "svelte";
+  import Envelope from "./Envelope.svelte";
 
   export let instruments: any[];
 
@@ -22,6 +23,7 @@
       on:click={() => select_instrument(instrument.uuid)}
     >
       {instrument.uuid}
+      <Envelope data={instrument.envelope} />
       <button
         on:mousedown={() => { sampler.trigger_instrument(instrument.uuid) }}
       >

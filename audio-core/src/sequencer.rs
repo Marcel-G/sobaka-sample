@@ -1,5 +1,5 @@
 use std::{rc::{Rc, Weak}};
-use dasp::{Sample, Signal};
+use dasp::{Sample, Signal, envelope, ring_buffer, signal::envelope::SignalEnvelope};
 use serde::{ Serialize, Deserialize };
 use uuid::Uuid;
 use crate::synth::{SynthKind, get_synth};
@@ -171,10 +171,24 @@ impl Sequencer {
   pub fn add_instrument(&mut self, new: NewInstrument) {
     let uuid = Uuid::new_v4();
 
+    // Render envelope
+    // @todo this will need to be re-rendered if instrument parameters change
+    let attack = 1.0;
+    let release = 1.0;
+    let ring_buffer = ring_buffer::Fixed::from([0f32; 50]);
+    let detector = envelope::Detector::rms(ring_buffer, attack, release);
+
+    let envelope = self
+      .get_voice(&new.kind)
+      .as_mut()
+      .detect_envelope(detector)
+      .take(5000)
+      .collect();
+
     let instrument = Instrument {
       uuid,
       kind: new.kind,
-      envelope: vec![],
+      envelope,
       muted: false
     };
 
