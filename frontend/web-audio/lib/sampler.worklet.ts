@@ -1,36 +1,49 @@
+/**
+ * This worklet executed in an AudioWorkletGlobalScope which means
+ * many features are missing eg. setTimeout, setInterval, fetch, crypto api etc.
+ * 
+ * https://searchfox.org/mozilla-central/source/dom/webidl/AudioWorkletGlobalScope.webidl
+ */
+import { IJSONRPCRequest, IJSONRPCResponse } from '@open-rpc/client-js/build/Request';
 import 'fastestsmallesttextencoderdecoder'; // Add missing TextDecoder/TextEncoder in worklet env
 import init, { AudioProcessor } from '../pkg';
 import { SAMPLER_WORKLET } from './constants';
-import { RPCAudioProcessorInterface } from './interface';
-import { RPC } from './rpc';
+
 
 class SamplerProcessor extends AudioWorkletProcessor {
   private instance: AudioProcessor | null = null
-  private rpc: RPC<RPCAudioProcessorInterface, MessagePort>
   constructor(options?: AudioWorkletNodeOptions) {
     super(options);
-    this.rpc = new RPC(this.port);
 
-    this.rpc.expose('send_wasm_program', this.init.bind(this));
+    // Temporary hack for loading the wasm binary
+    // See sampler.node.ts#register
+    this.port.onmessage = () => {}
+    this.port.addEventListener('message', (event) => {
+      let message = event.data;
+      if (message.method === 'send_wasm_program') {
+        this.init(message);
+      } else {
+        throw new Error('Failed to load wasm program');
+      }
+    }, { once: true })
+
   }
-  private async init(data: ArrayBuffer) {
+
+  private async init(message: IJSONRPCRequest & { params: [ArrayBuffer] }) {
+    const data = message.params[0];
     const module = await WebAssembly.compile(data);
     await init(module);
 
-    this.instance = new AudioProcessor(
-      (step: number)        => { this.rpc.call('on_active_step', [step])        .catch(() => {}) },
-      (is_playing: boolean) => { this.rpc.call('on_is_playing',  [is_playing])  .catch(() => {}) },
-      (sequence: any)       => { this.rpc.call('on_sequence',    [sequence])    .catch(() => {}) },
-      (instruments: any)    => { this.rpc.call('on_instruments', [instruments]) .catch(() => {}) },
-    );
+    this.instance = new AudioProcessor(this.port);
 
-    this.rpc.expose('play', this.instance.play.bind(this.instance));
-    this.rpc.expose('stop', this.instance.stop.bind(this.instance));
-    this.rpc.expose('add_instrument', this.instance.add_instrument.bind(this.instance));
-    this.rpc.expose('destroy_instrument', this.instance.destroy_instrument.bind(this.instance));
-    this.rpc.expose('assign_instrument', this.instance.assign_instrument.bind(this.instance));
-    this.rpc.expose('unassign_instrument', this.instance.unassign_instrument.bind(this.instance));
-    this.rpc.expose('trigger_instrument', this.instance.trigger_instrument.bind(this.instance));
+    // No real rpc client initialised so respond manually
+    const response: IJSONRPCResponse = {
+      jsonrpc: '2.0',
+      id: message.id,
+      result: true
+    };
+
+    this.port.postMessage(JSON.stringify(response))
   }
   /**
    * Each channel has 128 samples. Inputs[n][m][i] will access n-th input,

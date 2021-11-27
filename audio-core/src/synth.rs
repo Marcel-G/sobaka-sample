@@ -49,7 +49,7 @@ fn hat() -> impl Signal<Frame=f32> {
   signal::from_iter(output)
 }
 
-fn kick() -> impl Signal<Frame=f32> {
+pub fn kick() -> impl Signal<Frame=f32> {
   let frames = 8000;
 
   let detune = 65.41;

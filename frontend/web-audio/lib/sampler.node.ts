@@ -1,18 +1,36 @@
 // @ts-ignore
 import samplerWorkletUrl from "./sampler.worklet";
 import samplerWasmUrl from '../pkg/sobaka_sample_web_audio_bg.wasm'
-import { EventBus, RPCAudioProcessorInterface, SendProgram } from "./interface";
+import { IJSONRPCSubscription, IJSONRPCSubscriptionResponse, is_subscription, SendProgram, Subscriber, Unsubscriber } from "./interface";
 import { SAMPLER_WORKLET } from "./constants";
-import { RPC } from "./rpc";
-import { AudioProcessor } from "../pkg/sobaka_sample_web_audio";
+import { RequestManager, Client } from "@open-rpc/client-js";
+import { PostMessageTransport } from "./postMessageTransport";
+import { ModuleStateDTO } from "../pkg/sobaka_sample_web_audio_rpc";
 
-export class SamplerNode extends AudioWorkletNode implements Partial<AudioProcessor>, SendProgram {
-  private rpc: RPC<RPCAudioProcessorInterface, MessagePort>
+export class SamplerNode extends AudioWorkletNode implements SendProgram {
+  client: Client
+  private subscriptions: Map<number, Function> = new Map();
   constructor(context: AudioContext) {
     super(context, SAMPLER_WORKLET);
-    this.rpc = new RPC(this.port);
+    const transport = new PostMessageTransport(this.port);
+    const requestManager = new RequestManager([transport]);
+    this.client = new Client(requestManager);
 
-    this.addEventListener('processorerror', console.error)
+    // @ts-ignore-next-line 
+    window.port = this.port;
+
+    this.client.onNotification((data) => {
+      try {
+        if (is_subscription(data)) {
+          this.handle_subscription(data)
+        }
+      } catch (error) {
+        // @todo where to catch this error
+        console.warn(error)
+      }
+    });
+
+    this.addEventListener('processorerror', console.error);
   }
   /**
    * Workaround for WASM + AudioWorkletProcessor
@@ -41,45 +59,51 @@ export class SamplerNode extends AudioWorkletNode implements Partial<AudioProces
     return node
   }
 
-  public subscribe<N extends keyof EventBus>(name: N): (set: EventBus[N]) => () => void {
-    return (set) => {
-      this.rpc.expose(name, set as any);
-      return () => {
-        // Cleanup
-      }
+  handle_subscription(data: IJSONRPCSubscription<any>) {
+    let handler = this.subscriptions.get(data.params.subscription);
+
+    if (handler) {
+      handler(data?.params);
+    }
+  }
+
+  subscribe(
+    subscribe_method: string,
+    unsubscribe_method: string,
+    params: any[],
+    callback: Subscriber<IJSONRPCSubscriptionResponse<ModuleStateDTO>>
+  ): Unsubscriber
+    {
+    let pending_subscription = this.client.request({
+      method: subscribe_method,
+      params
+    }).then((subscription_id) => {
+      this.subscriptions.set(subscription_id, callback);
+      return subscription_id;
+    })
+
+    return () => {
+      pending_subscription
+        .then((subscription_id) => {
+          this.subscriptions.delete(subscription_id);
+          return this.client.request({
+            method: unsubscribe_method,
+            params: [subscription_id]
+          }).catch(console.warn)
+        })
     }
   }
 
   public send_wasm_program(data: ArrayBuffer): Promise<void> {
-    // @todo return types are nested
-    return this.rpc.call('send_wasm_program', [data]) as unknown as Promise<void>;
+    return this.client.request({
+      method: 'send_wasm_program',
+      params: [data]
+    })
   }
 
-  public play() {
-    this.rpc.call('play', []);
-  }
-
-  public stop() {
-    this.rpc.call('stop', []);
-  }
-
-  public add_instrument(new_instrument: any) { // @todo fix type
-    this.rpc.call('add_instrument', [new_instrument]);
-  } 
-
-  public destroy_instrument(instrument_uuid: string) {
-    this.rpc.call('destroy_instrument', [instrument_uuid]);
-  }
-
-  public assign_instrument(step: number, instrument_uuid: string) {
-    this.rpc.call('assign_instrument', [step, instrument_uuid]);
-  }
-
-  public unassign_instrument(step: number, instrument_uuid: string) {
-    this.rpc.call('unassign_instrument', [step, instrument_uuid]);
-  }
-
-  public trigger_instrument(instrument_uuid: string) {
-    this.rpc.call('trigger_instrument', [instrument_uuid]);
+  public protocol_version() {
+    return this.client.request({
+      method: 'protocol_version',
+    })
   }
 }

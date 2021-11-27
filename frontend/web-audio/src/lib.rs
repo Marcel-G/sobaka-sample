@@ -1,107 +1,83 @@
 use wasm_bindgen::prelude::*;
-use sobaka_sample_audio_core::{sequencer::{InstrumentKind, NewInstrument, Sequencer}};
-use serde_wasm_bindgen;
-use serde::{Serialize};
-use js_sys;
+use dasp::ring_buffer::Bounded;
+use std::{sync::{Arc, Mutex}};
+use rpc::Messenger;
+use sobaka_sample_audio_core::{AudioCore, modules::AudioModule};
+use web_sys::{MessagePort};
+
+use crate::rpc::connect;
+
 mod utils;
+pub mod api;
+mod rpc;
+pub mod subscriptions;
 mod get_random;
+pub mod module;
 
 const FRAME_SIZE: usize = 128;
-
-fn bind_js_callback<T: Serialize>(func: js_sys::Function) -> Box<dyn Fn(&T)> {
-  let this = JsValue::null();
-  Box::new(move |_value: &T| {
-    let value = serde_wasm_bindgen::to_value(_value).unwrap();
-    let _ = func.call1(&this, &value);
-  })
-}
 // AudioProcessor is the rust entry-point for Web Audio AudioWorkletProcessor
 #[wasm_bindgen]
 pub struct AudioProcessor {
-  input_buffer: [Vec<f32>; 2], // 2 channel audio
-  output_buffer: [Vec<f32>; 2], // 2 channel audio
-  sequencer: Box<Sequencer>,
-  // mixer: Mixer
+  output_buffer: Bounded<[f32; FRAME_SIZE]>,
+  core: Arc<Mutex<AudioCore>>,
+  messenger: Messenger,
 }
 
 #[wasm_bindgen]
 impl AudioProcessor {
   #[wasm_bindgen(constructor)]
-  pub fn new(
-    on_active_step: js_sys::Function,
-    on_is_playing: js_sys::Function,
-    on_sequence: js_sys::Function,
-    on_instruments: js_sys::Function
-  ) -> Self {
-    let on_active_step = bind_js_callback(on_active_step);
-    let on_is_playing = bind_js_callback(on_is_playing);
-    let on_sequence = bind_js_callback(on_sequence); 
-    let on_instruments = bind_js_callback(on_instruments);
+  pub fn new(port: MessagePort) -> Self {
+    // Setup audio core
+    let core = Arc::new(Mutex::new(AudioCore::new()));
 
-    let sequencer = Sequencer::new(
-      16,
-      on_active_step,
-      on_is_playing,
-      on_sequence,
-      on_instruments 
-    );
+    let messenger = connect(port, core.clone());
 
     AudioProcessor {
-      input_buffer: [vec![0.0; FRAME_SIZE], vec![0.0; FRAME_SIZE]],
-      output_buffer: [vec![0.0; FRAME_SIZE], vec![0.0; FRAME_SIZE]],
-      sequencer: Box::new(sequencer),
-    }
-  }
-  pub fn play(&mut self) {
-    self.sequencer.play();
-  }
-
-  pub fn stop(&mut self) {
-    self.sequencer.stop();
-  }
-
-  pub fn add_instrument(&mut self, new_instrument: JsValue) {
-    let new_instrument: NewInstrument = serde_wasm_bindgen::from_value(new_instrument).unwrap();
-    self.sequencer.add_instrument(new_instrument);
-  }
-
-  pub fn destroy_instrument(&mut self, instrument_uuid: &str) {
-    if let Some(instrument) = self.sequencer.get_instrument(instrument_uuid) {
-      self.sequencer.destroy_instrument(instrument)
+      output_buffer: Bounded::from([0.0; FRAME_SIZE]),
+      core,
+      messenger
     }
   }
 
-  pub fn assign_instrument(&mut self, step: usize, instrument_uuid: &str) {
-    if let Some(instrument) = self.sequencer.get_instrument(instrument_uuid) {
-      self.sequencer.assign_instrument(step, instrument)
-    }
+  pub fn get_buffer(&mut self, _channel: usize) -> Vec<f32> {
+    // self.output_buffer[channel].clone()
+    self.output_buffer.drain()
+      .take(FRAME_SIZE)
+      .collect()
   }
 
-  pub fn unassign_instrument(&mut self, step: usize, instrument_uuid: &str) {
-    if let Some(instrument) = self.sequencer.get_instrument(instrument_uuid) {
-      self.sequencer.unassign_instrument(step, instrument)
-    }
-  }
-
-  pub fn trigger_instrument(&mut self, instrument_uuid: &str) {
-    if let Some(instrument) = self.sequencer.get_instrument(instrument_uuid) {
-      self.sequencer.trigger_instrument(instrument)
-    }
-  }
-
-  pub fn get_buffer(&self, channel: usize) -> Vec<f32> {
-    self.output_buffer[channel].clone()
-  }
-
-  pub fn set_buffer(&mut self, channel: usize, data: Vec<f32>) {
-    self.input_buffer[channel] = data
+  pub fn set_buffer(&mut self, _channel: usize, _data: Vec<f32>) {
+    // self.input_buffer[channel] = data
   }
 
   pub fn process(&mut self) {
-    let master: Vec<f32> = self.sequencer.tick(FRAME_SIZE);
+    let mut core = self.core.lock().unwrap();
+    let option_sink = core.modules.iter().find_map(|module| match module {
+      AudioModule::Sink(sink) => Some(sink),
+      _ => None
+    });
 
-    for channel in self.output_buffer.iter_mut() {
-      *channel = master.clone()
+    if let Some(module) = option_sink {
+      if let Some(sink_node) = module.sink {
+        while !self.output_buffer.is_full() {
+          core.graph.process(sink_node);
+          // output is 64 samples long
+          let outputs = &core.graph.graph.node_weight(sink_node).expect("").buffers;
+          for output in outputs[0].iter() {
+            self.output_buffer.push(*output);
+          }
+        }
+      }
     }
   }
+}
+
+#[wasm_bindgen]
+pub fn set_panic_hook() {
+  console_error_panic_hook::set_once();
+}
+
+#[wasm_bindgen(start)]
+pub fn main() {
+  set_panic_hook();
 }

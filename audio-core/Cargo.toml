@@ -5,10 +5,16 @@ authors = ["Marcel Gleeson <gleeson.marcel@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-dasp = { version = "0.11", features = ["all"] }
-serde = { version = "1.0", features = ["derive"] }
+dasp = { git = "https://github.com/Marcel-G/dasp", features = ["all"] }
+schemars = "0.8.7"
+petgraph = { version = "0.5.1", features = ["stable_graph"] }
+impl-enum = "0.2.0"
+async-std = { version = "1.10.0", features = ["unstable"] }
+futures = "0.3.17"
+serde = { version = "1.0", features = ["derive", "rc"] }
 # uuid = { version = "0.8", features = ["serde", "v4", "wasm-bindgen"]" }
 # waiting for https://github.com/uuid-rs/uuid/pull/512 to be released
 uuid = { features = ["serde", "v4"], git = "https://github.com/uuid-rs/uuid" }
+lazy_static = "1.4.0"
 
 splines = "4.0"

@@ -14,6 +14,7 @@
 <main>
   {#if sampler}
     <Sequencer sampler={sampler} />
+    <!-- Still loading... -->
   {:else}
     Loading...
   {/if}

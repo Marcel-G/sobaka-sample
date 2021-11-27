@@ -28,6 +28,7 @@
     "sobaka-sample-web-audio": "file:web-audio",
     "svelte": "^3.38.3",
     "tslib": "^2.3.0",
-    "typescript": "^4.3.4"
+    "typescript": "^4.3.4",
+    "webaudio-oscilloscope": "^3.2.1"
   }
 }

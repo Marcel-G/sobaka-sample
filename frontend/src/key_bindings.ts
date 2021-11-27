@@ -33,9 +33,9 @@ export function init_key_bindings(
       const instrument = get(selected_instrument);
       if (spot >= 0 && spot <= 7 && instrument) {
         if (event.shiftKey) {
-          sampler.assign_instrument(spot + 8, instrument);
+          // sampler.assign_instrument(spot + 8, instrument);
         } else {
-          sampler.assign_instrument(spot, instrument);
+          // sampler.assign_instrument(spot, instrument);
         }
       }
     }

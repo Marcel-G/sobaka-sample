@@ -5,6 +5,7 @@
     "strict": true,
     "esModuleInterop": true,
     "allowJs": true,
+    "skipLibCheck": true,
     "target": "es2017",
     "moduleResolution": "node",
     "importHelpers": true,
