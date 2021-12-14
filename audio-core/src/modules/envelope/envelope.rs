@@ -83,6 +83,7 @@ where
 
 #[test]
 fn test_envelope() {
+    use dasp::{signal};
     const RATE: f32 = 20.;
     let envelope = Envelope::new(
         RATE,

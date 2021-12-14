@@ -4,6 +4,7 @@ import { JSONRPCRequestData, IJSONRPCData, getNotifications } from "@open-rpc/cl
 
 /**
  * Custom transport for RPC to use postMessage on AudioWorklet port
+ * https://surma.dev/things/is-postmessage-slow/
  */
 export class PostMessageTransport extends Transport {
   public port: MessagePort;

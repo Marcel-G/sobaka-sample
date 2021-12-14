@@ -4,8 +4,8 @@ import type { Writable } from "svelte/store";
 export const as_writable = <
 	T extends AbstractStatefulModule<any, any>,
 	S extends ReturnType<T['from_dto']>
->(module: T): Writable<S> => {
-	let last_value: S = null;
+>(module: T, initial_value?: S): Writable<S> => {
+	let last_value: S = initial_value || null; // @todo find initial state from module
 
 	module.subscribe((new_value) => {
 		last_value = new_value;
@@ -20,6 +20,7 @@ export const as_writable = <
 	}
 
 	const subscribe = (run) => {
+		run(last_value);
 		let async_unsubscribe = module.subscribe(run)
 		return () => {
 			async_unsubscribe

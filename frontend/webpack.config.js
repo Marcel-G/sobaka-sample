@@ -64,7 +64,8 @@ module.exports = merge(webAudioPartial, {
   },
   devServer: {
     contentBase: dist,
-    hot: !prod 
+    hot: !prod,
+    historyApiFallback: true 
   },
   plugins: [
     new HtmlWebpackPlugin({
