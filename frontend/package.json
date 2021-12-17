@@ -6,13 +6,25 @@
     "prebuild": "cd web-audio && npm run build",
     "build": "rimraf dist pkg && webpack --stats-children",
     "start": "rimraf dist pkg && webpack serve --stats-children --open",
-    "postinstall": "cd web-audio && npm install"
+    "postinstall": "cd web-audio && npm install",
+    "format": "prettier --no-error-on-unmatched-pattern --write \"./src/**/*.{js,svelte,ts}\"",
+    "lint": "eslint './src/**/*.{js,ts,svelte}'",
+    "postlint": "cd web-audio && npm run lint",
+    "lint:fix": "eslint --fix './src/**/*.{js,ts,svelte}'",
+    "prelint": "npm run format"
   },
   "devDependencies": {
     "@tsconfig/recommended": "^1.0.1",
     "@tsconfig/svelte": "^2.0.1",
+    "@types/lodash": "^4.14.178",
+    "@typescript-eslint/eslint-plugin": "^5.7.0",
+    "@typescript-eslint/parser": "^5.7.0",
+    "eslint": "^8.4.1",
+    "eslint-plugin-svelte3": "^3.2.1",
     "file-loader": "^6.2.0",
     "html-webpack-plugin": "^5.3.2",
+    "prettier": "^2.5.1",
+    "prettier-plugin-svelte": "^2.5.1",
     "rimraf": "^3.0.0",
     "source-map-loader": "^3.0.0",
     "svelte-loader": "^3.1.2",
@@ -25,6 +37,7 @@
     "worklet-loader": "^1.0.0"
   },
   "dependencies": {
+    "lodash": "^4.17.21",
     "sobaka-sample-web-audio": "file:web-audio",
     "svelte": "^3.38.3",
     "svelte-routing": "^1.6.0",

@@ -1,5 +1,8 @@
 use crate::util::state_observer::{ObserveState, ObserverStorage};
-use dasp::{Signal, graph::{Buffer, Input, Node, NodeData}};
+use dasp::{
+    graph::{Buffer, Input, Node, NodeData},
+    Signal,
+};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -68,19 +71,22 @@ impl Signal for ParameterNode {
 
 impl Node for ParameterNode {
     fn process(&mut self, inputs: &[Input], output: &mut [Buffer]) {
-       (self as &mut (dyn Signal<Frame = f32> + Send)).process(inputs, output)
+        (self as &mut (dyn Signal<Frame = f32> + Send)).process(inputs, output)
     }
 }
 
-impl Into<NodeData<AudioNode>> for ParameterNode {
-    fn into(self) -> NodeData<AudioNode> {
-        NodeData::new1(AudioNode::Parameter(self))
+impl From<ParameterNode> for NodeData<AudioNode> {
+    fn from(node: ParameterNode) -> Self {
+        NodeData::new1(AudioNode::Parameter(node))
     }
 }
 
 #[test]
 fn test_parameter() {
-    let parameter = ParameterNode::new(ParameterState { value: 1.0, range: (0.0, 1.0) });
+    let parameter = ParameterNode::new(ParameterState {
+        value: 1.0,
+        range: (0.0, 1.0),
+    });
 
     let result = parameter.take(20).collect::<Vec<_>>();
 

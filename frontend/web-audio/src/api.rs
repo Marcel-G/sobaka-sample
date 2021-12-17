@@ -1,5 +1,5 @@
+use jsonrpc_core::Result;
 use jsonrpc_derive::rpc;
-use jsonrpc_core::{ Result };
 
 #[rpc(server)]
 pub trait Rpc {

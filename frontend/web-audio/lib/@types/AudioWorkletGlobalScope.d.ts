@@ -2,10 +2,10 @@
 declare function registerProcessor(
   name: string,
   processorCtor: typeof AudioWorkletProcessor & {
-    parameterDescriptors?: AudioParamDescriptor[];
+    parameterDescriptors?: AudioParamDescriptor[]
   }
-): undefined;
+): undefined
 
-declare const currentFrame: number;
-declare const currentTime: number;
-declare const sampleRate: number;
+declare const currentFrame: number
+declare const currentTime: number
+declare const sampleRate: number

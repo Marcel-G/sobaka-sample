@@ -1,53 +1,66 @@
-<script lang="ts">
-  import type { InputTypeDTO, SamplerNode } from "sobaka-sample-web-audio";
-  import { getContext, onDestroy } from "svelte";
-  import { derived, get, Readable, Writable } from "svelte/store";
+<style>
+  .wire {
+    pointer-events: all;
+    cursor: pointer;
+    stroke: black;
+  }
+  .wire:hover {
+    stroke: red;
+  }
+</style>
 
-  export let on_click: () => void;
-  export let from: number;
-  export let from_node: Readable<Element>;
-  export let to: number;
-  export let to_node: Readable<Element>;
-  export let to_type: InputTypeDTO;
-  const context: Writable<SamplerNode> = getContext("sampler");
+<script lang="ts">
+  import { InputTypeDTO, SamplerNode } from 'sobaka-sample-web-audio'
+  import { getContext, onDestroy } from 'svelte'
+  import { derived, get, Writable } from 'svelte/store'
+  import { ModuleContext } from '../state/modules'
+
+  export let on_click: () => void
+  export let from: ModuleContext
+  export let to: ModuleContext
+  export let to_type: InputTypeDTO
+  const context: Writable<SamplerNode> = getContext('sampler')
 
   interface Position {
-    x: number;
-    y: number;
+    x: number
+    y: number
   }
 
-  const to_center_point = ($node): Position => {
-    const box = $node.getBoundingClientRect();
+  const to_center_point = ($node: Element): Position => {
+    const box = $node.getBoundingClientRect()
     return {
       x: box.x + box.width / 2,
-      y: box.y + box.height / 2,
-    };
+      y: box.y + box.height / 2
+    }
   }
 
-  const from_pos = derived(from_node, to_center_point);
-  const to_pos = derived(to_node, to_center_point);
+  const from_node = from.output_node!
+  const to_node = to.input_nodes[JSON.stringify(to_type)]
+
+  const from_pos = derived(from_node, to_center_point)
+  const to_pos = derived(to_node, to_center_point)
 
   const connect = (
     module_source_id: number,
     module_destination_id: number,
     input: InputTypeDTO
   ) => {
-    let patch_id = $context.client.request({
-      method: "module/connect",
-      params: [module_source_id, module_destination_id, input],
-    });
+    const patch_id = get(context).client.request({
+      method: 'module/connect',
+      params: [module_source_id, module_destination_id, input]
+    }) as Promise<number>
 
     return async () => {
-      $context.client.request({
-        method: "module/disconnect",
-        params: [await patch_id],
-      });
-    };
-  };
+      void get(context).client.request({
+        method: 'module/disconnect',
+        params: [await patch_id]
+      })
+    }
+  }
 
-  const disconnect = connect(from, to, to_type);
+  const disconnect = connect(from.module_id, to.module_id, to_type)
 
-  onDestroy(disconnect);
+  onDestroy(disconnect)
 </script>
 
 <line
@@ -61,14 +74,3 @@
 />
 <circle cx={$from_pos.x} cy={$from_pos.y} r="4" />
 <circle cx={$to_pos.x} cy={$to_pos.y} r="4" />
-
-<style>
-  .wire {
-    pointer-events: all;
-    cursor: pointer;
-    stroke: black;
-  }
-  .wire:hover {
-    stroke: red;
-  }
-</style>

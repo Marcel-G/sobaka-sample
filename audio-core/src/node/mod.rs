@@ -1,9 +1,9 @@
-use dasp::{graph::{BoxedNodeSend, Buffer, Input, Node, node::{Pass, Sum}}};
-
-use crate::modules::{
-    parameter::node::ParameterNode,
-    sequencer::node::SequencerNode
+use dasp::graph::{
+    node::{Pass, Sum},
+    BoxedNodeSend, Buffer, Input, Node,
 };
+
+use crate::modules::{parameter::node::ParameterNode, sequencer::node::SequencerNode};
 
 pub mod input_signal;
 

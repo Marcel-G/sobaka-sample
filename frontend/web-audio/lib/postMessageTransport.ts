@@ -13,18 +13,22 @@ export class PostMessageTransport extends Transport {
     super();
     this.port = port;
   }
-  private messageHandler = (ev: MessageEvent) => {
-    let data = typeof ev.data !== 'string'
-      ? JSON.stringify(ev.data)
-      : ev.data;
+  private messageHandler = (event: MessageEvent) => {
+    const data = typeof event.data !== 'string'
+      ? JSON.stringify(event.data)
+      : event.data;
 
     this.transportRequestManager.resolveResponse(data);
   }
-  public async connect(): Promise<any> {
+  public connect(): Promise<any> {
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     this.port.onmessage = () => {}; // Required or else no messages come through
     this.port.addEventListener("message", this.messageHandler);
+
+    return Promise.resolve();
   }
 
+  // eslint-disable-next-line no-unused-vars
   public async sendData(data: JSONRPCRequestData, timeout: number | null = 5000): Promise<any> {
     const prom = this.transportRequestManager.addRequest(data, null);
     const notifications = getNotifications(data);

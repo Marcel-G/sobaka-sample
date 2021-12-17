@@ -1,9 +1,17 @@
-use std::{cell::RefCell, pin::Pin, rc::Rc, task::{Context, Poll}};
+use std::{
+    cell::RefCell,
+    pin::Pin,
+    rc::Rc,
+    task::{Context, Poll},
+};
 
 use async_std::task;
-use futures::{Future, channel::mpsc::{self, UnboundedSender}};
-use jsonrpc_core::{ MetaIoHandler, Result };
-use wasm_bindgen::{JsCast, prelude::Closure};
+use futures::{
+    channel::mpsc::{self, UnboundedSender},
+    Future,
+};
+use jsonrpc_core::{MetaIoHandler, Result};
+use wasm_bindgen::{prelude::Closure, JsCast};
 use web_sys::{MessageEvent, MessagePort};
 
 struct SenderFuture(
@@ -23,7 +31,7 @@ impl Future for SenderFuture {
                 Poll::Pending => return Poll::Pending,
                 Poll::Ready(None) => return Poll::Ready(()),
                 Poll::Ready(Some(val)) => {
-                    if let Err(_) = (this.0)(val) {
+                    if (this.0)(val).is_err() {
                         return Poll::Ready(());
                     }
                 }
@@ -108,8 +116,12 @@ where
             .handler
             .handle_request(
                 &req,
-                self.metadata.as_ref().expect("Metadata should be set on initialisation").clone()
-            ).await;
+                self.metadata
+                    .as_ref()
+                    .expect("Metadata should be set on initialisation")
+                    .clone(),
+            )
+            .await;
 
         if let Some(reply) = response {
             self.port.post_message(&reply.into()).unwrap();

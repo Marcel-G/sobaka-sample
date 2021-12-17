@@ -14,13 +14,20 @@
     "build:wasm": "wasm-pack build --target web && mkdir -p dist && cp -r pkg dist/",
     "watch:wasm": "cargo watch -w . -w '../../audio-core' -i 'dist' -i 'pkg' -i 'lib' -s 'npm run build:wasm'",
     "prebuild": "rimraf dist pkg",
+    "format": "prettier --no-error-on-unmatched-pattern --write ./lib/**/*.{js,ts}",
+    "prelint": "npm run format",
+    "lint": "eslint './lib/**/*.{js,ts}'",
+    "lint:fix": "eslint --fix './lib/**/*.{js,ts}'",
     "build": "npm run build:schema && npm run build:wasm && npm run build:tsc",
     "watch": "concurrently 'npm run watch:wasm' 'tsc -w'"
   },
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^5.7.0",
+    "@typescript-eslint/parser": "^5.7.0",
     "concurrently": "^6.2.0",
+    "eslint": "^8.4.1",
     "file-loader": "^6.2.0",
     "quicktype": "^15.0.260",
     "rimraf": "^2.7.1",
@@ -31,6 +38,7 @@
     "@open-rpc/client-js": "^1.7.1",
     "eventemitter3": "^4.0.7",
     "fastestsmallesttextencoderdecoder": "^1.0.22",
+    "prettier": "^2.5.1",
     "typescript": "^4.3.4"
   }
 }

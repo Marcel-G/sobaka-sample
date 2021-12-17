@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use dasp::{Sample, Signal, signal};
+use dasp::{signal, Sample, Signal};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 

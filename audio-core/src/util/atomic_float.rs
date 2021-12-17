@@ -1,4 +1,4 @@
-use std::{intrinsics::transmute, sync::atomic::{AtomicU64, Ordering}};
+use std::sync::atomic::{AtomicU64, Ordering};
 
 pub struct AtomicFloat {
     inner: AtomicU64,
@@ -23,9 +23,9 @@ impl AtomicFloat {
 }
 
 fn u64_to_f64(val: u64) -> f64 {
-	unsafe { transmute(val) }
+    f64::from_bits(val)
 }
 
 fn f64_to_u64(val: f64) -> u64 {
-	unsafe { transmute(val) }
+    val.to_bits()
 }

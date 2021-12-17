@@ -1,6 +1,6 @@
 use std::env::current_dir;
 use std::fs::{create_dir_all, write};
-use std::path::PathBuf;
+use std::path::Path;
 
 use jsonrpc_core::serde_json;
 use schemars::{schema::RootSchema, schema_for};
@@ -27,7 +27,7 @@ fn main() {
 
 // panics if any error writing out the schema
 // overwrites any existing schema
-fn export_schema(schema: &RootSchema, dir: &PathBuf, name: &str) -> () {
+fn export_schema(schema: &RootSchema, dir: &Path, name: &str) {
     let path = dir.join(name);
     let json = serde_json::to_string_pretty(schema).unwrap();
     write(&path, json + "\n").unwrap();

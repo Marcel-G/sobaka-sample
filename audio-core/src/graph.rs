@@ -1,9 +1,9 @@
-use dasp::{graph::{NodeData}};
-use petgraph::{graph::{DefaultIx, EdgeIndex as ExtEdgeIndex}};
+use dasp::graph::NodeData;
+use petgraph::graph::{DefaultIx, EdgeIndex as ExtEdgeIndex};
 
 pub type NodeIndex<Ix = DefaultIx> = petgraph::graph::NodeIndex<Ix>;
 pub type EdgeIndex = ExtEdgeIndex;
-use crate::{node::AudioNode};
+use crate::node::AudioNode;
 
 const SAMPLE_RATE: f64 = 44100.;
 
@@ -15,6 +15,12 @@ pub struct AudioGraph {
     pub processor: Processor,
 }
 
+impl Default for AudioGraph {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl AudioGraph {
     pub fn new() -> Self {
         let max_nodes = 1024;
@@ -23,13 +29,12 @@ impl AudioGraph {
         let graph = Graph::with_capacity(max_nodes, max_edges);
         let processor = Processor::with_capacity(max_nodes);
 
-        Self {
-            graph,
-            processor,
-        }
+        Self { graph, processor }
     }
 
-    pub fn sample_rate(&self) -> f64 { SAMPLE_RATE }
+    pub fn sample_rate(&self) -> f64 {
+        SAMPLE_RATE
+    }
 
     pub fn process(&mut self, node: NodeIndex) {
         self.processor.process(&mut self.graph, node);

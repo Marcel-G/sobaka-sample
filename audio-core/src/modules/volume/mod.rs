@@ -35,14 +35,12 @@ impl Module for VolumeModule {
         let vc = (VolumeInput::Vc, Input::create("Vc", core));
         let level = (VolumeInput::Level, Input::create("Level", core));
 
-        let volume = core.add_node(
-            InputSignalNode::new(|[signal, vc, level]| {
-                signal
-                    .mul_amp(vc)
-                    .mul_amp(level)
-                    .map(Sample::to_sample::<f32>)
-            })
-        );
+        let volume = core.add_node(InputSignalNode::new(|[signal, vc, level]| {
+            signal
+                .mul_amp(vc)
+                .mul_amp(level)
+                .map(Sample::to_sample::<f32>)
+        }));
 
         for (name, input) in [signal, vc, level] {
             core.add_edge(input.node.expect("Input not initialised"), volume);

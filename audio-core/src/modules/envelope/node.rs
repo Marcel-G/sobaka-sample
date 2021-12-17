@@ -28,12 +28,12 @@ where
 {
     pub fn new(rate: f32, gate: G, attack: A, decay: D, sustain: S, release: R) -> Self {
         Self {
-            rate: rate,
-            gate: gate,
-            attack: attack,
-            decay: decay,
-            sustain: sustain,
-            release: release,
+            rate,
+            gate,
+            attack,
+            decay,
+            sustain,
+            release,
             value: 0.0,
             is_decaying: false,
         }
@@ -83,7 +83,7 @@ where
 
 #[test]
 fn test_envelope() {
-    use dasp::{signal};
+    use dasp::signal;
     const RATE: f32 = 20.;
     let envelope = Envelope::new(
         RATE,

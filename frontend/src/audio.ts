@@ -1,14 +1,18 @@
-import { SamplerNode } from "sobaka-sample-web-audio";
+import { SamplerNode } from 'sobaka-sample-web-audio'
 
 export async function init_sampler(): Promise<SamplerNode> {
-  const context = new AudioContext();
+  const context = new AudioContext()
 
-  document.addEventListener('click', () => {
-    context.resume();
-  }, { once: true })
+  document.addEventListener(
+    'click',
+    () => {
+      void context.resume()
+    },
+    { once: true }
+  )
 
-  const sampler = await SamplerNode.register(context);
-  sampler.connect(context.destination);
+  const sampler = await SamplerNode.register(context)
+  sampler.connect(context.destination)
 
   return sampler
 }

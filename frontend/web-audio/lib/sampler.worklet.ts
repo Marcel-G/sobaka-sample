@@ -8,8 +8,7 @@ import { IJSONRPCRequest, IJSONRPCResponse } from '@open-rpc/client-js/build/Req
 import 'fastestsmallesttextencoderdecoder'; // Add missing TextDecoder/TextEncoder in worklet env
 import init, { AudioProcessor } from '../pkg';
 import { SAMPLER_WORKLET } from './constants';
-
-
+import { is_send_wasm_program_event, WasmProgramEvent } from './interface';
 class SamplerProcessor extends AudioWorkletProcessor {
   private instance: AudioProcessor | null = null
   constructor(options?: AudioWorkletNodeOptions) {
@@ -17,11 +16,12 @@ class SamplerProcessor extends AudioWorkletProcessor {
 
     // Temporary hack for loading the wasm binary
     // See sampler.node.ts#register
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     this.port.onmessage = () => {}
-    this.port.addEventListener('message', (event) => {
-      let message = event.data;
-      if (message.method === 'send_wasm_program') {
-        this.init(message);
+    this.port.addEventListener('message', (event: MessageEvent<IJSONRPCRequest>) => {
+      const message = event.data;
+      if (is_send_wasm_program_event(message)) {
+        void this.init(message);
       } else {
         throw new Error('Failed to load wasm program');
       }
@@ -29,7 +29,7 @@ class SamplerProcessor extends AudioWorkletProcessor {
 
   }
 
-  private async init(message: IJSONRPCRequest & { params: [ArrayBuffer] }) {
+  private async init(message: WasmProgramEvent) {
     const data = message.params[0];
     const module = await WebAssembly.compile(data);
     await init(module);
@@ -53,6 +53,7 @@ class SamplerProcessor extends AudioWorkletProcessor {
   public process(
     inputs: Float32Array[][],
     outputs: Float32Array[][],
+    // eslint-disable-next-line no-unused-vars
     parameters: Record<string, Float32Array>
   ): boolean {
     if (!outputs[0]?.[0] || !this.instance) {
@@ -65,7 +66,7 @@ class SamplerProcessor extends AudioWorkletProcessor {
     })
 
     // Process data in buffers
-    this.instance!.process()
+    this.instance.process()
 
     // Transfer data to AudioWorkletProcessor output
     outputs[0].forEach((output, index) => {
