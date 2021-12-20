@@ -5,7 +5,7 @@ module.exports = {
     rules: [
       {
         test: /\.wasm$/,
-        use: "file-loader",
+        type: 'asset/resource'
       },
       {
         test: /\.worklet\.(js|ts)$/,

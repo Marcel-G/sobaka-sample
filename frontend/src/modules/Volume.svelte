@@ -1,12 +1,7 @@
 <script lang="ts">
-  import {
-    SamplerNode,
-    Volume,
-    Parameter,
-    VolumeInput
-  } from 'sobaka-sample-web-audio'
+  import { SamplerNode, Volume, Parameter, VolumeInput } from 'sobaka-sample-web-audio'
   import { onDestroy } from 'svelte'
-  import { Writable } from 'svelte/store'
+  import type { Writable } from 'svelte/store'
   import Knob from '../components/Knob.svelte'
   import Panel from '../components/Panel.svelte'
   import Plug from '../components/Plug.svelte'

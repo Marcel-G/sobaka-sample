@@ -6,10 +6,9 @@
 </style>
 
 <script lang="ts">
-  import { ModuleType } from 'sobaka-sample-web-audio'
+  import { MODULES } from '../modules'
+  import type { ModuleType } from '../modules'
   import modules from '../state/modules'
-
-  const module_types: ModuleType[] = Object.values(ModuleType)
 
   function handle_create(module: ModuleType) {
     modules.create(module)
@@ -17,7 +16,7 @@
 </script>
 
 <div class="toolbox">
-  {#each module_types as module}
+  {#each Object.values(MODULES) as module}
     <button on:click={() => handle_create(module)}>{module}</button>
   {/each}
 </div>

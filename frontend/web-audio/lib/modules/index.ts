@@ -1,5 +1,5 @@
 import { SamplerNode } from '../sampler.node'
-import { ModuleStateDTO, ModuleType } from '../../pkg/sobaka_sample_web_audio_rpc'
+import { ModuleStateDTO, ModuleType } from '..'
 import { Subscriber, Unsubscriber } from '../interface'
 
 export abstract class AbstractModule<T extends ModuleType> {

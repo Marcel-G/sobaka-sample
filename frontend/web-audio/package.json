@@ -6,13 +6,13 @@
     "dist",
     "webpack.loaders.js"
   ],
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "main": "./dist/lib",
+  "types": "./dist/lib",
   "scripts": {
     "build:tsc": "tsc",
-    "build:schema": "cargo run --example schema && quicktype -s schema --just-types pkg/*.json -l ts -o pkg/sobaka_sample_web_audio_rpc.ts",
+    "build:schema": "cargo run --example schema && quicktype -s schema --just-types schema/*.json -l ts -o schema/sobaka_sample_web_audio_rpc.ts",
     "build:wasm": "wasm-pack build --target web && mkdir -p dist && cp -r pkg dist/",
-    "watch:wasm": "cargo watch -w . -w '../../audio-core' -i 'dist' -i 'pkg' -i 'lib' -s 'npm run build:wasm'",
+    "watch:wasm": "cargo watch -w . -w '../../audio-core' -i pkg -i dist -i README.md -s 'npm run build:wasm'",
     "prebuild": "rimraf dist pkg",
     "format": "prettier --no-error-on-unmatched-pattern --write ./lib/**/*.{js,ts}",
     "prelint": "npm run format",

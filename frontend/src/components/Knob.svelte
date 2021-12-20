@@ -81,12 +81,12 @@
     return Math.max(min, Math.min(num, max))
   }
 
-  function pointerMove({ clientY }: { clientY: number }) {
+  function pointerMove({ clientY }: PointerEvent) {
     const valueDiff = (valueRange * (clientY - start_y)) / pixel_range
     value = clamp(start_value - valueDiff, min, max)
   }
 
-  function pointerDown({ clientY }: { clientY: number }) {
+  function pointerDown({ clientY }: PointerEvent) {
     start_y = clientY
     start_value = value
     window.addEventListener('pointermove', pointerMove)

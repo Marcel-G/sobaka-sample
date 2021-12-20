@@ -10,11 +10,11 @@
 </style>
 
 <script lang="ts">
-import { onDestroy } from 'svelte';
+  import { onDestroy } from 'svelte'
 
   import { init } from '../state/global'
 
-  const { persistant, cleanup } = init();
+  const { persistant, cleanup } = init()
 
   export let id: string
 

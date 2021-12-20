@@ -25,7 +25,7 @@
   export let position: { x: number; y: number }
   export let context: SamplerNode
   export let initial_state: State = {
-    frequency: { range: [20, 10000], value: 60 },
+    frequency: { range: [0, 10], value: 1 },
     oscillator: { wave: OscillatorWave.Sine }
   }
 
@@ -59,25 +59,16 @@
     oscillator: $oscillator_state
   })
 
-  function change_wave(wave: OscillatorWave) {
-    oscillator_state.set({ wave })
-  }
-
   onDestroy(() => {
     void oscillator.dispose()
   })
 </script>
 
-<Panel name="oscillator" {id} {position} height={7} width={3}>
+<Panel name="lfo" {id} {position} height={3} width={3}>
   {#await loading}
     <p>Loading...</p>
   {:then}
     <Knob label="Frequency" bind:value={$frequency.value} bind:range={$frequency.range} />
-    <button on:click={() => change_wave(OscillatorWave.Sine)}>Sine</button>
-    <button on:click={() => change_wave(OscillatorWave.Saw)}>Saw</button>
-    <button on:click={() => change_wave(OscillatorWave.Square)}>Square</button>
-    <button on:click={() => change_wave(OscillatorWave.Noise)}>Noise</button>
-    <p>wave: {$oscillator_state?.wave}</p>
   {/await}
   <div slot="outputs">
     <Plug {id} label="output" bind:el={output_node} />

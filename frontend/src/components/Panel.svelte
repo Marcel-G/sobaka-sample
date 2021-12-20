@@ -49,7 +49,8 @@
 
 <script lang="ts">
   import modules from '../state/modules'
-  import { useDrag, OnDrag } from '../actions/drag'
+  import { useDrag } from '../actions/drag'
+  import type { OnDrag } from '../actions/drag'
   import { setContext } from 'svelte'
   export let id: string
   export let name: string
@@ -87,7 +88,7 @@
     <span class="name">{name}</span>
     <button class="close" on:click={() => modules.remove(id)}>x</button>
   </div>
-  <slot/>
+  <slot />
   <div class="inputs">
     <slot name="inputs" />
   </div>

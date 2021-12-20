@@ -24,14 +24,11 @@
 </style>
 
 <script lang="ts">
-  import {
-    SamplerNode,
-    Sequencer,
-    SequencerInput,
-    SequencerState
-  } from 'sobaka-sample-web-audio'
+  import { SamplerNode, Sequencer, SequencerInput } from 'sobaka-sample-web-audio'
+  import type { SequencerState } from 'sobaka-sample-web-audio'
   import { onDestroy } from 'svelte'
-  import { derived, Writable } from 'svelte/store'
+  import { derived } from 'svelte/store'
+  import type { Writable } from 'svelte/store'
   import Panel from '../components/Panel.svelte'
   import Plug from '../components/Plug.svelte'
   import modules from '../state/modules'

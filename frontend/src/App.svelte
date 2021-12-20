@@ -1,9 +1,10 @@
 <script lang="ts">
-  import { ModuleType, SamplerNode } from 'sobaka-sample-web-audio'
+  import { SamplerNode } from 'sobaka-sample-web-audio'
 
   import { Router, Route, Link } from 'svelte-routing'
   import { onDestroy, onMount, setContext } from 'svelte'
-  import { Writable, writable } from 'svelte/store'
+  import { writable } from 'svelte/store'
+  import type { Writable } from 'svelte/store'
   import { init_sampler } from './audio'
 
   import Toolbox from './components/Toolbox.svelte'
@@ -16,20 +17,24 @@
   import Sequencer from './modules/Sequencer.svelte'
   import Sink from './modules/Sink.svelte'
   import Volume from './modules/Volume.svelte'
-  import modules, { Module } from './state/modules'
+  import Lfo from './modules/LFO.svelte'
+  import modules from './state/modules'
+  import type { Module } from './state/modules'
+  import { MODULES } from './modules'
 
   let sampler: Writable<SamplerNode | null> = writable(null)
   setContext('sampler', sampler)
 
   function get_component(module: Module) {
     return {
-      [ModuleType.Clock]: Clock,
-      [ModuleType.Envelope]: Envelope,
-      [ModuleType.Oscillator]: Oscillator,
-      [ModuleType.Parameter]: Parameter,
-      [ModuleType.Sequencer]: Sequencer,
-      [ModuleType.Sink]: Sink,
-      [ModuleType.Volume]: Volume
+      [MODULES.Clock]: Clock,
+      [MODULES.Envelope]: Envelope,
+      [MODULES.Oscillator]: Oscillator,
+      [MODULES.Parameter]: Parameter,
+      [MODULES.Sequencer]: Sequencer,
+      [MODULES.Sink]: Sink,
+      [MODULES.Volume]: Volume,
+      [MODULES.Lfo]: Lfo
     }[module.type]
   }
 

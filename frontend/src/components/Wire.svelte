@@ -10,10 +10,12 @@
 </style>
 
 <script lang="ts">
-  import { InputTypeDTO, SamplerNode } from 'sobaka-sample-web-audio'
+  import { SamplerNode } from 'sobaka-sample-web-audio'
+  import type { InputTypeDTO } from 'sobaka-sample-web-audio'
   import { getContext, onDestroy } from 'svelte'
-  import { derived, get, Writable } from 'svelte/store'
-  import { ModuleContext } from '../state/modules'
+  import { derived, get } from 'svelte/store'
+  import type { Writable } from 'svelte/store'
+  import type { ModuleContext } from '../state/modules'
 
   export let on_click: () => void
   export let from: ModuleContext

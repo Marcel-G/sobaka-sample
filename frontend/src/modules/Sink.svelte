@@ -1,7 +1,7 @@
 <script lang="ts">
   import { SamplerNode, Sink, SinkInput } from 'sobaka-sample-web-audio'
   import { onDestroy } from 'svelte'
-  import { Writable } from 'svelte/store'
+  import type { Writable } from 'svelte/store'
   import Panel from '../components/Panel.svelte'
   import Plug from '../components/Plug.svelte'
   import modules from '../state/modules'

@@ -1,7 +1,6 @@
 /* eslint-disable no-unused-vars */
 import { IJSONRPCNotification, IJSONRPCRequest } from "@open-rpc/client-js/build/Request";
-import { ModuleStateDTO } from "..";
-import { AudioProcessor } from "../pkg/sobaka_sample_web_audio";
+import { ModuleStateDTO, AudioProcessor } from ".";
 
 export interface IJSONRPCSubscriptionResponse<T extends object> {
   result: T,

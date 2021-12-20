@@ -13,7 +13,8 @@
 <script lang="ts">
   import { derived } from 'svelte/store'
 
-  import links, { Link } from '../state/links'
+  import links from '../state/links'
+  import type { Link } from '../state/links'
   import type { Module } from '../state/modules'
   import modules from '../state/modules'
   import Wire from './Wire.svelte'

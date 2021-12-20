@@ -14,8 +14,10 @@
 <script lang="ts">
   import type { InputTypeDTO } from 'sobaka-sample-web-audio'
   import { getContext, onDestroy } from 'svelte'
-  import { get, writable, Writable } from 'svelte/store'
-  import links, { Link } from '../state/links'
+  import { get, writable } from 'svelte/store'
+  import type { Writable } from 'svelte/store'
+  import links from '../state/links'
+  import type { Link } from '../state/links'
 
   export let id: string
   export let label: string

@@ -1,5 +1,5 @@
-import type { ModuleType } from 'sobaka-sample-web-audio'
 import { get, Readable, writable } from 'svelte/store'
+import { ModuleType } from '../modules'
 
 // Context stores some ephemeral data that needs to be created
 // on moduel initialisation

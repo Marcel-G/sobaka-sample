@@ -13,6 +13,6 @@
     "sourceMap": true,
     "declaration": true,
   },
-  "exclude": ["node_modules"],
-  "include": ["lib", "index.ts"]
+  "exclude": ["node_modules", "dist"],
+  "include": ["lib"]
 }

@@ -6,7 +6,7 @@ import { IJSONRPCSubscription, IJSONRPCSubscriptionResponse, is_subscription, Se
 import { SAMPLER_WORKLET } from "./constants";
 import { RequestManager, Client } from "@open-rpc/client-js";
 import { PostMessageTransport } from "./postMessageTransport";
-import { ModuleStateDTO } from "../pkg/sobaka_sample_web_audio_rpc";
+import { ModuleStateDTO } from ".";
 
 export class SamplerNode extends AudioWorkletNode implements SendProgram {
   client: Client

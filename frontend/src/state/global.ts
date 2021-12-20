@@ -10,7 +10,6 @@ export interface Global {
 }
 
 export const global_state = () => {
-
   const save = (): Global => {
     return {
       modules: modules.save(),
@@ -38,16 +37,14 @@ export const init = () => {
     history.pushState({}, '', `/workspace/${id}`)
   }, 2000)
 
-  const cleanup = [
-    modules.store().subscribe(commit),
-    links.store().subscribe(commit)
-  ]
+  const cleanup = [modules.store().subscribe(commit), links.store().subscribe(commit)]
 
   return {
     persistant,
     cleanup: () => {
-      cleanup.forEach((fn) => { fn() })
+      cleanup.forEach(fn => {
+        fn()
+      })
     }
   }
 }
-

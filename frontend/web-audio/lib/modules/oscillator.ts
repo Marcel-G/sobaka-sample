@@ -1,5 +1,5 @@
 import { AbstractStatefulModule } from '.'
-import { ModuleType, OscillatorState } from '../../pkg/sobaka_sample_web_audio_rpc'
+import { ModuleType, OscillatorState } from '..'
 import { SamplerNode } from '../sampler.node'
 
 export class Oscillator extends AbstractStatefulModule<

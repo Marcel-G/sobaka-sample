@@ -4,14 +4,14 @@
 
 - Install [node](https://nodejs.org/en/)
 - Install [rust](https://www.rust-lang.org/tools/install)
-- Install [cargo-watch](hhttps://crates.io/crates/cargo-watch)
 
 ## Setup
 
-Install [wasm-pack](https://github.com/rustwasm/wasm-pack)
+Install [wasm-pack](https://github.com/rustwasm/wasm-pack) and [cargo-watch](hhttps://crates.io/crates/cargo-watch).
 
 ```
 cargo install wasm-pack
+cargo install cargo-watch
 ```
 
 Build and start project:

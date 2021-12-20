@@ -12,7 +12,7 @@ use sobaka_sample_web_audio::module::api::{InputTypeDTO, ModuleStateDTO, ModuleT
 
 fn main() {
     let mut pwd = current_dir().unwrap();
-    pwd.push("pkg");
+    pwd.push("schema");
     create_dir_all(&pwd).unwrap();
 
     let schema = schema_for!(ModuleType);

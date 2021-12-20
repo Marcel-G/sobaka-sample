@@ -1,5 +1,5 @@
 import { AbstractStatefulModule } from '.'
-import { ModuleType, SequencerState } from '../../pkg/sobaka_sample_web_audio_rpc'
+import { ModuleType, SequencerState } from '..'
 import { SamplerNode } from '../sampler.node'
 
 export class Sequencer extends AbstractStatefulModule<

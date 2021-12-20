@@ -1,5 +1,5 @@
 import { AbstractModule } from '.'
-import { ModuleType } from '../../pkg/sobaka_sample_web_audio_rpc'
+import { ModuleType } from '..'
 import { SamplerNode } from '../sampler.node'
 
 export class Volume extends AbstractModule<ModuleType.Volume> {

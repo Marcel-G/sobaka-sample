@@ -13,5 +13,5 @@ module.exports = {
     es6: true,
     browser: true
   },
-  ignorePatterns: ['node_modules', '*.d.ts']
+  ignorePatterns: ['node_modules', 'dist', '*.d.ts']
 }
