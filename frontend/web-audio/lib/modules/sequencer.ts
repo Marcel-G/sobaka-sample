@@ -1,12 +1,10 @@
-import { AbstractStatefulModule } from '.'
-import { ModuleType, SequencerState } from '..'
-import { SamplerNode } from '../sampler.node'
+import { AbstractStatefulModule, State } from '.'
+import { ModuleType, SequencerInput } from '..'
+import { SobakaContext } from '../sobaka.node'
 
-export class Sequencer extends AbstractStatefulModule<
-  ModuleType.Sequencer,
-  SequencerState
-> {
-  constructor(context: SamplerNode) {
-    super(context, ModuleType.Sequencer)
+export class Sequencer extends AbstractStatefulModule<ModuleType.Sequencer> {
+  static Input = SequencerInput
+  constructor(context: SobakaContext, initial_state: State<ModuleType.Sequencer>) {
+    super(context, ModuleType.Sequencer, initial_state)
   }
 }

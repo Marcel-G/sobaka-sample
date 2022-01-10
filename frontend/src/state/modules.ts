@@ -1,107 +1,83 @@
+import { concat, filter, isMatch, merge, negate, omit, __ as _ } from 'lodash/fp'
+import { ModuleType, AbstractModule } from 'sobaka-sample-web-audio/dist/lib'
+import { Input } from 'sobaka-sample-web-audio/dist/lib/modules'
 import { get, Readable, writable } from 'svelte/store'
-import { ModuleType } from '../modules'
+import { replace } from './utils'
 
 // Context stores some ephemeral data that needs to be created
 // on moduel initialisation
-export interface ModuleContext {
-  module_id: number
-  output_node?: Readable<Element>
-  input_nodes: Record<string, Readable<Element>>
+type InputNodeStorage<T extends ModuleType> = {
+  [M in Input<T>]?: Readable<Element>
 }
-export interface Module {
+export interface ModuleContext<T extends ModuleType> {
+  module?: AbstractModule<T> // @todo maybe needs to be [module_id, 'output', node], [module_id, Input<T>, node].. etc
+  output?: Readable<Element>
+  input?: InputNodeStorage<T>
+}
+export interface Module<T extends ModuleType> {
   id: string
-  type: ModuleType
-  context?: ModuleContext
-  state?: Record<string, any>
+  type: T
+  context?: ModuleContext<T>
+  state?: Record<string, any> // @todo can this be more specific
   position: {
     x: number
     y: number
   }
 }
 
+export type AnyModule = Module<ModuleType>
+
 const init = () => {
-  const module_state = writable<Module[]>([])
+  const module_state = writable<AnyModule[]>([])
   const move = (module: string, x: number, y: number): boolean => {
-    const state = get(module_state)
-
-    const module_index = state.findIndex(({ id }) => id === module)
-
-    if (module_index < 0) {
-      return false
-    }
-
-    // @todo box check
-
-    module_state.update(state => [
-      ...state.slice(0, module_index),
-      {
-        ...state[module_index],
-        position: { x, y }
-      },
-      ...state.slice(module_index + 1)
-    ])
+    module_state.update(
+      replace<AnyModule>(
+        isMatch({ id: module }),
+        merge<Partial<AnyModule>>(_, { position: { x, y } })
+      )
+    )
 
     return true
   }
 
   const create = (type: ModuleType): string => {
     const id = Math.random().toString(36).substr(2, 9)
-    module_state.update(state => [
-      ...state,
-      {
+
+    module_state.update(
+      concat(_, {
         id,
         type,
         position: { x: 5, y: 5 }
-      }
-    ])
+      })
+    )
 
     return id
   }
 
-  const get_module = (module: string): Module | null => {
-    const state = get(module_state)
-    const module_index = state.findIndex(({ id }) => id === module)
-
-    if (module_index < 0) return null
-
-    return state[module_index]
+  const get_module = (module: string): Module<ModuleType> | null => {
+    return get(module_state).find(isMatch({ id: module })) || null
   }
 
-  const register = (module: string, context: ModuleContext) => {
-    const state = get(module_state)
-    const module_index = state.findIndex(({ id }) => id === module)
-
-    module_state.update(state => [
-      ...state.slice(0, module_index),
-      {
-        ...state[module_index],
-        context
-      },
-      ...state.slice(module_index + 1)
-    ])
+  const register = (module: string, module_instance: AbstractModule<ModuleType>) => {
+    module_state.update(
+      replace<AnyModule>(
+        isMatch({ id: module }),
+        merge<Partial<AnyModule>>(_, { context: { module: module_instance } })
+      )
+    )
   }
 
-  const update = (module: string, new_state: any) => {
-    const state = get(module_state)
-    const module_index = state.findIndex(({ id }) => id === module)
-
-    if (module_index < 0) {
-      return false
-    }
-
-    module_state.update(state => [
-      ...state.slice(0, module_index),
-      {
-        ...state[module_index],
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        state: new_state
-      },
-      ...state.slice(module_index + 1)
-    ])
+  const update_state = <T extends ModuleType>(
+    module: string,
+    state: Record<string, any>
+  ) => {
+    module_state.update(
+      replace<AnyModule>(isMatch({ id: module }), merge<Partial<Module<T>>>(_, { state }))
+    )
   }
 
   const remove = (module: string) => {
-    module_state.update(state => state.filter(({ id }) => id !== module))
+    module_state.update(filter<AnyModule>(negate(isMatch({ id: module }))))
   }
 
   const store = () => {
@@ -109,16 +85,16 @@ const init = () => {
   }
 
   const save = () => {
-    return get(module_state).map(({ context, ...module }) => module) // @todo use ramda?
+    return get(module_state).map(omit('context'))
   }
 
-  const load = (modules: Module[]) => {
+  const load = (modules: Module<ModuleType>[]) => {
     module_state.set(modules)
   }
 
   return {
     get_module,
-    update,
+    update: update_state,
     remove,
     register,
     store,

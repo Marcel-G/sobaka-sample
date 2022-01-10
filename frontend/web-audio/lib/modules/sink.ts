@@ -1,9 +1,10 @@
 import { AbstractModule } from '.'
-import { ModuleType } from '..'
-import { SamplerNode } from '../sampler.node'
+import { SinkInput, ModuleType } from '..'
+import { SobakaContext } from '../sobaka.node'
 
 export class Sink extends AbstractModule<ModuleType.Sink> {
-  constructor(context: SamplerNode) {
+  static Input = SinkInput
+  constructor(context: SobakaContext) {
     super(context, ModuleType.Sink)
   }
 }

@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { SamplerNode } from 'sobaka-sample-web-audio'
+  import { ModuleType, SobakaContext } from 'sobaka-sample-web-audio'
 
   import { Router, Route, Link } from 'svelte-routing'
   import { onDestroy, onMount, setContext } from 'svelte'
-  import { writable } from 'svelte/store'
+  import { get, writable } from 'svelte/store'
   import type { Writable } from 'svelte/store'
   import { init_sampler } from './audio'
 
@@ -22,10 +22,10 @@
   import type { Module } from './state/modules'
   import { MODULES } from './modules'
 
-  let sampler: Writable<SamplerNode | null> = writable(null)
+  let sampler: Writable<SobakaContext | null> = writable(null)
   setContext('sampler', sampler)
 
-  function get_component(module: Module) {
+  function get_component(module: Module<ModuleType>) {
     return {
       [MODULES.Clock]: Clock,
       [MODULES.Envelope]: Envelope,
@@ -47,7 +47,7 @@
   })
 
   onDestroy(() => {
-    // @todo create destroy fn that will unload instance
+    void get(sampler)?.destroy()
     $sampler = null
   })
 </script>

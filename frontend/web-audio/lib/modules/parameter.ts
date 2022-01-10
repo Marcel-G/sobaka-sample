@@ -1,12 +1,9 @@
-import { AbstractStatefulModule } from '.'
-import { ModuleType, ParameterState } from '..'
-import { SamplerNode } from '../sampler.node'
+import { AbstractStatefulModule, State } from '.'
+import { ModuleType } from '..'
+import { SobakaContext } from '../sobaka.node'
 
-export class Parameter extends AbstractStatefulModule<
-  ModuleType.Parameter,
-  ParameterState
-> {
-  constructor(context: SamplerNode) {
-    super(context, ModuleType.Parameter)
+export class Parameter extends AbstractStatefulModule<ModuleType.Parameter> {
+  constructor(context: SobakaContext, initial_state: State<ModuleType.Parameter>) {
+    super(context, ModuleType.Parameter, initial_state)
   }
 }

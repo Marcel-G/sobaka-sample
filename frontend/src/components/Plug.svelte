@@ -12,50 +12,28 @@
 </style>
 
 <script lang="ts">
-  import type { InputTypeDTO } from 'sobaka-sample-web-audio'
+  import type { AnyInput } from 'sobaka-sample-web-audio'
   import { getContext, onDestroy } from 'svelte'
-  import { get, writable } from 'svelte/store'
+  import { writable } from 'svelte/store'
   import type { Writable } from 'svelte/store'
-  import links from '../state/links'
-  import type { Link } from '../state/links'
+  import plug from '../state/plug'
 
   export let id: string
   export let label: string
-  export let to_type: InputTypeDTO | null = null
+  export let for_input: AnyInput | null = null
 
   const move_context: EventTarget = getContext('move_context')
 
-  const is_fully_linked = (link: Partial<Link> | null): link is Link => {
-    return Boolean(link?.from && link?.to && link?.to_input_type)
-  }
+  const node: Writable<Element> = writable()
 
-  const active_link = links.active_link_store()
-  export const el: Writable<Element> = writable()
+  plug.register(id, for_input, node)
 
   function handle_click() {
-    if (to_type === null) {
-      active_link.update(link => ({
-        ...(link || {}),
-        from: id
-      }))
-    } else {
-      active_link.update(link => ({
-        ...(link || {}),
-        to: id,
-        to_input_type: to_type!
-      }))
-    }
-
-    const link = get(active_link)
-
-    if (is_fully_linked(link)) {
-      links.add(link)
-      active_link.set(null)
-    }
+    plug.make(id, for_input)
   }
 
   function on_move() {
-    el.update(element => element)
+    node.update(element => element)
   }
 
   move_context.addEventListener('move', on_move)
@@ -70,5 +48,5 @@
   aria-label={label}
   class="plug"
   on:click={() => handle_click()}
-  bind:this={$el}
+  bind:this={$node}
 />

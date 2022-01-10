@@ -1,7 +1,6 @@
 <script lang="ts">
-  import { SamplerNode, Sink, SinkInput } from 'sobaka-sample-web-audio'
+  import { SobakaContext, Sink } from 'sobaka-sample-web-audio'
   import { onDestroy } from 'svelte'
-  import type { Writable } from 'svelte/store'
   import Panel from '../components/Panel.svelte'
   import Plug from '../components/Plug.svelte'
   import modules from '../state/modules'
@@ -9,24 +8,13 @@
   // @todo make context
   export let id: string
   export let position: { x: number; y: number }
-  export let context: SamplerNode
-
-  const signal_input_type = { Sink: SinkInput.Signal }
+  export let context: SobakaContext
 
   const sink = new Sink(context)
-  const loading = sink.create()
 
-  let signal_node: Writable<Element>
+  const loading = sink.module_id
 
-  void loading.then(module_id =>
-    modules.register(id, {
-      module_id: module_id,
-      output_node: undefined,
-      input_nodes: {
-        [JSON.stringify(signal_input_type)]: signal_node
-      }
-    })
-  )
+  modules.register(id, sink)
 
   onDestroy(() => {
     void sink.dispose()
@@ -41,6 +29,6 @@
   {/await}
 
   <div slot="inputs">
-    <Plug {id} label="gate" to_type={signal_input_type} bind:el={signal_node} />
+    <Plug {id} label="signal" for_input={Sink.Input.Signal} />
   </div>
 </Panel>

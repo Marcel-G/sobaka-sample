@@ -1,14 +1,11 @@
 <script lang="ts">
   import {
-    Input,
     Oscillator,
     OscillatorWave,
     Parameter,
-    SamplerNode
+    SobakaContext
   } from 'sobaka-sample-web-audio'
-  import type { OscillatorState } from 'sobaka-sample-web-audio'
   import { onDestroy } from 'svelte'
-  import type { Writable } from 'svelte/store'
   import Knob from '../components/Knob.svelte'
   import Panel from '../components/Panel.svelte'
   import Plug from '../components/Plug.svelte'
@@ -16,43 +13,29 @@
   import { as_writable } from '../writable_module'
 
   interface State {
-    frequency: { range: [number, number]; value: number }
-    oscillator: OscillatorState
+    frequency: Parameter['state']
+    oscillator: Oscillator['state']
   }
 
   // @todo make context
   export let id: string
   export let position: { x: number; y: number }
-  export let context: SamplerNode
+  export let context: SobakaContext
   export let initial_state: State = {
     frequency: { range: [20, 10000], value: 60 },
-    oscillator: { wave: OscillatorWave.Sine }
+    oscillator: { wave: Oscillator.Wave.Sine }
   }
 
-  const oscillator = new Oscillator(context)
-  const frequency_param = new Parameter(context)
+  const oscillator = new Oscillator(context, initial_state.oscillator)
+  const frequency_param = new Parameter(context, initial_state.frequency)
 
-  let output_node: Writable<Element>
+  const loading = oscillator.module_id
 
-  const loading = Promise.all([
-    oscillator.create(initial_state.oscillator),
-    frequency_param.create(initial_state.frequency)
-  ]).then(async ([oscillator_id, frequency_id]) => {
-    modules.register(id, {
-      module_id: oscillator_id,
-      output_node: output_node,
-      input_nodes: {}
-    })
+  modules.register(id, oscillator)
+  context.link(frequency_param, oscillator, Oscillator.Input.Frequency)
 
-    await context.client.request({
-      // @todo move to binding lib
-      method: 'module/connect',
-      params: [frequency_id, oscillator_id, { Oscillator: Input.Frequency }]
-    })
-  })
-
-  const frequency = as_writable(frequency_param, initial_state.frequency)
-  const oscillator_state = as_writable(oscillator, initial_state.oscillator)
+  const frequency = as_writable(frequency_param)
+  const oscillator_state = as_writable(oscillator)
 
   $: modules.update(id, {
     frequency: $frequency,
@@ -73,13 +56,13 @@
     <p>Loading...</p>
   {:then}
     <Knob label="Frequency" bind:value={$frequency.value} bind:range={$frequency.range} />
-    <button on:click={() => change_wave(OscillatorWave.Sine)}>Sine</button>
-    <button on:click={() => change_wave(OscillatorWave.Saw)}>Saw</button>
-    <button on:click={() => change_wave(OscillatorWave.Square)}>Square</button>
-    <button on:click={() => change_wave(OscillatorWave.Noise)}>Noise</button>
+    <button on:click={() => change_wave(Oscillator.Wave.Sine)}>Sine</button>
+    <button on:click={() => change_wave(Oscillator.Wave.Saw)}>Saw</button>
+    <button on:click={() => change_wave(Oscillator.Wave.Square)}>Square</button>
+    <button on:click={() => change_wave(Oscillator.Wave.Noise)}>Noise</button>
     <p>wave: {$oscillator_state?.wave}</p>
   {/await}
   <div slot="outputs">
-    <Plug {id} label="output" bind:el={output_node} />
+    <Plug {id} label="output" />
   </div>
 </Panel>

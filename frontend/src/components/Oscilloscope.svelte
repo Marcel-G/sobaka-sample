@@ -1,7 +1,7 @@
 <script lang="ts">
-  import type { SamplerNode } from 'sobaka-sample-web-audio'
+  import type { SobakaContext } from 'sobaka-sample-web-audio'
   import { getContext, onMount } from 'svelte'
-  const sampler: SamplerNode = getContext('sampler')
+  const sampler: SobakaContext = getContext('sampler')
 
   let canvas: HTMLCanvasElement
 

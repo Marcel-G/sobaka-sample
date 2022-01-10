@@ -1,12 +1,6 @@
 <script lang="ts">
-  import {
-    Envelope,
-    EnvelopeInput,
-    Parameter,
-    SamplerNode
-  } from 'sobaka-sample-web-audio'
+  import { Envelope, Parameter, SobakaContext } from 'sobaka-sample-web-audio'
   import { onDestroy } from 'svelte'
-  import type { Writable } from 'svelte/store'
   import Knob from '../components/Knob.svelte'
   import Panel from '../components/Panel.svelte'
   import Plug from '../components/Plug.svelte'
@@ -14,16 +8,16 @@
   import { as_writable } from '../writable_module'
 
   interface State {
-    a: { range: [number, number]; value: number }
-    d: { range: [number, number]; value: number }
-    s: { range: [number, number]; value: number }
-    r: { range: [number, number]; value: number }
+    a: Parameter['state']
+    d: Parameter['state']
+    s: Parameter['state']
+    r: Parameter['state']
   }
 
   // @todo make context
   export let id: string
   export let position: { x: number; y: number }
-  export let context: SamplerNode
+  export let context: SobakaContext
   export let initial_state: State = {
     a: { range: [0, 1], value: 0.5 },
     d: { range: [0, 1], value: 0.5 },
@@ -31,62 +25,25 @@
     r: { range: [0, 1], value: 0.5 }
   }
 
-  const gate_input_type = { Envelope: EnvelopeInput.Gate }
-
   const envelope = new Envelope(context)
 
-  const attack_param = new Parameter(context)
-  const decay_param = new Parameter(context)
-  const sustain_param = new Parameter(context)
-  const release_param = new Parameter(context)
+  const attack_param = new Parameter(context, initial_state.a)
+  const decay_param = new Parameter(context, initial_state.d)
+  const sustain_param = new Parameter(context, initial_state.s)
+  const release_param = new Parameter(context, initial_state.r)
 
-  let gate_node: Writable<Element>
-  let output_node: Writable<Element>
+  const loading = envelope.module_id
 
-  const loading = Promise.all([
-    envelope.create(),
-    attack_param.create(initial_state.a),
-    decay_param.create(initial_state.d),
-    sustain_param.create(initial_state.s),
-    release_param.create(initial_state.r)
-  ]).then(async ([envelope_id, attack_id, decay_id, sustain_id, release_id]) => {
-    modules.register(id, {
-      module_id: envelope_id,
-      output_node: output_node,
-      input_nodes: {
-        [JSON.stringify(gate_input_type)]: gate_node
-      }
-    })
+  modules.register(id, envelope)
+  context.link(attack_param, envelope, Envelope.Input.Attack)
+  context.link(decay_param, envelope, Envelope.Input.Decay)
+  context.link(sustain_param, envelope, Envelope.Input.Sustain)
+  context.link(release_param, envelope, Envelope.Input.Release)
 
-    await context.client.request({
-      // @todo move to binding lib
-      method: 'module/connect',
-      params: [attack_id, envelope_id, { Envelope: EnvelopeInput.Attack }]
-    })
-
-    await context.client.request({
-      // @todo move to binding lib
-      method: 'module/connect',
-      params: [decay_id, envelope_id, { Envelope: EnvelopeInput.Decay }]
-    })
-
-    await context.client.request({
-      // @todo move to binding lib
-      method: 'module/connect',
-      params: [sustain_id, envelope_id, { Envelope: EnvelopeInput.Sustain }]
-    })
-
-    await context.client.request({
-      // @todo move to binding lib
-      method: 'module/connect',
-      params: [release_id, envelope_id, { Envelope: EnvelopeInput.Release }]
-    })
-  })
-
-  const attack = as_writable(attack_param, initial_state.a)
-  const decay = as_writable(decay_param, initial_state.d)
-  const sustain = as_writable(sustain_param, initial_state.s)
-  const release = as_writable(release_param, initial_state.r)
+  const attack = as_writable(attack_param)
+  const decay = as_writable(decay_param)
+  const sustain = as_writable(sustain_param)
+  const release = as_writable(release_param)
 
   $: modules.update(id, {
     a: $attack,
@@ -111,10 +68,10 @@
   {/await}
 
   <div slot="inputs">
-    <Plug {id} label="gate" to_type={gate_input_type} bind:el={gate_node} />
+    <Plug {id} label="gate" for_input={Envelope.Input.Gate} />
   </div>
 
   <div slot="outputs">
-    <Plug {id} label="output" bind:el={output_node} />
+    <Plug {id} label="output" />
   </div>
 </Panel>

@@ -6,11 +6,12 @@
  */
 import { IJSONRPCRequest, IJSONRPCResponse } from '@open-rpc/client-js/build/Request';
 import 'fastestsmallesttextencoderdecoder'; // Add missing TextDecoder/TextEncoder in worklet env
-import init, { AudioProcessor } from '../pkg';
+import init, { AudioProcessor } from '../pkg/sobaka_sample_web_audio';
 import { SAMPLER_WORKLET } from './constants';
-import { is_send_wasm_program_event, WasmProgramEvent } from './interface';
-class SamplerProcessor extends AudioWorkletProcessor {
+import { is_destroy_destroy_event, is_send_wasm_program_event, WasmProgramEvent } from './interface';
+class SobakaProcessor extends AudioWorkletProcessor {
   private instance: AudioProcessor | null = null
+  private is_destroyed = false
   constructor(options?: AudioWorkletNodeOptions) {
     super(options);
 
@@ -22,14 +23,22 @@ class SamplerProcessor extends AudioWorkletProcessor {
       const message = event.data;
       if (is_send_wasm_program_event(message)) {
         void this.init(message);
-      } else {
-        throw new Error('Failed to load wasm program');
+      } else
+      if (is_destroy_destroy_event(message)) {
+        this.destroy()
       }
-    }, { once: true })
+    })
 
   }
 
   private async init(message: WasmProgramEvent) {
+    if (this.instance) {
+      throw new Error('Program already initialised')
+    }
+    if (this.is_destroyed) {
+      throw new Error('Audio worklet has already been destroyed')
+    }
+
     const data = message.params[0];
     const module = await WebAssembly.compile(data);
     await init(module);
@@ -45,6 +54,11 @@ class SamplerProcessor extends AudioWorkletProcessor {
 
     this.port.postMessage(JSON.stringify(response))
   }
+
+  private destroy () {
+    this.is_destroyed = true
+    this.instance = null
+  }
   /**
    * Each channel has 128 samples. Inputs[n][m][i] will access n-th input,
    * m-th channel of that input, and i-th sample of that channel.
@@ -56,6 +70,9 @@ class SamplerProcessor extends AudioWorkletProcessor {
     // eslint-disable-next-line no-unused-vars
     parameters: Record<string, Float32Array>
   ): boolean {
+    if (this.is_destroyed) {
+      return false
+    }
     if (!outputs[0]?.[0] || !this.instance) {
       return true;
     }
@@ -81,4 +98,4 @@ class SamplerProcessor extends AudioWorkletProcessor {
   }
 }
 
-registerProcessor(SAMPLER_WORKLET, SamplerProcessor);
+registerProcessor(SAMPLER_WORKLET, SobakaProcessor);

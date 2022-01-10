@@ -1,12 +1,12 @@
 import type { Link } from './links'
 import { throttle } from 'lodash'
 import links from './links'
-import modules, { Module } from './modules'
+import modules, { AnyModule } from './modules'
 import { local_storage as local_storage_adapter } from './persist'
 
 export interface Global {
-  modules: Module[]
-  links: Link[]
+  modules: AnyModule[]
+  links: Required<Link>[]
 }
 
 export const global_state = () => {

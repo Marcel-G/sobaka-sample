@@ -41,3 +41,7 @@ export type WasmProgramEvent = IJSONRPCRequest & { params: [ArrayBuffer] };
 export const is_send_wasm_program_event = (message: IJSONRPCRequest): message is WasmProgramEvent => {
   return message.method === 'send_wasm_program'
 }
+
+export const is_destroy_destroy_event = (message: IJSONRPCRequest): message is IJSONRPCRequest => {
+  return message.method === 'destroy'
+}

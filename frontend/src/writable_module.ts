@@ -1,29 +1,19 @@
-import type { AbstractStatefulModule } from 'sobaka-sample-web-audio'
+import type { AbstractStatefulModule, ModuleType } from 'sobaka-sample-web-audio'
 import type { Writable } from 'svelte/store'
 
-export const as_writable = <
-  T extends AbstractStatefulModule<any, any>,
-  S extends ReturnType<T['from_dto']>
->(
-  module: T,
-  initial_value?: S
-): Writable<S> => {
-  let last_value: S | null = initial_value || null // @todo find initial state from module
-
-  void module.subscribe((new_value: S) => {
-    last_value = new_value
-  })
-
-  const set = (value: S) => {
+export const as_writable = <M extends AbstractStatefulModule<ModuleType>>(
+  module: M
+): Writable<M['state']> => {
+  const set = (value: M['state']) => {
     void module.update(value)
   }
 
-  const update = (updater: (value: S) => S) => {
-    set(updater(last_value as S))
+  const update = (updater: (value: M['state']) => M['state']) => {
+    set(updater(module.state))
   }
 
-  const subscribe = (run: (value: S) => void) => {
-    run(last_value as S)
+  const subscribe = (run: (value: M['state']) => void) => {
+    run(module.state)
     const async_unsubscribe = module.subscribe(run)
     return () => {
       void async_unsubscribe.then(unsubscribe => unsubscribe())

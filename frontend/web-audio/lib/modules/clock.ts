@@ -1,9 +1,10 @@
 import { AbstractModule } from '.'
-import { ModuleType } from '..'
-import { SamplerNode } from '../sampler.node'
+import { ModuleType, Input } from '..'
+import { SobakaContext } from '../sobaka.node'
 
 export class Clock extends AbstractModule<ModuleType.Clock> {
-  constructor(context: SamplerNode) {
+  static Input = Input
+  constructor(context: SobakaContext) {
     super(context, ModuleType.Clock)
   }
 }

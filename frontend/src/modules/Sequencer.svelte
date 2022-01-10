@@ -24,50 +24,36 @@
 </style>
 
 <script lang="ts">
-  import { SamplerNode, Sequencer, SequencerInput } from 'sobaka-sample-web-audio'
-  import type { SequencerState } from 'sobaka-sample-web-audio'
+  import { SobakaContext, Sequencer } from 'sobaka-sample-web-audio'
   import { onDestroy } from 'svelte'
   import { derived } from 'svelte/store'
-  import type { Writable } from 'svelte/store'
   import Panel from '../components/Panel.svelte'
   import Plug from '../components/Plug.svelte'
   import modules from '../state/modules'
   import { as_writable } from '../writable_module'
+  import { omit } from 'lodash/fp'
   interface State {
-    sequencer: Omit<SequencerState, 'step'>
+    sequencer: Omit<Sequencer['state'], 'step'>
   }
 
   // @todo make context
   export let id: string
   export let position: { x: number; y: number }
-  export let context: SamplerNode
+  export let context: SobakaContext
   export let initial_state: State = {
     sequencer: { sequence: [true, false, false, false] }
   }
 
-  const gate_input_type = { Sequencer: SequencerInput.Gate }
+  const sequencer = new Sequencer(context, { step: 0, ...initial_state.sequencer })
 
-  const sequencer = new Sequencer(context)
-  const loading = sequencer.create({ step: 0, ...initial_state.sequencer })
+  const loading = sequencer.module_id
 
-  let output_node: Writable<Element>
-  let gate_node: Writable<Element>
+  modules.register(id, sequencer)
 
-  void loading.then(module_id =>
-    modules.register(id, {
-      module_id: module_id,
-      output_node: output_node,
-      input_nodes: {
-        [JSON.stringify(gate_input_type)]: gate_node
-      }
-    })
-  )
-
-  let state = as_writable(sequencer, { step: 0, ...initial_state.sequencer })
+  let state = as_writable(sequencer)
 
   // Do not persist `step` as it updates automatically
-  // @todo use omit
-  let persistant_state = derived(state, ({ step, ...state }) => state)
+  let persistant_state = derived(state, omit('step'))
 
   $: modules.update(id, {
     sequencer: $persistant_state
@@ -93,7 +79,9 @@
 </script>
 
 <Panel name="sequencer" {id} {position} height={3} width={10}>
-  {#if $state}
+  {#await loading}
+    <p>Loading...</p>
+  {:then}
     <div class="sequence">
       {#each $state.sequence as step, i}
         <div
@@ -105,14 +93,12 @@
       {/each}
     </div>
     <button on:click={extend}> extend </button>
-  {:else}
-    <p>Loading...</p>
-  {/if}
+  {/await}
   <div slot="inputs">
-    <Plug {id} label="gate" to_type={gate_input_type} bind:el={gate_node} />
+    <Plug {id} label="gate" for_input={Sequencer.Input.Gate} />
   </div>
 
   <div slot="outputs">
-    <Plug {id} label="output" bind:el={output_node} />
+    <Plug {id} label="output" />
   </div>
 </Panel>

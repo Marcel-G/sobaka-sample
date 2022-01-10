@@ -1,7 +1,6 @@
 <script lang="ts">
-  import { Parameter, SamplerNode } from 'sobaka-sample-web-audio'
+  import { Parameter, SobakaContext } from 'sobaka-sample-web-audio'
   import { onDestroy } from 'svelte'
-  import type { Writable } from 'svelte/store'
   import Knob from '../components/Knob.svelte'
   import Panel from '../components/Panel.svelte'
   import Plug from '../components/Plug.svelte'
@@ -9,7 +8,7 @@
   import { as_writable } from '../writable_module'
 
   interface State {
-    parameter: { range: [number, number]; value: number }
+    parameter: Parameter['state']
   }
 
   export let label: string
@@ -20,22 +19,15 @@
   // @todo make context
   export let id: string
   export let position: { x: number; y: number }
-  export let context: SamplerNode
+  export let context: SobakaContext
 
-  let output_node: Writable<Element>
+  const parameter = new Parameter(context, initial_state.parameter)
 
-  const parameter = new Parameter(context)
-  const loading = parameter.create(initial_state.parameter)
+  const loading = parameter.module_id
 
-  void loading.then(module_id =>
-    modules.register(id, {
-      module_id: module_id,
-      output_node: output_node,
-      input_nodes: {}
-    })
-  )
+  modules.register(id, parameter)
 
-  let state = as_writable(parameter, initial_state.parameter)
+  const state = as_writable(parameter)
 
   $: modules.update(id, {
     parameter: $state
@@ -47,14 +39,14 @@
 </script>
 
 <Panel name="parameter" {id} {position} height={3} width={3}>
-  {#if $state}
+  {#await loading}
+    <p>Loading...</p>
+  {:then}
     <span>
       <Knob label="Frequency" bind:value={$state.value} bind:range={$state.range} />
     </span>
-  {:else}
-    <p>Loading...</p>
-  {/if}
+  {/await}
   <div slot="outputs">
-    <Plug {id} label="output" bind:el={output_node} />
+    <Plug {id} label="output" />
   </div>
 </Panel>

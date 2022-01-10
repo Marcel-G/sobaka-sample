@@ -1,25 +1,32 @@
-import type { InputTypeDTO } from 'sobaka-sample-web-audio'
+import { concat, filter, isMatch, negate } from 'lodash/fp'
+import { AnyInput } from 'sobaka-sample-web-audio/dist/lib'
 import { get, writable } from 'svelte/store'
 import modules from './modules'
 
 export interface Link {
+  id?: string
   from: string
   to: string
-  to_input_type: InputTypeDTO
+  to_input: AnyInput
+}
+
+export const is_fully_linked = (link: Partial<Link> | null): link is Link => {
+  return Boolean(link?.from && link?.to && link?.to_input)
 }
 
 const init = () => {
   const active_link = writable<Partial<Link> | null>(null)
-  const link_state = writable<Link[]>([])
+  const link_state = writable<Required<Link>[]>([])
 
   // Clear out links for removed items
   // @todo Probably can be done less frequently than this
   modules.store().subscribe(modules => {
-    link_state.update(links =>
-      links.filter(
-        link =>
-          modules.find(({ id }) => id === link.from) &&
-          modules.find(({ id }) => id === link.to)
+    link_state.update(
+      filter<Required<Link>>(link =>
+        Boolean(
+          modules.find(isMatch({ id: link.to })) &&
+            modules.find(isMatch({ id: link.from }))
+        )
       )
     )
   })
@@ -32,24 +39,23 @@ const init = () => {
     return link_state
   }
 
-  const add = (link: Link) => {
-    link_state.update(links => [...links, link])
+  const add = (link: Link): string => {
+    const id = Math.random().toString(36).substr(2, 9)
+
+    link_state.update(concat({ ...link, id }))
+
+    return id
   }
 
-  const remove = (link: Link) => {
-    link_state.update(links =>
-      links.filter(
-        ({ from, to, to_input_type }) =>
-          !(link.from === from && link.to === to && link.to_input_type === to_input_type)
-      )
-    )
+  const remove = (link_id: string) => {
+    link_state.update(filter<Required<Link>>(negate(isMatch({ id: link_id }))))
   }
 
   const save = () => {
     return get(link_state)
   }
 
-  const load = (links: Link[]) => {
+  const load = (links: Required<Link>[]) => {
     link_state.set(links)
     active_link.set(null)
   }

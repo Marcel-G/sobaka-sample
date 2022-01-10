@@ -1,14 +1,23 @@
-import { SamplerNode } from '../sampler.node'
-import { ModuleStateDTO, ModuleType } from '..'
+import { SobakaContext } from '../sobaka.node'
+import { ModuleStateDTO, ModuleType, InputTypeDTO } from '..'
 import { Subscriber, Unsubscriber } from '../interface'
 
+type FromDTO<T, K extends ModuleType> = {
+  [P in keyof typeof ModuleType]: P extends keyof T ? Required<T>[P] : never
+}[K]
+
+export type Input<T extends ModuleType> = FromDTO<InputTypeDTO, T>
+export type State<T extends ModuleType> = FromDTO<ModuleStateDTO, T>
+
+export type AnyInput = Input<ModuleType>
 export abstract class AbstractModule<T extends ModuleType> {
-  type: T
-  private context: SamplerNode
-  module_id?: Promise<number>
-  constructor(context: SamplerNode, type: T) {
+  readonly type: T
+  private context: SobakaContext
+  module_id: Promise<number>
+  constructor(context: SobakaContext, type: T, ...args: readonly unknown[]) {
     this.context = context
     this.type = type
+    this.module_id = this.create(context, type, ...args)
   }
 
   get_module_id() {
@@ -19,13 +28,19 @@ export abstract class AbstractModule<T extends ModuleType> {
     return this.context
   }
 
-  async create(): Promise<number> {
-    this.module_id = this.get_context().client.request({
-      method: 'module/create',
-      params: [this.type]
-    })
+  to_input_dto(input: Input<T>): InputTypeDTO {
+    return { [this.type]: input }
+  }
 
-    return this.get_module_id()!
+  private create(
+    context: SobakaContext,
+    type: ModuleType,
+    ...args: readonly unknown[]
+  ): Promise<number> {
+    return context.client.request({
+      method: 'module/create',
+      params: [type, ...args]
+    }) as Promise<number>
   }
 
   async dispose(): Promise<boolean> {
@@ -41,50 +56,50 @@ export abstract class AbstractModule<T extends ModuleType> {
 }
 
 export abstract class AbstractStatefulModule<
-  T extends ModuleType,
-  State
+  T extends ModuleType
 > extends AbstractModule<T> {
   private unsubscribe_handles: Unsubscriber[] = []
+  state: State<T>
+  constructor(context: SobakaContext, type: T, initial_state: State<T>) {
+    super(context, type, initial_state ? { [type]: initial_state } : undefined)
 
-  async create(initial_state?: State): Promise<number> {
-    this.module_id = this.get_context().client.request({
-      method: 'module/create',
-      params: [this.type, initial_state ? this.to_dto(initial_state) : null]
-    })
-
-    return this.get_module_id()!
+    this.state = initial_state
   }
 
-  async update(state: State) {
+  async update(state: State<T>) {
     const module_id = await this.get_module_id()
 
     return this.get_context().client.request({
       method: 'module/update',
-      params: [module_id, this.to_dto(state)]
+      params: [module_id, this.to_state_dto(state)]
     })
   }
 
-  to_dto(state: State): ModuleStateDTO {
+  to_state_dto(state: State<T>): ModuleStateDTO {
     return { [this.type]: state }
   }
-  from_dto(state: ModuleStateDTO): State {
+
+  from_state_dto(state: ModuleStateDTO): State<T> {
     if (this.type in state) {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore-next-line
-      return state[this.type] as State
+      return state[this.type] as State<T>
     } else {
       throw new Error(`Cannot convert into "${this.type}" state`)
     }
   }
 
-  async subscribe(callback: Subscriber<State>): Promise<Unsubscriber> {
+  async subscribe(callback: Subscriber<State<T>>): Promise<Unsubscriber> {
     const module_id = await this.get_module_id()
 
     let unsubscribe: Unsubscriber | null = this.get_context().subscribe(
       'module/subscribe',
       'module/unsubscribe',
-      [module_id!],
-      value => callback(this.from_dto(value.result))
+      [module_id],
+      value => {
+        this.state = this.from_state_dto(value.result)
+        callback(this.state)
+      }
     )
 
     const maybe_unsubscribe = () => {

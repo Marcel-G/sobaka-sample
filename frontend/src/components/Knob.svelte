@@ -55,7 +55,7 @@
 
   export let label: string
   export let value = 0.0
-  export let range: [number, number] = [0, 20000]
+  export let range: number[] = [0, 20000]
 
   let [min, max] = range
   let rot_range = 2 * Math.PI * 0.83
