@@ -14,7 +14,7 @@ use sobaka_sample_audio_core::modules::{
     parameter::node::ParameterState,
     sequencer::{node::SequencerState, SequencerInput},
     sink::SinkInput,
-    volume::VolumeInput,
+    volume::VolumeInput, delay::DelayInput,
 };
 
 #[derive(Serialize, Deserialize, JsonSchema)]
@@ -25,6 +25,7 @@ pub enum ModuleType {
     Parameter,
     Sequencer,
     Volume,
+    Delay,
     Sink,
 }
 
@@ -35,6 +36,7 @@ pub enum InputTypeDTO {
     Oscillator(OscillatorInput),
     Sequencer(SequencerInput),
     Volume(VolumeInput),
+    Delay(DelayInput),
     Sink(SinkInput),
 }
 

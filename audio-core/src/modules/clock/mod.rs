@@ -55,8 +55,8 @@ impl Module for ClockModule {
         }
         self.inputs.clear();
 
-        if let Some(envelope) = self.clock {
-            core.remove_node(envelope);
+        if let Some(clock) = self.clock {
+            core.remove_node(clock);
             self.clock = None;
             self.output = None;
         }

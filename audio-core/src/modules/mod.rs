@@ -1,4 +1,5 @@
 pub mod clock;
+pub mod delay;
 pub mod envelope;
 pub mod io;
 pub mod oscillator;
@@ -11,9 +12,9 @@ pub mod volume;
 use crate::graph::AudioGraph;
 
 use self::{
-    clock::ClockModule, envelope::EnvelopeModule, io::Output, oscillator::OscillatorModule,
-    parameter::ParameterModule, sequencer::SequencerModule, sink::SinkModule, traits::Module,
-    volume::VolumeModule,
+    clock::ClockModule, delay::DelayModule, envelope::EnvelopeModule, io::Output,
+    oscillator::OscillatorModule, parameter::ParameterModule, sequencer::SequencerModule,
+    sink::SinkModule, traits::Module, volume::VolumeModule,
 };
 
 #[impl_enum::with_methods {
@@ -28,5 +29,6 @@ pub enum AudioModule {
     Parameter(ParameterModule),
     Sequencer(SequencerModule),
     Volume(VolumeModule),
+    Delay(DelayModule),
     Sink(SinkModule),
 }

@@ -16,7 +16,8 @@ use sobaka_sample_audio_core::{
         sink::SinkModule,
         traits::{Module, StatefulModule},
         volume::VolumeModule,
-        AudioModule,
+        delay::DelayModule,
+        AudioModule
     },
 };
 
@@ -46,6 +47,7 @@ impl ModuleRpc for RpcImpl {
             ModuleType::Parameter => AudioModule::Parameter(ParameterModule::default()),
             ModuleType::Sequencer => AudioModule::Sequencer(SequencerModule::default()),
             ModuleType::Sink => AudioModule::Sink(SinkModule::default()),
+            ModuleType::Delay => AudioModule::Delay(DelayModule::default()),
             ModuleType::Volume => AudioModule::Volume(VolumeModule::default()),
         };
 
@@ -234,6 +236,9 @@ impl ModuleRpc for RpcImpl {
                     module.input(&input_name.try_into().map_err(into_err)?)
                 }
                 AudioModule::Volume(module) => {
+                    module.input(&input_name.try_into().map_err(into_err)?)
+                }
+                AudioModule::Delay(module) => {
                     module.input(&input_name.try_into().map_err(into_err)?)
                 }
                 _ => None,

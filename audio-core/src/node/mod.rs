@@ -3,7 +3,9 @@ use dasp::graph::{
     BoxedNodeSend, Buffer, Input, Node,
 };
 
-use crate::modules::{parameter::node::ParameterNode, sequencer::node::SequencerNode};
+use crate::modules::{
+    delay::node::DelayNode, parameter::node::ParameterNode, sequencer::node::SequencerNode,
+};
 
 pub mod input_signal;
 
@@ -13,6 +15,7 @@ pub mod input_signal;
 pub enum AudioNode {
     Parameter(ParameterNode),
     Signal(BoxedNodeSend),
+    Delay(DelayNode),
     Sequencer(SequencerNode),
     Sum(Sum),
     Pass(Pass),

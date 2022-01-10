@@ -7,6 +7,7 @@
   import type { Writable } from 'svelte/store'
   import { init_sampler } from './audio'
 
+  import Oscilloscope from './components/Oscilloscope.svelte'
   import Toolbox from './components/Toolbox.svelte'
   import Wires from './components/Wires.svelte'
   import Workspace from './components/Workspace.svelte'
@@ -18,6 +19,7 @@
   import Sink from './modules/Sink.svelte'
   import Volume from './modules/Volume.svelte'
   import Lfo from './modules/LFO.svelte'
+  import Delay from './modules/Delay.svelte'
   import modules from './state/modules'
   import type { Module } from './state/modules'
   import { MODULES } from './modules'
@@ -34,7 +36,8 @@
       [MODULES.Sequencer]: Sequencer,
       [MODULES.Sink]: Sink,
       [MODULES.Volume]: Volume,
-      [MODULES.Lfo]: Lfo
+      [MODULES.Lfo]: Lfo,
+      [MODULES.Delay]: Delay
     }[module.type]
   }
 
@@ -59,6 +62,7 @@
     </Route>
     <Route path="workspace/:id" let:params>
       {#if $sampler}
+        <Oscilloscope />
         <Toolbox />
         <Workspace id={params.id}>
           {#each $module_list as module (module.id)}

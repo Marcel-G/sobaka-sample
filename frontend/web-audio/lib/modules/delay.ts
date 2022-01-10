@@ -1,10 +1,10 @@
 import { AbstractModule } from '.'
-import { SinkInput as Input, ModuleType } from '..'
+import { ModuleType, DelayInput as Input } from '..'
 import { SobakaContext } from '../sobaka.node'
 
-export class Sink extends AbstractModule<ModuleType.Sink> {
+export class Delay extends AbstractModule<ModuleType.Delay> {
   static Input = Input
   constructor(context: SobakaContext) {
-    super(context, ModuleType.Sink)
+    super(context, ModuleType.Delay)
   }
 }

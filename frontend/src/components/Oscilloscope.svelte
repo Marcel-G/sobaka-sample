@@ -1,7 +1,8 @@
 <script lang="ts">
   import type { SobakaContext } from 'sobaka-sample-web-audio'
   import { getContext, onMount } from 'svelte'
-  const sampler: SobakaContext = getContext('sampler')
+  import { get, Writable } from 'svelte/store'
+  const context: Writable<SobakaContext> = getContext('sampler')
 
   let canvas: HTMLCanvasElement
 
@@ -13,9 +14,9 @@
 
   let fftSize = 2048 * 16
 
-  let analyserNode = new AnalyserNode(sampler.context, { fftSize })
+  let analyserNode = new AnalyserNode(get(context).context, { fftSize })
 
-  sampler.connect(analyserNode)
+  get(context).connect(analyserNode)
 
   let u8ar = new Uint8Array(fftSize)
 
