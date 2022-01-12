@@ -12,24 +12,26 @@
 </style>
 
 <script lang="ts">
-  import type { AnyInput } from 'sobaka-sample-web-audio'
+  import type { AbstractModule, AnyInput, ModuleType } from 'sobaka-sample-web-audio'
   import { getContext, onDestroy } from 'svelte'
   import { writable } from 'svelte/store'
   import type { Writable } from 'svelte/store'
   import plug from '../state/plug'
 
   export let id: string
-  export let label: string
-  export let for_input: AnyInput | null = null
+  export let name: string
+  export let label: string = name
+  export let for_module: AbstractModule<ModuleType>
+  export let for_input: AnyInput | undefined = undefined
 
   const move_context: EventTarget = getContext('move_context')
 
   const node: Writable<Element> = writable()
 
-  plug.register(id, for_input, node)
+  plug.register(id, name, for_module, node, for_input)
 
   function handle_click() {
-    plug.make(id, for_input)
+    plug.make(id, name)
   }
 
   function on_move() {
@@ -39,6 +41,7 @@
   move_context.addEventListener('move', on_move)
 
   onDestroy(() => {
+    plug.remove(id, name)
     move_context.removeEventListener('move', on_move)
   })
 </script>

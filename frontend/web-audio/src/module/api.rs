@@ -9,12 +9,14 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use sobaka_sample_audio_core::modules::{
     clock::ClockInput,
+    delay::DelayInput,
     envelope::EnvelopeInput,
     oscillator::{OscillatorInput, OscillatorState},
     parameter::node::ParameterState,
     sequencer::{node::SequencerState, SequencerInput},
     sink::SinkInput,
-    volume::VolumeInput, delay::DelayInput,
+    sum::SumInput,
+    volume::VolumeInput,
 };
 
 #[derive(Serialize, Deserialize, JsonSchema)]
@@ -27,6 +29,7 @@ pub enum ModuleType {
     Volume,
     Delay,
     Sink,
+    Sum,
 }
 
 #[derive(Serialize, Deserialize, JsonSchema, TryInto)]
@@ -38,6 +41,7 @@ pub enum InputTypeDTO {
     Volume(VolumeInput),
     Delay(DelayInput),
     Sink(SinkInput),
+    Sum(SumInput),
 }
 
 #[derive(Serialize, Deserialize, JsonSchema, TryInto)]

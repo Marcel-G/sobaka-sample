@@ -5,7 +5,7 @@ export interface Persistant<S> {
 
 export const local_storage = <S>(state: Persistant<S>) => {
   const previous = { json: '', id: '' }
-  const save = () => {
+  const save = (): string | undefined => {
     const data = JSON.stringify(state.save())
     if (previous.json !== data) {
       const id = Math.random().toString(36).substr(2, 9)
@@ -16,8 +16,6 @@ export const local_storage = <S>(state: Persistant<S>) => {
 
       return id
     }
-
-    return previous.id
   }
   const load = (id: string): boolean => {
     try {
@@ -27,7 +25,12 @@ export const local_storage = <S>(state: Persistant<S>) => {
       } else {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const data: S = JSON.parse(stored)
+
+        previous.json = stored
+        previous.id = id
+
         state.load(data)
+
         return true
       }
     } catch (error) {

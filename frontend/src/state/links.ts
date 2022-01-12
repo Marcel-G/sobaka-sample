@@ -1,35 +1,22 @@
 import { concat, filter, isMatch, negate } from 'lodash/fp'
-import { AnyInput } from 'sobaka-sample-web-audio/dist/lib'
 import { get, writable } from 'svelte/store'
-import modules from './modules'
 
 export interface Link {
+  // Unique ID for this link
   id?: string
+  // Plug ID from which to link.
   from: string
+  // Plug ID to link to.
   to: string
-  to_input: AnyInput
 }
 
 export const is_fully_linked = (link: Partial<Link> | null): link is Link => {
-  return Boolean(link?.from && link?.to && link?.to_input)
+  return Boolean(link?.from && link?.to)
 }
 
 const init = () => {
   const active_link = writable<Partial<Link> | null>(null)
   const link_state = writable<Required<Link>[]>([])
-
-  // Clear out links for removed items
-  // @todo Probably can be done less frequently than this
-  modules.store().subscribe(modules => {
-    link_state.update(
-      filter<Required<Link>>(link =>
-        Boolean(
-          modules.find(isMatch({ id: link.to })) &&
-            modules.find(isMatch({ id: link.from }))
-        )
-      )
-    )
-  })
 
   const active_link_store = () => {
     return active_link

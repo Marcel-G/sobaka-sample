@@ -19,8 +19,6 @@ pub trait ObserveState {
     fn observe(&self) -> Observer<Self::State> {
         let (sink, stream) = mpsc::unbounded();
         self.observers().lock().unwrap().push(sink);
-        // Notify of current state immediately on subscription
-        self.notify();
         stream
     }
 }

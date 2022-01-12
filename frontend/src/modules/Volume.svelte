@@ -26,8 +26,6 @@
 
   const loading = volume.module_id
 
-  modules.register(id, volume)
-
   const level = as_writable(level_param)
 
   $: modules.update(id, {
@@ -47,12 +45,12 @@
   {/await}
 
   <div slot="inputs">
-    <Plug {id} label="signal" for_input={Volume.Input.Signal} />
+    <Plug {id} name="signal" for_module={volume} for_input={Volume.Input.Signal} />
 
-    <Plug {id} label="vc" for_input={Volume.Input.Vc} />
+    <Plug {id} name="cv" for_module={volume} for_input={Volume.Input.Vc} />
   </div>
 
   <div slot="outputs">
-    <Plug {id} label="output" />
+    <Plug {id} name="output" for_module={volume} />
   </div>
 </Panel>

@@ -1,5 +1,5 @@
 import { AbstractModule } from '.'
-import { SinkInput as Input, ModuleType } from '..'
+import { SinkEnum as Input, ModuleType } from '..'
 import { SobakaContext } from '../sobaka.node'
 
 export class Sink extends AbstractModule<ModuleType.Sink> {

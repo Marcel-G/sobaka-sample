@@ -24,7 +24,6 @@
 
   const loading = delay.module_id
 
-  modules.register(id, delay)
   context.link(time_param, delay, Delay.Input.Time)
 
   const time = as_writable(time_param)
@@ -46,10 +45,10 @@
   {/await}
 
   <div slot="inputs">
-    <Plug {id} label="signal" for_input={Delay.Input.Signal} />
+    <Plug {id} name="signal" for_module={delay} for_input={Delay.Input.Signal} />
   </div>
 
   <div slot="outputs">
-    <Plug {id} label="output" />
+    <Plug {id} name="output" for_module={delay} />
   </div>
 </Panel>

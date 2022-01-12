@@ -9,15 +9,16 @@ use sobaka_sample_audio_core::{
     graph::EdgeIndex,
     modules::{
         clock::ClockModule,
+        delay::DelayModule,
         envelope::EnvelopeModule,
         oscillator::OscillatorModule,
         parameter::ParameterModule,
         sequencer::SequencerModule,
         sink::SinkModule,
+        sum::SumModule,
         traits::{Module, StatefulModule},
         volume::VolumeModule,
-        delay::DelayModule,
-        AudioModule
+        AudioModule,
     },
 };
 
@@ -49,6 +50,7 @@ impl ModuleRpc for RpcImpl {
             ModuleType::Sink => AudioModule::Sink(SinkModule::default()),
             ModuleType::Delay => AudioModule::Delay(DelayModule::default()),
             ModuleType::Volume => AudioModule::Volume(VolumeModule::default()),
+            ModuleType::Sum => AudioModule::Sum(SumModule::default()),
         };
 
         let mut core = self.core.lock().expect("Cannot lock core");
@@ -241,6 +243,7 @@ impl ModuleRpc for RpcImpl {
                 AudioModule::Delay(module) => {
                     module.input(&input_name.try_into().map_err(into_err)?)
                 }
+                AudioModule::Sum(module) => module.input(&input_name.try_into().map_err(into_err)?),
                 _ => None,
             };
 

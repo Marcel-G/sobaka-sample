@@ -6,17 +6,16 @@
 </style>
 
 <script lang="ts">
-  import { MODULES } from '../modules'
-  import type { ModuleType } from '../modules'
+  import { ModuleUI } from '../modules'
   import modules from '../state/modules'
 
-  function handle_create(module: ModuleType) {
-    modules.create(module)
+  function handle_create(type: ModuleUI) {
+    modules.create(type)
   }
 </script>
 
 <div class="toolbox">
-  {#each Object.values(MODULES) as module}
+  {#each Object.values(ModuleUI) as module}
     <button on:click={() => handle_create(module)}>{module}</button>
   {/each}
 </div>

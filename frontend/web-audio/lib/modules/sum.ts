@@ -1,10 +1,11 @@
 import { AbstractModule } from '.'
-import { ModuleType, ClockEnum as Input } from '..'
+import { ModuleType, SinkEnum as Input } from '..'
 import { SobakaContext } from '../sobaka.node'
 
-export class Clock extends AbstractModule<ModuleType.Clock> {
+export class Sum extends AbstractModule<ModuleType.Sum> {
   static Input = Input
   constructor(context: SobakaContext) {
-    super(context, ModuleType.Clock)
+    super(context, ModuleType.Sum)
   }
 }
+

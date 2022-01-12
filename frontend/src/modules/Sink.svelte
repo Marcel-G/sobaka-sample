@@ -3,7 +3,6 @@
   import { onDestroy } from 'svelte'
   import Panel from '../components/Panel.svelte'
   import Plug from '../components/Plug.svelte'
-  import modules from '../state/modules'
 
   // @todo make context
   export let id: string
@@ -13,8 +12,6 @@
   const sink = new Sink(context)
 
   const loading = sink.module_id
-
-  modules.register(id, sink)
 
   onDestroy(() => {
     void sink.dispose()
@@ -29,6 +26,6 @@
   {/await}
 
   <div slot="inputs">
-    <Plug {id} label="signal" for_input={Sink.Input.Signal} />
+    <Plug {id} name="signal" for_module={sink} for_input={Sink.Input.Signal} />
   </div>
 </Panel>

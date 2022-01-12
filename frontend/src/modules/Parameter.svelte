@@ -25,8 +25,6 @@
 
   const loading = parameter.module_id
 
-  modules.register(id, parameter)
-
   const state = as_writable(parameter)
 
   $: modules.update(id, {
@@ -47,6 +45,6 @@
     </span>
   {/await}
   <div slot="outputs">
-    <Plug {id} label="output" />
+    <Plug {id} name="output" for_module={parameter} />
   </div>
 </Panel>

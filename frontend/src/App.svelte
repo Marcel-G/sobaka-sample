@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { ModuleType, SobakaContext } from 'sobaka-sample-web-audio'
+  import { SobakaContext } from 'sobaka-sample-web-audio'
 
   import { Router, Route, Link } from 'svelte-routing'
   import { onDestroy, onMount, setContext } from 'svelte'
@@ -15,29 +15,29 @@
   import Envelope from './modules/Envelope.svelte'
   import Oscillator from './modules/Oscillator.svelte'
   import Parameter from './modules/Parameter.svelte'
-  import Sequencer from './modules/Sequencer.svelte'
+  import MultiSequencer from './modules/MultiSequencer.svelte'
   import Sink from './modules/Sink.svelte'
   import Volume from './modules/Volume.svelte'
   import Lfo from './modules/LFO.svelte'
   import Delay from './modules/Delay.svelte'
   import modules from './state/modules'
   import type { Module } from './state/modules'
-  import { MODULES } from './modules'
+  import { ModuleUI } from './modules'
 
   let sampler: Writable<SobakaContext | null> = writable(null)
   setContext('sampler', sampler)
 
-  function get_component(module: Module<ModuleType>) {
+  function get_component(module: Module<ModuleUI>) {
     return {
-      [MODULES.Clock]: Clock,
-      [MODULES.Envelope]: Envelope,
-      [MODULES.Oscillator]: Oscillator,
-      [MODULES.Parameter]: Parameter,
-      [MODULES.Sequencer]: Sequencer,
-      [MODULES.Sink]: Sink,
-      [MODULES.Volume]: Volume,
-      [MODULES.Lfo]: Lfo,
-      [MODULES.Delay]: Delay
+      [ModuleUI.Clock]: Clock,
+      [ModuleUI.Envelope]: Envelope,
+      [ModuleUI.Oscillator]: Oscillator,
+      [ModuleUI.Parameter]: Parameter,
+      [ModuleUI.MultiSequencer]: MultiSequencer,
+      [ModuleUI.Sink]: Sink,
+      [ModuleUI.Vca]: Volume,
+      [ModuleUI.Lfo]: Lfo,
+      [ModuleUI.Delay]: Delay
     }[module.type]
   }
 

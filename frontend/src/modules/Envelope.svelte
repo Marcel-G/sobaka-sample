@@ -34,7 +34,6 @@
 
   const loading = envelope.module_id
 
-  modules.register(id, envelope)
   context.link(attack_param, envelope, Envelope.Input.Attack)
   context.link(decay_param, envelope, Envelope.Input.Decay)
   context.link(sustain_param, envelope, Envelope.Input.Sustain)
@@ -68,10 +67,10 @@
   {/await}
 
   <div slot="inputs">
-    <Plug {id} label="gate" for_input={Envelope.Input.Gate} />
+    <Plug {id} name="gate" for_module={envelope} for_input={Envelope.Input.Gate} />
   </div>
 
   <div slot="outputs">
-    <Plug {id} label="output" />
+    <Plug {id} name="output" for_module={envelope} />
   </div>
 </Panel>

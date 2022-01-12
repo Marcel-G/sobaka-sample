@@ -1,18 +1,34 @@
-import { isMatch, merge, __ as _ } from 'lodash/fp'
-import { AnyInput } from 'sobaka-sample-web-audio/dist/lib'
-import { get, Writable } from 'svelte/store'
+import { merge, omit, __ as _ } from 'lodash/fp'
+import { AbstractModule, AnyInput, ModuleType } from 'sobaka-sample-web-audio/dist/lib'
+import { get, Readable, writable, Writable } from 'svelte/store'
 import links, { is_fully_linked, Link } from './links'
-import modules, { AnyModule } from './modules'
-import { replace } from './utils'
+
+enum PlugType {
+  Input,
+  Output
+}
+
+export interface PlugContext {
+  type: PlugType
+  node: Readable<Element>
+  module: AbstractModule<ModuleType>
+  input?: AnyInput
+}
+
+type PlugStore = Record<string, PlugContext>
 
 const init = () => {
+  const plug_store = writable<PlugStore>({})
   // @todo move together with plug calls?
-  const make = (module: string, to_input: AnyInput | null) => {
+  const make = (module: string, name: string) => {
     const active_link = links.active_link_store()
-    if (to_input === null) {
-      active_link.update(merge<Partial<Link>>(_, { from: module }))
+    const id = `${module}/${name}`
+    const plug_context = get(plug_store)[id]
+
+    if (plug_context.type == PlugType.Input) {
+      active_link.update(merge<Partial<Link>>(_, { from: id }))
     } else {
-      active_link.update(merge<Partial<Link>>(_, { to: module, to_input }))
+      active_link.update(merge<Partial<Link>>(_, { to: id }))
     }
 
     const link = get(active_link)
@@ -26,29 +42,42 @@ const init = () => {
   // move together with plug calls?
   const register = (
     module: string,
-    for_input: AnyInput | null,
-    node: Writable<Element>
+    name: string,
+    for_module: AbstractModule<ModuleType>,
+    node: Writable<Element>,
+    for_input?: AnyInput
   ) => {
-    const module_state = modules.store()
-
-    if (for_input == null) {
-      module_state.update(
-        replace<AnyModule>(
-          isMatch({ id: module }),
-          merge<Partial<AnyModule>>(_, { context: { output: node } })
-        )
-      )
-    } else {
-      module_state.update(
-        replace<AnyModule>(
-          isMatch({ id: module }),
-          merge<Partial<AnyModule>>(_, { context: { input: { [for_input]: node } } })
-        )
-      )
+    const id = `${module}/${name}`
+    if (get(plug_store)[id]) {
+      throw new Error(`Plug: '${id}' already exists. Please use unique naming`)
     }
+    plug_store.update(
+      merge<Partial<PlugStore>>(_, {
+        [id]: {
+          node,
+          module: for_module,
+          input: for_input,
+          type: !for_input ? PlugType.Output : PlugType.Input
+        }
+      })
+    )
+  }
+
+  const remove = (module: string, name: string) => {
+    const id = `${module}/${name}`
+    links
+      .store()
+      .update(links => links.filter(link => !(link.to == id || link.from === id)))
+    plug_store.update(omit(id))
+  }
+
+  const store = () => {
+    return plug_store
   }
 
   return {
+    remove,
+    store,
     register,
     make
   }

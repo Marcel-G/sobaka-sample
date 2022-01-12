@@ -23,7 +23,6 @@
 
   const loading = clock.module_id
 
-  modules.register(id, clock)
   context.link(frequency_param, clock, Clock.Input.Frequency)
 
   const frequency = as_writable(frequency_param)
@@ -45,6 +44,6 @@
   {/await}
 
   <div slot="outputs">
-    <Plug {id} label="output" />
+    <Plug {id} for_module={clock} name="output" />
   </div>
 </Panel>

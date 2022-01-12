@@ -1,12 +1,18 @@
-import { ModuleType as ExternModuleType } from 'sobaka-sample-web-audio'
-
-export enum CustomModule {
+/**
+ * Modules that can be spawned on the frontend.
+ * These can be made up of several SobakaModuleTypes.
+ * Core modules map directly to SobakaModuleTypes.
+ */
+export enum ModuleUI {
+  // Core module types
+  Clock = 'Clock',
+  Delay = 'Delay',
+  Envelope = 'Envelope',
+  Oscillator = 'Oscillator',
+  Parameter = 'Parameter',
+  Sink = 'Sink',
+  Vca = 'Vca',
+  // Frontend module types
+  MultiSequencer = 'MultiSequencer',
   Lfo = 'Lfo'
-}
-
-export type ModuleType = ExternModuleType | CustomModule
-
-export const MODULES = {
-  ...ExternModuleType,
-  ...CustomModule
 }

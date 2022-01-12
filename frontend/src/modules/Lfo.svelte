@@ -26,7 +26,6 @@
 
   const loading = oscillator.module_id
 
-  modules.register(id, oscillator)
   context.link(frequency_param, oscillator, Oscillator.Input.Frequency)
 
   const frequency = as_writable(frequency_param)
@@ -49,6 +48,6 @@
     <Knob label="Frequency" bind:value={$frequency.value} bind:range={$frequency.range} />
   {/await}
   <div slot="outputs">
-    <Plug {id} label="output" />
+    <Plug {id} name="output" for_module={oscillator} />
   </div>
 </Panel>

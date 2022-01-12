@@ -1,5 +1,5 @@
+import { debounce } from 'lodash'
 import type { Link } from './links'
-import { throttle } from 'lodash'
 import links from './links'
 import modules, { AnyModule } from './modules'
 import { local_storage as local_storage_adapter } from './persist'
@@ -32,9 +32,11 @@ export const init = () => {
   const global = global_state()
   const persistant = local_storage_adapter(global)
 
-  const commit = throttle(() => {
+  const commit = debounce(() => {
     const id = persistant.save()
-    history.pushState({}, '', `/workspace/${id}`)
+    if (id) {
+      history.pushState({}, '', `/workspace/${id}`)
+    }
   }, 2000)
 
   const cleanup = [modules.store().subscribe(commit), links.store().subscribe(commit)]

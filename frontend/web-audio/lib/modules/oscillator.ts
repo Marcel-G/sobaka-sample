@@ -1,5 +1,5 @@
 import { AbstractStatefulModule, State } from '.'
-import { Input, ModuleType, OscillatorWave } from '..'
+import { ClockEnum as Input, ModuleType, OscillatorWave } from '..'
 import { SobakaContext } from '../sobaka.node'
 
 export class Oscillator extends AbstractStatefulModule<ModuleType.Oscillator> {

@@ -10,16 +10,15 @@
 </style>
 
 <script lang="ts">
-  import { AnyInput, ModuleType, SobakaContext } from 'sobaka-sample-web-audio'
+  import { SobakaContext } from 'sobaka-sample-web-audio'
   import { getContext, onDestroy } from 'svelte'
   import { derived, get } from 'svelte/store'
   import type { Writable } from 'svelte/store'
-  import type { ModuleContext } from '../state/modules'
+  import { PlugContext } from '../state/plug'
 
   export let on_click: () => void
-  export let from: Required<ModuleContext<ModuleType>>
-  export let to: Required<ModuleContext<ModuleType>>
-  export let to_input: AnyInput
+  export let from: PlugContext
+  export let to: PlugContext
   const context: Writable<SobakaContext> = getContext('sampler')
 
   interface Position {
@@ -37,17 +36,18 @@
     }
   }
 
-  const from_node = from.output
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-  const to_node = to.input[to_input]!
-
-  const from_pos = derived(from_node, to_center_point)
-  const to_pos = derived(to_node, to_center_point)
+  const from_pos = derived(from.node, to_center_point)
+  const to_pos = derived(to.node, to_center_point)
 
   // @todo store AbstractModule in state
-  const disconnect = get(context).link(from.module, to.module, to_input)
-
-  onDestroy(disconnect)
+  if (to.input) {
+    const disconnect = get(context).link(from.module, to.module, to.input)
+    onDestroy(disconnect)
+  } else {
+    throw new Error(
+      `Cannot connect to output node`
+    )
+  }
 </script>
 
 <line
