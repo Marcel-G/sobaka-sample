@@ -1,6 +1,7 @@
 <script lang="ts">
-  import { SobakaContext, Sequencer, Sum } from 'sobaka-sample-web-audio'
+  import { SobakaContext, Sequencer, Sum } from 'sobaka-sample-audio-worklet'
   import { derived, writable } from 'svelte/store'
+  import type { Writable } from 'svelte/store'
   import Panel from '../components/Panel.svelte'
   import Plug from '../components/Plug.svelte'
   import modules from '../state/modules'
@@ -16,7 +17,7 @@
   export let position: { x: number; y: number }
   export let context: SobakaContext
   export let initial_state: State = {
-    sequencers: [{ sequence: Array(8).fill(false) }]
+    sequencers: [{ sequence: Array(8).fill(false) as boolean[] }]
   }
 
   const sum = new Sum(context)
@@ -24,6 +25,7 @@
   const sequencers = writable(
     initial_state.sequencers.map(state => writable({ step: 0, ...state }))
   )
+  let state: Writable<Sequencer['state']>[] = []
 
   $: state = $sequencers.map(state => state)
 

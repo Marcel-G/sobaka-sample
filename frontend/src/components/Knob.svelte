@@ -53,7 +53,6 @@
 <script lang="ts">
   import { throttle } from 'lodash'
 
-  export let label: string
   export let value = 0.0
   export let range: number[] = [0, 20000]
 

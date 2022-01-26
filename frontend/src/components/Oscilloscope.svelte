@@ -1,7 +1,8 @@
 <script lang="ts">
-  import type { SobakaContext } from 'sobaka-sample-web-audio'
+  import type { SobakaContext } from 'sobaka-sample-audio-worklet'
   import { getContext, onMount } from 'svelte'
-  import { get, Writable } from 'svelte/store'
+  import { get } from 'svelte/store'
+  import type { Writable } from 'svelte/store'
   const context: Writable<SobakaContext> = getContext('sampler')
 
   let canvas: HTMLCanvasElement

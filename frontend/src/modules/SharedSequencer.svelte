@@ -24,10 +24,12 @@
 </style>
 
 <script lang="ts">
-  import { SobakaContext, Sequencer } from 'sobaka-sample-web-audio'
+  import { merge, __ as _ } from 'lodash/fp'
+
+  import { SobakaContext, Sequencer } from 'sobaka-sample-audio-worklet'
   import { onDestroy } from 'svelte'
-  import { get, Writable } from 'svelte/store'
-  import { bind_with } from '../writable_module'
+  import { get } from 'svelte/store'
+  import type { Writable } from 'svelte/store'
 
   export let context: SobakaContext
   export let state: Writable<Sequencer['state']>
@@ -36,9 +38,13 @@
   const sequencer = new Sequencer(context, get(state))
   on_mount(sequencer)
 
-  const loading = sequencer.module_id
+  const loading = sequencer.node_id
 
-  const cleanup = bind_with(sequencer, state)
+  void sequencer.subscribe('StepChange', event => {
+    state.update(merge(_, event))
+  })
+
+  $: void sequencer.update($state)
 
   function toggle_index(i: number) {
     state.update(state => ({
@@ -48,7 +54,6 @@
   }
 
   onDestroy(() => {
-    cleanup()
     void sequencer.dispose()
   })
 </script>

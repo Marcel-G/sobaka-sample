@@ -1,0 +1,44 @@
+{
+  "name": "sobaka-sample-audio-worklet",
+  "version": "1.0.0",
+  "description": "",
+  "files": [
+    "dist",
+    "webpack.loaders.js"
+  ],
+  "main": "./dist/lib",
+  "types": "./dist/lib",
+  "scripts": {
+    "build:tsc": "tsc",
+    "build:schema": "rm -rf schema && cargo run --example schema && quicktype -s schema --just-types schema/*.json -l ts -o schema/sobaka_sample_audio_worklet_rpc.ts",
+    "build:wasm": "wasm-pack build --target web && mkdir -p dist && cp -r pkg dist/",
+    "watch:wasm": "cargo watch -w . -w '../../audio-core' -i pkg -i dist -i README.md -s 'npm run build:wasm'",
+    "prebuild": "rimraf dist pkg",
+    "format": "prettier --no-error-on-unmatched-pattern --write ./lib/**/*.{js,ts}",
+    "prelint": "npm run format",
+    "lint": "eslint './lib/**/*.{js,ts}'",
+    "lint:fix": "eslint --fix './lib/**/*.{js,ts}'",
+    "build": "npm run build:schema && npm run build:wasm && npm run build:tsc",
+    "watch": "concurrently 'npm run watch:wasm' 'tsc -w'"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^5.7.0",
+    "@typescript-eslint/parser": "^5.7.0",
+    "concurrently": "^6.2.0",
+    "eslint": "^8.4.1",
+    "file-loader": "^6.2.0",
+    "quicktype": "^15.0.260",
+    "rimraf": "^2.7.1",
+    "webpack": "^4.46.0",
+    "worklet-loader": "^1.0.0"
+  },
+  "dependencies": {
+    "@open-rpc/client-js": "^1.7.1",
+    "eventemitter3": "^4.0.7",
+    "fastestsmallesttextencoderdecoder": "^1.0.22",
+    "prettier": "^2.5.1",
+    "typescript": "^4.3.4"
+  }
+}

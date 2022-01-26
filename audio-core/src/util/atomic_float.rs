@@ -1,5 +1,6 @@
 use std::sync::atomic::{AtomicU64, Ordering};
 
+#[derive(Default)]
 pub struct AtomicFloat {
     inner: AtomicU64,
 }

@@ -1,5 +1,5 @@
 import { merge, omit, __ as _ } from 'lodash/fp'
-import { AbstractModule, AnyInput, ModuleType } from 'sobaka-sample-web-audio/dist/lib'
+import { AbstractNode, AnyInput, NodeType } from 'sobaka-sample-audio-worklet/dist/lib'
 import { get, Readable, writable, Writable } from 'svelte/store'
 import links, { is_fully_linked, Link } from './links'
 
@@ -11,7 +11,7 @@ enum PlugType {
 export interface PlugContext {
   type: PlugType
   node: Readable<Element>
-  module: AbstractModule<ModuleType>
+  module: AbstractNode<NodeType>
   input?: AnyInput
 }
 
@@ -43,7 +43,7 @@ const init = () => {
   const register = (
     module: string,
     name: string,
-    for_module: AbstractModule<ModuleType>,
+    for_module: AbstractNode<NodeType>,
     node: Writable<Element>,
     for_input?: AnyInput
   ) => {

@@ -1,7 +1,7 @@
 const path = require("path");
 const { merge } = require("webpack-merge");
 const HtmlWebpackPlugin = require('html-webpack-plugin');
-const webAudioPartial = require("sobaka-sample-web-audio/webpack.partial");
+const webAudioPartial = require("sobaka-sample-audio-worklet/webpack.partial");
 const sveltePreprocess = require("svelte-preprocess");
 
 const dist = path.resolve(__dirname, "dist");

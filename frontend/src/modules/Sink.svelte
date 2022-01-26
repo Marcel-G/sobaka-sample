@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { SobakaContext, Sink } from 'sobaka-sample-web-audio'
+  import { SobakaContext, Sink } from 'sobaka-sample-audio-worklet'
   import { onDestroy } from 'svelte'
   import Panel from '../components/Panel.svelte'
   import Plug from '../components/Plug.svelte'
@@ -11,7 +11,7 @@
 
   const sink = new Sink(context)
 
-  const loading = sink.module_id
+  const loading = sink.node_id
 
   onDestroy(() => {
     void sink.dispose()

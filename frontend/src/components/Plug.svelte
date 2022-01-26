@@ -12,7 +12,7 @@
 </style>
 
 <script lang="ts">
-  import type { AbstractModule, AnyInput, ModuleType } from 'sobaka-sample-web-audio'
+  import type { AbstractNode, AnyInput, NodeType } from 'sobaka-sample-audio-worklet'
   import { getContext, onDestroy } from 'svelte'
   import { writable } from 'svelte/store'
   import type { Writable } from 'svelte/store'
@@ -21,7 +21,7 @@
   export let id: string
   export let name: string
   export let label: string = name
-  export let for_module: AbstractModule<ModuleType>
+  export let for_module: AbstractNode<NodeType>
   export let for_input: AnyInput | undefined = undefined
 
   const move_context: EventTarget = getContext('move_context')

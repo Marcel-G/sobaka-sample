@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { SobakaContext } from 'sobaka-sample-web-audio'
+  import { SobakaContext } from 'sobaka-sample-audio-worklet'
 
   import { Router, Route, Link } from 'svelte-routing'
   import { onDestroy, onMount, setContext } from 'svelte'

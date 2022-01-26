@@ -10,11 +10,11 @@
 </style>
 
 <script lang="ts">
-  import { SobakaContext } from 'sobaka-sample-web-audio'
+  import { SobakaContext } from 'sobaka-sample-audio-worklet'
   import { getContext, onDestroy } from 'svelte'
   import { derived, get } from 'svelte/store'
   import type { Writable } from 'svelte/store'
-  import { PlugContext } from '../state/plug'
+  import type { PlugContext } from '../state/plug'
 
   export let on_click: () => void
   export let from: PlugContext
@@ -39,13 +39,13 @@
   const from_pos = derived(from.node, to_center_point)
   const to_pos = derived(to.node, to_center_point)
 
-  // @todo store AbstractModule in state
+  // @todo store AbstractNode in state
   if (to.input) {
     const disconnect = get(context).link(from.module, to.module, to.input)
     onDestroy(disconnect)
   } else {
     throw new Error(
-      `Cannot connect to output node`
+      `Cannot connect to output node: ${JSON.stringify({ from, to }, null, 2)}`
     )
   }
 </script>

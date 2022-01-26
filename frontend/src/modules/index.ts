@@ -1,7 +1,7 @@
 /**
  * Modules that can be spawned on the frontend.
- * These can be made up of several SobakaModuleTypes.
- * Core modules map directly to SobakaModuleTypes.
+ * These can be made up of several SobakaNodeTypes.
+ * Core modules map directly to SobakaNodeTypes.
  */
 export enum ModuleUI {
   // Core module types

@@ -1,17 +1,16 @@
 <script lang="ts">
-  import { Parameter, SobakaContext } from 'sobaka-sample-web-audio'
+  import { Parameter, SobakaContext } from 'sobaka-sample-audio-worklet'
   import { onDestroy } from 'svelte'
+  import { writable } from 'svelte/store'
   import Knob from '../components/Knob.svelte'
   import Panel from '../components/Panel.svelte'
   import Plug from '../components/Plug.svelte'
   import modules from '../state/modules'
-  import { as_writable } from '../writable_module'
 
   interface State {
     parameter: Parameter['state']
   }
 
-  export let label: string
   export let initial_state: State = {
     parameter: { range: [0, 1], value: 0.0 }
   }
@@ -21,15 +20,16 @@
   export let position: { x: number; y: number }
   export let context: SobakaContext
 
+  const state = writable(initial_state.parameter)
+
   const parameter = new Parameter(context, initial_state.parameter)
 
-  const loading = parameter.module_id
+  $: {
+    void parameter.update($state)
+    modules.update(id, { parameter: $state })
+  }
 
-  const state = as_writable(parameter)
-
-  $: modules.update(id, {
-    parameter: $state
-  })
+  const loading = parameter.node_id
 
   onDestroy(() => {
     void parameter.dispose()
@@ -41,7 +41,7 @@
     <p>Loading...</p>
   {:then}
     <span>
-      <Knob label="Frequency" bind:value={$state.value} bind:range={$state.range} />
+      <Knob bind:value={$state.value} bind:range={$state.range} />
     </span>
   {/await}
   <div slot="outputs">

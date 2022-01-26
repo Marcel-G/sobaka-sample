@@ -3,13 +3,13 @@
   "name": "sobaka-sample",
   "version": "0.1.0",
   "scripts": {
-    "prebuild": "cd web-audio && npm run build",
+    "prebuild": "cd ../audio-worklet && npm run build",
     "build": "rimraf dist pkg && webpack --stats-children",
     "start": "rimraf dist pkg && webpack serve --stats-children --open",
-    "postinstall": "cd web-audio && npm install",
+    "postinstall": "cd ../audio-worklet && npm install",
     "format": "prettier --no-error-on-unmatched-pattern --write \"./src/**/*.{js,svelte,ts}\"",
     "lint": "eslint './src/**/*.{js,ts,svelte}'",
-    "postlint": "cd web-audio && npm run lint",
+    "postlint": "cd ../audio-worklet && npm run lint",
     "lint:fix": "eslint --fix './src/**/*.{js,ts,svelte}'",
     "prelint": "npm run format"
   },
@@ -37,7 +37,7 @@
   },
   "dependencies": {
     "lodash": "^4.17.21",
-    "sobaka-sample-web-audio": "file:web-audio",
+    "sobaka-sample-audio-worklet": "file:../audio-worklet",
     "svelte": "^3.45.0",
     "svelte-routing": "^1.6.0",
     "tslib": "^2.3.0",

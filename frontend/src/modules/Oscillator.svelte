@@ -4,13 +4,13 @@
     OscillatorWave,
     Parameter,
     SobakaContext
-  } from 'sobaka-sample-web-audio'
+  } from 'sobaka-sample-audio-worklet'
   import { onDestroy } from 'svelte'
+  import { writable } from 'svelte/store'
   import Knob from '../components/Knob.svelte'
   import Panel from '../components/Panel.svelte'
   import Plug from '../components/Plug.svelte'
   import modules from '../state/modules'
-  import { as_writable } from '../writable_module'
 
   interface State {
     frequency: Parameter['state']
@@ -29,17 +29,21 @@
   const oscillator = new Oscillator(context, initial_state.oscillator)
   const frequency_param = new Parameter(context, initial_state.frequency)
 
-  const loading = oscillator.module_id
+  const loading = oscillator.node_id
 
   context.link(frequency_param, oscillator, Oscillator.Input.Frequency)
 
-  const frequency = as_writable(frequency_param)
-  const oscillator_state = as_writable(oscillator)
+  const frequency = writable(initial_state.frequency)
+  const oscillator_state = writable(initial_state.oscillator)
 
-  $: modules.update(id, {
-    frequency: $frequency,
-    oscillator: $oscillator_state
-  })
+  $: {
+    void frequency_param.update($frequency)
+    void oscillator.update($oscillator_state)
+    modules.update(id, {
+      frequency: $frequency,
+      oscillator: $oscillator_state
+    })
+  }
 
   function change_wave(wave: OscillatorWave) {
     oscillator_state.set({ wave })
@@ -54,7 +58,7 @@
   {#await loading}
     <p>Loading...</p>
   {:then}
-    <Knob label="Frequency" bind:value={$frequency.value} bind:range={$frequency.range} />
+    <Knob bind:value={$frequency.value} bind:range={$frequency.range} />
     <button on:click={() => change_wave(Oscillator.Wave.Sine)}>Sine</button>
     <button on:click={() => change_wave(Oscillator.Wave.Saw)}>Saw</button>
     <button on:click={() => change_wave(Oscillator.Wave.Square)}>Square</button>

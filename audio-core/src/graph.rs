@@ -1,13 +1,13 @@
-use dasp::graph::NodeData;
+use dasp::graph::{sinks, NodeData};
 use petgraph::graph::{DefaultIx, EdgeIndex as ExtEdgeIndex};
 
 pub type NodeIndex<Ix = DefaultIx> = petgraph::graph::NodeIndex<Ix>;
 pub type EdgeIndex = ExtEdgeIndex;
-use crate::node::AudioNode;
+use crate::node::{AudioInput, AudioNode};
 
 const SAMPLE_RATE: f64 = 44100.;
 
-type Graph = petgraph::stable_graph::StableGraph<NodeData<AudioNode>, ()>;
+type Graph = petgraph::stable_graph::StableGraph<NodeData<AudioNode>, AudioInput>;
 type Processor = dasp::graph::Processor<Graph>;
 
 pub struct AudioGraph {
@@ -48,8 +48,57 @@ impl AudioGraph {
         self.graph.remove_node(node)
     }
 
-    pub fn add_edge(&mut self, a: NodeIndex, b: NodeIndex) -> EdgeIndex {
-        self.graph.add_edge(a, b, ())
+    pub fn add_edge(
+        &mut self,
+        source: NodeIndex,
+        destination: NodeIndex,
+        destination_input: &AudioInput,
+    ) -> Result<EdgeIndex, &'static str> {
+        if self.get_audio_node(source).is_none() {
+            return Err("Source node not found");
+        }
+        if let Some(destination_node) = self.get_audio_node(destination) {
+            match (destination_node, destination_input) {
+                (AudioNode::Delay(_), AudioInput::Delay(_)) => {
+                    Ok(self
+                        .graph
+                        .add_edge(source, destination, destination_input.clone()))
+                }
+                (AudioNode::Oscillator(_), AudioInput::Oscillator(_)) => {
+                    Ok(self
+                        .graph
+                        .add_edge(source, destination, destination_input.clone()))
+                }
+                (AudioNode::Envelope(_), AudioInput::Envelope(_)) => {
+                    Ok(self
+                        .graph
+                        .add_edge(source, destination, destination_input.clone()))
+                }
+                (AudioNode::Sequencer(_), AudioInput::Sequencer(_)) => {
+                    Ok(self
+                        .graph
+                        .add_edge(source, destination, destination_input.clone()))
+                }
+                (AudioNode::Volume(_), AudioInput::Volume(_)) => {
+                    Ok(self
+                        .graph
+                        .add_edge(source, destination, destination_input.clone()))
+                }
+                (AudioNode::Sink(_), AudioInput::Sink(_)) => {
+                    Ok(self
+                        .graph
+                        .add_edge(source, destination, destination_input.clone()))
+                }
+                (AudioNode::Sum(_), AudioInput::Sum(_)) => {
+                    Ok(self
+                        .graph
+                        .add_edge(source, destination, destination_input.clone()))
+                }
+                _ => Err("Input not compatible with destination node"),
+            }
+        } else {
+            Err("Destination node not found")
+        }
     }
 
     pub fn remove_edge(&mut self, edge: EdgeIndex) {
@@ -70,6 +119,12 @@ impl AudioGraph {
         } else {
             None
         }
+    }
+
+    pub fn sinks(&self) -> Vec<NodeIndex> {
+        sinks(&self.graph)
+            .filter(|n| matches!(self.get_audio_node(*n), Some(AudioNode::Sink(_))))
+            .collect()
     }
 }
 

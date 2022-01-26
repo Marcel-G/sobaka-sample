@@ -15,7 +15,8 @@
   import links from '../state/links'
   import type { Link } from '../state/links'
   import Wire from './Wire.svelte'
-  import plug, { PlugContext } from '../state/plug'
+  import plug from '../state/plug'
+  import type { PlugContext } from '../state/plug'
 
   const link_positions = derived([links.store(), plug.store()], ([links, plugs]) =>
     links

@@ -20,7 +20,9 @@
 
   $: if (id == 'new') {
     const id = persistant.save()
-    history.pushState({}, '', `/workspace/${id}`)
+    if (id) {
+      history.pushState({}, '', `/workspace/${id}`)
+    }
   } else {
     if (!persistant.load(id)) {
       console.error('Cannot load from file')

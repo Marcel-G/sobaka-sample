@@ -1,11 +1,11 @@
 <script lang="ts">
-  import { SobakaContext, Delay, Parameter } from 'sobaka-sample-web-audio'
+  import { SobakaContext, Delay, Parameter } from 'sobaka-sample-audio-worklet'
   import { onDestroy } from 'svelte'
+  import { writable } from 'svelte/store'
   import Knob from '../components/Knob.svelte'
   import Panel from '../components/Panel.svelte'
   import Plug from '../components/Plug.svelte'
   import modules from '../state/modules'
-  import { as_writable } from '../writable_module'
 
   interface State {
     time: Parameter['state']
@@ -22,15 +22,18 @@
   const delay = new Delay(context)
   const time_param = new Parameter(context, initial_state.time)
 
-  const loading = delay.module_id
+  const loading = delay.node_id
 
   context.link(time_param, delay, Delay.Input.Time)
 
-  const time = as_writable(time_param)
+  const time = writable(initial_state.time)
 
-  $: modules.update(id, {
-    time: $time
-  })
+  $: {
+    void time_param.update($time)
+    modules.update(id, {
+      time: $time
+    })
+  }
 
   onDestroy(() => {
     void delay.dispose()
@@ -41,7 +44,7 @@
   {#await loading}
     <p>Loading...</p>
   {:then}
-    <Knob label="Time" bind:value={$time.value} bind:range={$time.range} />
+    <Knob bind:value={$time.value} bind:range={$time.range} />
   {/await}
 
   <div slot="inputs">
