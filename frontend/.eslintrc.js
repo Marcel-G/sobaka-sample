@@ -23,6 +23,7 @@ module.exports = {
     }
   ],
   settings: {
+    'svelte3/named-blocks': true,
     'svelte3/typescript': require('typescript'),
     // ignore style tags in Svelte because of Tailwind CSS
     // See https://github.com/sveltejs/eslint-plugin-svelte3/issues/70

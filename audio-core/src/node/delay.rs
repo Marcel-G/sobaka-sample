@@ -8,19 +8,19 @@ use serde::{Deserialize, Serialize};
 
 use crate::util::input::{filter_inputs, summed};
 
-const SAMPLE_RATE: f64 = 44100.;
-
 pub struct DelayNode {
     buffer: Bounded<Vec<f32>>,
     interpolator: Sinc<[f32; 64]>,
     interpolation_value: f32,
+    sample_rate: f64,
 }
 
-impl Default for DelayNode {
-    fn default() -> Self {
+impl DelayNode {
+    pub fn new(sample_rate: f64) -> Self {
         let frames = Fixed::from([0.0; 64]);
         let interpolator = Sinc::new(frames);
         Self {
+            sample_rate,
             buffer: Bounded::from(vec![0.0; 44100 * 10]),
             interpolator,
             interpolation_value: 0.0,
@@ -61,7 +61,7 @@ impl Node for DelayNode {
                 .interpolator
                 .interpolate(self.interpolation_value.into());
 
-            let target_length = d.clamp(0.0, 10.0) * SAMPLE_RATE as f32;
+            let target_length = d.clamp(0.0, 10.0) * self.sample_rate as f32;
             let consume = source_length - target_length;
             let ratio = 4.0_f32.powf((consume / 10000.0).clamp(-1.0, 1.0));
 

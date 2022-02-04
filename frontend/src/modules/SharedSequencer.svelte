@@ -1,14 +1,17 @@
 <style>
   .sequence {
     display: flex;
-    justify-content: center;
+    justify-content: space-between;
+    row-gap: 0.25rem;
+    margin-bottom: 0.25rem;
   }
 
   .step {
-    height: 2rem;
-    width: 2rem;
-    border: 1px solid black;
+    height: 1.5rem;
+    width: 1.5rem;
+    border: 2px solid black;
     cursor: pointer;
+    border-radius: 0.5rem;
   }
   .step.active {
     background-color: pink;
@@ -23,35 +26,44 @@
   }
 </style>
 
+<script context="module" lang="ts">
+  export type SequencerLayout = Omit<Sequencer['state'], 'step'>
+</script>
+
 <script lang="ts">
-  import { merge, __ as _ } from 'lodash/fp'
-
-  import { SobakaContext, Sequencer } from 'sobaka-sample-audio-worklet'
+  import { Sequencer } from 'sobaka-sample-audio-worklet'
   import { onDestroy } from 'svelte'
-  import { get } from 'svelte/store'
-  import type { Writable } from 'svelte/store'
+  import { get_module_context } from './ModuleWrapper.svelte'
 
-  export let context: SobakaContext
-  export let state: Writable<Sequencer['state']>
+  const { context, get_sub_state, update_sub_state } = get_module_context()
+
+  export let name: string
+  export let sequencer_state: SequencerLayout = {
+    sequence: Array(8).fill(false) as boolean[]
+  }
   export let on_mount: (sequencer: Sequencer) => void
 
-  const sequencer = new Sequencer(context, get(state))
+  let active_step = 0
+  let { sequence } = get_sub_state<SequencerLayout>(name) || sequencer_state
+
+  const sequencer = new Sequencer(context, { step: 0, sequence })
   on_mount(sequencer)
 
-  const loading = sequencer.node_id
-
   void sequencer.subscribe('StepChange', event => {
-    state.update(merge(_, event))
+    active_step = event.step
   })
 
-  $: void sequencer.update($state)
+  // Update the sobaka node when the state changes
+  $: void sequencer.update({ step: active_step, sequence })
+
+  // Update the global state when state changes
+  $: update_sub_state(name, { sequence })
 
   function toggle_index(i: number) {
-    state.update(state => ({
-      ...state,
-      sequence: state.sequence.map((step, index) => (i === index ? !step : step))
-    }))
+    sequence = sequence.map((step, index) => (i === index ? !step : step))
   }
+
+  const loading = sequencer.node_id
 
   onDestroy(() => {
     void sequencer.dispose()
@@ -62,11 +74,11 @@
   <p>Loading...</p>
 {:then}
   <div class="sequence">
-    {#each $state.sequence as step, i}
+    {#each sequence as step, i}
       <div
         class="step"
         class:selected={step}
-        class:active={i === $state.step}
+        class:active={i === active_step}
         on:click={() => toggle_index(i)}
       />
     {/each}

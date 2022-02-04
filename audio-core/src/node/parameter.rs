@@ -1,9 +1,12 @@
 use dasp::{
     graph::{Buffer, Input, Node},
-    Signal,
+    Frame, Signal,
 };
+use enum_map::Enum;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+
+use crate::util::input::{filter_inputs, summed};
 
 use super::StatefulNode;
 
@@ -11,6 +14,11 @@ pub struct ParameterNode {
     pub range: (f32, f32),
     pub value: f32,
     current_value: f32,
+}
+
+#[derive(Clone, Enum, PartialEq, Eq, Hash, Serialize, Deserialize, JsonSchema)]
+pub enum ParameterInput {
+    Cv,
 }
 
 #[derive(Default, Serialize, Deserialize, JsonSchema)]
@@ -40,27 +48,27 @@ impl Signal for ParameterNode {
     type Frame = f32;
 
     fn next(&mut self) -> Self::Frame {
-        if (self.current_value - self.value).abs() > 0.005 {
-            self.current_value += (self.value - self.current_value) * 0.25;
-        } else {
-            self.current_value = self.value;
-        }
+        self.current_value += (self.value - self.current_value) / 2000.;
 
         self.current_value
     }
 }
 
 impl Node for ParameterNode {
-    type InputType = ();
+    type InputType = ParameterInput;
     fn process(&mut self, inputs: &[Input<Self::InputType>], output: &mut [Buffer]) {
-        (self as &mut (dyn Signal<Frame = f32> + Send)).process(inputs, output)
+        let control = summed(&filter_inputs(inputs, &ParameterInput::Cv));
+        for ix in 0..Buffer::LEN {
+            let frame = self.next() + control[ix];
+            output[0][ix] = unsafe { *frame.channel_unchecked(0) };
+        }
     }
 }
 
 impl StatefulNode for ParameterNode {
     type State = ParameterState;
 
-    fn create(state: Self::State) -> Self {
+    fn create(state: Self::State, _sample_rate: f64) -> Self {
         Self::new(state)
     }
 

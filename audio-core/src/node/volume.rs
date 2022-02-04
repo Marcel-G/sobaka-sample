@@ -10,7 +10,6 @@ use crate::util::input_signal::InputSignalNode;
 
 #[derive(Clone, PartialEq, Enum, Eq, Hash, Serialize, Deserialize, JsonSchema)]
 pub enum VolumeInput {
-    Vc,
     Signal,
     Level,
 }
@@ -20,7 +19,6 @@ impl Default for VolumeNode {
     fn default() -> Self {
         let node = InputSignalNode::new(|s| {
             s.input(VolumeInput::Signal)
-                .mul_amp(s.input(VolumeInput::Vc))
                 .mul_amp(s.input(VolumeInput::Level))
                 .map(Sample::to_sample::<f32>)
         });

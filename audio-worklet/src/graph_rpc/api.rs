@@ -8,30 +8,39 @@ use jsonrpc_pubsub::{typed, SubscriptionId};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use sobaka_sample_audio_core::node::{
+    filter::node::FilterState,
     oscillator::OscillatorState,
     parameter::ParameterState,
+    quantiser::QuantiserState,
     sequencer::{SequencerEvent, SequencerState},
     AudioInput,
 };
 
 #[derive(Serialize, Deserialize, JsonSchema)]
 pub enum NodeType {
+    Delay,
     Envelope,
+    Filter,
+    Noise,
     Oscillator,
     Parameter,
+    Quantiser,
+    Reverb,
+    SampleAndHold,
     Sequencer,
-    Volume,
-    Delay,
     Sink,
     Sum,
+    Volume,
 }
 
 pub type NodeInputTypeDTO = AudioInput;
 
 #[derive(Serialize, Deserialize, JsonSchema, TryInto)]
 pub enum NodeStateDTO {
+    Filter(FilterState),
     Oscillator(OscillatorState),
     Parameter(ParameterState),
+    Quantiser(QuantiserState),
     Sequencer(SequencerState),
 }
 

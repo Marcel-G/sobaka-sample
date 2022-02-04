@@ -11,35 +11,11 @@
   import Toolbox from './components/Toolbox.svelte'
   import Wires from './components/Wires.svelte'
   import Workspace from './components/Workspace.svelte'
-  import Clock from './modules/Clock.svelte'
-  import Envelope from './modules/Envelope.svelte'
-  import Oscillator from './modules/Oscillator.svelte'
-  import Parameter from './modules/Parameter.svelte'
-  import MultiSequencer from './modules/MultiSequencer.svelte'
-  import Sink from './modules/Sink.svelte'
-  import Volume from './modules/Volume.svelte'
-  import Lfo from './modules/LFO.svelte'
-  import Delay from './modules/Delay.svelte'
   import modules from './state/modules'
-  import type { Module } from './state/modules'
-  import { ModuleUI } from './modules'
+  import ModuleWrapper from './modules/ModuleWrapper.svelte'
 
   let sampler: Writable<SobakaContext | null> = writable(null)
   setContext('sampler', sampler)
-
-  function get_component(module: Module<ModuleUI>) {
-    return {
-      [ModuleUI.Clock]: Clock,
-      [ModuleUI.Envelope]: Envelope,
-      [ModuleUI.Oscillator]: Oscillator,
-      [ModuleUI.Parameter]: Parameter,
-      [ModuleUI.MultiSequencer]: MultiSequencer,
-      [ModuleUI.Sink]: Sink,
-      [ModuleUI.Vca]: Volume,
-      [ModuleUI.Lfo]: Lfo,
-      [ModuleUI.Delay]: Delay
-    }[module.type]
-  }
 
   const module_list = modules.store()
 
@@ -66,13 +42,7 @@
         <Toolbox />
         <Workspace id={params.id}>
           {#each $module_list as module (module.id)}
-            <svelte:component
-              this={get_component(module)}
-              context={$sampler}
-              id={module.id}
-              initial_state={module.state}
-              position={module.position}
-            />
+            <ModuleWrapper {module} context={$sampler} />
           {/each}
           <Wires />
         </Workspace>

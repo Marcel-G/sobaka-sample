@@ -1,11 +1,10 @@
 <style>
   .plug {
     cursor: pointer;
-    width: 0.75rem;
-    height: 0.75rem;
-    margin: 0.25rem;
+    width: 0.625rem;
+    height: 0.625rem;
     background-color: white;
-    border: 3px solid pink;
+    border: 2px solid pink;
 
     border-radius: 50%;
   }
@@ -16,19 +15,21 @@
   import { getContext, onDestroy } from 'svelte'
   import { writable } from 'svelte/store'
   import type { Writable } from 'svelte/store'
-  import plug from '../state/plug'
+  import plug from '../../state/plug'
+  import { get_module_context } from '../ModuleWrapper.svelte'
 
-  export let id: string
-  export let name: string
-  export let label: string = name
-  export let for_module: AbstractNode<NodeType>
+  const { id } = get_module_context()
+
+  export let for_node: AbstractNode<NodeType>
   export let for_input: AnyInput | undefined = undefined
+  export let name: string = for_input || 'output'
+  export let label: string = name
 
   const move_context: EventTarget = getContext('move_context')
 
   const node: Writable<Element> = writable()
 
-  plug.register(id, name, for_module, node, for_input)
+  plug.register(id, name, for_node, node, for_input)
 
   function handle_click() {
     plug.make(id, name)

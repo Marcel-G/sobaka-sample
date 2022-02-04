@@ -75,20 +75,34 @@ where
             .storage
             .0
             .iter()
-            .map(|(name, _)| (name.clone(), summed(&filter_inputs(inputs, &name))))
+            .filter_map(|(name, _)| {
+                let named_inputs = filter_inputs(inputs, &name);
+                if !named_inputs.is_empty() {
+                    Some((name.clone(), summed(&named_inputs)))
+                } else {
+                    None
+                }
+            })
             .collect::<Vec<_>>();
 
-        for ix in 0..Buffer::LEN {
-            // @todo multiple channels
-            let input_frames = input_buffers
-                .iter()
-                .map(|(i, buffer)| (i.clone(), &buffer[ix]))
-                .collect();
+        // Silence output until all inputs are connected
+        if input_buffers.len() != self.storage.0.len() {
+            for out_buffer in output.iter_mut() {
+                out_buffer.silence();
+            }
+        } else {
+            for ix in 0..Buffer::LEN {
+                // @todo multiple channels
+                let input_frames = input_buffers
+                    .iter()
+                    .map(|(i, buffer)| (i.clone(), &buffer[ix]))
+                    .collect();
 
-            let frame = self.next(input_frames);
-            for (ch, buffer) in output.iter_mut().enumerate().take(channels) {
-                // Safe, as we verify the number of channels at the beginning of the function.
-                buffer[ix] = unsafe { *frame.channel_unchecked(ch) };
+                let frame = self.next(input_frames);
+                for (ch, buffer) in output.iter_mut().enumerate().take(channels) {
+                    // Safe, as we verify the number of channels at the beginning of the function.
+                    buffer[ix] = unsafe { *frame.channel_unchecked(ch) };
+                }
             }
         }
     }

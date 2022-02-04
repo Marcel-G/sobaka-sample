@@ -429,6 +429,11 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "37ab347416e802de484e4d03c7316c48f1ecb56574dfd4a46a80f173ce1de04d"
 
 [[package]]
+name = "freeverb"
+version = "0.1.0"
+source = "git+https://github.com/irh/freeverb-rs#b877287cfaced4c2872f126b0f0e595abb87dbd0"
+
+[[package]]
 name = "futures"
 version = "0.1.31"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1078,6 +1083,7 @@ dependencies = [
  "dasp",
  "derive_more",
  "enum-map",
+ "freeverb",
  "futures 0.3.19",
  "impl-enum",
  "lazy_static",

@@ -1,71 +1,51 @@
 <script lang="ts">
-  import {
-    Oscillator,
-    OscillatorWave,
-    Parameter,
-    SobakaContext
-  } from 'sobaka-sample-audio-worklet'
+  import { Oscillator } from 'sobaka-sample-audio-worklet'
   import { onDestroy } from 'svelte'
-  import { writable } from 'svelte/store'
-  import Knob from '../components/Knob.svelte'
-  import Panel from '../components/Panel.svelte'
-  import Plug from '../components/Plug.svelte'
-  import modules from '../state/modules'
+  import Dropdown from '../components/Dropdown.svelte'
+  import { get_module_context } from './ModuleWrapper.svelte'
+  import CvParameter from './shared/CvParameter.svelte'
+  import Panel from './shared/Panel.svelte'
+  import Plug from './shared/Plug.svelte'
 
-  interface State {
-    frequency: Parameter['state']
-    oscillator: Oscillator['state']
+  let name = 'oscillator'
+
+  const { context, get_sub_state, update_sub_state } = get_module_context()
+
+  let { wave } = get_sub_state<Oscillator['state']>(name) || {
+    wave: Oscillator.Wave.Sine
   }
 
-  // @todo make context
-  export let id: string
-  export let position: { x: number; y: number }
-  export let context: SobakaContext
-  export let initial_state: State = {
-    frequency: { range: [20, 10000], value: 60 },
-    oscillator: { wave: Oscillator.Wave.Sine }
-  }
-
-  const oscillator = new Oscillator(context, initial_state.oscillator)
-  const frequency_param = new Parameter(context, initial_state.frequency)
+  const oscillator = new Oscillator(context, { wave })
 
   const loading = oscillator.node_id
 
-  context.link(frequency_param, oscillator, Oscillator.Input.Frequency)
+  // Update the sobaka node when the state changes
+  $: void oscillator.update({ wave })
 
-  const frequency = writable(initial_state.frequency)
-  const oscillator_state = writable(initial_state.oscillator)
-
-  $: {
-    void frequency_param.update($frequency)
-    void oscillator.update($oscillator_state)
-    modules.update(id, {
-      frequency: $frequency,
-      oscillator: $oscillator_state
-    })
-  }
-
-  function change_wave(wave: OscillatorWave) {
-    oscillator_state.set({ wave })
-  }
+  // Update the global state when state changes
+  $: update_sub_state(name, { wave })
 
   onDestroy(() => {
     void oscillator.dispose()
   })
 </script>
 
-<Panel name="oscillator" {id} {position} height={7} width={3}>
+<Panel {name} height={4} width={3}>
   {#await loading}
     <p>Loading...</p>
   {:then}
-    <Knob bind:value={$frequency.value} bind:range={$frequency.range} />
-    <button on:click={() => change_wave(Oscillator.Wave.Sine)}>Sine</button>
-    <button on:click={() => change_wave(Oscillator.Wave.Saw)}>Saw</button>
-    <button on:click={() => change_wave(Oscillator.Wave.Square)}>Square</button>
-    <button on:click={() => change_wave(Oscillator.Wave.Noise)}>Noise</button>
-    <p>wave: {$oscillator_state?.wave}</p>
+    <Dropdown
+      options={[Oscillator.Wave.Saw, Oscillator.Wave.Sine, Oscillator.Wave.Square]}
+      bind:selected={wave}
+    />
+    <CvParameter
+      for_node={oscillator}
+      for_input={Oscillator.Input.Frequency}
+      default_value={1}
+      default_range={[0, 10]}
+    />
   {/await}
   <div slot="outputs">
-    <Plug {id} name="output" for_module={oscillator} />
+    <Plug name="output" for_node={oscillator} />
   </div>
 </Panel>

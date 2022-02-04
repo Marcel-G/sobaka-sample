@@ -1,8 +1,8 @@
 <style>
   .workspace {
     display: grid;
-    grid-template-columns: repeat(auto-fill, 1.5rem);
-    grid-template-rows: repeat(auto-fill, 1.5rem);
+    grid-template-columns: repeat(auto-fill, 1.25rem);
+    grid-template-rows: repeat(auto-fill, 1.25rem);
     position: fixed;
     inset: 0;
     gap: 0.5rem;

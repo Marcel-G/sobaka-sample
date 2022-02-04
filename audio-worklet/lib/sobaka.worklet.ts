@@ -42,7 +42,8 @@ class SobakaProcessor extends AudioWorkletProcessor {
     const module = await WebAssembly.compile(data);
     await init(module);
 
-    this.instance = new AudioProcessor(this.port);
+    // eslint-disable-next-line no-undef
+    this.instance = new AudioProcessor(this.port, sampleRate);
 
     // No real rpc client initialised so respond manually
     const response: IJSONRPCResponse = {

@@ -4,7 +4,6 @@
     border-radius: 0.5rem;
     background-color: pink;
     padding: 0.5rem;
-    /* overflow: hidden; */
 
     cursor: move;
 
@@ -23,8 +22,6 @@
     display: flex;
     justify-content: space-between;
     align-items: flex-end;
-  }
-  .close {
   }
 
   .name {
@@ -48,15 +45,17 @@
 </style>
 
 <script lang="ts">
-  import modules from '../state/modules'
-  import { useDrag } from '../actions/drag'
-  import type { OnDrag } from '../actions/drag'
+  import modules from '../../state/modules'
+  import { useDrag } from '../../actions/drag'
+  import type { OnDrag } from '../../actions/drag'
   import { setContext } from 'svelte'
-  export let id: string
+  import { get_module_context } from '../ModuleWrapper.svelte'
+
   export let name: string
-  export let position: { x: number; y: number }
   export let height = 0
   export let width = 0
+
+  let { position, id } = get_module_context()
 
   const moveContext = new EventTarget()
   setContext('move_context', moveContext)
@@ -64,7 +63,7 @@
   $: col = `${position.x + 1} / span ${width}`
   $: row = `${position.y + 1} / span ${height}`
 
-  const grid = 1.5 * 16 // grid is 2rem;
+  const grid = 1.25 * 16 // grid is 1.25rem;
   const gap = 0.5 * 16 // grid is 0.5rem
 
   const onMove: OnDrag = (x, y, box) => {

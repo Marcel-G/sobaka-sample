@@ -48,10 +48,13 @@ const init = () => {
 
   const update_state = <T extends ModuleUI>(
     module: string,
-    state: Record<string, any>
+    state_fn: (state: Record<string, any>) => Record<string, any>
   ) => {
     module_state.update(
-      replace<AnyModule>(isMatch({ id: module }), merge<Partial<Module<T>>>(_, { state }))
+      replace<AnyModule>(isMatch({ id: module }), module => ({
+        ...module,
+        state: state_fn(module.state || {})
+      }))
     )
   }
 

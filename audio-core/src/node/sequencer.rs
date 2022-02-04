@@ -87,11 +87,11 @@ impl Node for SequencerNode {
             for ix in 0..Buffer::LEN {
                 let clock_frame = clock_buffers[0][ix];
                 if clock_frame == 1.0 {
-                    if self.should_trigger() {
-                        output[0][ix] = 1.0;
-                    }
                     if self.is_rising {
                         self.step();
+                    }
+                    if self.should_trigger() {
+                        output[0][ix] = 1.0;
                     }
                     self.is_rising = false;
                 } else {
@@ -105,7 +105,7 @@ impl Node for SequencerNode {
 impl StatefulNode for SequencerNode {
     type State = SequencerState;
 
-    fn create(state: Self::State) -> Self {
+    fn create(state: Self::State, _sample_rate: f64) -> Self {
         Self::new(state)
     }
 

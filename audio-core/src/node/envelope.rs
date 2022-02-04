@@ -7,8 +7,6 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::util::input_signal::InputSignalNode;
-
-const SAMPLE_RATE: f64 = 44100.;
 struct Envelope<G, A, D, S, R>
 where
     G: Signal<Frame = f64>,
@@ -99,22 +97,28 @@ pub enum EnvelopeInput {
     Release,
 }
 
-pub struct EnvelopeNode(BoxedNodeSend<EnvelopeInput>);
+pub struct EnvelopeNode {
+    envelope: BoxedNodeSend<EnvelopeInput>,
+    sample_rate: f64,
+}
 
-impl Default for EnvelopeNode {
-    fn default() -> Self {
+impl EnvelopeNode {
+    pub fn new(sample_rate: f64) -> Self {
         let node = InputSignalNode::new(|s| {
             Envelope::new(
-                SAMPLE_RATE as f32,
+                sample_rate as f32,
                 s.input(EnvelopeInput::Gate),
-                s.input(EnvelopeInput::Attack),
-                s.input(EnvelopeInput::Decay),
-                s.input(EnvelopeInput::Sustain),
-                s.input(EnvelopeInput::Release),
+                s.input(EnvelopeInput::Attack).map(|g| g.clamp(0.0, 1.0)),
+                s.input(EnvelopeInput::Decay).map(|g| g.clamp(0.0, 1.0)),
+                s.input(EnvelopeInput::Sustain).map(|g| g.clamp(0.0, 1.0)),
+                s.input(EnvelopeInput::Release).map(|g| g.clamp(0.0, 1.0)),
             )
         });
 
-        Self(BoxedNodeSend::new(node))
+        Self {
+            envelope: BoxedNodeSend::new(node),
+            sample_rate,
+        }
     }
 }
 
@@ -122,7 +126,7 @@ impl Node for EnvelopeNode {
     type InputType = EnvelopeInput;
 
     fn process(&mut self, inputs: &[Input<Self::InputType>], output: &mut [Buffer]) {
-        self.0.process(inputs, output)
+        self.envelope.process(inputs, output)
     }
 }
 

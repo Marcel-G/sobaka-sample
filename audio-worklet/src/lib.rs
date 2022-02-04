@@ -26,9 +26,9 @@ pub struct AudioProcessor {
 #[wasm_bindgen]
 impl AudioProcessor {
     #[wasm_bindgen(constructor)]
-    pub fn new(port: MessagePort) -> Self {
+    pub fn new(port: MessagePort, sample_rate: f64) -> Self {
         // Setup audio core
-        let graph = Arc::new(Mutex::new(AudioGraph::new()));
+        let graph = Arc::new(Mutex::new(AudioGraph::new(sample_rate)));
 
         let messenger = connect(port, graph.clone());
 
@@ -48,6 +48,7 @@ impl AudioProcessor {
         // self.input_buffer[channel] = data
     }
 
+    // @todo be more smart https://github.com/irh/freeverb-rs/blob/main/examples/wasm/src/lib.rs#L19
     pub fn process(&mut self) {
         let mut graph = self.graph.lock().unwrap();
         let sinks = graph.sinks();

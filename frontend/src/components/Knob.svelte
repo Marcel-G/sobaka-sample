@@ -1,8 +1,10 @@
 <style>
   .wrapper {
     position: relative;
-    margin: 0.5rem;
+    margin: 0.25rem;
     pointer-events: none;
+    flex: 1 1 auto;
+    min-width: 50px;
   }
   .knob {
     position: relative;
@@ -22,7 +24,7 @@
   }
 
   .knob::after {
-    content: ' ';
+    content: '';
     display: block;
     position: absolute;
     left: 50%;
@@ -37,6 +39,12 @@
     transform: translateX(-50%);
   }
 
+  .inputs {
+    position: absolute;
+    bottom: -0.5rem;
+    left: -0.5rem;
+    pointer-events: all;
+  }
   .direct-input {
     position: absolute;
     padding: 0.5rem;
@@ -105,6 +113,9 @@
     on:dblclick={() => (direct_input = true)}
     on:pointerdown={pointerDown}
   />
+  <div class="inputs">
+    <slot name="inputs" />
+  </div>
   {#if direct_input}
     <input
       autofocus

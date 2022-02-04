@@ -29,81 +29,7 @@ impl<S> Coefficients<S>
 where
     S: FloatSample,
 {
-    pub fn highpass(center_freq: f64, sample_rate: f64, q: f64) -> Self {
-        let omega = 2. * std::f64::consts::PI * center_freq / sample_rate;
-        let sn = f64::sin(omega);
-        let cs = f64::cos(omega);
-        let alpha = sn / (2. * q);
-        let filter = Self {
-            b0: ((1. + cs) / 2.).to_sample(),
-            b1: (-(1. + cs)).to_sample(),
-            b2: ((1. + cs) / 2.).to_sample(),
-            a1: (-2. * cs).to_sample(),
-            a2: (1. - alpha).to_sample(),
-        };
-
-        let a0 = (1.0 + alpha).to_sample();
-
-        Self::normalise(filter, a0)
-    }
-
-    pub fn lowpass(center_freq: f64, sample_rate: f64, q: f64) -> Self {
-        let omega = 2. * std::f64::consts::PI * center_freq / sample_rate;
-        let sn = f64::sin(omega);
-        let cs = f64::cos(omega);
-        let alpha = sn / (2. * q);
-        let filter = Self {
-            b0: ((1. - cs) / 2.).to_sample(),
-            b1: (1. - cs).to_sample(),
-            b2: ((1. - cs) / 2.).to_sample(),
-            a1: (-2. * cs).to_sample(),
-            a2: (1. - alpha).to_sample(),
-        };
-
-        let a0 = (1.0 + alpha).to_sample();
-
-        Self::normalise(filter, a0)
-    }
-
-    pub fn bandpass(center_freq: f64, sample_rate: f64, q: f64) -> Self {
-        let omega = 2. * std::f64::consts::PI * center_freq / sample_rate;
-        let sn = f64::sin(omega);
-        let cs = f64::cos(omega);
-        let alpha = sn / (2. * q);
-        let filter = Self {
-            b0: alpha.to_sample(),
-            b1: (0.).to_sample(),
-            b2: (-alpha).to_sample(),
-            a1: (-2. * cs).to_sample(),
-            a2: (1. - alpha).to_sample(),
-        };
-
-        let a0 = (1.0 + alpha).to_sample();
-
-        Self::normalise(filter, a0)
-    }
-
-    pub fn peak(center_freq: f64, sample_rate: f64, q: f64, gain_db: f64) -> Self {
-        let omega = 2. * std::f64::consts::PI * center_freq / sample_rate;
-        let gain_abs = 10.0_f64.powf(gain_db / 40.);
-        let sn = f64::sin(omega);
-        let cs = f64::cos(omega);
-        let alpha = sn / (2. * q);
-
-        let filter = Self {
-            b0: (1. + (alpha * gain_abs)).to_sample(),
-            b1: (-2. * cs).to_sample(),
-            b2: (1. - (alpha * gain_abs)).to_sample(),
-            a1: (-2. * cs).to_sample(),
-            a2: (1. - (alpha / gain_abs)).to_sample(),
-        };
-
-        let a0 = (1.0 + (alpha / gain_abs)).to_sample();
-
-        Self::normalise(filter, a0)
-    }
-
-    fn normalise(coefs: Self, a0: S) -> Self {
+    pub fn normalise(coefs: Self, a0: S) -> Self {
         Self {
             b0: coefs.b0 / a0,
             b1: coefs.b1 / a0,
@@ -116,12 +42,13 @@ where
 
 /// An implementation of a digital biquad filter, using the Direct Form 2
 /// Transposed (DF2T) representation.
-pub struct Biquad<F>
+pub struct Biquad<F, C>
 where
     F: Frame,
     F::Sample: FloatSample,
+    C: Iterator<Item = Coefficients<F::Sample>>,
 {
-    pub coeff: Coefficients<F::Sample>,
+    pub coeff: C,
 
     // Since biquad filters are second-order, we require two historical buffers.
     // This state is updated each time the filter is applied to a `Frame`.
@@ -129,12 +56,13 @@ where
     t1: F,
 }
 
-impl<F> Biquad<F>
+impl<F, C> Biquad<F, C>
 where
     F: Frame,
     F::Sample: FloatSample,
+    C: Iterator<Item = Coefficients<F::Sample>>,
 {
-    pub fn new(coeff: Coefficients<F::Sample>) -> Self {
+    pub fn new(coeff: C) -> Self {
         Self {
             coeff,
             t0: F::EQUILIBRIUM,
@@ -172,21 +100,22 @@ where
         I: Frame<NumChannels = F::NumChannels>,
         I::Sample: Duplex<F::Sample>,
     {
+        let coeff = self.coeff.next().unwrap();
         // Convert into floating point representation.
         let input: F = input.map(ToSample::to_sample_);
 
         // Calculate scaled inputs.
-        let input_by_b0 = input.scale_amp(self.coeff.b0);
-        let input_by_b1 = input.scale_amp(self.coeff.b1);
-        let input_by_b2 = input.scale_amp(self.coeff.b2);
+        let input_by_b0 = input.scale_amp(coeff.b0);
+        let input_by_b1 = input.scale_amp(coeff.b1);
+        let input_by_b2 = input.scale_amp(coeff.b2);
 
         // This is the new filtered `Frame`.
         let output: F = self.t0.add_amp(input_by_b0);
 
         // Calculate scaled outputs.
         // NOTE: Negative signs on the scaling factors for these.
-        let output_by_neg_a1 = output.scale_amp(-self.coeff.a1);
-        let output_by_neg_a2 = output.scale_amp(-self.coeff.a2);
+        let output_by_neg_a1 = output.scale_amp(-coeff.a1);
+        let output_by_neg_a2 = output.scale_amp(-coeff.a2);
 
         // Update buffers.
         self.t0 = self.t1.add_amp(input_by_b1).add_amp(output_by_neg_a1);
@@ -197,13 +126,14 @@ where
     }
 }
 
-impl<F> From<Coefficients<F::Sample>> for Biquad<F>
+impl<F, C> From<C> for Biquad<F, C>
 where
     F: Frame,
     F::Sample: FloatSample,
+    C: Iterator<Item = Coefficients<F::Sample>>,
 {
     // Same as `new()`, but adding this for the blanket `Into` impl.
-    fn from(coeff: Coefficients<F::Sample>) -> Self {
+    fn from(coeff: C) -> Self {
         Self::new(coeff)
     }
 }
@@ -240,14 +170,12 @@ where
 /// - When using `dasp_signal`, this item requires the **filter** feature to be enabled.
 /// - When using `dasp`, this item requires the **signal-filter** feature to be enabled.
 pub trait SignalFilter: Signal {
-    fn filtered(
-        self,
-        coeff: Coefficients<<<Self::Frame as Frame>::Sample as Sample>::Float>,
-    ) -> FilteredSignal<Self>
+    fn filtered<C>(self, coeff: C) -> FilteredSignal<Self, C>
     where
         Self: Sized,
         <Self::Frame as Frame>::Sample:
-            FromSample<<<Self::Frame as Frame>::Sample as Sample>::Float>,
+            FromSample<<<Self::Frame as Frame>::Sample as Sample>::Float> + FloatSample,
+        C: Iterator<Item = Coefficients<<Self::Frame as Frame>::Sample>>,
     {
         let biquad = Biquad::from(coeff);
 
@@ -264,19 +192,23 @@ pub trait SignalFilter: Signal {
 ///
 /// - When using `dasp_signal`, this item requires the **filter** feature to be enabled.
 /// - When using `dasp`, this item requires the **signal-filter** feature to be enabled.
-pub struct FilteredSignal<S>
+pub struct FilteredSignal<S, C>
 where
     S: Signal,
-    <S::Frame as Frame>::Sample: FromSample<<<S::Frame as Frame>::Sample as Sample>::Float>,
+    <S::Frame as Frame>::Sample:
+        FromSample<<<S::Frame as Frame>::Sample as Sample>::Float> + FloatSample,
+    C: Iterator<Item = Coefficients<<S::Frame as Frame>::Sample>>,
 {
     signal: S,
-    biquad: Biquad<<S::Frame as Frame>::Float>,
+    biquad: Biquad<<S::Frame as Frame>::Float, C>,
 }
 
-impl<S> Signal for FilteredSignal<S>
+impl<S, C> Signal for FilteredSignal<S, C>
 where
     S: Signal,
-    <S::Frame as Frame>::Sample: FromSample<<<S::Frame as Frame>::Sample as Sample>::Float>,
+    <S::Frame as Frame>::Sample:
+        FromSample<<<S::Frame as Frame>::Sample as Sample>::Float> + FloatSample,
+    C: Iterator<Item = Coefficients<<S::Frame as Frame>::Sample>>,
 {
     // Output is the same type as the input.
     type Frame = S::Frame;

@@ -5,35 +5,28 @@ pub type NodeIndex<Ix = DefaultIx> = petgraph::graph::NodeIndex<Ix>;
 pub type EdgeIndex = ExtEdgeIndex;
 use crate::node::{AudioInput, AudioNode};
 
-const SAMPLE_RATE: f64 = 44100.;
-
 type Graph = petgraph::stable_graph::StableGraph<NodeData<AudioNode>, AudioInput>;
 type Processor = dasp::graph::Processor<Graph>;
 
 pub struct AudioGraph {
     pub graph: Graph,
     pub processor: Processor,
-}
-
-impl Default for AudioGraph {
-    fn default() -> Self {
-        Self::new()
-    }
+    pub sample_rate: f64,
 }
 
 impl AudioGraph {
-    pub fn new() -> Self {
+    pub fn new(sample_rate: f64) -> Self {
         let max_nodes = 1024;
         let max_edges = 1024;
 
         let graph = Graph::with_capacity(max_nodes, max_edges);
         let processor = Processor::with_capacity(max_nodes);
 
-        Self { graph, processor }
-    }
-
-    pub fn sample_rate(&self) -> f64 {
-        SAMPLE_RATE
+        Self {
+            graph,
+            processor,
+            sample_rate,
+        }
     }
 
     pub fn process(&mut self, node: NodeIndex) {
@@ -64,22 +57,40 @@ impl AudioGraph {
                         .graph
                         .add_edge(source, destination, destination_input.clone()))
                 }
-                (AudioNode::Oscillator(_), AudioInput::Oscillator(_)) => {
-                    Ok(self
-                        .graph
-                        .add_edge(source, destination, destination_input.clone()))
-                }
                 (AudioNode::Envelope(_), AudioInput::Envelope(_)) => {
                     Ok(self
                         .graph
                         .add_edge(source, destination, destination_input.clone()))
                 }
-                (AudioNode::Sequencer(_), AudioInput::Sequencer(_)) => {
+                (AudioNode::Filter(_), AudioInput::Filter(_)) => {
                     Ok(self
                         .graph
                         .add_edge(source, destination, destination_input.clone()))
                 }
-                (AudioNode::Volume(_), AudioInput::Volume(_)) => {
+                (AudioNode::Oscillator(_), AudioInput::Oscillator(_)) => {
+                    Ok(self
+                        .graph
+                        .add_edge(source, destination, destination_input.clone()))
+                }
+                (AudioNode::Parameter(_), AudioInput::Parameter(_)) => {
+                    Ok(self
+                        .graph
+                        .add_edge(source, destination, destination_input.clone()))
+                }
+                (AudioNode::Quantiser(_), AudioInput::Quantiser(_)) => {
+                    Ok(self
+                        .graph
+                        .add_edge(source, destination, destination_input.clone()))
+                }
+                (AudioNode::Reverb(_), AudioInput::Reverb(_)) => {
+                    Ok(self
+                        .graph
+                        .add_edge(source, destination, destination_input.clone()))
+                }
+                (AudioNode::SampleAndHold(_), AudioInput::SampleAndHold(_)) => Ok(self
+                    .graph
+                    .add_edge(source, destination, destination_input.clone())),
+                (AudioNode::Sequencer(_), AudioInput::Sequencer(_)) => {
                     Ok(self
                         .graph
                         .add_edge(source, destination, destination_input.clone()))
@@ -90,6 +101,11 @@ impl AudioGraph {
                         .add_edge(source, destination, destination_input.clone()))
                 }
                 (AudioNode::Sum(_), AudioInput::Sum(_)) => {
+                    Ok(self
+                        .graph
+                        .add_edge(source, destination, destination_input.clone()))
+                }
+                (AudioNode::Volume(_), AudioInput::Volume(_)) => {
                     Ok(self
                         .graph
                         .add_edge(source, destination, destination_input.clone()))
