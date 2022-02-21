@@ -31,17 +31,26 @@ export const global_state = () => {
 export const init = () => {
   const global = global_state()
   const persistant = local_storage_adapter(global)
+  let current_id: string
+
+  const set_current_id = (id: string) => {
+    current_id = id
+  }
 
   const commit = debounce(() => {
-    const id = persistant.save()
-    if (id) {
-      history.pushState({}, '', `/workspace/${id}`)
-    }
+    void persistant
+      .save(current_id)
+      .then((id) => {
+        if (id) {
+          history.pushState({}, '', `/workspace/${id}`)
+        }
+      })
   }, 2000)
 
   const cleanup = [modules.store().subscribe(commit), links.store().subscribe(commit)]
 
   return {
+    set_current_id,
     persistant,
     cleanup: () => {
       cleanup.forEach(fn => {

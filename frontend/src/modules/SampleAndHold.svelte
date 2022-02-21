@@ -24,8 +24,8 @@
   {/await}
 
   <div slot="inputs">
-    <Plug for_node={sample_and_hold} for_input={SampleAndHold.Input.Signal} />
-    <Plug for_node={sample_and_hold} for_input={SampleAndHold.Input.Gate} />
+    <Plug for_node={sample_and_hold} for_input={'Signal'} />
+    <Plug for_node={sample_and_hold} for_input={'Gate'} />
   </div>
 
   <div slot="outputs">

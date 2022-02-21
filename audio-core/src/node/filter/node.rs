@@ -2,18 +2,20 @@ use dasp::{
     graph::{BoxedNodeSend, Buffer, Input, Node},
     signal, Sample, Signal,
 };
-use enum_map::Enum;
-use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use strum_macros::{EnumIter, IntoStaticStr};
+use ts_rs::TS;
 
 use crate::{
+    graph::InputId,
     node::StatefulNode,
     util::{filtered_signal::SignalFilter, input_signal::InputSignalNode},
 };
 
 use super::filters::{BandPass, HighPass, LowPass, Peak};
 
-#[derive(PartialEq, Clone, Serialize, Deserialize, JsonSchema)]
+#[derive(PartialEq, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
 pub enum FilterKind {
     HighPass,
     LowPass,
@@ -21,12 +23,14 @@ pub enum FilterKind {
     Peak,
 }
 
-#[derive(Serialize, Deserialize, JsonSchema)]
+#[derive(Serialize, Deserialize, TS)]
+#[ts(export)]
 pub struct FilterState {
     kind: FilterKind,
 }
 
-#[derive(PartialEq, Eq, Hash, Clone, Enum, Serialize, Deserialize, JsonSchema)]
+#[derive(Clone, Serialize, Deserialize, TS, IntoStaticStr, EnumIter)]
+#[ts(export)]
 pub enum FilterInput {
     Signal,
     Frequency,
@@ -39,13 +43,13 @@ fn voltage_to_frequency(voltage: f64) -> f64 {
 }
 
 pub struct FilterNode {
-    filter: BoxedNodeSend<FilterInput>,
+    filter: BoxedNodeSend<InputId>,
     sample_rate: f64,
 }
 
 impl FilterNode {
-    fn create_high_pass(sample_rate: f64) -> BoxedNodeSend<FilterInput> {
-        let node = InputSignalNode::new(|s| {
+    fn create_high_pass(sample_rate: f64) -> BoxedNodeSend<InputId> {
+        let node = InputSignalNode::<FilterInput, _>::new(|s| {
             s.input(FilterInput::Signal)
                 .filtered(HighPass::new(
                     s.input(FilterInput::Frequency).map(voltage_to_frequency),
@@ -59,8 +63,8 @@ impl FilterNode {
         BoxedNodeSend::new(node)
     }
 
-    fn create_low_pass(sample_rate: f64) -> BoxedNodeSend<FilterInput> {
-        let node = InputSignalNode::new(|s| {
+    fn create_low_pass(sample_rate: f64) -> BoxedNodeSend<InputId> {
+        let node = InputSignalNode::<FilterInput, _>::new(|s| {
             s.input(FilterInput::Signal)
                 .filtered(LowPass::new(
                     s.input(FilterInput::Frequency).map(voltage_to_frequency),
@@ -74,8 +78,8 @@ impl FilterNode {
         BoxedNodeSend::new(node)
     }
 
-    fn create_band_pass(sample_rate: f64) -> BoxedNodeSend<FilterInput> {
-        let node = InputSignalNode::new(|s| {
+    fn create_band_pass(sample_rate: f64) -> BoxedNodeSend<InputId> {
+        let node = InputSignalNode::<FilterInput, _>::new(|s| {
             s.input(FilterInput::Signal)
                 .filtered(BandPass::new(
                     s.input(FilterInput::Frequency).map(voltage_to_frequency),
@@ -89,8 +93,8 @@ impl FilterNode {
         BoxedNodeSend::new(node)
     }
 
-    fn create_peak(sample_rate: f64) -> BoxedNodeSend<FilterInput> {
-        let node = InputSignalNode::new(|s| {
+    fn create_peak(sample_rate: f64) -> BoxedNodeSend<InputId> {
+        let node = InputSignalNode::<FilterInput, _>::new(|s| {
             s.input(FilterInput::Signal)
                 .filtered(Peak::new(
                     s.input(FilterInput::Frequency).map(voltage_to_frequency),
@@ -133,10 +137,8 @@ impl StatefulNode for FilterNode {
     }
 }
 
-impl Node for FilterNode {
-    type InputType = FilterInput;
-
-    fn process(&mut self, inputs: &[Input<Self::InputType>], output: &mut [Buffer]) {
+impl Node<InputId> for FilterNode {
+    fn process(&mut self, inputs: &[Input<InputId>], output: &mut [Buffer]) {
         self.filter.process(inputs, output)
     }
 }

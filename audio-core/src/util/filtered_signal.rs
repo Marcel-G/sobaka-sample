@@ -73,28 +73,6 @@ where
     /// Performs a single iteration of this filter, calculating a new filtered
     /// `Frame` from an input `Frame`.
     ///
-    /// ```rust
-    /// use dasp_filter::{Coefficients, Biquad};
-    ///
-    /// fn main() {
-    ///   // Notch boost filter.
-    ///   let co = Coefficients {
-    ///     b0: 1.0469127398708575f64,
-    ///     b1: -0.27732002669854483,
-    ///     b2: 0.8588151488168104,
-    ///     a1: -0.27732002669854483,
-    ///     a2: 0.9057278886876682,
-    ///   };
-    ///
-    ///   // Note that this type argument defines the format of the temporary
-    ///   // values, as well as the number of channels required for input
-    ///   // `Frame`s.
-    ///   let mut b = Biquad::<[f64; 2]>::new(co);
-    ///
-    ///   assert_eq!(b.apply([32i8, -64]), [33, -67]);
-    ///   assert_eq!(b.apply([0.1f32, -0.3]), [0.107943736, -0.32057875]);
-    /// }
-    /// ```
     pub fn apply<I>(&mut self, input: I) -> I
     where
         I: Frame<NumChannels = F::NumChannels>,
@@ -139,31 +117,6 @@ where
 }
 
 /// An extension to the **Signal** trait that enables iterative filtering.
-///
-/// # Example
-///
-/// ```
-/// use dasp_filter::{self as filter, Coefficients};
-/// use dasp_signal::{self as signal, Signal};
-/// use dasp_signal::filter::SignalFilter;
-///
-/// fn main() {
-///   let signal = signal::rate(48000.0).const_hz(997.0).sine();
-///   // Notch filter to attenuate 997 Hz.
-///   let coeff = Coefficients {
-///     b0: 0.9157328640471359f64,
-///     b1: -1.8158910212730535,
-///     b2: 0.9157328640471359,
-///     a1: -1.8158910212730535,
-///     a2: 0.831465728094272,
-///   };
-///   let mut filtered = signal.filtered(coeff);
-///   assert_eq!(
-///     filtered.take(4).collect::<Vec<_>>(),
-///     vec![0.0, 0.11917058366454024, 0.21640079287630784, 0.2938740006664008]
-///   );
-/// }
-/// ```
 ///
 /// ### Required Features
 ///

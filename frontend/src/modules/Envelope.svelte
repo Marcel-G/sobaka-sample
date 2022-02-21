@@ -32,25 +32,25 @@
     <div class="controls">
       <CvParameter
         for_node={envelope}
-        for_input={Envelope.Input.Attack}
+        for_input={'Attack'}
         default_value={0.5}
         default_range={[0, 1]}
       />
       <CvParameter
         for_node={envelope}
-        for_input={Envelope.Input.Decay}
+        for_input={'Decay'}
         default_value={0.5}
         default_range={[0, 1]}
       />
       <CvParameter
         for_node={envelope}
-        for_input={Envelope.Input.Sustain}
+        for_input={'Sustain'}
         default_value={0.5}
         default_range={[0, 1]}
       />
       <CvParameter
         for_node={envelope}
-        for_input={Envelope.Input.Release}
+        for_input={'Release'}
         default_value={0.5}
         default_range={[0, 1]}
       />
@@ -58,7 +58,7 @@
   {/await}
 
   <div slot="inputs">
-    <Plug for_node={envelope} for_input={Envelope.Input.Gate} />
+    <Plug for_node={envelope} for_input={'Gate'} />
   </div>
 
   <div slot="outputs">

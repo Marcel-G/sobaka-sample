@@ -1,10 +1,8 @@
 import { AbstractNode } from '.'
-import { ReverbInput as Input, NodeType } from '..'
 import { SobakaContext } from '../sobaka.node'
 
-export class Reverb extends AbstractNode<NodeType.Reverb> {
-  static Input = Input
+export class Reverb extends AbstractNode<'Reverb'> {
   constructor(context: SobakaContext) {
-    super(context, NodeType.Reverb)
+    super(context, 'Reverb', undefined)
   }
 }

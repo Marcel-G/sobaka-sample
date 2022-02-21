@@ -2,20 +2,22 @@ use dasp::{
     graph::{BoxedNodeSend, Buffer, Input, Node},
     signal, Sample, Signal,
 };
-use enum_map::Enum;
-use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use strum_macros::{EnumIter, IntoStaticStr};
+use ts_rs::TS;
 
-use crate::util::input_signal::InputSignalNode;
+use crate::{graph::InputId, util::input_signal::InputSignalNode};
 
 use super::StatefulNode;
 
-#[derive(Clone, Enum, PartialEq, Eq, Hash, Serialize, Deserialize, JsonSchema)]
+#[derive(Clone, Serialize, Deserialize, TS, IntoStaticStr, EnumIter)]
+#[ts(export)]
 pub enum OscillatorInput {
     Frequency,
 }
 
-#[derive(PartialEq, Clone, Serialize, Deserialize, JsonSchema)]
+#[derive(PartialEq, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
 pub enum OscillatorWave {
     Clock,
     Lfo,
@@ -35,18 +37,19 @@ fn voltage_to_frequency(voltage: f64) -> f64 {
     16.35 * 2.0_f64.powf(voltage)
 }
 
-#[derive(Default, Serialize, Deserialize, JsonSchema)]
+#[derive(Default, Serialize, Deserialize, TS)]
+#[ts(export)]
 pub struct OscillatorState {
     wave: OscillatorWave,
 }
 pub struct OscillatorNode {
-    wave: BoxedNodeSend<OscillatorInput>,
+    wave: BoxedNodeSend<InputId>,
     sample_rate: f64,
 }
 
 impl OscillatorNode {
-    fn create_clock(sample_rate: f64) -> BoxedNodeSend<OscillatorInput> {
-        let node = InputSignalNode::new(|s| {
+    fn create_clock(sample_rate: f64) -> BoxedNodeSend<InputId> {
+        let node = InputSignalNode::<OscillatorInput, _>::new(|s| {
             signal::rate(sample_rate)
                 .hz(s.input(OscillatorInput::Frequency))
                 .square()
@@ -55,8 +58,8 @@ impl OscillatorNode {
 
         BoxedNodeSend::new(node)
     }
-    fn create_lfo(sample_rate: f64) -> BoxedNodeSend<OscillatorInput> {
-        let node = InputSignalNode::new(|s| {
+    fn create_lfo(sample_rate: f64) -> BoxedNodeSend<InputId> {
+        let node = InputSignalNode::<OscillatorInput, _>::new(|s| {
             signal::rate(sample_rate)
                 .hz(s.input(OscillatorInput::Frequency))
                 .sine()
@@ -65,8 +68,8 @@ impl OscillatorNode {
 
         BoxedNodeSend::new(node)
     }
-    fn create_sine(sample_rate: f64) -> BoxedNodeSend<OscillatorInput> {
-        let node = InputSignalNode::new(|s| {
+    fn create_sine(sample_rate: f64) -> BoxedNodeSend<InputId> {
+        let node = InputSignalNode::<OscillatorInput, _>::new(|s| {
             signal::rate(sample_rate)
                 .hz(s
                     .input(OscillatorInput::Frequency)
@@ -78,8 +81,8 @@ impl OscillatorNode {
         BoxedNodeSend::new(node)
     }
 
-    fn create_saw(sample_rate: f64) -> BoxedNodeSend<OscillatorInput> {
-        let node = InputSignalNode::new(|s| {
+    fn create_saw(sample_rate: f64) -> BoxedNodeSend<InputId> {
+        let node = InputSignalNode::<OscillatorInput, _>::new(|s| {
             signal::rate(sample_rate)
                 .hz(s
                     .input(OscillatorInput::Frequency)
@@ -91,8 +94,8 @@ impl OscillatorNode {
         BoxedNodeSend::new(node)
     }
 
-    fn create_square(sample_rate: f64) -> BoxedNodeSend<OscillatorInput> {
-        let node = InputSignalNode::new(|s| {
+    fn create_square(sample_rate: f64) -> BoxedNodeSend<InputId> {
+        let node = InputSignalNode::<OscillatorInput, _>::new(|s| {
             signal::rate(sample_rate)
                 .hz(s
                     .input(OscillatorInput::Frequency)
@@ -131,10 +134,8 @@ impl StatefulNode for OscillatorNode {
     }
 }
 
-impl Node for OscillatorNode {
-    type InputType = OscillatorInput;
-
-    fn process(&mut self, inputs: &[Input<Self::InputType>], output: &mut [Buffer]) {
+impl Node<InputId> for OscillatorNode {
+    fn process(&mut self, inputs: &[Input<InputId>], output: &mut [Buffer]) {
         self.wave.process(inputs, output)
     }
 }

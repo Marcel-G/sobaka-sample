@@ -32,31 +32,31 @@
     <div class="controls">
       <CvParameter
         for_node={reverb}
-        for_input={Reverb.Input.Dampening}
+        for_input={'Dampening'}
         default_value={0.5}
         default_range={[0, 1]}
       />
       <CvParameter
         for_node={reverb}
-        for_input={Reverb.Input.Dry}
+        for_input={'Dry'}
         default_value={0.5}
         default_range={[0, 1]}
       />
       <CvParameter
         for_node={reverb}
-        for_input={Reverb.Input.Wet}
+        for_input={'Wet'}
         default_value={0.5}
         default_range={[0, 1]}
       />
       <CvParameter
         for_node={reverb}
-        for_input={Reverb.Input.RoomSize}
+        for_input={'RoomSize'}
         default_value={0.5}
         default_range={[0, 1]}
       />
       <CvParameter
         for_node={reverb}
-        for_input={Reverb.Input.Width}
+        for_input={'Width'}
         default_value={0.5}
         default_range={[0, 1]}
       />
@@ -64,7 +64,7 @@
   {/await}
 
   <div slot="inputs">
-    <Plug for_node={reverb} for_input={Reverb.Input.Signal} />
+    <Plug for_node={reverb} for_input={'Signal'} />
   </div>
 
   <div slot="outputs">

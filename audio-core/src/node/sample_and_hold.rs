@@ -1,12 +1,16 @@
 use dasp::graph::{Buffer, Input, Node};
 
-use enum_map::Enum;
-use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use strum_macros::IntoStaticStr;
+use ts_rs::TS;
 
-use crate::util::input::{filter_inputs, summed};
+use crate::{
+    graph::InputId,
+    util::input::{filter_inputs, summed},
+};
 
-#[derive(Clone, Enum, PartialEq, Eq, Hash, Serialize, Deserialize, JsonSchema)]
+#[derive(Clone, Serialize, Deserialize, TS, IntoStaticStr)]
+#[ts(export)]
 pub enum SampleAndHoldInput {
     Signal,
     Gate,
@@ -26,12 +30,10 @@ impl Default for SampleAndHoldNode {
     }
 }
 
-impl Node for SampleAndHoldNode {
-    type InputType = SampleAndHoldInput;
-
-    fn process(&mut self, inputs: &[Input<Self::InputType>], output: &mut [Buffer]) {
-        let signal = summed(&filter_inputs(inputs, &SampleAndHoldInput::Signal));
-        let gate = summed(&filter_inputs(inputs, &SampleAndHoldInput::Gate));
+impl Node<InputId> for SampleAndHoldNode {
+    fn process(&mut self, inputs: &[Input<InputId>], output: &mut [Buffer]) {
+        let signal = summed(&filter_inputs(inputs, SampleAndHoldInput::Signal));
+        let gate = summed(&filter_inputs(inputs, SampleAndHoldInput::Gate));
 
         for ix in 0..Buffer::LEN {
             if gate[ix] >= 1.0 {

@@ -1,19 +1,24 @@
 use dasp::graph::{Buffer, Input, Node};
 
-use enum_map::Enum;
-use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use strum_macros::IntoStaticStr;
+use ts_rs::TS;
 
-use crate::util::input::{filter_inputs, summed};
+use crate::{
+    graph::InputId,
+    util::input::{filter_inputs, summed},
+};
 
 use super::StatefulNode;
 
-#[derive(Clone, Enum, PartialEq, Eq, Hash, Serialize, Deserialize, JsonSchema)]
+#[derive(Clone, Serialize, Deserialize, TS, IntoStaticStr)]
+#[ts(export)]
 pub enum QuantiserInput {
     Pitch,
 }
 
-#[derive(Default, Serialize, Deserialize, JsonSchema)]
+#[derive(Default, Serialize, Deserialize, TS)]
+#[ts(export)]
 pub struct QuantiserState {
     notes: [bool; 12],
 }
@@ -60,11 +65,9 @@ impl QuantiserNode {
     }
 }
 
-impl Node for QuantiserNode {
-    type InputType = QuantiserInput;
-
-    fn process(&mut self, inputs: &[Input<Self::InputType>], output: &mut [Buffer]) {
-        let pitch = summed(&filter_inputs(inputs, &QuantiserInput::Pitch));
+impl Node<InputId> for QuantiserNode {
+    fn process(&mut self, inputs: &[Input<InputId>], output: &mut [Buffer]) {
+        let pitch = summed(&filter_inputs(inputs, QuantiserInput::Pitch));
 
         for ix in 0..Buffer::LEN {
             let range = (pitch[ix] * 24.0).floor() as usize;

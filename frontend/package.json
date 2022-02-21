@@ -17,6 +17,7 @@
     "@tsconfig/recommended": "^1.0.1",
     "@tsconfig/svelte": "^2.0.1",
     "@types/lodash": "^4.14.178",
+    "@types/webmidi": "^2.0.6",
     "@typescript-eslint/eslint-plugin": "^5.7.0",
     "@typescript-eslint/parser": "^5.7.0",
     "eslint": "^8.4.1",
@@ -36,12 +37,14 @@
     "worklet-loader": "^1.0.0"
   },
   "dependencies": {
+    "localforage": "^1.10.0",
     "lodash": "^4.17.21",
     "sobaka-sample-audio-worklet": "file:../audio-worklet",
     "svelte": "^3.45.0",
     "svelte-routing": "^1.6.0",
     "tslib": "^2.3.0",
     "typescript": "^4.3.4",
-    "webaudio-oscilloscope": "^3.2.1"
+    "webaudio-oscilloscope": "^3.2.1",
+    "webmidi": "^3.0.14"
   }
 }

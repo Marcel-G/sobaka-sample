@@ -22,7 +22,7 @@
   let sequencer_modules: Sequencer[] = []
   function mount_sequencer(i: number) {
     return (seq: Sequencer) => {
-      context.link(sum, seq, Sequencer.Input.Gate)
+      context.link(sum, seq, 'Gate')
       sequencer_modules[i] = seq
     }
   }
@@ -42,7 +42,7 @@
   <button on:click={add}> add </button>
 
   <div slot="inputs">
-    <Plug for_node={sum} for_input={Sum.Input.Signal} />
+    <Plug for_node={sum} for_input={'Signal'} />
   </div>
 
   <div slot="outputs">

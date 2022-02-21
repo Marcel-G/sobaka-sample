@@ -1,10 +1,8 @@
 import { AbstractNode } from '.'
-import { NodeType, DelayInput as Input } from '..'
 import { SobakaContext } from '../sobaka.node'
 
-export class Delay extends AbstractNode<NodeType.Delay> {
-  static Input = Input
+export class Delay extends AbstractNode<'Delay'> {
   constructor(context: SobakaContext) {
-    super(context, NodeType.Delay)
+    super(context, 'Delay', undefined)
   }
 }

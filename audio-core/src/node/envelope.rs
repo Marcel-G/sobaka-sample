@@ -2,11 +2,11 @@ use dasp::{
     graph::{BoxedNodeSend, Buffer, Input, Node},
     Sample, Signal,
 };
-use enum_map::Enum;
-use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use strum_macros::{EnumIter, IntoStaticStr};
+use ts_rs::TS;
 
-use crate::util::input_signal::InputSignalNode;
+use crate::{graph::InputId, util::input_signal::InputSignalNode};
 struct Envelope<G, A, D, S, R>
 where
     G: Signal<Frame = f64>,
@@ -88,7 +88,9 @@ where
     }
 }
 
-#[derive(PartialEq, Eq, Hash, Clone, Enum, Serialize, Deserialize, JsonSchema)]
+#[derive(Clone, Serialize, Deserialize, TS, IntoStaticStr, EnumIter)]
+#[ts(export)]
+
 pub enum EnvelopeInput {
     Gate,
     Attack,
@@ -98,13 +100,13 @@ pub enum EnvelopeInput {
 }
 
 pub struct EnvelopeNode {
-    envelope: BoxedNodeSend<EnvelopeInput>,
+    envelope: BoxedNodeSend<InputId>,
     sample_rate: f64,
 }
 
 impl EnvelopeNode {
     pub fn new(sample_rate: f64) -> Self {
-        let node = InputSignalNode::new(|s| {
+        let node = InputSignalNode::<EnvelopeInput, _>::new(|s| {
             Envelope::new(
                 sample_rate as f32,
                 s.input(EnvelopeInput::Gate),
@@ -122,52 +124,8 @@ impl EnvelopeNode {
     }
 }
 
-impl Node for EnvelopeNode {
-    type InputType = EnvelopeInput;
-
-    fn process(&mut self, inputs: &[Input<Self::InputType>], output: &mut [Buffer]) {
+impl Node<InputId> for EnvelopeNode {
+    fn process(&mut self, inputs: &[Input<InputId>], output: &mut [Buffer]) {
         self.envelope.process(inputs, output)
     }
-}
-
-#[test]
-fn test_envelope() {
-    use dasp::signal;
-    const RATE: f32 = 20.;
-    let envelope = Envelope::new(
-        RATE,
-        signal::rate(RATE as f64).const_hz(1.0).square(),
-        signal::gen(|| 0.5),  // attack
-        signal::gen(|| 0.5),  // decay
-        signal::gen(|| 0.75), // sustain
-        signal::gen(|| 0.5),  // release
-    );
-
-    let result = envelope.take(20).collect::<Vec<_>>();
-
-    assert_eq!(
-        result,
-        vec![
-            0.71417785,
-            0.9233557,
-            0.9846225,
-            1.0,
-            0.8232233,
-            0.7714466,
-            0.75628155,
-            0.7518398,
-            0.7505389,
-            0.75015783,
-            0.75004625,
-            0.21968347,
-            0.064343795,
-            0.01884586,
-            0.005519824,
-            0.001616719,
-            0.00047352596,
-            0.00013869253,
-            4.0622093e-5,
-            1.1897937e-5
-        ]
-    );
 }

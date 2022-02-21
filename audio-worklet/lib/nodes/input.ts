@@ -1,8 +1,8 @@
 import { AbstractNode } from '.'
 import { SobakaContext } from '../sobaka.node'
 
-export class SampleAndHold extends AbstractNode<'SampleAndHold'> {
+export class Input extends AbstractNode<'Input'> {
   constructor(context: SobakaContext) {
-    super(context, 'SampleAndHold', undefined)
+    super(context, 'Input', undefined)
   }
 }

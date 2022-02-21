@@ -1,10 +1,8 @@
 import { AbstractNode } from '.'
-import { NodeType, Input } from '..'
 import { SobakaContext } from '../sobaka.node'
 
-export class Sink extends AbstractNode<NodeType.Sink> {
-  static Input = Input
+export class Sink extends AbstractNode<'Sink'> {
   constructor(context: SobakaContext) {
-    super(context, NodeType.Sink)
+    super(context, 'Sink', undefined)
   }
 }

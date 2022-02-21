@@ -23,14 +23,14 @@
   {:then}
     <CvParameter
       for_node={volume}
-      for_input={Volume.Input.Level}
+      for_input={'Level'}
       default_value={0}
-      default_range={[0, 10]}
+      default_range={[-1, 1]}
     />
   {/await}
 
   <div slot="inputs">
-    <Plug for_node={volume} for_input={Volume.Input.Signal} />
+    <Plug for_node={volume} for_input={'Signal'} />
   </div>
 
   <div slot="outputs">

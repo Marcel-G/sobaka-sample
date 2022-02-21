@@ -1,25 +1,24 @@
 import { SobakaContext } from '../sobaka.node'
-import { NodeStateDTO, NodeType, AudioInput as NodeInputTypeDTO, NodeEventDTO } from '..'
 import { Subscriber, Unsubscriber } from '../interface'
+import { AudioNodeEvent, AudioNodeInput, AudioNodeState } from '../generatedAudioNodes'
 
-type FromDTO<T, K extends NodeType> = {
-  [P in keyof typeof NodeType]: P extends keyof T ? Required<T>[P] : never
-}[K]
+export type NodeType = AudioNodeState['node_type']
 
-export type Input<T extends NodeType> = FromDTO<NodeInputTypeDTO, T>
-export type State<T extends NodeType> = FromDTO<NodeStateDTO, T>
-export type Event<T extends NodeType> = FromDTO<NodeEventDTO, T>
+type Data<T> = T extends { data: any } ? T['data'] : undefined
+
+export type Input<T extends NodeType> = Data<Extract<AudioNodeInput, { node_type: T }>>
+export type State<T extends NodeType> = Data<Extract<AudioNodeState, { node_type: T }>>
+export type Event<T extends NodeType> = Data<Extract<AudioNodeEvent, { node_type: T }>>
 
 export type AnyInput = Input<NodeType>
-
 export abstract class AbstractNode<T extends NodeType> {
   readonly type: T
   private context: SobakaContext
   node_id: Promise<number>
-  constructor(context: SobakaContext, type: T, ...args: readonly unknown[]) {
+  constructor(context: SobakaContext, type: T, state: State<T>) {
     this.context = context
     this.type = type
-    this.node_id = this.create(context, type, ...args)
+    this.node_id = this.create(context, type, state)
   }
 
   get_node_id() {
@@ -30,18 +29,18 @@ export abstract class AbstractNode<T extends NodeType> {
     return this.context
   }
 
-  to_input_dto(input: Input<T>): NodeInputTypeDTO {
-    return { [this.type]: input }
+  to_input_dto(input: Input<T>): any { // AudioNodeInput {
+    return { node_type: this.type, data: input }
   }
 
   private create(
     context: SobakaContext,
-    type: NodeType,
-    ...args: readonly unknown[]
+    type: T,
+    state: State<T>
   ): Promise<number> {
     return context.client.request({
       method: 'node/create',
-      params: [type, ...args]
+      params: [{ node_type: type, data: state }]
     }) as Promise<number>
   }
 
@@ -60,7 +59,7 @@ export abstract class AbstractNode<T extends NodeType> {
 export abstract class AbstractStatefulNode<T extends NodeType> extends AbstractNode<T> {
   state: State<T>
   constructor(context: SobakaContext, type: T, initial_state: State<T>) {
-    super(context, type, initial_state ? { [type]: initial_state } : undefined)
+    super(context, type, initial_state)
 
     this.state = initial_state
   }
@@ -70,18 +69,14 @@ export abstract class AbstractStatefulNode<T extends NodeType> extends AbstractN
 
     return this.get_context().client.request({
       method: 'node/update',
-      params: [node_id, this.to_state_dto(state)]
+      params: [node_id, { node_type: this.type, data: state }]
     })
   }
 
-  to_state_dto(state: State<T>): NodeStateDTO {
-    return { [this.type]: state }
-  }
-
-  from_state_dto(state: NodeStateDTO): State<T> {
-    if (this.type in state) {
+  from_state_dto(state: AudioNodeState): State<T> {
+    if (state.node_type == this.type) {
       // @ts-ignore-next-line
-      return state[this.type] as State<T>
+      return state.data as State<T>
     } else {
       throw new Error(`Cannot convert into "${this.type}" state`)
     }
@@ -96,10 +91,10 @@ export abstract class AbstractStatefulEmitterNode<
     super(context, type, initial_state)
   }
 
-  from_event_dto(event: NodeEventDTO): Event<T> {
-    if (this.type in event) {
+  from_event_dto(event: AudioNodeEvent): Event<T> {
+    if (event.node_type == this.type) {
       // @ts-ignore-next-line
-      return event[this.type] as Event<T>
+      return event.data as Event<T>
     } else {
       throw new Error(`Cannot convert into "${this.type}" event`)
     }
@@ -112,7 +107,7 @@ export abstract class AbstractStatefulEmitterNode<
     const node_id = await this.get_node_id()
 
     // @todo only one subscription is needed per module
-    let unsubscribe: Unsubscriber | null = this.get_context().subscribe<NodeEventDTO>(
+    let unsubscribe: Unsubscriber | null = this.get_context().subscribe<AudioNodeEvent>(
       'node/subscribe',
       'node/unsubscribe',
       [node_id],

@@ -1,10 +1,8 @@
 import { AbstractNode } from '.'
-import { EnvelopeInput, NodeType } from '..'
 import { SobakaContext } from '../sobaka.node'
 
-export class Envelope extends AbstractNode<NodeType.Envelope> {
-  static Input = EnvelopeInput
+export class Envelope extends AbstractNode<'Envelope'> {
   constructor(context: SobakaContext) {
-    super(context, NodeType.Envelope)
+    super(context, 'Envelope', undefined)
   }
 }

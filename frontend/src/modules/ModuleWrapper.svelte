@@ -19,7 +19,8 @@
   import { getContext, setContext } from 'svelte'
 
   import { get_component } from '.'
-  import modules, { AnyModule } from '../state/modules'
+  import modules from '../state/modules'
+  import type { AnyModule } from '../state/modules'
 
   export let module: AnyModule
   export let context: SobakaContext

@@ -6,7 +6,7 @@ import { replace } from './utils'
 export interface Module<T extends ModuleUI> {
   id: string
   type: T
-  state?: Record<string, any>
+  state?: Record<string, unknown>
   position: {
     x: number
     y: number
@@ -46,9 +46,9 @@ const init = () => {
     return get(module_state).find(isMatch({ id: module })) || null
   }
 
-  const update_state = <T extends ModuleUI>(
+  const update_state = (
     module: string,
-    state_fn: (state: Record<string, any>) => Record<string, any>
+    state_fn: (state: Record<string, unknown>) => Record<string, unknown>
   ) => {
     module_state.update(
       replace<AnyModule>(isMatch({ id: module }), module => ({

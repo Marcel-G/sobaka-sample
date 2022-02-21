@@ -73,24 +73,16 @@ class SobakaProcessor extends AudioWorkletProcessor {
     if (this.is_destroyed) {
       return false
     }
-    if (!outputs[0]?.[0] || !this.instance) {
+
+    if (!outputs[0]?.[0] ||  !outputs[0]?.[1] || !this.instance) {
       return true;
     }
 
-    // Transfer input data to wasm instance
-    inputs[0].forEach((input, index) => {
-      this.instance!.set_buffer(index, input)
-    })
+    // Only supports mono inputs for the moment
+    const input = inputs[0][0] || new Float32Array()
 
     // Process data in buffers
-    this.instance.process()
-
-    // Transfer data to AudioWorkletProcessor output
-    outputs[0].forEach((output, index) => {
-      // Is get_buffer allocating a new Float32Array each cycle?
-      // Could cause some GC
-      output.set(this.instance!.get_buffer(index))
-    })
+    this.instance.process(input, outputs[0][0], outputs[0][1])
 
     // @todo return false when isShutdown
     // How to cleanup wasm instance?

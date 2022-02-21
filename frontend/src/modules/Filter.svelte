@@ -19,7 +19,7 @@
 
   let name = 'filter'
 
-  let { kind } = get_sub_state<Filter['state']>(name) || { kind: Filter.Kind.BandPass }
+  let { kind } = get_sub_state<Filter['state']>(name) || { kind: 'BandPass' }
 
   const filter = new Filter(context, { kind })
 
@@ -40,17 +40,17 @@
   {#await loading}
     <p>Loading...</p>
   {:then}
-    <Dropdown options={Object.values(Filter.Kind)} bind:selected={kind} />
+    <Dropdown options={["HighPass" , "LowPass" , "BandPass" , "Peak"]} bind:selected={kind} />
     <div class="controls">
       <CvParameter
         for_node={filter}
-        for_input={Filter.Input.Frequency}
+        for_input={'Frequency'}
         default_value={1}
         default_range={[0, 10]}
       />
       <CvParameter
         for_node={filter}
-        for_input={Filter.Input.Q}
+        for_input={'Q'}
         default_value={0.5}
         default_range={[0, 1]}
       />
@@ -58,7 +58,7 @@
   {/await}
 
   <div slot="inputs">
-    <Plug for_node={filter} for_input={Filter.Input.Signal} />
+    <Plug for_node={filter} for_input={'Signal'} />
   </div>
 
   <div slot="outputs">

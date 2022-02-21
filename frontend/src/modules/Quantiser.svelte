@@ -12,7 +12,7 @@
   import Plug from './shared/Plug.svelte'
   import { get_module_context } from './ModuleWrapper.svelte'
 
-  const NOTE_LABELS = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
+  const NOTE_LABELS = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'] as const
 
   let name = 'quantiser'
   const { context, get_sub_state, update_sub_state } = get_module_context()
@@ -56,7 +56,7 @@
   {/await}
 
   <div slot="inputs">
-    <Plug for_node={quantiser} for_input={Quantiser.Input.Pitch} />
+    <Plug for_node={quantiser} for_input={'Pitch'} />
   </div>
 
   <div slot="outputs">

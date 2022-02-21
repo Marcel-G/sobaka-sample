@@ -2,11 +2,11 @@
   import { Parameter } from 'sobaka-sample-audio-worklet'
   import { onDestroy } from 'svelte'
   import Knob from '../components/Knob.svelte'
-  import { get_module_context, MODULE_CONTEXT } from './ModuleWrapper.svelte'
+  import { get_module_context } from './ModuleWrapper.svelte'
   import Plug from './shared/Plug.svelte'
   import Panel from './shared/Panel.svelte'
 
-  const { id, context, get_sub_state, update_sub_state } = get_module_context()
+  const { context, get_sub_state, update_sub_state } = get_module_context()
 
   let name = 'parameter'
 

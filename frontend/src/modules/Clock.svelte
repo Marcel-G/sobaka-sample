@@ -8,7 +8,7 @@
 
   const { context } = get_module_context()
 
-  const clock = new Oscillator(context, { wave: Oscillator.Wave.Clock })
+  const clock = new Oscillator(context, { wave: 'Clock' })
 
   const loading = clock.node_id
 
@@ -23,7 +23,7 @@
   {:then}
     <CvParameter
       for_node={clock}
-      for_input={Oscillator.Input.Frequency}
+      for_input={'Frequency'}
       default_value={1}
       default_range={[0, 10]}
     />

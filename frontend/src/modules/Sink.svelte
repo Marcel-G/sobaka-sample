@@ -24,6 +24,6 @@
   {/await}
 
   <div slot="inputs">
-    <Plug for_node={sink} for_input={Sink.Input.Signal} />
+    <Plug for_node={sink} for_input={'Signal'} />
   </div>
 </Panel>

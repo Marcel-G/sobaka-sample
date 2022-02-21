@@ -12,7 +12,7 @@ export class SobakaContext extends AudioWorkletNode implements SendProgram {
   > = new Map();
 
   constructor(context: AudioContext) {
-    super(context, SAMPLER_WORKLET);
+    super(context, SAMPLER_WORKLET, { numberOfInputs: 1, outputChannelCount: [2] });
     const transport = new PostMessageTransport(this.port);
     const requestManager = new RequestManager([transport]);
     this.client = new Client(requestManager);

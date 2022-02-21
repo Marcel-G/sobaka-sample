@@ -1,70 +1,35 @@
 pub mod api;
 
-use std::{convert::TryInto, sync::Arc};
+use std::sync::Arc;
 
 use futures::{FutureExt, SinkExt, StreamExt};
 use jsonrpc_core::{Error, ErrorCode, Result};
 use jsonrpc_pubsub::{typed, Session, SubscriptionId};
 use sobaka_sample_audio_core::{
     graph::{EdgeIndex, NodeIndex},
-    node::{
-        delay::DelayNode, envelope::EnvelopeNode, filter::node::FilterNode, noise::NoiseNode,
-        oscillator::OscillatorNode, parameter::ParameterNode, quantiser::QuantiserNode,
-        reverb::ReverbNode, sample_and_hold::SampleAndHoldNode, sequencer::SequencerNode,
-        sink::SinkNode, sum::SumNode, volume::VolumeNode, AudioNode, EventNode, StatefulNode,
-    },
+    node::{AudioNode, AudioNodeEvent, AudioNodeInput, AudioNodeState, StatefulNode},
 };
 
-fn into_err(message: &str) -> Error {
+fn into_err<T: ToString>(message: T) -> Error {
     Error {
         code: ErrorCode::InvalidParams,
-        message: message.into(),
+        message: message.to_string(),
         data: None,
     }
 }
 
-use self::api::{NodeEventDTO, NodeInputTypeDTO, NodeStateDTO, NodeType, SobakaGraphRpc};
+use self::api::SobakaGraphRpc;
 use crate::rpc::RpcImpl;
 
 impl SobakaGraphRpc for RpcImpl {
     type Metadata = Arc<Session>;
 
-    fn create_node(
-        &self,
-        node_type: NodeType,
-        initial_state: Option<NodeStateDTO>,
-    ) -> Result<usize> {
+    fn create_node(&self, node_state: AudioNodeState) -> Result<usize> {
         let mut graph = self.graph.lock().expect("Cannot lock graph");
 
         let sr = graph.sample_rate;
-        let node: AudioNode = match (node_type, initial_state) {
-            (NodeType::Delay, _) => DelayNode::new(sr).into(),
-            (NodeType::Envelope, _) => EnvelopeNode::new(sr).into(),
-            (NodeType::Filter, Some(state)) => {
-                FilterNode::create(state.try_into().map_err(into_err)?, sr).into()
-            }
-            (NodeType::Noise, _) => NoiseNode::default().into(),
-            (NodeType::Oscillator, Some(state)) => {
-                OscillatorNode::create(state.try_into().map_err(into_err)?, sr).into()
-            }
-            (NodeType::Parameter, Some(state)) => {
-                ParameterNode::create(state.try_into().map_err(into_err)?, sr).into()
-            }
-            (NodeType::Quantiser, Some(state)) => {
-                QuantiserNode::create(state.try_into().map_err(into_err)?, sr).into()
-            }
-            (NodeType::Reverb, _) => ReverbNode::default().into(),
-            (NodeType::SampleAndHold, _) => SampleAndHoldNode::default().into(),
-            (NodeType::Sequencer, Some(state)) => {
-                SequencerNode::create(state.try_into().map_err(into_err)?, sr).into()
-            }
-            (NodeType::Sink, _) => SinkNode::default().into(),
-            (NodeType::Sum, _) => SumNode::default().into(),
-            (NodeType::Volume, _) => VolumeNode::default().into(),
-            _ => todo!(),
-        };
 
-        let id = graph.add_node(node);
+        let id = graph.add_node(AudioNode::create(node_state, sr));
 
         Ok(id.index())
     }
@@ -83,19 +48,10 @@ impl SobakaGraphRpc for RpcImpl {
         }
     }
 
-    fn update_node(&self, node_id: usize, state: NodeStateDTO) -> Result<bool> {
+    fn update_node(&self, node_id: usize, node_state: AudioNodeState) -> Result<bool> {
         let graph = &mut self.graph.lock().expect("Cannot lock graph");
         if let Some(node) = graph.get_audio_node_mut(NodeIndex::new(node_id)) {
-            match node {
-                AudioNode::Filter(node) => node.update(state.try_into().map_err(into_err)?),
-                AudioNode::Oscillator(node) => node.update(state.try_into().map_err(into_err)?),
-                AudioNode::Parameter(node) => node.update(state.try_into().map_err(into_err)?),
-                AudioNode::Quantiser(node) => node.update(state.try_into().map_err(into_err)?),
-                AudioNode::Sequencer(node) => node.update(state.try_into().map_err(into_err)?),
-                _ => Err("Module does not support state updates").map_err(into_err)?,
-            };
-
-            Ok(true)
+            node.update(node_state).map(|_| true).map_err(into_err)
         } else {
             Err(Error {
                 code: ErrorCode::InvalidParams,
@@ -108,19 +64,12 @@ impl SobakaGraphRpc for RpcImpl {
     fn subscribe_node(
         &self,
         _meta: Self::Metadata,
-        subscriber: typed::Subscriber<NodeEventDTO>,
+        subscriber: typed::Subscriber<AudioNodeEvent>,
         node_id: usize,
     ) {
         let graph = &self.graph.lock().expect("Cannot lock graph");
         if let Some(module) = graph.get_audio_node(NodeIndex::new(node_id)) {
-            let result = match module {
-                AudioNode::Sequencer(node) => {
-                    Ok(node.observe().map(NodeEventDTO::Sequencer).boxed())
-                }
-                _ => Err("Node does not support subscriptions"),
-            };
-
-            if let Ok(future) = result {
+            if let Ok(future) = module.observe() {
                 self.subscriptions.add(subscriber, move |sink| {
                     future
                         .map(|res| Ok(Ok(res)))
@@ -161,7 +110,7 @@ impl SobakaGraphRpc for RpcImpl {
         &self,
         node_id_a: usize,
         node_id_b: usize,
-        input_name: NodeInputTypeDTO,
+        input_name: AudioNodeInput,
     ) -> Result<usize> {
         if node_id_a == node_id_b {
             return Err(Error {
@@ -177,7 +126,7 @@ impl SobakaGraphRpc for RpcImpl {
             .add_edge(
                 NodeIndex::new(node_id_a),
                 NodeIndex::new(node_id_b),
-                &input_name,
+                input_name,
             )
             .map_err(into_err)?;
 

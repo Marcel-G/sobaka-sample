@@ -1,4 +1,3 @@
-use dasp::ring_buffer::Bounded;
 use rpc::Messenger;
 use sobaka_sample_audio_core::graph::AudioGraph;
 use std::sync::{Arc, Mutex};
@@ -13,12 +12,9 @@ pub mod graph_rpc;
 mod rpc;
 pub mod subscriptions;
 mod utils;
-
-const FRAME_SIZE: usize = 128;
 // AudioProcessor is the rust entry-point for Web Audio AudioWorkletProcessor
 #[wasm_bindgen]
 pub struct AudioProcessor {
-    output_buffer: Bounded<[f32; FRAME_SIZE]>,
     graph: Arc<Mutex<AudioGraph>>,
     messenger: Messenger,
 }
@@ -32,35 +28,33 @@ impl AudioProcessor {
 
         let messenger = connect(port, graph.clone());
 
-        AudioProcessor {
-            output_buffer: Bounded::from([0.0; FRAME_SIZE]),
-            graph,
-            messenger,
-        }
+        AudioProcessor { graph, messenger }
     }
 
-    pub fn get_buffer(&mut self, _channel: usize) -> Vec<f32> {
-        // self.output_buffer[channel].clone()
-        self.output_buffer.drain().take(FRAME_SIZE).collect()
-    }
-
-    pub fn set_buffer(&mut self, _channel: usize, _data: Vec<f32>) {
-        // self.input_buffer[channel] = data
-    }
-
-    // @todo be more smart https://github.com/irh/freeverb-rs/blob/main/examples/wasm/src/lib.rs#L19
-    pub fn process(&mut self) {
+    pub fn process(&mut self, input: &[f32], output_l: &mut [f32], output_r: &mut [f32]) {
         let mut graph = self.graph.lock().unwrap();
         let sinks = graph.sinks();
+        let inputs = graph.inputs();
 
-        // @todo zip sinks to across channels
         if let Some(node) = sinks.get(0) {
-            while !self.output_buffer.is_full() {
+            let mut out_index = 0;
+            let mut in_index = 0;
+
+            while out_index < output_l.len() {
+                if let Some(node) = inputs.get(0) {
+                    let input_node_data = graph.graph.node_weight_mut(*node).expect("");
+                    for i in input_node_data.buffers[0].iter_mut() {
+                        *i = *input.get(in_index).unwrap_or(&0.0);
+                        in_index += 1;
+                    }
+                }
                 graph.process(*node);
                 // output is 64 samples long
-                let outputs = &graph.graph.node_weight(*node).expect("").buffers;
-                for output in outputs[0].iter() {
-                    self.output_buffer.push(*output);
+                let output_node_data = &graph.graph.node_weight(*node).expect("").buffers[0];
+                for sample in output_node_data.iter() {
+                    output_l[out_index] = *sample;
+                    output_r[out_index] = *sample;
+                    out_index += 1;
                 }
             }
         }

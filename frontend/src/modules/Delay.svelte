@@ -23,14 +23,14 @@
   {:then}
     <CvParameter
       for_node={delay}
-      for_input={Delay.Input.Time}
+      for_input={'Time'}
       default_value={0.5}
       default_range={[0, 10]}
     />
   {/await}
 
   <div slot="inputs">
-    <Plug for_node={delay} for_input={Delay.Input.Signal} />
+    <Plug for_node={delay} for_input={'Signal'} />
   </div>
 
   <div slot="outputs">

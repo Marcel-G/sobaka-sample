@@ -3,21 +3,25 @@ use dasp::{
     interpolate::{sinc::Sinc, Interpolator},
     ring_buffer::{Bounded, Fixed},
 };
-use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use strum_macros::IntoStaticStr;
+use ts_rs::TS;
 
-use crate::util::input::{filter_inputs, summed};
+use crate::{
+    graph::InputId,
+    util::input::{filter_inputs, summed},
+};
 
 pub struct DelayNode {
     buffer: Bounded<Vec<f32>>,
-    interpolator: Sinc<[f32; 64]>,
+    interpolator: Sinc<[f32; 16]>,
     interpolation_value: f32,
     sample_rate: f64,
 }
 
 impl DelayNode {
     pub fn new(sample_rate: f64) -> Self {
-        let frames = Fixed::from([0.0; 64]);
+        let frames = Fixed::from([0.0; 16]);
         let interpolator = Sinc::new(frames);
         Self {
             sample_rate,
@@ -28,17 +32,17 @@ impl DelayNode {
     }
 }
 
-#[derive(Clone, PartialEq, Eq, Hash, Serialize, Deserialize, JsonSchema)]
+#[derive(Clone, PartialEq, Eq, Hash, Serialize, Deserialize, TS, IntoStaticStr)]
+#[ts(export)]
 pub enum DelayInput {
     Time,
     Signal,
 }
 
-impl Node for DelayNode {
-    type InputType = DelayInput;
-    fn process(&mut self, inputs: &[Input<Self::InputType>], output: &mut [Buffer]) {
-        let input = summed(&filter_inputs(inputs, &DelayInput::Signal));
-        let delay = summed(&filter_inputs(inputs, &DelayInput::Time));
+impl Node<InputId> for DelayNode {
+    fn process(&mut self, inputs: &[Input<InputId>], output: &mut [Buffer]) {
+        let input = summed(&filter_inputs(inputs, DelayInput::Signal));
+        let delay = summed(&filter_inputs(inputs, DelayInput::Time));
 
         for ((out, d), dry) in output
             .get_mut(0)

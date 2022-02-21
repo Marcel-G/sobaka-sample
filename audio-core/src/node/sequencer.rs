@@ -1,6 +1,9 @@
 use dasp::graph::{Buffer, Input, Node};
-use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use strum_macros::IntoStaticStr;
+use ts_rs::TS;
+
+use crate::graph::InputId;
 
 use super::{EventNode, ObserverStorage, StatefulNode};
 
@@ -13,18 +16,21 @@ pub struct SequencerNode {
     is_rising: bool, // @todo rename this
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Default, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Default, TS)]
+#[ts(export)]
 pub struct SequencerState {
     pub step: usize,
     pub sequence: Vec<bool>,
 }
 
-#[derive(Clone, PartialEq, Eq, Hash, Serialize, Deserialize, JsonSchema)]
+#[derive(Clone, Serialize, Deserialize, TS, IntoStaticStr)]
+#[ts(export)]
 pub enum SequencerInput {
     Gate,
 }
 
-#[derive(Clone, PartialEq, Eq, Hash, Serialize, Deserialize, JsonSchema)]
+#[derive(Clone, PartialEq, Eq, Hash, Serialize, Deserialize, TS)]
+#[ts(export)]
 pub enum SequencerEvent {
     StepChange { step: usize },
 }
@@ -74,9 +80,8 @@ impl EventNode for SequencerNode {
     }
 }
 
-impl Node for SequencerNode {
-    type InputType = SequencerInput;
-    fn process(&mut self, inputs: &[Input<Self::InputType>], output: &mut [Buffer]) {
+impl Node<InputId> for SequencerNode {
+    fn process(&mut self, inputs: &[Input<InputId>], output: &mut [Buffer]) {
         // Fill the output with silence.
         for out_buffer in output.iter_mut() {
             out_buffer.silence();

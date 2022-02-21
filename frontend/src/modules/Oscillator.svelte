@@ -12,7 +12,7 @@
   const { context, get_sub_state, update_sub_state } = get_module_context()
 
   let { wave } = get_sub_state<Oscillator['state']>(name) || {
-    wave: Oscillator.Wave.Sine
+    wave: 'Sine'
   }
 
   const oscillator = new Oscillator(context, { wave })
@@ -35,12 +35,13 @@
     <p>Loading...</p>
   {:then}
     <Dropdown
-      options={[Oscillator.Wave.Saw, Oscillator.Wave.Sine, Oscillator.Wave.Square]}
+      options={['Saw', 'Sine', 'Square']}
       bind:selected={wave}
     />
     <CvParameter
+      step={1 / 12}
       for_node={oscillator}
-      for_input={Oscillator.Input.Frequency}
+      for_input={'Frequency'}
       default_value={1}
       default_range={[0, 10]}
     />

@@ -1,13 +1,17 @@
 use dasp::graph::{Buffer, Input, Node};
 
-use enum_map::Enum;
 use freeverb::Freeverb;
-use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use strum_macros::IntoStaticStr;
+use ts_rs::TS;
 
-use crate::util::input::{filter_inputs, summed};
+use crate::{
+    graph::InputId,
+    util::input::{filter_inputs, summed},
+};
 
-#[derive(Clone, Enum, PartialEq, Eq, Hash, Serialize, Deserialize, JsonSchema)]
+#[derive(Clone, Serialize, Deserialize, TS, IntoStaticStr)]
+#[ts(export)]
 pub enum ReverbInput {
     Signal,
     Dampening,
@@ -51,15 +55,14 @@ impl ReverbNode {
     }
 }
 
-impl Node for ReverbNode {
-    type InputType = ReverbInput;
-    fn process(&mut self, inputs: &[Input<Self::InputType>], output: &mut [Buffer]) {
-        let signal = summed(&filter_inputs(inputs, &ReverbInput::Signal));
-        let dampening = summed(&filter_inputs(inputs, &ReverbInput::Dampening));
-        let wet = summed(&filter_inputs(inputs, &ReverbInput::Wet));
-        let width = summed(&filter_inputs(inputs, &ReverbInput::Width));
-        let dry = summed(&filter_inputs(inputs, &ReverbInput::Dry));
-        let room_size = summed(&filter_inputs(inputs, &ReverbInput::RoomSize));
+impl Node<InputId> for ReverbNode {
+    fn process(&mut self, inputs: &[Input<InputId>], output: &mut [Buffer]) {
+        let signal = summed(&filter_inputs(inputs, ReverbInput::Signal));
+        let dampening = summed(&filter_inputs(inputs, ReverbInput::Dampening));
+        let wet = summed(&filter_inputs(inputs, ReverbInput::Wet));
+        let width = summed(&filter_inputs(inputs, ReverbInput::Width));
+        let dry = summed(&filter_inputs(inputs, ReverbInput::Dry));
+        let room_size = summed(&filter_inputs(inputs, ReverbInput::RoomSize));
         for ix in 0..Buffer::LEN {
             self.set_dampening(dampening[ix].into());
             self.set_wet(wet[ix].into());

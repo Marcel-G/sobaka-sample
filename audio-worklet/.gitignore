@@ -5,3 +5,4 @@ pkg/
 wasm-pack.log
 dist/
 schema/
+bindings/

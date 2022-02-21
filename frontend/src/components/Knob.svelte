@@ -70,6 +70,8 @@
   let start_rotation = -Math.PI * 0.83
   let direct_input = false
 
+  export let step = (max - min) / 100
+
   let start_y: number, start_value: number
   $: valueRange = max - min
   $: rotation = start_rotation + ((value - min) / valueRange) * rot_range
@@ -120,7 +122,7 @@
     <input
       autofocus
       class="direct-input"
-      step={(max - min) / 100}
+      step={step}
       type="number"
       value={parseFloat(value.toFixed(3))}
       on:blur={() => (direct_input = false)}

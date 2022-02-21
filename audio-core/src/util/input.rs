@@ -3,10 +3,16 @@ use dasp::{
     slice::add_in_place,
 };
 
-pub fn filter_inputs<'a, T: PartialEq>(inputs: &'a [Input<T>], name: &T) -> Vec<&'a Input<T>> {
+use crate::graph::InputId;
+
+pub fn filter_inputs<'a, T: Into<&'static str>>(
+    inputs: &'a [Input<InputId>],
+    name: T,
+) -> Vec<&'a Input<InputId>> {
+    let name_str: &'static str = name.into();
     inputs
         .iter()
-        .filter(|input| &input.variant == name)
+        .filter(|input| *input.variant == *name_str)
         .collect::<Vec<_>>()
 }
 
