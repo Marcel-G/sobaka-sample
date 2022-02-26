@@ -3,8 +3,8 @@
     cursor: pointer;
     width: 0.625rem;
     height: 0.625rem;
-    background-color: white;
-    border: 2px solid pink;
+    background-color: var(--background);
+    border: 2px solid var(--module-highlight);
 
     border-radius: 50%;
   }

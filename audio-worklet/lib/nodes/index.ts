@@ -29,15 +29,12 @@ export abstract class AbstractNode<T extends NodeType> {
     return this.context
   }
 
-  to_input_dto(input: Input<T>): any { // AudioNodeInput {
+  to_input_dto(input: Input<T>): any {
+    // AudioNodeInput {
     return { node_type: this.type, data: input }
   }
 
-  private create(
-    context: SobakaContext,
-    type: T,
-    state: State<T>
-  ): Promise<number> {
+  private create(context: SobakaContext, type: T, state: State<T>): Promise<number> {
     return context.client.request({
       method: 'node/create',
       params: [{ node_type: type, data: state }]

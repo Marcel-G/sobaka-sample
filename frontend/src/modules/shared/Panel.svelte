@@ -2,7 +2,8 @@
   .panel {
     box-shadow: 0 10px 15px -3px rgb(0 0 0 / 10%), 0 4px 6px -2px rgb(0 0 0 / 5%);
     border-radius: 0.5rem;
-    background-color: pink;
+    background-color: var(--module-background);
+    border: 2px solid var(--module-highlight);
     padding: 0.5rem;
 
     cursor: move;
@@ -51,6 +52,7 @@
   import { setContext } from 'svelte'
   import { get_module_context } from '../ModuleWrapper.svelte'
 
+  export let custom_style: string = ''
   export let name: string
   export let height = 0
   export let width = 0
@@ -82,7 +84,11 @@
   }
 </script>
 
-<div class="panel" use:useDrag={onMove} style={`grid-column: ${col}; grid-row: ${row};`}>
+<div
+  use:useDrag={onMove}
+  class="panel"
+  style={`grid-column: ${col}; grid-row: ${row}; ${custom_style}`}
+>
   <div class="bar">
     <span class="name">{name}</span>
     <button class="close" on:click={() => modules.remove(id)}>x</button>

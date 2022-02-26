@@ -1,3 +1,10 @@
+<style>
+  :global(html) {
+    background-color: var(--background, initial);
+    color: var(--foreground, initial);
+  }
+</style>
+
 <script lang="ts">
   import { SobakaContext } from 'sobaka-sample-audio-worklet'
 
@@ -13,6 +20,7 @@
   import Workspace from './components/Workspace.svelte'
   import modules from './state/modules'
   import ModuleWrapper from './modules/ModuleWrapper.svelte'
+  import Theme from './components/Theme.svelte'
 
   let sampler: Writable<SobakaContext | null> = writable(null)
   setContext('sampler', sampler)
@@ -31,6 +39,7 @@
   })
 </script>
 
+<Theme />
 <Router {url}>
   <main>
     <Route path="/">

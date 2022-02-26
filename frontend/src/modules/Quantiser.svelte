@@ -5,14 +5,35 @@
   }
 </style>
 
+<script context="module" lang="ts">
+  import { ModuleTheme } from '../components/Theme.svelte'
+  export const theme: Partial<ModuleTheme> = {
+    highlight: 'var(--cyan)'
+  }
+</script>
+
 <script lang="ts">
   import { Quantiser } from 'sobaka-sample-audio-worklet'
   import { onDestroy } from 'svelte'
   import Panel from './shared/Panel.svelte'
   import Plug from './shared/Plug.svelte'
   import { get_module_context } from './ModuleWrapper.svelte'
+  import { into_style } from '../components/Theme.svelte'
 
-  const NOTE_LABELS = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'] as const
+  const NOTE_LABELS = [
+    'C',
+    'C#',
+    'D',
+    'D#',
+    'E',
+    'F',
+    'F#',
+    'G',
+    'G#',
+    'A',
+    'A#',
+    'B'
+  ] as const
 
   let name = 'quantiser'
   const { context, get_sub_state, update_sub_state } = get_module_context()
@@ -41,7 +62,7 @@
   })
 </script>
 
-<Panel name="quantiser" height={4} width={6}>
+<Panel name="quantiser" height={4} width={6} custom_style={into_style(theme)}>
   {#await loading}
     <p>Loading...</p>
   {:then}

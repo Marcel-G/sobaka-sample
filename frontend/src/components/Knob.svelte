@@ -4,7 +4,7 @@
     margin: 0.25rem;
     pointer-events: none;
     flex: 1 1 auto;
-    min-width: 50px;
+    min-width: 48px;
   }
   .knob {
     position: relative;
@@ -18,9 +18,10 @@
     padding: 0;
     border-radius: 50%;
     transform: rotate(calc(var(--rotation) * 1rad));
+    background-color: var(--module-knob-background);
     transform-origin: 50% 50%;
 
-    border: 2px solid black;
+    box-shadow: inset 0 0 10px var(--background);
   }
 
   .knob::after {
@@ -30,12 +31,12 @@
     left: 50%;
     top: 4px;
 
-    width: 0.5rem;
+    width: 3px;
     height: 0.5rem;
 
-    border-radius: 50%;
-    border: 1px solid black;
-    background-color: black;
+    border-radius: 1.5px;
+    /* border: 2px solid var(--module-highlight); */
+    background-color: var(--module-highlight);
     transform: translateX(-50%);
   }
 
@@ -122,7 +123,7 @@
     <input
       autofocus
       class="direct-input"
-      step={step}
+      {step}
       type="number"
       value={parseFloat(value.toFixed(3))}
       on:blur={() => (direct_input = false)}

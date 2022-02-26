@@ -1,3 +1,10 @@
+<script context="module" lang="ts">
+  import { ModuleTheme } from '../components/Theme.svelte'
+  export const theme: Partial<ModuleTheme> = {
+    highlight: 'var(--pink)'
+  }
+</script>
+
 <script lang="ts">
   import { Sampler } from 'sobaka-sample-audio-worklet'
   import { onDestroy } from 'svelte'
@@ -5,6 +12,7 @@
   import Plug from './shared/Plug.svelte'
   import { get_module_context } from './ModuleWrapper.svelte'
   import CvParameter from './shared/CvParameter.svelte'
+  import { into_style } from '../components/Theme.svelte'
 
   const { context, update_sub_state, get_sub_state } = get_module_context()
 
@@ -69,7 +77,7 @@
   })
 </script>
 
-<Panel name="sampler" height={8} width={3}>
+<Panel name="sampler" height={8} width={3} custom_style={into_style(theme)}>
   {#await loading}
     <p>Loading...</p>
   {:then}

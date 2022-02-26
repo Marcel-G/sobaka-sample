@@ -1,8 +1,5 @@
 <script lang="ts">
-  import {
-    AbstractNode,
-    Parameter
-  } from 'sobaka-sample-audio-worklet'
+  import { AbstractNode, Parameter } from 'sobaka-sample-audio-worklet'
   import type { NodeType, AnyInput } from 'sobaka-sample-audio-worklet'
   import { onDestroy } from 'svelte'
   import Knob from '../../components/Knob.svelte'
@@ -48,11 +45,7 @@
 {:then}
   <Knob {step} bind:value bind:range>
     <div slot="inputs">
-      <Plug
-        name={`${name}_Cv`}
-        for_node={parameter}
-        for_input={'Cv'}
-      />
+      <Plug name={`${name}_Cv`} for_node={parameter} for_input={'Cv'} />
     </div>
   </Knob>
 {/await}
