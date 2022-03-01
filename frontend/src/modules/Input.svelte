@@ -1,7 +1,8 @@
 <script context="module" lang="ts">
   import { ModuleTheme } from '../components/Theme.svelte'
   export const theme: Partial<ModuleTheme> = {
-    highlight: 'var(--pink)'
+    highlight: 'var(--pink)',
+    background: 'var(--pink-dark)'
   }
 </script>
 
@@ -48,7 +49,7 @@
   })
 </script>
 
-<Panel name="input" height={2} width={2} custom_style={into_style(theme)}>
+<Panel name="input" height={4} width={4} custom_style={into_style(theme)}>
   {#await loading}
     <p>Loading...</p>
   {:then}

@@ -4,6 +4,7 @@
     border-radius: 0.5rem;
     background-color: var(--module-background);
     border: 2px solid var(--module-highlight);
+    border-top-width: 1rem;
     padding: 0.5rem;
 
     cursor: move;
@@ -18,16 +19,58 @@
     left: 0;
     top: 0;
     right: 0;
+
+    font-size: 0.75rem;
+
+    padding-left: 0.25rem;
+
+    height: 1rem;
     transform: translateY(-100%);
-    padding: 0.25rem 0;
     display: flex;
     justify-content: space-between;
     align-items: flex-end;
+    pointer-events: none;
+  }
+
+  .close {
+    font-family: monospace;
+    border: 0;
+    /* border-radius: 0.25rem; */
+    background: var(--module-background);
+    color: var(--module-foreground);
+    line-height: 0;
+    white-space: nowrap;
+    text-decoration: none;
+    cursor: pointer;
+
+    height: calc(1rem - 2px);
+    width: 1.5rem;
+    border-top-right-radius: 0.5rem;
+
+    /* margin-right: -2px; */
+    transition: opacity 0.125s;
+
+    pointer-events: all;
+  }
+
+  .close:hover {
+    opacity: 0.75;
+  }
+
+  .close:active {
+    opacity: 0;
+    color: var(--module-background);
   }
 
   .name {
     text-transform: uppercase;
     font-family: monospace;
+    font-weight: bold;
+    color: var(--background);
+    mix-blend-mode: difference;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .inputs,
   .outputs {
@@ -65,7 +108,7 @@
   $: col = `${position.x + 1} / span ${width}`
   $: row = `${position.y + 1} / span ${height}`
 
-  const grid = 1.25 * 16 // grid is 1.25rem;
+  const grid = 0.5 * 16 // grid is 0.5rem;
   const gap = 0.5 * 16 // grid is 0.5rem
 
   const onMove: OnDrag = (x, y, box) => {

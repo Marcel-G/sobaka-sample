@@ -1,10 +1,10 @@
 <style>
   .wrapper {
     position: relative;
-    margin: 0.25rem;
+    margin: 0.125rem;
     pointer-events: none;
     flex: 1 1 auto;
-    min-width: 48px;
+    min-width: 45px;
   }
   .knob {
     position: relative;
@@ -17,6 +17,7 @@
 
     padding: 0;
     border-radius: 50%;
+    border: 2px solid var(--module-highlight);
     transform: rotate(calc(var(--rotation) * 1rad));
     background-color: var(--module-knob-background);
     transform-origin: 50% 50%;

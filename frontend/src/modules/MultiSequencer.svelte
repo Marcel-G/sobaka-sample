@@ -1,7 +1,8 @@
 <script context="module" lang="ts">
   import { ModuleTheme } from '../components/Theme.svelte'
   export const theme: Partial<ModuleTheme> = {
-    highlight: 'var(--cyan)'
+    highlight: 'var(--cyan)',
+    background: 'var(--cyan-dark)'
   }
 </script>
 
@@ -44,8 +45,8 @@
 
 <Panel
   name="multi-sequencer"
-  height={2 + 1 * count}
-  width={10}
+  height={4 + 2 * count}
+  width={18}
   custom_style={into_style(theme)}
 >
   {#each { length: count } as _, i}

@@ -14,7 +14,6 @@
   import type { Writable } from 'svelte/store'
   import { init_sampler } from './audio'
 
-  import Oscilloscope from './components/Oscilloscope.svelte'
   import Toolbox from './components/Toolbox.svelte'
   import Wires from './components/Wires.svelte'
   import Workspace from './components/Workspace.svelte'
@@ -47,7 +46,6 @@
     </Route>
     <Route path="workspace/:id" let:params>
       {#if $sampler}
-        <Oscilloscope />
         <Toolbox />
         <Workspace id={params.id}>
           {#each $module_list as module (module.id)}

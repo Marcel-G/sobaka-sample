@@ -9,7 +9,8 @@
 <script context="module" lang="ts">
   import { ModuleTheme } from '../components/Theme.svelte'
   export const theme: Partial<ModuleTheme> = {
-    highlight: 'var(--purple)'
+    highlight: 'var(--purple)',
+    background: 'var(--purple-dark)'
   }
 </script>
 
@@ -33,7 +34,7 @@
   })
 </script>
 
-<Panel name="reverb" height={7} width={5} custom_style={into_style(theme)}>
+<Panel name="reverb" height={12} width={8} custom_style={into_style(theme)}>
   {#await loading}
     <p>Loading...</p>
   {:then}

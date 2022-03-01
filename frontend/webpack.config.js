@@ -25,7 +25,9 @@ module.exports = merge(webAudioPartial, {
             compilerOptions: {
               dev: !prod
             },
-            preprocess: sveltePreprocess({}),
+            preprocess: sveltePreprocess({
+              postcss: true
+            }),
             emitCss: prod,
             hotReload: !prod
           }

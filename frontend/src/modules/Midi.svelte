@@ -1,7 +1,8 @@
 <script context="module" lang="ts">
   import { ModuleTheme } from '../components/Theme.svelte'
   export const theme: Partial<ModuleTheme> = {
-    highlight: 'var(--cyan)'
+    highlight: 'var(--cyan)',
+    background: 'var(--cyan-dark)'
   }
 </script>
 
@@ -60,7 +61,7 @@
   })
 </script>
 
-<Panel name="midi" height={2} width={4} custom_style={into_style(theme)}>
+<Panel name="midi" height={4} width={6} custom_style={into_style(theme)}>
   <Dropdown options={inputs.map(input => input.id)} bind:selected={active_device_id} />
 
   <div slot="outputs">
