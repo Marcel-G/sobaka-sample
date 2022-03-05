@@ -17,6 +17,7 @@ pub struct MidiNode {
 #[ts(export)]
 pub enum MidiOutputMode {
     Note,
+    Clock,
     Gate,
 }
 
@@ -28,6 +29,7 @@ pub enum MidiMessageEvent {
     // Values are 0-127 where C4 is 60
     NoteOn { value: u8 },
     NoteOff { value: u8 },
+    Clock,
     None,
 }
 
@@ -42,6 +44,14 @@ impl Node<InputId> for MidiNode {
                         self.reset = false;
                     } else {
                         output[0][ix] = if self.enabled { 1.0 } else { 0.0 };
+                    }
+                },
+                MidiOutputMode::Clock => {
+                    if self.enabled {
+                        output[0][ix] = 1.0;
+                        self.enabled = false;
+                    } else {
+                        output[0][ix] = 0.0;
                     }
                 }
             }
@@ -80,6 +90,9 @@ impl StatefulNode for MidiNode {
             }
             MidiMessageEvent::OutputMode(mode) => self.mode = mode,
             MidiMessageEvent::None => {}
+            MidiMessageEvent::Clock => {
+                self.enabled = true;
+            },
         }
     }
 }

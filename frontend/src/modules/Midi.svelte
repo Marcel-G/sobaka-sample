@@ -25,11 +25,13 @@
 
   const midi_gate = new HACKMidi(context, 'Gate')
   const midi_note = new HACKMidi(context, 'Note')
+  const midi_clock = new HACKMidi(context, 'Clock')
 
   $: {
     // Cleanup previous
     default_device?.removeListener('noteon')
     default_device?.removeListener('noteoff')
+    default_device?.removeListener('clock')
 
     // Attach new device
     default_device = inputs.find(matches({ id: active_device_id }))!
@@ -40,6 +42,9 @@
     default_device?.addListener('noteoff', event => {
       midi_gate.update({ NoteOff: { value: event.note.number } })
       midi_note.update({ NoteOff: { value: event.note.number } })
+    })
+    default_device?.addListener('clock', event => {
+      midi_gate.update('Clock')
     })
   }
 
@@ -56,15 +61,18 @@
     // Cleanup previous
     default_device?.removeListener('noteon')
     default_device?.removeListener('noteoff')
+    default_device?.removeListener('clock')
     void midi_gate.dispose()
     void midi_note.dispose()
+    void midi_clock.dispose()
   })
 </script>
 
-<Panel name="midi" height={4} width={6} custom_style={into_style(theme)}>
+<Panel name="midi" height={5} width={6} custom_style={into_style(theme)}>
   <Dropdown options={inputs.map(input => input.id)} bind:selected={active_device_id} />
 
   <div slot="outputs">
+    <Plug name="output_clock" for_node={midi_clock} />
     <Plug name="output_gate" for_node={midi_gate} />
     <Plug name="output_note" for_node={midi_note} />
   </div>
