@@ -86,6 +86,10 @@
     right: 0;
     transform: translateX(50%);
   }
+  .vertical {
+    display: flex;
+    flex-direction: column;
+  }
 </style>
 
 <script lang="ts">
@@ -138,9 +142,9 @@
   </div>
   <slot />
   <div class="inputs">
-    <slot name="inputs" />
+    <slot class="vertical" name="inputs" />
   </div>
   <div class="outputs">
-    <slot name="outputs" />
+    <slot class="vertical" name="outputs" />
   </div>
 </div>
