@@ -46,7 +46,7 @@
 <Panel
   name="multi-sequencer"
   height={4 + 2 * count}
-  width={18}
+  width={24}
   custom_style={into_style(theme)}
 >
   {#each { length: count } as _, i}

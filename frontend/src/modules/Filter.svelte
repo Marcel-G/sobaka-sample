@@ -1,7 +1,7 @@
 <style>
   .controls {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: auto auto;
     pointer-events: none;
   }
 </style>

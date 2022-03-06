@@ -43,8 +43,8 @@
       midi_gate.update({ NoteOff: { value: event.note.number } })
       midi_note.update({ NoteOff: { value: event.note.number } })
     })
-    default_device?.addListener('clock', event => {
-      midi_gate.update('Clock')
+    default_device?.addListener('clock', () => {
+      midi_clock.update('Clock')
     })
   }
 

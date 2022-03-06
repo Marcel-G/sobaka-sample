@@ -39,7 +39,7 @@
 
   export let name: string
   export let sequencer_state: SequencerLayout = {
-    sequence: Array(8).fill(false) as boolean[]
+    sequence: Array(16).fill(false) as boolean[]
   }
   export let on_mount: (sequencer: Sequencer) => void
 

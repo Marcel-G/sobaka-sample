@@ -40,12 +40,11 @@
   })
 </script>
 
-{#await loading}
-  <p>Loading...</p>
-{:then}
-  <Knob {step} bind:value bind:range>
-    <div slot="inputs">
-      <Plug name={`${name}_Cv`} for_node={parameter} for_input={'Cv'} />
-    </div>
-  </Knob>
-{/await}
+<Knob {step} bind:value bind:range>
+  <div slot="inputs">
+    {#await loading}
+    {:then}
+    <Plug name={`${name}_Cv`} for_node={parameter} for_input={'Cv'} />
+    {/await}
+  </div>
+</Knob>
