@@ -1,12 +1,18 @@
 <style>
   .plug {
     cursor: pointer;
-    width: 0.625rem;
-    height: 0.625rem;
+    width: 0.8rem;
+    height: 0.8rem;
     background-color: var(--background);
     border: 2px solid var(--module-highlight);
 
+    transition: border-color 0.25s;
+
     border-radius: 50%;
+  }
+
+  .plug:hover {
+    border-color: var(--foreground);
   }
 
   .wrapper {
@@ -111,8 +117,8 @@
     bind:this={$node}
   />
   <span
-    class:left="{position === 'left'}"
-    class:right="{position === 'right'}"
+    class:left={position === 'left'}
+    class:right={position === 'right'}
     class="tooltip left"
   >
     {label}

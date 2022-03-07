@@ -42,9 +42,8 @@
 
 <Knob {step} bind:value bind:range>
   <div slot="inputs">
-    {#await loading}
-    {:then}
-    <Plug name={`${name}_Cv`} for_node={parameter} for_input={'Cv'} />
+    {#await loading then}
+      <Plug name={`${name}_Cv`} for_node={parameter} for_input={'Cv'} />
     {/await}
   </div>
 </Knob>

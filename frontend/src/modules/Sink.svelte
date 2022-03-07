@@ -1,10 +1,3 @@
-<script context="module" lang="ts">
-  import { ModuleTheme } from '../components/Theme.svelte'
-  export const theme: Partial<ModuleTheme> = {
-    highlight: 'var(--pink)',
-    background: 'var(--pink-dark)'
-  }
-</script>
 <style>
   .oscilloscope-wrapper {
     position: absolute;
@@ -14,6 +7,14 @@
   }
 </style>
 
+<script context="module" lang="ts">
+  import { ModuleTheme } from '../components/Theme.svelte'
+  export const theme: Partial<ModuleTheme> = {
+    highlight: 'var(--pink)',
+    background: 'var(--pink-dark)'
+  }
+</script>
+
 <script lang="ts">
   import { Sink } from 'sobaka-sample-audio-worklet'
   import { onDestroy } from 'svelte'
@@ -21,7 +22,7 @@
   import { get_module_context } from './ModuleWrapper.svelte'
   import Plug from './shared/Plug.svelte'
   import { into_style } from '../components/Theme.svelte'
-  import Oscilloscope from '../components/Oscilloscope.svelte';
+  import Oscilloscope from '../components/Oscilloscope.svelte'
 
   const { context } = get_module_context()
 

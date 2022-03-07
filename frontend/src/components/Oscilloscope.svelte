@@ -19,8 +19,7 @@
   let fftSize = 2048 * 16
 
   function get_css_var(name: string): string {
-    return getComputedStyle(canvas)
-      .getPropertyValue(name);
+    return getComputedStyle(canvas).getPropertyValue(name)
   }
 
   let analyserNode = new AnalyserNode(get(context).context, { fftSize })
@@ -34,7 +33,7 @@
   function init(ctx: CanvasRenderingContext2D, width: number, height: number) {
     ctx.fillStyle = get_css_var('--module-background')
     ctx.strokeStyle = get_css_var('--module-foreground')
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 2
   }
   function primer(ctx: CanvasRenderingContext2D, width: number, height: number) {
     ctx.fillRect(0, 0, width, height)
@@ -67,15 +66,15 @@
     }
   }
   onMount(() => {
-    const width = canvas.width; 
-    const height = canvas.height;
+    const width = canvas.width
+    const height = canvas.height
 
     const context = canvas.getContext('2d')!
     init(context, width, height)
     context.fillRect(0, 0, canvas.width, canvas.height)
 
     function draw() {
-      if (!canvas) return;
+      if (!canvas) return
       if (!paused) requestAnimationFrame(draw)
       context.clearRect(0, 0, width, height)
       primer(context, width, height)
@@ -98,8 +97,4 @@
   }
 </script>
 
-<canvas
-  class="canvas"
-  bind:this={canvas}
-  on:click={handle_click}
-/>
+<canvas class="canvas" bind:this={canvas} on:click={handle_click} />

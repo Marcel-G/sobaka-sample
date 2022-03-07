@@ -45,7 +45,7 @@ impl Node<InputId> for MidiNode {
                     } else {
                         output[0][ix] = if self.enabled { 1.0 } else { 0.0 };
                     }
-                },
+                }
                 MidiOutputMode::Clock => {
                     if self.enabled {
                         output[0][ix] = 1.0;
@@ -92,7 +92,7 @@ impl StatefulNode for MidiNode {
             MidiMessageEvent::None => {}
             MidiMessageEvent::Clock => {
                 self.enabled = true;
-            },
+            }
         }
     }
 }

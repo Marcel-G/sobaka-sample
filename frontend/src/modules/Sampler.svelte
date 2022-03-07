@@ -1,3 +1,35 @@
+<style>
+  .controls {
+    display: grid;
+    grid-template-columns: auto auto;
+    pointer-events: none;
+
+    height: 100%;
+    width: 100%;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .file-input input {
+    display: none;
+  }
+
+  .file-input {
+    pointer-events: all;
+    border: 2px solid var(--module-highlight);
+    padding: 0.25rem;
+    border-radius: 0.5rem;
+    font-family: monospace;
+    cursor: pointer;
+
+    transition: border-color 0.25s;
+  }
+
+  .file-input:hover {
+    border-color: var(--foreground);
+  }
+</style>
+
 <script context="module" lang="ts">
   import { ModuleTheme } from '../components/Theme.svelte'
   export const theme: Partial<ModuleTheme> = {
@@ -78,29 +110,37 @@
   })
 </script>
 
-<Panel name="sampler" height={14} width={5} custom_style={into_style(theme)}>
+<Panel name="sampler" height={10} width={8} custom_style={into_style(theme)}>
   {#await loading}
     <p>Loading...</p>
   {:then}
-    <CvParameter
-      for_node={sampler}
-      for_input={'Start'}
-      default_value={0}
-      default_range={[0, 1]}
-    />
-    <CvParameter
-      for_node={sampler}
-      for_input={'Length'}
-      default_value={1}
-      default_range={[0, 1]}
-    />
-    <CvParameter
-      for_node={sampler}
-      for_input={'Speed'}
-      default_value={1}
-      default_range={[0, 10]}
-    />
-    <input on:change={handle_change} type="file" accept="audio/*" />
+    <div class="controls">
+      {#if sampler_data}
+        <CvParameter
+          for_node={sampler}
+          for_input={'Start'}
+          default_value={0}
+          default_range={[0, 1]}
+        />
+        <CvParameter
+          for_node={sampler}
+          for_input={'Length'}
+          default_value={1}
+          default_range={[0, 1]}
+        />
+        <CvParameter
+          for_node={sampler}
+          for_input={'Speed'}
+          default_value={1}
+          default_range={[0, 10]}
+        />
+      {:else}
+        <label class="file-input">
+          <input on:change={handle_change} type="file" accept="audio/*" />
+          Add Sample
+        </label>
+      {/if}
+    </div>
   {/await}
 
   <div slot="inputs">

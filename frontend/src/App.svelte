@@ -14,12 +14,12 @@
   import type { Writable } from 'svelte/store'
   import { init_sampler } from './audio'
 
-  import Toolbox from './components/Toolbox.svelte'
   import Wires from './components/Wires.svelte'
   import Workspace from './components/Workspace.svelte'
   import modules from './state/modules'
   import ModuleWrapper from './modules/ModuleWrapper.svelte'
   import Theme from './components/Theme.svelte'
+  import CssReset from './components/CSSReset.svelte'
 
   let sampler: Writable<SobakaContext | null> = writable(null)
   setContext('sampler', sampler)
@@ -38,6 +38,7 @@
   })
 </script>
 
+<CssReset />
 <Theme />
 <Router {url}>
   <main>
@@ -46,7 +47,6 @@
     </Route>
     <Route path="workspace/:id" let:params>
       {#if $sampler}
-        <Toolbox />
         <Workspace id={params.id}>
           {#each $module_list as module (module.id)}
             <ModuleWrapper {module} context={$sampler} />

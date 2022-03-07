@@ -92,6 +92,20 @@
   }
 </style>
 
+<script context="module" lang="ts">
+  export const into_grid_coords = (coords: {
+    x: number
+    y: number
+  }): { x: number; y: number } => {
+    const grid = 0.5 * 16 // grid is 0.5rem;
+    const gap = 0.5 * 16 // grid is 0.5rem
+    return {
+      x: Math.round(coords.x / (grid + gap)),
+      y: Math.round(coords.y / (grid + gap))
+    }
+  }
+</script>
+
 <script lang="ts">
   import modules from '../../state/modules'
   import { useDrag } from '../../actions/drag'
@@ -112,12 +126,8 @@
   $: col = `${position.x + 1} / span ${width}`
   $: row = `${position.y + 1} / span ${height}`
 
-  const grid = 0.5 * 16 // grid is 0.5rem;
-  const gap = 0.5 * 16 // grid is 0.5rem
-
-  const onMove: OnDrag = (x, y, box) => {
-    x = Math.round(x / (grid + gap))
-    y = Math.round(y / (grid + gap))
+  const onMove: OnDrag = (x_in, y_in, box) => {
+    let { x, y } = into_grid_coords({ x: x_in, y: y_in })
     if (x < 0 || y < 0) {
       return
     }

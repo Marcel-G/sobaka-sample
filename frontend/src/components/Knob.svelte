@@ -23,6 +23,12 @@
     transform-origin: 50% 50%;
 
     box-shadow: inset 0 0 10px var(--background);
+
+    transition: border-color 0.25s;
+  }
+
+  .knob:hover {
+    border-color: var(--foreground);
   }
 
   .knob::after {
@@ -36,9 +42,15 @@
     height: 0.5rem;
 
     border-radius: 1.5px;
-    /* border: 2px solid var(--module-highlight); */
+
     background-color: var(--module-highlight);
     transform: translateX(-50%);
+
+    transition: background-color 0.25s;
+  }
+
+  .knob:hover:after {
+    background-color: var(--foreground);
   }
 
   .inputs {
