@@ -62,7 +62,7 @@ module.exports = merge(webAudioPartial, {
   output: {
     publicPath: "/",
     path: dist,
-    filename: "[name].js",
+    filename: '[name].[contenthash].js',
   },
   devServer: {
     contentBase: dist,
