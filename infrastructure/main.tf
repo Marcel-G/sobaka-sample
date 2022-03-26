@@ -128,7 +128,7 @@ resource "aws_s3_bucket" "website_root" {
 
   website {
     index_document = "index.html"
-    error_document = "404.html"
+    error_document = "index.html"
   }
 
   tags = merge(var.tags, {
@@ -198,13 +198,6 @@ resource "aws_cloudfront_distribution" "website_cdn_root" {
   viewer_certificate {
     acm_certificate_arn = data.aws_acm_certificate.wildcard_website.arn
     ssl_support_method  = "sni-only"
-  }
-
-  custom_error_response {
-    error_caching_min_ttl = 300
-    error_code            = 404
-    response_page_path    = "/404.html"
-    response_code         = 404
   }
 
   tags = merge(var.tags, {
