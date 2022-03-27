@@ -93,7 +93,7 @@ jobs:
   deploy:
     name: "🏃‍♂️ Deploy"
     runs-on: ubuntu-latest
-    # if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     permissions:
       id-token: write
       contents: read
