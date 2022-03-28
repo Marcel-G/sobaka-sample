@@ -114,13 +114,12 @@ jobs:
           aws s3 sync frontend/dist s3://${{ needs.terraform.outputs.deploy_bucket }} \
             --acl public-read \
             --metadata-directive REPLACE \
-            --cache-control 'max-age=31104000' \
-            --delete
+            --cache-control 'max-age=31104000'
       - name: "Invalidate CloudFront Cache"
         run: |
           aws cloudfront create-invalidation \
             --distribution-id ${{ needs.terraform.outputs.website_cdn_root_id }} \
-            --paths "/*"
+            --paths "/index.html"
     needs:
       - build
       - terraform
