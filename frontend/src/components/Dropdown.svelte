@@ -1,7 +1,19 @@
 <style>
   select {
+    color: var(--module-foreground);
+    font-family: monospace;
     width: 100%;
     margin-bottom: 0.5rem;
+
+    cursor: pointer;
+
+    border-bottom: 2px solid var(--module-highlight);
+
+    transition: border-color 0.25s;
+  }
+
+  select:hover {
+    border-color: var(--foreground);
   }
 </style>
 

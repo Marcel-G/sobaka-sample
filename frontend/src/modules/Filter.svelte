@@ -1,10 +1,18 @@
 <style>
   .controls {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: auto auto;
     pointer-events: none;
   }
 </style>
+
+<script context="module" lang="ts">
+  import { ModuleTheme } from '../components/Theme.svelte'
+  export const theme: Partial<ModuleTheme> = {
+    highlight: 'var(--purple)',
+    background: 'var(--purple-dark)'
+  }
+</script>
 
 <script lang="ts">
   import { Filter } from 'sobaka-sample-audio-worklet'
@@ -14,6 +22,7 @@
   import CvParameter from './shared/CvParameter.svelte'
   import { get_module_context } from './ModuleWrapper.svelte'
   import Dropdown from '../components/Dropdown.svelte'
+  import { into_style } from '../components/Theme.svelte'
 
   const { context, get_sub_state, update_sub_state } = get_module_context()
 
@@ -36,11 +45,14 @@
   })
 </script>
 
-<Panel name="filter" height={4} width={5}>
+<Panel name="filter" height={8} width={8} custom_style={into_style(theme)}>
   {#await loading}
     <p>Loading...</p>
   {:then}
-    <Dropdown options={["HighPass" , "LowPass" , "BandPass" , "Peak"]} bind:selected={kind} />
+    <Dropdown
+      options={['HighPass', 'LowPass', 'BandPass', 'Peak']}
+      bind:selected={kind}
+    />
     <div class="controls">
       <CvParameter
         for_node={filter}

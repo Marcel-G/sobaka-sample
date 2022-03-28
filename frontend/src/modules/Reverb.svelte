@@ -6,6 +6,14 @@
   }
 </style>
 
+<script context="module" lang="ts">
+  import { ModuleTheme } from '../components/Theme.svelte'
+  export const theme: Partial<ModuleTheme> = {
+    highlight: 'var(--purple)',
+    background: 'var(--purple-dark)'
+  }
+</script>
+
 <script lang="ts">
   import { Reverb } from 'sobaka-sample-audio-worklet'
   import { onDestroy } from 'svelte'
@@ -13,6 +21,7 @@
   import Plug from './shared/Plug.svelte'
   import { get_module_context } from './ModuleWrapper.svelte'
   import CvParameter from './shared/CvParameter.svelte'
+  import { into_style } from '../components/Theme.svelte'
 
   const { context } = get_module_context()
 
@@ -25,7 +34,7 @@
   })
 </script>
 
-<Panel name="reverb" height={7} width={5}>
+<Panel name="reverb" height={12} width={8} custom_style={into_style(theme)}>
   {#await loading}
     <p>Loading...</p>
   {:then}

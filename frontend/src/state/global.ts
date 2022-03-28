@@ -38,13 +38,11 @@ export const init = () => {
   }
 
   const commit = debounce(() => {
-    void persistant
-      .save(current_id)
-      .then((id) => {
-        if (id) {
-          history.pushState({}, '', `/workspace/${id}`)
-        }
-      })
+    void persistant.save(current_id).then(id => {
+      if (id) {
+        history.pushState({}, '', `/workspace/${id}`)
+      }
+    })
   }, 2000)
 
   const cleanup = [modules.store().subscribe(commit), links.store().subscribe(commit)]

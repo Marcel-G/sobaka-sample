@@ -1,9 +1,18 @@
+<script context="module" lang="ts">
+  import { ModuleTheme } from '../components/Theme.svelte'
+  export const theme: Partial<ModuleTheme> = {
+    highlight: 'var(--cyan)',
+    background: 'var(--cyan-dark)'
+  }
+</script>
+
 <script lang="ts">
   import { Sequencer, Sum } from 'sobaka-sample-audio-worklet'
   import Panel from './shared/Panel.svelte'
   import Plug from './shared/Plug.svelte'
   import SharedSequencer from './SharedSequencer.svelte'
   import { get_module_context } from './ModuleWrapper.svelte'
+  import { into_style } from '../components/Theme.svelte'
 
   const { context, get_sub_state, update_sub_state } = get_module_context()
 
@@ -34,7 +43,12 @@
   }
 </script>
 
-<Panel name="multi-sequencer" height={2 + 1 * count} width={10}>
+<Panel
+  name="multi-sequencer"
+  height={4 + 2 * count}
+  width={24}
+  custom_style={into_style(theme)}
+>
   {#each { length: count } as _, i}
     <SharedSequencer name={`Sequencer_${i}`} on_mount={mount_sequencer(i)} />
   {/each}

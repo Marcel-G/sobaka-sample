@@ -28,14 +28,14 @@ const init = () => {
     return true
   }
 
-  const create = (type: ModuleUI): string => {
+  const create = (type: ModuleUI, position: { x: number; y: number }): string => {
     const id = Math.random().toString(36).substr(2, 9)
 
     module_state.update(
       concat(_, {
         id,
         type,
-        position: { x: 5, y: 5 }
+        position
       })
     )
 

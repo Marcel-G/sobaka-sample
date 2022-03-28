@@ -25,7 +25,9 @@ module.exports = merge(webAudioPartial, {
             compilerOptions: {
               dev: !prod
             },
-            preprocess: sveltePreprocess({}),
+            preprocess: sveltePreprocess({
+              postcss: true
+            }),
             emitCss: prod,
             hotReload: !prod
           }
@@ -60,7 +62,7 @@ module.exports = merge(webAudioPartial, {
   output: {
     publicPath: "/",
     path: dist,
-    filename: "[name].js",
+    filename: '[name].[contenthash].js',
   },
   devServer: {
     contentBase: dist,

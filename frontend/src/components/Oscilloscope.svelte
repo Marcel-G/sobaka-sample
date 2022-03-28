@@ -1,3 +1,10 @@
+<style>
+  .canvas {
+    width: 100%;
+    height: 100%;
+  }
+</style>
+
 <script lang="ts">
   import type { SobakaContext } from 'sobaka-sample-audio-worklet'
   import { getContext, onMount } from 'svelte'
@@ -7,13 +14,13 @@
 
   let canvas: HTMLCanvasElement
 
-  let pixelRatio = 2 //window.devicePixelRatio;
-  let width = 800
-  let height = 100
-
   let paused = false
 
   let fftSize = 2048 * 16
+
+  function get_css_var(name: string): string {
+    return getComputedStyle(canvas).getPropertyValue(name)
+  }
 
   let analyserNode = new AnalyserNode(get(context).context, { fftSize })
 
@@ -23,11 +30,10 @@
 
   let draw_fn: () => void // @todo this is wird
 
-  const DEFAULT_FILL = '#111111'
-  const DEFAULT_STROKE = '#11ff11'
   function init(ctx: CanvasRenderingContext2D, width: number, height: number) {
-    ctx.fillStyle = DEFAULT_FILL
-    ctx.strokeStyle = DEFAULT_STROKE
+    ctx.fillStyle = get_css_var('--module-background')
+    ctx.strokeStyle = get_css_var('--module-foreground')
+    ctx.lineWidth = 2
   }
   function primer(ctx: CanvasRenderingContext2D, width: number, height: number) {
     ctx.fillRect(0, 0, width, height)
@@ -43,28 +49,37 @@
       let x = i * (width / data.length) // need to fix x
       let v = data[i] / 128.0
       let y = (v * height) / 2
-      if (v >= 2.0 || v <= 0.0) {
-        let fill = ctx.fillStyle
-        ctx.fillStyle = 'red'
-        ctx.fillRect(x, y, 1, height)
-        ctx.fillStyle = fill
-      }
       if (i === 0) ctx.moveTo(x, y)
       else ctx.lineTo(x, y)
     }
     ctx.stroke()
+
+    for (let i = 0; i < data.length; i++) {
+      let x = i * (width / data.length) // need to fix x
+      let v = data[i] / 128.0
+      if (v >= 2.0 || v <= 0.0) {
+        let fill = ctx.fillStyle
+        ctx.fillStyle = get_css_var('--red')
+        ctx.fillRect(x, v, 1, height)
+        ctx.fillStyle = fill
+      }
+    }
   }
   onMount(() => {
+    const width = canvas.width
+    const height = canvas.height
+
     const context = canvas.getContext('2d')!
-    init(context, width * pixelRatio, height * pixelRatio)
-    context.fillRect(0, 0, width * pixelRatio, height * pixelRatio)
+    init(context, width, height)
+    context.fillRect(0, 0, canvas.width, canvas.height)
 
     function draw() {
+      if (!canvas) return
       if (!paused) requestAnimationFrame(draw)
-      context.clearRect(0, 0, width * pixelRatio, height * pixelRatio)
-      primer(context, width * pixelRatio, height * pixelRatio)
+      context.clearRect(0, 0, width, height)
+      primer(context, width, height)
       analyserNode.getByteTimeDomainData(u8ar)
-      drawRawOsc(context, u8ar, width * pixelRatio, height * pixelRatio)
+      drawRawOsc(context, u8ar, width, height)
     }
 
     draw_fn = draw
@@ -82,10 +97,4 @@
   }
 </script>
 
-<canvas
-  bind:this={canvas}
-  on:click={handle_click}
-  width={width * pixelRatio}
-  height={height * pixelRatio}
-  style="width: {width}px; height: {height}px;"
-/>
+<canvas class="canvas" bind:this={canvas} on:click={handle_click} />

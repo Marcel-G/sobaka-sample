@@ -9,20 +9,20 @@
   .step {
     height: 1.5rem;
     width: 1.5rem;
-    border: 2px solid black;
+    border: 2px solid var(--module-highlight);
     cursor: pointer;
     border-radius: 0.5rem;
   }
   .step.active {
-    background-color: pink;
+    background-color: var(--foreground);
   }
 
   .step.active.selected {
-    background-color: red;
+    background-color: var(--module-highlight);
   }
 
   .step.selected {
-    background-color: gainsboro;
+    background-color: var(--background);
   }
 </style>
 
@@ -39,7 +39,7 @@
 
   export let name: string
   export let sequencer_state: SequencerLayout = {
-    sequence: Array(8).fill(false) as boolean[]
+    sequence: Array(16).fill(false) as boolean[]
   }
   export let on_mount: (sequencer: Sequencer) => void
 

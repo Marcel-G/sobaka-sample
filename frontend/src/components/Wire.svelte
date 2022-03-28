@@ -1,11 +1,13 @@
 <style>
   .wire {
+    stroke: var(--orange);
+    fill: var(--orange);
     pointer-events: all;
     cursor: pointer;
-    stroke: black;
   }
   .wire:hover {
-    stroke: red;
+    stroke: var(--red);
+    fill: var(--red);
   }
 </style>
 
@@ -50,14 +52,14 @@
   }
 </script>
 
-<line
-  on:click={on_click}
-  class="wire"
-  stroke-width="4"
-  x1={$from_pos.x}
-  y1={$from_pos.y}
-  x2={$to_pos.x}
-  y2={$to_pos.y}
-/>
-<circle cx={$from_pos.x} cy={$from_pos.y} r="4" />
-<circle cx={$to_pos.x} cy={$to_pos.y} r="4" />
+<g class="wire" on:click={on_click}>
+  <line
+    stroke-width="2"
+    x1={$from_pos.x}
+    y1={$from_pos.y}
+    x2={$to_pos.x}
+    y2={$to_pos.y}
+  />
+  <circle cx={$from_pos.x} cy={$from_pos.y} r="3" />
+  <circle cx={$to_pos.x} cy={$to_pos.y} r="3" />
+</g>

@@ -1,0 +1,130 @@
+name: "CI"
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  terraform:
+    name: "👟 Terraform"
+    runs-on: ubuntu-latest
+    outputs:
+      deploy_bucket: ${{ steps.collect-outputs.outputs.deploy_bucket }}
+      deploy_role: ${{ steps.collect-outputs.outputs.deploy_role }}
+      website_cdn_root_id: ${{ steps.collect-outputs.outputs.website_cdn_root_id }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v1
+        with:
+          # https://github.com/hashicorp/setup-terraform/issues/20#issuecomment-679424701
+          terraform_wrapper: false
+          # terraform_version: 0.13.0:
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+
+      - name: Terraform Format
+        working-directory: infrastructure
+        id: fmt
+        run: terraform fmt -check
+
+      - name: Terraform Init
+        working-directory: infrastructure
+        id: init
+        run: terraform init
+      
+      - name: Terraform Validate
+        working-directory: infrastructure
+        id: validate
+        run: terraform validate -no-color
+
+      - name: Terraform Plan
+        working-directory: infrastructure
+        id: plan
+        if: github.event_name == 'pull_request'
+        run: terraform plan -no-color
+        continue-on-error: true
+
+      - name: Terraform Plan Status
+        if: steps.plan.outcome == 'failure'
+        run: exit 1
+
+      - name: Terraform Apply
+        working-directory: infrastructure
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: terraform apply -auto-approve
+      
+      - name: Terraform Outputs
+        id: collect-outputs
+        working-directory: infrastructure
+        run: |
+          echo "::set-output name=deploy_bucket::$(terraform output -raw website_root_s3_bucket)"
+          echo "::set-output name=deploy_role::$(terraform output -raw role-to-assume)"
+          echo "::set-output name=website_cdn_root_id::$(terraform output -raw website_cdn_root_id)"
+
+  build:
+    name: "🧦 Build"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install latest nightly
+        uses: actions-rs/toolchain@v1
+        with:
+            toolchain: nightly
+            override: true
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+      - uses: actions/setup-node@v2
+        with:
+          node-version: 16
+          cache: 'npm'
+          cache-dependency-path: '**/package-lock.json'
+      - run: npm install
+        working-directory: frontend
+      - run: npm run build
+        working-directory: frontend
+      - uses: actions/upload-artifact@v2
+        with:
+          name: build-output
+          path: frontend/dist 
+  deploy:
+    name: "🏃‍♂️ Deploy"
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - uses: actions/download-artifact@v2
+        with:
+          name: build-output
+          path: frontend/dist
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-region: us-east-1
+          role-to-assume: ${{ needs.terraform.outputs.deploy_role }}
+          role-session-name: DeploySession
+      - name: "Copy files to S3"
+        run: |
+          aws s3 sync frontend/dist s3://${{ needs.terraform.outputs.deploy_bucket }} \
+            --acl public-read \
+            --metadata-directive REPLACE \
+            --cache-control 'max-age=31104000' \
+            --delete
+      - name: "Invalidate CloudFront Cache"
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ needs.terraform.outputs.website_cdn_root_id }} \
+            --paths "/*"
+    needs:
+      - build
+      - terraform
+
+concurrency: 
+  group: ${{ github.ref }}
+  cancel-in-progress: true
