@@ -3,7 +3,7 @@ name: "CI"
 on:
   push:
     branches:
-      - main
+      - master
   pull_request:
 
 jobs:
@@ -54,7 +54,7 @@ jobs:
 
       - name: Terraform Apply
         working-directory: infrastructure
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        if: github.ref == 'refs/heads/master' && github.event_name == 'push'
         run: terraform apply -auto-approve
       
       - name: Terraform Outputs
@@ -93,7 +93,7 @@ jobs:
   deploy:
     name: "🏃‍♂️ Deploy"
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
     permissions:
       id-token: write
       contents: read
