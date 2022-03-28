@@ -1,16 +1,50 @@
 <style>
   .workspace {
     display: grid;
-    grid-template-columns: repeat(auto-fill, 0.5rem);
-    grid-template-rows: repeat(auto-fill, 0.5rem);
-    position: fixed;
-    inset: 0;
+    grid-auto-rows: 0.5rem;
+    grid-auto-columns: 0.5rem;
     gap: 0.5rem;
+    min-width: max-content;
+    min-height: 100vh;
+    position: relative;
+  }
+
+  .navigation {
+    background-color: var(--current-line);
+    width: 100vw;
+    position: fixed;
+    inset: 0 0 auto 0;
+    z-index: 100;
+  }
+
+  .navigation ul {
+    display: flex;
+    justify-content: flex-end;
+    list-style-type: none;
+  }
+
+  .navigation button {
+    background-color: var(--purple-dark);
+    color: var(--foreground);
+    padding: 0.5rem;
+    margin: 0.5rem;
+    border-radius: 0.25rem;
+
+    font-family: monospace;
+
+    transition: background-color 0.25s;
+
+    cursor: pointer;
+  }
+
+  .navigation button:hover {
+    background-color: var(--purple);
   }
 </style>
 
 <script lang="ts">
   import { onDestroy } from 'svelte'
+  import { Link, navigate } from 'svelte-routing'
 
   import { init } from '../state/global'
   import Toolbox from './Toolbox.svelte'
@@ -25,16 +59,7 @@
   export let id: string
 
   $: set_current_id(id)
-
-  $: if (id == 'new') {
-    persistant.save().then(new_id => {
-      if (new_id) {
-        set_current_id(new_id)
-        history.pushState({}, '', `/workspace/${new_id}`)
-        loading = false
-      }
-    })
-  } else {
+  $: {
     persistant.load(id).then(loaded => {
       if (!loaded) {
         console.error('Cannot load from file')
@@ -42,6 +67,16 @@
         console.log('loading from file')
       }
       loading = false
+    })
+  }
+
+  const handle_fork = () => {
+    persistant.save().then(new_id => {
+      if (new_id) {
+        set_current_id(new_id)
+        navigate(`/workspace/${new_id}`)
+        loading = false
+      }
     })
   }
 
@@ -69,6 +104,19 @@
 </script>
 
 <svelte:window on:keydown={handle_global_keydown} />
+<nav class="navigation">
+  <ul>
+    <li>
+      <Link to="/workspace/new">
+        <button>New</button>
+      </Link>
+    </li>
+    <li>
+      <button on:click={handle_fork}> Fork </button>
+    </li>
+    <ul />
+  </ul>
+</nav>
 <div
   class="workspace"
   on:click|self={handle_close}

@@ -1,4 +1,5 @@
 import { debounce } from 'lodash'
+import { navigate } from 'svelte-routing'
 import type { Link } from './links'
 import links from './links'
 import modules, { AnyModule } from './modules'
@@ -22,9 +23,15 @@ export const global_state = () => {
     links.load(state.links)
   }
 
+  const fresh: Global = {
+    modules: [],
+    links: []
+  }
+
   return {
     load,
-    save
+    save,
+    fresh
   }
 }
 
@@ -40,7 +47,7 @@ export const init = () => {
   const commit = debounce(() => {
     void persistant.save(current_id).then(id => {
       if (id) {
-        history.pushState({}, '', `/workspace/${id}`)
+        navigate(`/workspace/${id}`)
       }
     })
   }, 2000)
