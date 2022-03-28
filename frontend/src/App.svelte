@@ -20,6 +20,7 @@
   import ModuleWrapper from './modules/ModuleWrapper.svelte'
   import Theme from './components/Theme.svelte'
   import CssReset from './components/CSSReset.svelte'
+  import Redirect from './components/Redirect.svelte'
 
   let sampler: Writable<SobakaContext | null> = writable(null)
   setContext('sampler', sampler)
@@ -43,7 +44,7 @@
 <Router {url}>
   <main>
     <Route path="/">
-      Hello <Link to="/workspace/new">click here</Link> to begin
+      <Redirect to="workspace/example" />
     </Route>
     <Route path="workspace/:id" let:params>
       {#if $sampler}

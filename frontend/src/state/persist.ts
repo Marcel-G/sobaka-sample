@@ -3,6 +3,7 @@ import localforage from 'localforage'
 export interface Persistant<S> {
   save(): S
   load(state: S): void
+  fresh: S
 }
 
 export const local_storage = <S>(state: Persistant<S>) => {
@@ -29,12 +30,26 @@ export const local_storage = <S>(state: Persistant<S>) => {
 
   const load = async (id: string): Promise<boolean> => {
     try {
-      const stored = await state_store.getItem<S>(id)
-      if (!stored) {
-        return false
-      } else {
-        state.load(stored)
+      if (id === 'new') { // Load fresh patch 
+        state.load(state.fresh)
         return true
+      } else if (id === 'example') { // Load patch remotely
+        /**
+         * @todo Add backend to fetch remote patches
+         */
+        const data = await import('../../static/example.json')
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore-next-line 
+        state.load(data.default)
+        return true
+      } else { // Load patch locally
+        const stored = await state_store.getItem<S>(id)
+        if (!stored) {
+          return false
+        } else {
+          state.load(stored)
+          return true
+        }
       }
     } catch (error) {
       return false
@@ -43,6 +58,6 @@ export const local_storage = <S>(state: Persistant<S>) => {
 
   return {
     save,
-    load
+    load,
   }
 }
