@@ -32,9 +32,11 @@
     if (!node) return { x: 0, y: 0 } // @todo
 
     const box = node.getBoundingClientRect()
+    const scrollX = document.documentElement.scrollLeft || document.body.scrollLeft
+    const scrollY = document.documentElement.scrollTop || document.body.scrollTop
     return {
-      x: box.x + box.width / 2,
-      y: box.y + box.height / 2
+      x: scrollX + box.x + box.width / 2,
+      y: scrollY + box.y + box.height / 2
     }
   }
 
