@@ -47,7 +47,7 @@
     padding: 0.25rem 0;
   }
 
-  button:first-of-type {
+  button.selected {
     background-color: var(--comment);
   }
 
@@ -84,6 +84,7 @@
 </style>
 
 <script lang="ts">
+  import { clamp } from 'lodash';
   import { ModuleUI } from '../modules'
   import { into_grid_coords } from '../modules/shared/Panel.svelte'
   import modules from '../state/modules'
@@ -92,6 +93,8 @@
   export let onClose: () => void
 
   let search = ''
+  let selected_index = 0
+  let selection_refs: HTMLButtonElement[] = []
 
   const dumb_fuzzy =
     (query: string) =>
@@ -104,6 +107,8 @@
     }
 
   $: list = Object.values(ModuleUI).filter(dumb_fuzzy(search))
+  $: selected_index = clamp(selected_index, 0, list.length - 1)
+  $: selection_refs[selected_index]?.scrollIntoView({ block: 'center'})
 
   function handle_create(type: ModuleUI) {
     modules.create(type, into_grid_coords(position))
@@ -111,15 +116,24 @@
   }
 
   const handle_key_down = (event: KeyboardEvent) => {
-    if (event.code === 'Enter') {
-      const [first] = list
-      if (first) {
-        handle_create(first)
-      } else {
+    switch (event.code) {
+      case 'Enter':
+        const selected = list[selected_index]
+        if (selected) {
+          handle_create(selected)
+        } else {
+          onClose()
+        }
+        break;
+      case 'Escape':
         onClose()
-      }
-    } else if (event.code === 'Escape') {
-      onClose()
+        break;
+      case 'ArrowUp':
+        selected_index -= 1
+        break;
+      case 'ArrowDown':
+        selected_index += 1
+        break;
     }
   }
 </script>
@@ -128,8 +142,12 @@
   <input autofocus bind:value={search} on:keydown={handle_key_down} />
   <div class="list-wrapper">
     <div class="list">
-      {#each list as module}
-        <button on:click={() => handle_create(module)}>
+      {#each list as module, index}
+        <button
+          bind:this={selection_refs[index]}
+          class:selected={index === selected_index}
+          on:click={() => handle_create(module)}
+        >
           {module}
         </button>
       {/each}
