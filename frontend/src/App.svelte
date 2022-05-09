@@ -3,6 +3,13 @@
     background-color: var(--background, initial);
     color: var(--foreground, initial);
   }
+
+  .spinner-container {
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
 </style>
 
 <script lang="ts">
@@ -21,6 +28,8 @@
   import Theme from './components/Theme.svelte'
   import CssReset from './components/CSSReset.svelte'
   import Redirect from './components/Redirect.svelte'
+
+  import Spinner from './components/Spinner.svelte'
 
   let sampler: Writable<SobakaContext | null> = writable(null)
   setContext('sampler', sampler)
@@ -55,7 +64,9 @@
           <Wires />
         </Workspace>
       {:else}
-        Loading...
+        <div class="spinner-container">
+          <Spinner />
+        </div>
       {/if}
     </Route>
   </main>
