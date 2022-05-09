@@ -1,5 +1,6 @@
 <style>
   select {
+    background: var(--module-background);
     color: var(--module-foreground);
     font-family: monospace;
     width: 100%;
