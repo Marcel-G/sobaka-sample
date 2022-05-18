@@ -5,6 +5,7 @@ use wasm_bindgen::prelude::*;
 use web_sys::MessagePort;
 
 use crate::rpc::connect;
+pub mod modules;
 
 pub mod api;
 mod get_random;

@@ -12,6 +12,8 @@ default = ["console_error_panic_hook"]
 
 [dependencies]
 sobaka-sample-audio-core = { path = "../audio-core" }
+fundsp = "0.6.3"
+fundsp_graph = { path = "../fundsp-graph" }
 dasp = { git = "https://github.com/Marcel-G/dasp", features = ["all"] }
 serde = { version = "1.0", features = ["derive", "rc"] }
 derive_more = "0.99.0"
@@ -27,6 +29,7 @@ js-sys = "0.3.51"
 web-sys = { version = "0.3.55", features = ["MessagePort", "console"] }
 getrandom = { version = "0.2", features = ["custom"] }
 ts-rs = { version = "6.1.2", features = ["serde-compat"] }
+rosc = "~0.7"
 
 # The `console_error_panic_hook` crate provides better debugging of panics by
 # logging them with `console.error`. This is great for development, but requires
@@ -46,6 +49,8 @@ parking_lot_core = "=0.8.0"
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3.13"
+cpal = "0.13.5"
+anyhow = "1.0.56"
 
 [profile.release]
 # Tell `rustc` to optimize for small code size.
