@@ -3,19 +3,23 @@ use ts_rs::TS;
 
 use super::address::Address;
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
+#[ts(export)]
 pub struct SobakaMessage {
+    #[ts(type = "string")]
     pub addr: Address,
     pub args: Vec<SobakaType>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize, TS)]
+#[ts(export)]
 pub struct SobakaTime {
     pub seconds: u32,
     pub fractional: u32,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
+#[ts(export)]
 pub struct SobakaColor {
     pub red: u8,
     pub green: u8,
@@ -24,6 +28,7 @@ pub struct SobakaColor {
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
+#[ts(export)]
 pub struct SobakaMidiMessage {
     pub port: u8,
     pub status: u8,
@@ -33,11 +38,13 @@ pub struct SobakaMidiMessage {
 
 /// An OscArray color.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
+#[ts(export)]
 pub struct SobakaArray {
     pub content: Vec<SobakaType>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
+#[ts(export)]
 pub enum SobakaType {
     Int(i32),
     Float(f32),

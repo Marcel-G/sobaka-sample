@@ -1,7 +1,6 @@
 /* eslint-disable no-unused-vars */
 import { IJSONRPCNotification, IJSONRPCRequest } from "@open-rpc/client-js/build/Request";
-import { AudioProcessor } from ".";
-import { AudioNodeState } from "./generatedAudioNodes";
+import { SobakaAudioWorklet } from ".";
 
 export interface IJSONRPCSubscriptionResponse<T extends object> {
   result: T,
@@ -15,7 +14,7 @@ export interface IJSONRPCSubscription<T extends object> {
   params: IJSONRPCSubscriptionResponse<T>;
 }
 
-export const is_subscription = (data: IJSONRPCNotification): data is IJSONRPCSubscription<AudioNodeState> => {
+export const is_subscription = (data: IJSONRPCNotification): data is IJSONRPCSubscription<Record<string, unknown>> => {
   return 'subscription' in data.params
 }
 
@@ -32,7 +31,7 @@ export type SendProgram = {
 }
 
 export type RPCAudioProcessorInterface = Omit<
-  AudioProcessor & SendProgram,
+  SobakaAudioWorklet & SendProgram,
   'free' | 'process' | 'get_buffer' | 'set_buffer'
   >
 

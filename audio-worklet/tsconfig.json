@@ -15,5 +15,5 @@
     "declaration": true,
   },
   "exclude": ["node_modules", "dist"],
-  "include": ["lib"]
+  "include": ["lib", "bindings"]
 }

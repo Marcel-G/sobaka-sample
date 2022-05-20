@@ -7,9 +7,11 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 use crate::interface::message::SobakaMessage;
-use self::{oscillator::oscillator, parameter::parameter};
+use self::{oscillator::{oscillator, OscillatorParams}, parameter::{parameter, ParameterParams}};
 
 #[derive(Serialize, Deserialize, TS)]
+#[serde(tag = "node_type", content = "data")]
+#[ts(export)]
 pub enum AudioModuleType {
     // Delay(DelayNode),
     // Envelope(EnvelopeNode),
@@ -17,8 +19,8 @@ pub enum AudioModuleType {
     // Midi(MidiNode),
     // Filter(FilterNode),
     // Noise(NoiseNode),
-    Parameter,
-    Oscillator,
+    Parameter(ParameterParams),
+    Oscillator(OscillatorParams),
     // Parameter(ParameterNode),
     // Quantiser(QuantiserNode),
     // Reverb(ReverbNode),
@@ -33,8 +35,8 @@ pub enum AudioModuleType {
 impl From<AudioModuleType> for Box<dyn AudioModule32 + Send> {
     fn from(node_type: AudioModuleType) -> Self {
         match node_type {
-            AudioModuleType::Oscillator => Box::new(oscillator()),
-            AudioModuleType::Parameter => Box::new(parameter()),
+            AudioModuleType::Oscillator(params) => Box::new(oscillator(params)),
+            AudioModuleType::Parameter(params) => Box::new(parameter(params)),
         }
     }
 }

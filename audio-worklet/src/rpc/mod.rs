@@ -4,7 +4,7 @@ use jsonrpc_core::{Result, Error};
 use jsonrpc_pubsub::{Session, typed::Subscriber};
 use petgraph::graph::EdgeIndex;
 
-mod interface;
+pub mod interface;
 
 use crate::{
     interface::{address::Address, message::SobakaMessage}, module::AudioModuleType,
@@ -16,7 +16,15 @@ use self::interface::SobakaGraphRpc;
 pub struct AudioProcessorRpc {
     processor: AudioProcessor,
     subscriptions: Subscriptions,
-    // modules: HashMap
+}
+
+impl AudioProcessorRpc {
+    pub fn new(processor: AudioProcessor) -> Self {
+        Self {
+            processor,
+            subscriptions: Default::default()
+        }
+    }
 }
 
 impl SobakaGraphRpc for AudioProcessorRpc {
@@ -116,7 +124,7 @@ mod tests {
     #[test]
     fn test_module_creation() {
         let (handler, meta) = build_rpc();
-        let request = r#"{"jsonrpc":"2.0","id":1,"method":"create","params":["Oscillator"]}"#;
+        let request = r#"{"jsonrpc":"2.0","id":1,"method":"create","params":[{ "node_type": "Oscillator", "data": { "saw": 0.25, "sine": 0.25, "square": 0.25, "triangle": 0.25 }}]}"#;
         let response = handler.handle_request_sync(request, meta);
 
         let expected = r#"{"jsonrpc":"2.0","result":"/sobaka/2","id":1}"#;

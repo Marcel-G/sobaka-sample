@@ -1,9 +1,9 @@
 import { merge, omit, __ as _ } from 'lodash/fp'
-import { AbstractNode, AnyInput, NodeType } from 'sobaka-sample-audio-worklet/dist/lib'
+import { AbstractModule, NodeType, In, Out } from 'sobaka-sample-audio-worklet'
 import { get, Readable, writable, Writable } from 'svelte/store'
 import links, { is_fully_linked, Link } from './links'
 
-enum PlugType {
+export enum PlugType {
   Input,
   Output
 }
@@ -11,8 +11,8 @@ enum PlugType {
 export interface PlugContext {
   type: PlugType
   node: Readable<Element>
-  module: AbstractNode<NodeType>
-  input?: AnyInput
+  module: AbstractModule<NodeType>
+  id: number
 }
 
 type PlugStore = Record<string, PlugContext>
@@ -20,9 +20,10 @@ type PlugStore = Record<string, PlugContext>
 const init = () => {
   const plug_store = writable<PlugStore>({})
   // @todo move together with plug calls?
-  const make = (module: string, name: string) => {
+  const make = (module: string, plug_type: PlugType, plug_id: number) => {
+    const id = `${module}/${plug_type == PlugType.Input ? In(plug_id) : Out(plug_id)}`
     const active_link = links.active_link_store()
-    const id = `${module}/${name}`
+
     const plug_context = get(plug_store)[id]
 
     if (plug_context.type == PlugType.Input) {
@@ -42,12 +43,13 @@ const init = () => {
   // move together with plug calls?
   const register = (
     module: string,
-    name: string,
-    for_module: AbstractNode<NodeType>,
+    for_module: AbstractModule<NodeType>,
     node: Writable<Element>,
-    for_input?: AnyInput
+    plug_type: PlugType,
+    plug_id: number
   ) => {
-    const id = `${module}/${name}`
+    const id = `${module}/${plug_type == PlugType.Input ? In(plug_id) : Out(plug_id)}`
+
     if (get(plug_store)[id]) {
       throw new Error(`Plug: '${id}' already exists. Please use unique naming`)
     }
@@ -56,15 +58,16 @@ const init = () => {
         [id]: {
           node,
           module: for_module,
-          input: for_input,
-          type: !for_input ? PlugType.Output : PlugType.Input
+          type: plug_type,
+          id: plug_id
         }
       })
     )
   }
 
-  const remove = (module: string, name: string) => {
-    const id = `${module}/${name}`
+  const remove = (module: string, plug_type: PlugType, plug_id: number) => {
+    const id = `${module}/${plug_type == PlugType.Input ? In(plug_id) : Out(plug_id)}`
+
     links
       .store()
       .update(links => links.filter(link => !(link.to == id || link.from === id)))

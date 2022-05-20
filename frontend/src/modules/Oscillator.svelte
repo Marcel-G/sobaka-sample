@@ -9,30 +9,38 @@
 <script lang="ts">
   import { Oscillator } from 'sobaka-sample-audio-worklet'
   import { onDestroy } from 'svelte'
-  import Dropdown from '../components/Dropdown.svelte'
   import { get_module_context } from './ModuleWrapper.svelte'
-  import CvParameter from './shared/CvParameter.svelte'
+  // import CvParameter from './shared/CvParameter.svelte'
   import Panel from './shared/Panel.svelte'
   import Plug from './shared/Plug.svelte'
   import { into_style } from '../components/Theme.svelte'
+import { PlugType } from '../state/plug';
 
   let name = 'oscillator'
 
   const { context, get_sub_state, update_sub_state } = get_module_context()
 
-  let { wave } = get_sub_state<Oscillator['state']>(name) || {
-    wave: 'Sine'
-  }
+  // let init = get_sub_state<Oscillator['state']>(name) || {
+  //   sine: 0.25,
+  //   saw: 0.25,
+  //   square: 0.25,
+  //   triangle: 0.25
+  // }
 
-  const oscillator = new Oscillator(context, { wave })
+  const oscillator = new Oscillator(context, {
+    sine: 0.25,
+    saw: 0.25,
+    square: 0.25,
+    triangle: 0.25
+  })
 
-  const loading = oscillator.node_id
+  const loading = oscillator.get_address()
 
   // Update the sobaka node when the state changes
-  $: void oscillator.update({ wave })
+  // $: void oscillator.update({ wave })
 
   // Update the global state when state changes
-  $: update_sub_state(name, { wave })
+  // $: update_sub_state(name, { wave })
 
   onDestroy(() => {
     void oscillator.dispose()
@@ -43,16 +51,20 @@
   {#await loading}
     <p>Loading...</p>
   {:then}
-    <Dropdown options={['Saw', 'Sine', 'Square']} bind:selected={wave} />
-    <CvParameter
+    <!-- <CvParameter
       step={1 / 12}
       for_node={oscillator}
       for_input={'Frequency'}
       default_value={1}
       default_range={[0, 10]}
-    />
+    /> -->
   {/await}
   <div slot="outputs">
-    <Plug name="output" for_node={oscillator} />
+    <Plug
+      id={0}
+      label="Output"
+      type={PlugType.Output}
+      for_module={oscillator}
+    />
   </div>
 </Panel>

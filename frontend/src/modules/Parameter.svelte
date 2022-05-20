@@ -14,27 +14,33 @@
   import Plug from './shared/Plug.svelte'
   import Panel from './shared/Panel.svelte'
   import { into_style } from '../components/Theme.svelte'
+  import { PlugType } from '../state/plug';
 
   const { context, get_sub_state, update_sub_state } = get_module_context()
 
   let name = 'parameter'
 
-  // Set values from the global state if they're present
-  let { value, range } = get_sub_state<Parameter['state']>(name) || {
+  // // Set values from the global state if they're present
+  // let { value, range } = get_sub_state<Parameter['state']>(name) || {
+  //   value: 0,
+  //   range: [-10, 10]
+  // }
+
+  let { value, range } = {
     value: 0,
     range: [-10, 10]
   }
 
   // Create and link sobaka node
-  const parameter = new Parameter(context, { value, range })
+  const parameter = new Parameter(context, { min: range[0], max: range[1], default: value })
 
-  // Update the sobaka node when the state changes
-  $: void parameter.update({ value, range })
+  // // Update the sobaka node when the state changes
+  // $: void parameter.update({ value, range })
 
-  // Update the global state when state changes
-  $: update_sub_state(name, { value, range })
+  // // Update the global state when state changes
+  // $: update_sub_state(name, { value, range })
 
-  const loading = parameter.node_id
+  const loading = parameter.get_address()
 
   onDestroy(() => {
     void parameter.dispose()
@@ -50,6 +56,11 @@
     </span>
   {/await}
   <div slot="outputs">
-    <Plug name="output" for_node={parameter} />
+    <Plug
+      id={0}
+      label="Output"
+      type={PlugType.Output}
+      for_module={parameter}
+    />
   </div>
 </Panel>

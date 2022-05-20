@@ -69,31 +69,28 @@
 </style>
 
 <script lang="ts">
-  import type { AbstractNode, AnyInput, NodeType } from 'sobaka-sample-audio-worklet'
+  import type { AbstractModule, NodeType } from 'sobaka-sample-audio-worklet'
   import { getContext, onDestroy } from 'svelte'
   import { writable } from 'svelte/store'
   import type { Writable } from 'svelte/store'
-  import plug from '../../state/plug'
+  import plug, { PlugType } from '../../state/plug'
   import { get_module_context } from '../ModuleWrapper.svelte'
 
-  const { id } = get_module_context()
+  const { id : module_id } = get_module_context()
 
-  export let for_node: AbstractNode<NodeType>
-  export let for_input: AnyInput | undefined = undefined
-  export let name: string = for_input || 'output'
-  export let label: string = name
-
-  // @Todo this is hacky
-  const position = name.includes('output') ? 'right' : 'left'
+  export let for_module: AbstractModule<NodeType>
+  export let type: PlugType
+  export let id: number
+  export let label: string
 
   const move_context: EventTarget = getContext('move_context')
 
   const node: Writable<Element> = writable()
 
-  plug.register(id, name, for_node, node, for_input)
+  plug.register(module_id, for_module, node, type, id)
 
   function handle_click() {
-    plug.make(id, name)
+    plug.make(module_id, type, id)
   }
 
   function on_move() {
@@ -103,7 +100,7 @@
   move_context.addEventListener('move', on_move)
 
   onDestroy(() => {
-    plug.remove(id, name)
+    plug.remove(module_id, type, id)
     move_context.removeEventListener('move', on_move)
   })
 </script>
@@ -117,8 +114,8 @@
     bind:this={$node}
   />
   <span
-    class:left={position === 'left'}
-    class:right={position === 'right'}
+    class:left={type === PlugType.Input}
+    class:right={type === PlugType.Output}
     class="tooltip left"
   >
     {label}

@@ -2,7 +2,8 @@ import { IJSONRPCSubscription, IJSONRPCSubscriptionResponse, is_subscription, Se
 import { SAMPLER_WORKLET } from "./constants";
 import { RequestManager, Client } from "@open-rpc/client-js";
 import { PostMessageTransport } from "./postMessageTransport";
-import { AbstractNode, Input } from "./nodes";
+import { AbstractModule } from "./abstractModule";
+import { In, Out } from "./conversion";
 
 export class SobakaContext extends AudioWorkletNode implements SendProgram {
   client: Client
@@ -75,26 +76,25 @@ export class SobakaContext extends AudioWorkletNode implements SendProgram {
   }
 
   public link<
-    A extends AbstractNode<any>,
-    B extends AbstractNode<any>
-  >(a: A, b: B, input: Input<B['type']>): () => void {
+    A extends AbstractModule<any>,
+    B extends AbstractModule<any>
+  >(from: A, from_port: number, to: B, to_port: number): () => void {
     const pending_cleanup = Promise.all([
-      a.get_node_id(),
-      b.get_node_id()
-    ]).then(([node_a, node_b]) => {
+      from.get_address(),
+      to.get_address()
+    ]).then(([address_a, address_b]) => {
       return this.client.request({
-        method: 'node/connect',
+        method: 'connect',
         params: [
-          node_a,
-          node_b,
-          b.to_input_dto(input)
+          `${address_a}/${Out(from_port)}`,
+          `${address_b}/${In(to_port)}`,
         ]
       }) as Promise<number>
     })
 
     return async () => {
       void this.client.request({
-        method: 'node/disconnect',
+        method: 'disconnect',
         params: [await pending_cleanup]
       })
     }
@@ -138,12 +138,6 @@ export class SobakaContext extends AudioWorkletNode implements SendProgram {
   public async destroy(): Promise<void> {
     await this.client.notify({
       method: 'destroy',
-    })
-  }
-
-  public protocol_version() {
-    return this.client.request({
-      method: 'protocol_version',
     })
   }
 }

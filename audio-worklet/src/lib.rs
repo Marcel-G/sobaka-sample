@@ -18,6 +18,7 @@ pub mod rpc;
 mod get_random;
 pub mod interface;
 pub mod utils;
+pub mod worklet;
 
 type SharedGraph = Arc<Mutex<Graph32>>;
 // AudioProcessor is the rust entry-point for Web Audio AudioWorkletProcessor

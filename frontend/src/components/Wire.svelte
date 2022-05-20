@@ -43,7 +43,7 @@
   const from_pos = derived(from.node, to_center_point)
   const to_pos = derived(to.node, to_center_point)
 
-  // @todo store AbstractNode in state
+  // @todo store AbstractModule in state
   if (to.input) {
     const disconnect = get(context).link(from.module, to.module, to.input)
     onDestroy(disconnect)

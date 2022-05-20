@@ -1,10 +1,8 @@
 use std::{
     fmt::{self, Display},
-    str::FromStr, convert::TryFrom,
+    str::FromStr
 };
-
 use serde::{de, Deserialize, Deserializer, Serialize};
-
 use crate::graph::NodeIndex;
 
 #[derive(Debug, Clone, PartialEq)]

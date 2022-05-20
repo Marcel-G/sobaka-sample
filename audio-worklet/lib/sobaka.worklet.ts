@@ -6,11 +6,11 @@
  */
 import { IJSONRPCRequest, IJSONRPCResponse } from '@open-rpc/client-js/build/Request';
 import 'fastestsmallesttextencoderdecoder'; // Add missing TextDecoder/TextEncoder in worklet env
-import init, { AudioProcessor } from '../pkg/sobaka_sample_audio_worklet';
+import init, { SobakaAudioWorklet } from '../pkg/sobaka_sample_audio_worklet';
 import { SAMPLER_WORKLET } from './constants';
 import { is_destroy_destroy_event, is_send_wasm_program_event, WasmProgramEvent } from './interface';
 class SobakaProcessor extends AudioWorkletProcessor {
-  private instance: AudioProcessor | null = null
+  private instance: SobakaAudioWorklet | null = null
   private is_destroyed = false
   constructor(options?: AudioWorkletNodeOptions) {
     super(options);
@@ -43,7 +43,7 @@ class SobakaProcessor extends AudioWorkletProcessor {
     await init(module);
 
     // eslint-disable-next-line no-undef
-    this.instance = new AudioProcessor(this.port, sampleRate);
+    this.instance = new SobakaAudioWorklet(this.port, sampleRate);
 
     // No real rpc client initialised so respond manually
     const response: IJSONRPCResponse = {
