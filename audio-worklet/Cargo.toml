@@ -8,13 +8,18 @@ edition = "2018"
 crate-type = ["cdylib", "rlib"]
 
 [features]
+all = ["default", "osc"]
 default = ["console_error_panic_hook"]
+osc = ["dep:rosc"]
 
 [dependencies]
-sobaka-sample-audio-core = { path = "../audio-core" }
 fundsp = "0.6.3"
-fundsp_graph = { path = "../fundsp-graph" }
-dasp = { git = "https://github.com/Marcel-G/dasp", features = ["all"] }
+petgraph = { version = "0.6", features = ["stable_graph"] }
+
+# For OSC example
+rosc = { version = "~0.7", optional = true }
+
+# Todo check all the below
 serde = { version = "1.0", features = ["derive", "rc"] }
 derive_more = "0.99.0"
 jsonrpc-core = "18.0.0"
@@ -25,11 +30,12 @@ wasm-bindgen = { version = "0.2.63", features = ["serde-serialize"] }
 async-std = { version = "1.10.0", features = ["unstable"] }
 futures = "0.3.17"
 linkme = "0.2.10"
+
+# Wasm Dependencies
 js-sys = "0.3.51"
 web-sys = { version = "0.3.55", features = ["MessagePort", "console"] }
 getrandom = { version = "0.2", features = ["custom"] }
 ts-rs = { version = "6.1.2", features = ["serde-compat"] }
-rosc = "~0.7"
 
 # The `console_error_panic_hook` crate provides better debugging of panics by
 # logging them with `console.error`. This is great for development, but requires
@@ -61,3 +67,7 @@ debug = true
 [package.metadata.wasm-pack.profile.release]
 wasm-opt = false
 
+[[example]]
+name = "osc"
+path = "examples/osc.rs"
+required-features = ["osc"]

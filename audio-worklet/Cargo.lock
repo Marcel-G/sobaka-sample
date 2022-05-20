@@ -437,127 +437,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "dasp"
-version = "0.11.0"
-source = "git+https://github.com/Marcel-G/dasp#2be1f44f07b6793af0cc2a8c3ba64d6adba4b770"
-dependencies = [
- "dasp_envelope",
- "dasp_frame",
- "dasp_graph",
- "dasp_interpolate",
- "dasp_peak",
- "dasp_ring_buffer",
- "dasp_rms",
- "dasp_sample",
- "dasp_signal",
- "dasp_slice",
- "dasp_window",
-]
-
-[[package]]
-name = "dasp_envelope"
-version = "0.11.0"
-source = "git+https://github.com/Marcel-G/dasp#2be1f44f07b6793af0cc2a8c3ba64d6adba4b770"
-dependencies = [
- "dasp_frame",
- "dasp_peak",
- "dasp_ring_buffer",
- "dasp_rms",
- "dasp_sample",
-]
-
-[[package]]
-name = "dasp_frame"
-version = "0.11.0"
-source = "git+https://github.com/Marcel-G/dasp#2be1f44f07b6793af0cc2a8c3ba64d6adba4b770"
-dependencies = [
- "dasp_sample",
-]
-
-[[package]]
-name = "dasp_graph"
-version = "0.11.0"
-source = "git+https://github.com/Marcel-G/dasp#2be1f44f07b6793af0cc2a8c3ba64d6adba4b770"
-dependencies = [
- "dasp_frame",
- "dasp_ring_buffer",
- "dasp_signal",
- "dasp_slice",
- "petgraph 0.5.1",
-]
-
-[[package]]
-name = "dasp_interpolate"
-version = "0.11.0"
-source = "git+https://github.com/Marcel-G/dasp#2be1f44f07b6793af0cc2a8c3ba64d6adba4b770"
-dependencies = [
- "dasp_frame",
- "dasp_ring_buffer",
- "dasp_sample",
-]
-
-[[package]]
-name = "dasp_peak"
-version = "0.11.0"
-source = "git+https://github.com/Marcel-G/dasp#2be1f44f07b6793af0cc2a8c3ba64d6adba4b770"
-dependencies = [
- "dasp_frame",
- "dasp_sample",
-]
-
-[[package]]
-name = "dasp_ring_buffer"
-version = "0.11.0"
-source = "git+https://github.com/Marcel-G/dasp#2be1f44f07b6793af0cc2a8c3ba64d6adba4b770"
-
-[[package]]
-name = "dasp_rms"
-version = "0.11.0"
-source = "git+https://github.com/Marcel-G/dasp#2be1f44f07b6793af0cc2a8c3ba64d6adba4b770"
-dependencies = [
- "dasp_frame",
- "dasp_ring_buffer",
- "dasp_sample",
-]
-
-[[package]]
-name = "dasp_sample"
-version = "0.11.0"
-source = "git+https://github.com/Marcel-G/dasp#2be1f44f07b6793af0cc2a8c3ba64d6adba4b770"
-
-[[package]]
-name = "dasp_signal"
-version = "0.11.0"
-source = "git+https://github.com/Marcel-G/dasp#2be1f44f07b6793af0cc2a8c3ba64d6adba4b770"
-dependencies = [
- "dasp_envelope",
- "dasp_frame",
- "dasp_interpolate",
- "dasp_peak",
- "dasp_ring_buffer",
- "dasp_rms",
- "dasp_sample",
- "dasp_window",
-]
-
-[[package]]
-name = "dasp_slice"
-version = "0.11.0"
-source = "git+https://github.com/Marcel-G/dasp#2be1f44f07b6793af0cc2a8c3ba64d6adba4b770"
-dependencies = [
- "dasp_frame",
- "dasp_sample",
-]
-
-[[package]]
-name = "dasp_window"
-version = "0.11.0"
-source = "git+https://github.com/Marcel-G/dasp#2be1f44f07b6793af0cc2a8c3ba64d6adba4b770"
-dependencies = [
- "dasp_sample",
-]
-
-[[package]]
 name = "derive_more"
 version = "0.99.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -576,7 +455,7 @@ version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4a2535fcf1437c9de0d91a3921351c474258abdb6440cd03bb5a7cf0547e7214"
 dependencies = [
- "heck 0.4.0",
+ "heck",
  "proc-macro-error",
 ]
 
@@ -597,12 +476,6 @@ dependencies = [
 
 [[package]]
 name = "fixedbitset"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "37ab347416e802de484e4d03c7316c48f1ecb56574dfd4a46a80f173ce1de04d"
-
-[[package]]
-name = "fixedbitset"
 version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "279fb028e20b3c4c320317955b77c5e0c9701f05a1d309905d6fc702cdc5053e"
@@ -612,11 +485,6 @@ name = "fnv"
 version = "1.0.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3f9eec918d3f24069decb9af1554cad7c880e2da24a9afd88aca000531ab82c1"
-
-[[package]]
-name = "freeverb"
-version = "0.1.0"
-source = "git+https://github.com/irh/freeverb-rs#b877287cfaced4c2872f126b0f0e595abb87dbd0"
 
 [[package]]
 name = "fundsp"
@@ -632,15 +500,6 @@ dependencies = [
  "rsor",
  "rustfft",
  "tinyvec",
-]
-
-[[package]]
-name = "fundsp_graph"
-version = "0.11.0"
-dependencies = [
- "duplicate",
- "fundsp",
- "petgraph 0.6.0",
 ]
 
 [[package]]
@@ -813,15 +672,6 @@ checksum = "ab5ef0d4909ef3724cc8cce6ccc8572c5c817592e9285f5464f8e86f8bd3726e"
 
 [[package]]
 name = "heck"
-version = "0.3.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6d621efb26863f0e9924c6ac577e8275e5e6b77455db64ffa6c65c904e9e132c"
-dependencies = [
- "unicode-segmentation",
-]
-
-[[package]]
-name = "heck"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2540771e65fc8cb83cd6e8a237f70c319bd5c29f78ed1084ba5d50eeac86f7f9"
@@ -850,16 +700,6 @@ dependencies = [
  "matches",
  "unicode-bidi",
  "unicode-normalization",
-]
-
-[[package]]
-name = "impl-enum"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dcf669990de016afa11e8cf922127c3ea8e817c0f0639aee9ad2906539e8a5bb"
-dependencies = [
- "quote",
- "syn",
 ]
 
 [[package]]
@@ -1345,21 +1185,11 @@ checksum = "31010dd2e1ac33d5b46a5b413495239882813e0369f8ed8a5e266f173602f831"
 
 [[package]]
 name = "petgraph"
-version = "0.5.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "467d164a6de56270bd7c4d070df81d07beace25012d5103ced4e9ff08d6afdb7"
-dependencies = [
- "fixedbitset 0.2.0",
- "indexmap",
-]
-
-[[package]]
-name = "petgraph"
 version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4a13a2fa9d0b63e5f22328828741e523766fff0ee9e779316902290dff3f824f"
 dependencies = [
- "fixedbitset 0.4.1",
+ "fixedbitset",
  "indexmap",
 ]
 
@@ -1578,12 +1408,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "rustversion"
-version = "1.0.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f2cc38e8fa666e2de3c4aba7edeb5ffc5246c1c2ed0e3d17e560aeeba736b23f"
-
-[[package]]
 name = "ryu"
 version = "1.0.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1685,23 +1509,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f2dd574626839106c320a323308629dcb1acfc96e32a8cba364ddc61ac23ee83"
 
 [[package]]
-name = "sobaka-sample-audio-core"
-version = "0.1.0"
-dependencies = [
- "async-std",
- "dasp",
- "derive_more",
- "freeverb",
- "futures 0.3.21",
- "impl-enum",
- "petgraph 0.5.1",
- "serde",
- "strum",
- "strum_macros",
- "ts-rs",
-]
-
-[[package]]
 name = "sobaka-sample-audio-worklet"
 version = "0.1.0"
 dependencies = [
@@ -1709,10 +1516,8 @@ dependencies = [
  "async-std",
  "console_error_panic_hook",
  "cpal",
- "dasp",
  "derive_more",
  "fundsp",
- "fundsp_graph",
  "futures 0.3.21",
  "getrandom 0.2.4",
  "js-sys",
@@ -1722,9 +1527,9 @@ dependencies = [
  "jsonrpc-pubsub",
  "linkme",
  "parking_lot_core",
+ "petgraph",
  "rosc",
  "serde",
- "sobaka-sample-audio-core",
  "ts-rs",
  "wasm-bindgen",
  "wasm-bindgen-test",
@@ -1759,25 +1564,6 @@ name = "strsim"
 version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "73473c0e59e6d5812c5dfe2a064a6444949f089e20eec9a2e5506596494e4623"
-
-[[package]]
-name = "strum"
-version = "0.23.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cae14b91c7d11c9a851d3fbc80a963198998c2a64eec840477fa92d8ce9b70bb"
-
-[[package]]
-name = "strum_macros"
-version = "0.23.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5bb0dc7ee9c15cea6199cde9a127fa16a4c5819af85395457ad72d68edc85a38"
-dependencies = [
- "heck 0.3.3",
- "proc-macro2",
- "quote",
- "rustversion",
- "syn",
-]
 
 [[package]]
 name = "syn"
@@ -1896,12 +1682,6 @@ checksum = "d54590932941a9e9266f0832deed84ebe1bf2e4c9e4a3554d393d18f5e854bf9"
 dependencies = [
  "tinyvec",
 ]
-
-[[package]]
-name = "unicode-segmentation"
-version = "1.9.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7e8820f5d777f6224dc4be3632222971ac30164d4a258d595640799554ebfd99"
 
 [[package]]
 name = "unicode-xid"

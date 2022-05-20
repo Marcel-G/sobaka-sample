@@ -1,73 +1,137 @@
-use rpc::Messenger;
-use sobaka_sample_audio_core::graph::AudioGraph;
-use std::sync::{Arc, Mutex};
-use wasm_bindgen::prelude::*;
-use web_sys::MessagePort;
+use fundsp::{hacker::AudioUnit32, hacker32::{U1, U2}};
+use graph::{Graph32, NodeIndex};
+use interface::{
+    address::{Address, Port},
+    error::SobakaError,
+    message::SobakaMessage,
+};
+use module::AudioModuleType;
+use petgraph::graph::EdgeIndex;
+use std::{
+    sync::{Arc, Mutex, MutexGuard},
+};
 
-use crate::rpc::connect;
-pub mod modules;
+pub mod graph;
+pub mod module;
+pub mod rpc;
 
-pub mod api;
 mod get_random;
-pub mod graph_rpc;
-mod rpc;
-pub mod subscriptions;
-mod utils;
+pub mod interface;
+pub mod utils;
+
+type SharedGraph = Arc<Mutex<Graph32>>;
 // AudioProcessor is the rust entry-point for Web Audio AudioWorkletProcessor
-#[wasm_bindgen]
 pub struct AudioProcessor {
-    graph: Arc<Mutex<AudioGraph>>,
-    messenger: Messenger,
+    graph: SharedGraph,
 }
 
-#[wasm_bindgen]
+pub type SobakaResult<T> = Result<T, SobakaError>;
+
 impl AudioProcessor {
-    #[wasm_bindgen(constructor)]
-    pub fn new(port: MessagePort, sample_rate: f64) -> Self {
-        // Setup audio core
-        let graph = Arc::new(Mutex::new(AudioGraph::new(sample_rate)));
+    pub fn new(sample_rate: f64) -> Self {
+        let mut graph = Graph32::new::<U1, U2>();
 
-        let messenger = connect(port, graph.clone());
+        graph.reset(Some(sample_rate));
 
-        AudioProcessor { graph, messenger }
-    }
-
-    pub fn process(&mut self, input: &[f32], output_l: &mut [f32], output_r: &mut [f32]) {
-        let mut graph = self.graph.lock().unwrap();
-        let sinks = graph.sinks();
-        let inputs = graph.inputs();
-
-        if let Some(node) = sinks.get(0) {
-            let mut out_index = 0;
-            let mut in_index = 0;
-
-            while out_index < output_l.len() {
-                if let Some(node) = inputs.get(0) {
-                    let input_node_data = graph.graph.node_weight_mut(*node).expect("");
-                    for i in input_node_data.buffers[0].iter_mut() {
-                        *i = *input.get(in_index).unwrap_or(&0.0);
-                        in_index += 1;
-                    }
-                }
-                graph.process(*node);
-                // output is 64 samples long
-                let output_node_data = &graph.graph.node_weight(*node).expect("").buffers[0];
-                for sample in output_node_data.iter() {
-                    output_l[out_index] = *sample;
-                    output_r[out_index] = *sample;
-                    out_index += 1;
-                }
-            }
+        AudioProcessor {
+            graph: Arc::new(Mutex::new(graph)),
         }
     }
-}
 
-#[wasm_bindgen]
-pub fn set_panic_hook() {
-    console_error_panic_hook::set_once();
-}
+    pub fn graph(&self) -> SharedGraph {
+        self.graph.clone()
+    }
 
-#[wasm_bindgen(start)]
-pub fn main() {
-    set_panic_hook();
+    fn graph_mut(&self) -> SobakaResult<MutexGuard<Graph32>> {
+        self.graph.lock().map_err(|_| SobakaError::Something)
+    }
+
+    pub fn create(&self, node: AudioModuleType) -> SobakaResult<Address> {
+        Ok(self.graph_mut()?.add(node.into()).into())
+    }
+
+    pub fn dispose(&self, address: Address) -> SobakaResult<bool> {
+        if let Some(_port) = address.port {
+            // Port should not be specified when targeting modules directly
+            return Err(SobakaError::Something);
+        }
+
+        let id: NodeIndex = address.into();
+
+        Ok(self.graph_mut()?.remove(id))
+    }
+
+    pub fn connect(&self, from: Address, to: Address) -> SobakaResult<usize> {
+        let from_port = match from {
+            Address {
+                id: _from_id,
+                port: Some(Port::Output(output)),
+            } => {
+                let outputs = self
+                    .graph_mut()?
+                    .get_mod(from.clone().into())
+                    // Node cannot be found
+                    .ok_or(SobakaError::Something)?
+                    .outputs();
+
+                if output >= outputs {
+                    // Output is out of range
+                    Err(SobakaError::Something)
+                } else {
+                    Ok(output)
+                }
+            }
+            // Expecting from to target output port
+            _ => Err(SobakaError::Something),
+        }?;
+
+        let to_port = match to {
+            Address {
+                id: _to_id,
+                port: Some(Port::Input(input)),
+            } => {
+                let inputs = self
+                    .graph_mut()?
+                    .get_mod(to.clone().into())
+                    // Node cannot be found
+                    .ok_or(SobakaError::Something)?
+                    .inputs();
+
+                if input >= inputs {
+                    // Input is out of range
+                    Err(SobakaError::Something)
+                } else {
+                    Ok(input)
+                }
+            }
+            // Expecting to to target output port
+            _ => Err(SobakaError::Something),
+        }?;
+
+        Ok(self
+            .graph_mut()?
+            .connect(from.into(), from_port, to.into(), to_port)
+            .index())
+    }
+
+    pub fn disconnect(&self, id: EdgeIndex) -> SobakaResult<bool> {
+        Ok(self.graph_mut()?.disconnect(id))
+    }
+
+    pub fn message(&self, message: SobakaMessage) -> SobakaResult<bool> {
+        match message.addr.port {
+            Some(Port::Parameter(_)) => Ok(()),
+            // Port must be targeting a parameter
+            _ => Err(SobakaError::Something)
+        }?;
+
+        self.graph_mut()?
+            .get_mod_mut(message.addr.clone().into())
+            // Node cannot be found
+            .ok_or(SobakaError::Something)?
+            .unit
+            .on_message(message);
+
+        Ok(true) // @todo - confirmation that message was handled / matched?
+    }
 }

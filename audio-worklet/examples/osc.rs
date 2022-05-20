@@ -1,18 +1,25 @@
 extern crate rosc;
 
-use cpal::traits::{DeviceTrait, StreamTrait, HostTrait};
+use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 
-use fundsp::hacker::*;
-
-use rosc::{OscPacket, OscType};
-use std::{env, thread};
+use fundsp::hacker::AudioUnit32;
+use fundsp::hacker32::{U1, U2};
+use rosc::{OscPacket};
+use sobaka_sample_audio_worklet::AudioProcessor;
+use sobaka_sample_audio_worklet::graph::{Graph32, NodeIndex};
+use sobaka_sample_audio_worklet::interface::address::{Address, Port};
+use sobaka_sample_audio_worklet::interface::error::SobakaError;
+use sobaka_sample_audio_worklet::interface::message::SobakaMessage;
+use sobaka_sample_audio_worklet::module::AudioModuleType;
+use std::convert::TryInto;
 use std::net::{SocketAddrV4, UdpSocket};
 use std::str::FromStr;
-use std::sync::{Mutex, Arc};
+use std::sync::{Arc, Mutex};
+use std::{env, thread};
 
 /// [iPad] -> [UDP Server] -> [Decode OSC] -> [Handle Message]
 
-fn main() {
+fn main() -> Result<(), SobakaError> {
     let args: Vec<String> = env::args().collect();
     let usage = format!("Usage {} IP:PORT", &args[0]);
     if args.len() < 2 {
@@ -24,12 +31,29 @@ fn main() {
         Err(_) => panic!("{}", usage),
     };
 
-    let graph = tag(0, 440.0) >> sine();
+    let processor = AudioProcessor::new(44100.0);
 
-    let shared_graph: Arc<Mutex<Box<dyn AudioUnit64 + Send>>> = Arc::new(Mutex::new(Box::new(graph)));
+    let frequency = processor.create(AudioModuleType::Parameter)?;
+    let oscillator = processor.create(AudioModuleType::Oscillator)?;
 
+    processor.connect(
+        Address { id: oscillator.id, port: Some(Port::Output(0)) },
+        // @ todo global output
+        Address { id: 1, port: Some(Port::Input(0)) },
+    );
+    processor.connect(
+        Address { id: oscillator.id, port: Some(Port::Output(0)) },
+        // @ todo global output
+        Address { id: 1, port: Some(Port::Input(1)) },
+    );
 
-    let shared_graph_osc = shared_graph.clone();
+    processor.connect(
+        Address { id: frequency.id, port: Some(Port::Output(0)) },
+        Address { id: oscillator.id, port: Some(Port::Input(0)) },
+    );
+
+    let graph = processor.graph();
+
     thread::spawn(move || {
         // OSC stuff
         let sock = UdpSocket::bind(addr).unwrap();
@@ -45,23 +69,7 @@ fn main() {
                         OscPacket::Message(msg) => {
                             println!("OSC address: {}", msg.addr);
                             println!("OSC arguments: {:?}", msg.args);
-
-                            match msg.addr.as_str() {
-                                "/sobaka/hello/" => {
-                                    match msg.args[..] {
-                                        [OscType::Float(num)] => {
-                                            shared_graph_osc.lock().unwrap().set(0, num as f64);
-                                        }
-                                        _ => {
-                                            println!("dunno man")
-                                        }
-                                    }
-                                }
-                                _ => {
-                                    println!("No handler")
-                                }
-                            }
-
+                            processor.message(msg.try_into().expect("weird messsage"));
                         }
                         OscPacket::Bundle(bundle) => {
                             println!("OSC Bundle: {:?}", bundle);
@@ -74,7 +82,7 @@ fn main() {
                 }
             }
         }
-    }); 
+    });
 
     // Audio stuff
     let host = cpal::default_host();
@@ -85,13 +93,19 @@ fn main() {
     let config = device.default_output_config().unwrap();
 
     match config.sample_format() {
-        cpal::SampleFormat::F32 => run::<f32>(shared_graph, &device, &config.into()).unwrap(),
-        cpal::SampleFormat::I16 => run::<i16>(shared_graph, &device, &config.into()).unwrap(),
-        cpal::SampleFormat::U16 => run::<u16>(shared_graph, &device, &config.into()).unwrap(),
-    }
+        cpal::SampleFormat::F32 => run::<f32>(graph, &device, &config.into()).unwrap(),
+        cpal::SampleFormat::I16 => run::<i16>(graph, &device, &config.into()).unwrap(),
+        cpal::SampleFormat::U16 => run::<u16>(graph, &device, &config.into()).unwrap(),
+    };
+
+    Ok(())
 }
 
-fn run<T>(shared_graph: Arc<Mutex<Box<dyn AudioUnit64 + Send>>>, device: &cpal::Device, config: &cpal::StreamConfig) -> Result<(), anyhow::Error>
+fn run<T>(
+    shared_graph: Arc<Mutex<Graph32>>,
+    device: &cpal::Device,
+    config: &cpal::StreamConfig,
+) -> Result<(), anyhow::Error>
 where
     T: cpal::Sample,
 {
@@ -100,9 +114,7 @@ where
 
     shared_graph.lock().unwrap().reset(Some(sample_rate));
 
-    let mut next_value = move || {
-        shared_graph.lock().unwrap().get_stereo()
-    };
+    let mut next_value = move || shared_graph.lock().unwrap().get_stereo();
 
     let err_fn = |err| eprintln!("an error occurred on stream: {}", err);
 
@@ -120,14 +132,14 @@ where
     Ok(())
 }
 
-fn write_data<T>(output: &mut [T], channels: usize, next_sample: &mut dyn FnMut() -> (f64, f64))
+fn write_data<T>(output: &mut [T], channels: usize, next_sample: &mut dyn FnMut() -> (f32, f32))
 where
     T: cpal::Sample,
 {
     for frame in output.chunks_mut(channels) {
         let sample = next_sample();
-        let left: T = cpal::Sample::from::<f32>(&(sample.0 as f32));
-        let right: T = cpal::Sample::from::<f32>(&(sample.1 as f32));
+        let left: T = cpal::Sample::from::<f32>(&(sample.0));
+        let right: T = cpal::Sample::from::<f32>(&(sample.1));
 
         for (channel, sample) in frame.iter_mut().enumerate() {
             if channel & 1 == 0 {
