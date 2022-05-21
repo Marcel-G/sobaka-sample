@@ -14,7 +14,7 @@ pub struct ParameterParams {
 
 pub fn parameter(params: ParameterParams) -> impl AudioModule32 {
     module(
-        tag(0, 440.0),
+        tag(0, params.default),
         move |unit, message| {
             match (message.addr.port, &message.args[..]) {
                 // Saw Attenuation Param

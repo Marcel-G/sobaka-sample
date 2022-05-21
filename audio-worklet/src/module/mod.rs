@@ -1,13 +1,18 @@
 use fundsp::hacker32::*;
 pub mod oscillator;
 pub mod parameter;
+pub mod reverb;
 
 use fundsp::hacker::AudioUnit32;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
+use self::{
+    oscillator::{oscillator, OscillatorParams},
+    parameter::{parameter, ParameterParams},
+    reverb::{reverb, ReverbParams},
+};
 use crate::interface::message::SobakaMessage;
-use self::{oscillator::{oscillator, OscillatorParams}, parameter::{parameter, ParameterParams}};
 
 #[derive(Serialize, Deserialize, TS)]
 #[serde(tag = "node_type", content = "data")]
@@ -23,7 +28,7 @@ pub enum AudioModuleType {
     Oscillator(OscillatorParams),
     // Parameter(ParameterNode),
     // Quantiser(QuantiserNode),
-    // Reverb(ReverbNode),
+    Reverb(ReverbParams),
     // SampleAndHold(SampleAndHoldNode),
     // Sampler(SamplerNode),
     // Sequencer(SequencerNode),
@@ -37,26 +42,26 @@ impl From<AudioModuleType> for Box<dyn AudioModule32 + Send> {
         match node_type {
             AudioModuleType::Oscillator(params) => Box::new(oscillator(params)),
             AudioModuleType::Parameter(params) => Box::new(parameter(params)),
+            AudioModuleType::Reverb(params) => Box::new(reverb(params)),
         }
     }
 }
 
 pub fn module<U, F>(unit: An<U>, message_fn: F) -> Mod<U, F>
 where
- U: AudioNode<Sample = f32>,
- F: Fn(&mut U, SobakaMessage) {
-    Mod {
-        unit,
-        message_fn
-    }
+    U: AudioNode<Sample = f32>,
+    F: Fn(&mut U, SobakaMessage),
+{
+    Mod { unit, message_fn }
 }
 
 pub struct Mod<U, F>
 where
- U: AudioNode<Sample = f32>,
- F: Fn(&mut U, SobakaMessage) {
+    U: AudioNode<Sample = f32>,
+    F: Fn(&mut U, SobakaMessage),
+{
     unit: An<U>,
-    message_fn: F
+    message_fn: F,
 }
 
 pub trait AudioModule32: AudioUnit32 {
@@ -105,10 +110,11 @@ where
     }
 }
 
-impl <U, F> AudioModule32 for Mod<U, F>
+impl<U, F> AudioModule32 for Mod<U, F>
 where
- U: AudioNode<Sample = f32>,
- F: Fn(&mut U, SobakaMessage) {
+    U: AudioNode<Sample = f32>,
+    F: Fn(&mut U, SobakaMessage),
+{
     fn on_message(&mut self, message: SobakaMessage) {
         (self.message_fn)(&mut self.unit, message)
     }
