@@ -16,7 +16,8 @@
   import { getContext, onDestroy } from 'svelte'
   import { derived, get } from 'svelte/store'
   import type { Writable } from 'svelte/store'
-  import type { PlugContext } from '../state/plug'
+  import { PlugContext, PlugType } from '../state/plug'
+  import Plug from '../modules/shared/Plug.svelte';
 
   export let on_click: () => void
   export let from: PlugContext
@@ -43,9 +44,8 @@
   const from_pos = derived(from.node, to_center_point)
   const to_pos = derived(to.node, to_center_point)
 
-  // @todo store AbstractModule in state
-  if (to.input) {
-    const disconnect = get(context).link(from.module, to.module, to.input)
+  if (to.type == PlugType.Input) {
+    const disconnect = get(context).link(from.module, from.id, to.module, to.id)
     onDestroy(disconnect)
   } else {
     throw new Error(

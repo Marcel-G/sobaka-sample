@@ -3,7 +3,7 @@ import { AudioModuleType } from '../bindings/AudioModuleType'
 import { SobakaType } from '../bindings/SobakaType'
 import { SobakaMessage } from '../bindings/SobakaMessage'
 
-export type NodeType = AudioModuleType['node_type']
+export type NodeType = AudioModuleType['node_type'] | 'Sink'
 
 type Data<T> = T extends { data: any } ? T['data'] : undefined
 
@@ -27,7 +27,7 @@ export abstract class AbstractModule<T extends NodeType> {
     return this.context
   }
 
-  private async create(context: SobakaContext, type: T, state: Params<T>): Promise<string> {
+  async create(context: SobakaContext, type: T, state: Params<T>): Promise<string> {
     return context.client.request({
       method: 'create',
       params: [{ node_type: type, data: state }]

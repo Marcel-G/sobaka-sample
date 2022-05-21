@@ -27,7 +27,7 @@ pub enum AudioModuleType {
     // SampleAndHold(SampleAndHoldNode),
     // Sampler(SamplerNode),
     // Sequencer(SequencerNode),
-    // Sink(SinkNode),
+    // Sink,
     // Sum(SumNode),
     // Volume(VolumeNode)
 }

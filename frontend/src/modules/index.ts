@@ -2,6 +2,7 @@ import { Module } from '../state/modules'
 
 import Oscillator from './Oscillator.svelte'
 import Parameter from './Parameter.svelte'
+import Sink from './Sink.svelte'
 
 /**
  * Modules that can be spawned on the frontend.
@@ -24,7 +25,7 @@ export enum ModuleUI {
   // Reverb = 'Reverb',
   // SampleAndHold = 'SampleAndHold',
   // Sampler = 'Sampler',
-  // Sink = 'Sink',
+  Sink = 'Sink',
   // Vca = 'Vca'
 }
 
@@ -45,7 +46,7 @@ export const get_component = (module: Module<ModuleUI>) => {
     // [ModuleUI.Reverb]: Reverb,
     // [ModuleUI.SampleAndHold]: SampleAndHold,
     // [ModuleUI.Sampler]: Sampler,
-    // [ModuleUI.Sink]: Sink,
+    [ModuleUI.Sink]: Sink,
     // [ModuleUI.Vca]: Volume
   }[module.type]
 }

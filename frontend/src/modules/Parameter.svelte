@@ -7,7 +7,7 @@
 </script>
 
 <script lang="ts">
-  import { Parameter } from 'sobaka-sample-audio-worklet'
+  import { Float, Param, Parameter } from 'sobaka-sample-audio-worklet'
   import { onDestroy } from 'svelte'
   import Knob from '../components/Knob.svelte'
   import { get_module_context } from './ModuleWrapper.svelte'
@@ -20,25 +20,17 @@
 
   let name = 'parameter'
 
-  // // Set values from the global state if they're present
-  // let { value, range } = get_sub_state<Parameter['state']>(name) || {
-  //   value: 0,
-  //   range: [-10, 10]
-  // }
-
-  let { value, range } = {
-    value: 0,
-    range: [-10, 10]
-  }
+  // Set values from the global state if they're present
+  let { min, max, value } = get_sub_state(name, { min: 0, max: 14000, value: 0 })
 
   // Create and link sobaka node
-  const parameter = new Parameter(context, { min: range[0], max: range[1], default: value })
+  const parameter = new Parameter(context, { min, max, default: value })
 
-  // // Update the sobaka node when the state changes
-  // $: void parameter.update({ value, range })
+  // Update the sobaka node when the state changes
+  $: void parameter.message(Param(0), [Float(value)]);
 
   // // Update the global state when state changes
-  // $: update_sub_state(name, { value, range })
+  $: update_sub_state(name, { min, max, value })
 
   const loading = parameter.get_address()
 
@@ -52,7 +44,7 @@
     <p>Loading...</p>
   {:then}
     <span>
-      <Knob bind:value bind:range />
+      <Knob bind:value range={[min, max]} />
     </span>
   {/await}
   <div slot="outputs">

@@ -12,3 +12,17 @@ export class Parameter extends AbstractModule<'Parameter'> {
     super(context, 'Parameter', initial_state)
   }
 }
+
+export class Sink extends AbstractModule<'Sink'> {
+  constructor(context: SobakaContext) {
+    super(context, 'Sink', undefined as never)
+  }
+
+  async create(): Promise<string> {
+    return Promise.resolve('/sobaka/1') // @todo - better way to target the output node
+  }
+
+  async dispose(): Promise<boolean> {
+    return Promise.resolve(true)
+  }
+}

@@ -1,7 +1,7 @@
-use fundsp::{hacker::AudioUnit32};
+use fundsp::{hacker::AudioUnit32, MAX_BUFFER_SIZE};
 use futures::channel::mpsc::UnboundedSender;
 use jsonrpc_pubsub::{PubSubHandler, Session};
-use std::sync::{Arc};
+use std::{sync::{Arc}};
 use wasm_bindgen::prelude::*;
 use web_sys::MessagePort;
 
@@ -31,7 +31,6 @@ impl SobakaAudioWorklet {
 
         let rpc = AudioProcessorRpc::new(processor);
 
-
         io.extend_with(rpc.to_delegate());
 
         // Metadata should be created on connection
@@ -47,16 +46,24 @@ impl SobakaAudioWorklet {
 
     pub fn process(&mut self, input: &[f32], output_l: &mut [f32], output_r: &mut [f32]) {
         let mut graph = self.graph.lock().expect("Cannot lock graph");
-        graph.process(
-            64,
-            &[&input[..64]],
-            &mut [&mut output_l[..64], &mut output_r[..64]],
-        );
-        graph.process(
-            64,
-            &[&input[64..]],
-            &mut [&mut output_l[64..], &mut output_r[64..]],
-        );
+        // When no input is provided
+        if input.len() == 0 {
+            for (l, r) in output_l
+                .chunks_mut(MAX_BUFFER_SIZE)
+                .zip(output_r.chunks_mut(MAX_BUFFER_SIZE))
+            {
+                graph.process( MAX_BUFFER_SIZE, &[], &mut [l, r]);
+            }
+        } else {
+        // When input is provided
+            for ((l, r), i) in output_l
+                .chunks_mut(MAX_BUFFER_SIZE)
+                .zip(output_r.chunks_mut(MAX_BUFFER_SIZE))
+                .zip(input.chunks(MAX_BUFFER_SIZE))
+            {
+                graph.process( MAX_BUFFER_SIZE, &[i], &mut [l, r]);
+            }
+        }
     }
 }
 

@@ -7,58 +7,56 @@
 </script>
 
 <script lang="ts">
-  import { Oscillator } from 'sobaka-sample-audio-worklet'
+  import { Float, Oscillator, Param } from 'sobaka-sample-audio-worklet'
   import { onDestroy } from 'svelte'
   import { get_module_context } from './ModuleWrapper.svelte'
-  // import CvParameter from './shared/CvParameter.svelte'
   import Panel from './shared/Panel.svelte'
   import Plug from './shared/Plug.svelte'
   import { into_style } from '../components/Theme.svelte'
-import { PlugType } from '../state/plug';
+  import { PlugType } from '../state/plug';
+  import Knob from '../components/Knob.svelte';
 
   let name = 'oscillator'
 
   const { context, get_sub_state, update_sub_state } = get_module_context()
 
-  // let init = get_sub_state<Oscillator['state']>(name) || {
-  //   sine: 0.25,
-  //   saw: 0.25,
-  //   square: 0.25,
-  //   triangle: 0.25
-  // }
+  let state = get_sub_state(name, { sine: 0.25, saw: 0.25, square: 0.25, triangle: 0.25 })
 
-  const oscillator = new Oscillator(context, {
-    sine: 0.25,
-    saw: 0.25,
-    square: 0.25,
-    triangle: 0.25
-  })
+  const oscillator = new Oscillator(context, state)
 
   const loading = oscillator.get_address()
 
   // Update the sobaka node when the state changes
-  // $: void oscillator.update({ wave })
+  $: void oscillator.message(Param(0), [Float(state.saw)]);
+  $: void oscillator.message(Param(1), [Float(state.sine)]);
+  $: void oscillator.message(Param(2), [Float(state.square)]);
+  $: void oscillator.message(Param(3), [Float(state.triangle)]);
 
   // Update the global state when state changes
-  // $: update_sub_state(name, { wave })
+  $: update_sub_state(name, state)
 
   onDestroy(() => {
     void oscillator.dispose()
   })
 </script>
 
-<Panel {name} height={8} width={5} custom_style={into_style(theme)}>
+<Panel {name} height={15} width={5} custom_style={into_style(theme)}>
   {#await loading}
     <p>Loading...</p>
   {:then}
-    <!-- <CvParameter
-      step={1 / 12}
-      for_node={oscillator}
-      for_input={'Frequency'}
-      default_value={1}
-      default_range={[0, 10]}
-    /> -->
+      <Knob bind:value={state.saw} range={[0, 1]} />
+      <Knob bind:value={state.sine} range={[0, 1]} />
+      <Knob bind:value={state.square} range={[0, 1]} />
+      <Knob bind:value={state.triangle} range={[0, 1]} />
   {/await}
+  <div slot="inputs">
+    <Plug
+      id={0}
+      label="Input"
+      type={PlugType.Input}
+      for_module={oscillator}
+    />
+  </div>
   <div slot="outputs">
     <Plug
       id={0}

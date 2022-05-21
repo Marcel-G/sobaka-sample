@@ -6,7 +6,7 @@
     id: string
     context: SobakaContext
     position: { x: number; y: number }
-    get_sub_state: <T>(name: string) => T | undefined
+    get_sub_state: <T>(name: string, initial: T) => T
     update_sub_state: <T>(name: string, state: T) => void
   }
 
@@ -28,8 +28,8 @@
     id: module.id,
     context,
     position: module.position,
-    get_sub_state: function <T>(name: string): T | undefined {
-      return module.state?.[name] as T
+    get_sub_state: function <T>(name: string, initial: T): T {
+      return module.state?.[name] as T || initial
     },
     update_sub_state: function <T>(name: string, state: T): void {
       modules.update(module.id, merge(_, { [name]: state }))
