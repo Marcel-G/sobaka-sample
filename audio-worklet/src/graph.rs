@@ -8,7 +8,7 @@ use petgraph::visit::Reversed;
 use petgraph::visit::{DfsPostOrder, Visitable};
 use petgraph::EdgeDirection::Incoming;
 
-use crate::module::{AudioModule32, module};
+use crate::module::{module, AudioModule32};
 
 pub type PortIndex = usize;
 pub type NodeIndex = petgraph::stable_graph::NodeIndex;
@@ -30,7 +30,6 @@ pub fn edge(source: PortIndex, target: PortIndex) -> Edge {
 
 /// Individual AudioUnits are vertices in the graph.
 pub struct Node32 {
-    // aka NodeData
     /// The unit.
     pub unit: Box<dyn AudioModule32 + Send>,
     /// Input buffers. The length indicates the number of inputs.
@@ -276,6 +275,8 @@ impl AudioUnit32 for Graph32 {
 
             // Collects input buffers
             let mut in_buffers: Vec<f32> = vec![0.0; visit_node_inputs];
+            let mut in_totals: Vec<usize> = vec![0; visit_node_inputs];
+
             for incoming_edge_ref in self.graph.edges_directed(node, Incoming) {
                 // Skip edges that connect the node to itself to avoid aliasing `node`.
                 if node == incoming_edge_ref.source() {
@@ -291,11 +292,19 @@ impl AudioUnit32 for Graph32 {
                     .edge_weight(incoming_edge_ref.id())
                     .expect("No edge found");
 
-                in_buffers[incoming_edge_data.target] =
+                in_totals[incoming_edge_data.target] += 1;
+                in_buffers[incoming_edge_data.target] +=
                     incoming_node_data.tick_output[incoming_edge_data.source];
             }
 
-            // Here we deference our raw pointer to the `NodeData`. The only references to the graph at
+            // Average signals when multiple edges are attached to the same input
+            for (sample, total) in in_buffers.iter_mut().zip(in_totals) {
+                if total > 0 {
+                    *sample = *sample / (total as f32)
+                }
+            }
+
+            // Here we deference our raw pointer to the `Node32`. The only references to the graph at
             // this point in time are the input references and the node itself. We know that the input
             // references do not alias our node's mutable reference as we explicitly check for it while
             // looping through the inputs above.
@@ -341,11 +350,13 @@ impl AudioUnit32 for Graph32 {
         // Walk the graph
         while let Some(node) = self.visitor.next(Reversed(&self.graph)) {
             let visit_node_data = self.graph.node_weight_mut(node).expect(NO_NODE);
+            let visit_node_inputs = visit_node_data.inputs();
 
             let raw_node_data: *mut _ = &mut *visit_node_data;
 
             // Collects input buffers
-            let mut in_buffers = Buffer::with_size(visit_node_data.inputs());
+            let mut in_buffers = Buffer::with_size(visit_node_inputs);
+            let mut in_totals: Vec<usize> = vec![0; visit_node_inputs];
             for incoming_edge_ref in self.graph.edges_directed(node, Incoming) {
                 // Skip edges that connect the node to itself to avoid aliasing `node`.
                 if node == incoming_edge_ref.source() {
@@ -361,12 +372,24 @@ impl AudioUnit32 for Graph32 {
                     .edge_weight(incoming_edge_ref.id())
                     .expect("No edge found");
 
+                in_totals[incoming_edge.target] += 1;
                 in_buffers
                     .mut_at(incoming_edge.target)
-                    .copy_from_slice(incoming_node.output.at(incoming_edge.source));
+                    .iter_mut()
+                    .zip(incoming_node.output.at(incoming_edge.source))
+                    .for_each(|(sample, new)| *sample += new);
             }
 
-            // Here we deference our raw pointer to the `NodeData`. The only references to the graph at
+            // Average signals when multiple edges are attached to the same input
+            for (buffer, total) in in_buffers.self_mut().into_iter().zip(in_totals) {
+                if total > 0 {
+                    buffer
+                        .iter_mut()
+                        .for_each(|sample| *sample = *sample / (total as f32));
+                }
+            }
+
+            // Here we deference our raw pointer to the `Node32`. The only references to the graph at
             // this point in time are the input references and the node itself. We know that the input
             // references do not alias our node's mutable reference as we explicitly check for it while
             // looping through the inputs above.
@@ -506,9 +529,10 @@ fn test_basic() {
     }
 
     let mut graph = Graph32::new::<U0, U2>();
-    let id = graph.add(Box::new(
-        module(noise() >> moog_hz(1500.0, 0.8) | noise() >> moog_hz(500.0, 0.4), |_, _| {}),
-    ));
+    let id = graph.add(Box::new(module(
+        noise() >> moog_hz(1500.0, 0.8) | noise() >> moog_hz(500.0, 0.4),
+        |_, _| {},
+    )));
 
     graph.connect_output(id, 0, 1);
     graph.connect_output(id, 1, 1);
