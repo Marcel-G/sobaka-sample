@@ -1,5 +1,5 @@
 use super::{module, AudioModule32};
-use crate::interface::{address::Port, message::SobakaType};
+use crate::{interface::{address::Port, message::SobakaType}, dsp::param::param};
 use fundsp::prelude::*;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
@@ -28,7 +28,7 @@ where
     ];
 
     let line = stack::<U32, T, _, _>(|i| {
-        let a = tag(1, T::from_f64(time))
+        let a = param::<T>(1, T::from_f64(time))
             >> map(|t: &Frame<T, U1>| T::from_f64(pow(db_amp(-60.0), 0.03 / t[0].to_f64())));
 
         delay::<T>(DELAYS[i as usize])
@@ -39,9 +39,9 @@ where
     // The feedback structure.
     let reverb = fdn::<U32, T, _>(line);
 
-    let wet_mix = (pass() | pass()) * (tag(0, wet) >> (pass() ^ pass()));
+    let wet_mix = (pass() | pass()) * (param::<T>(0, wet) >> (pass() ^ pass()));
     let dry_mix =
-        (pass() | pass()) * (tag(0, wet) >> map(|f| T::one() - f[0]) >> (pass() ^ pass()));
+        (pass() | pass()) * (param::<T>(0, wet) >> map(|f| T::one() - f[0]) >> (pass() ^ pass()));
 
     // Multiplex stereo into 32 channels, reverberate, then average them back.
     // Bus the reverb with the dry signal. Operator precedences work perfectly for us here.

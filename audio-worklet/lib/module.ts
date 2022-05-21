@@ -19,6 +19,12 @@ export class Reverb extends AbstractModule<'Reverb'> {
   }
 }
 
+export class Filter extends AbstractModule<'Filter'> {
+  constructor(context: SobakaContext, initial_state: Params<'Filter'>) {
+    super(context, 'Filter', initial_state)
+  }
+}
+
 export class Sink extends AbstractModule<'Sink'> {
   constructor(context: SobakaContext) {
     super(context, 'Sink', undefined as never)

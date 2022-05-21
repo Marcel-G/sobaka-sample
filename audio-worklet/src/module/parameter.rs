@@ -1,7 +1,7 @@
 use fundsp::hacker32::*;
 use ts_rs::TS;
 use serde::{Serialize, Deserialize};
-use crate::interface::{message::SobakaType, address::Port};
+use crate::{interface::{message::SobakaType, address::Port}, dsp::param::{param32}};
 use super::{AudioModule32, module};
 
 #[derive(Default, Serialize, Deserialize, TS)]
@@ -14,7 +14,7 @@ pub struct ParameterParams {
 
 pub fn parameter(params: ParameterParams) -> impl AudioModule32 {
     module(
-        tag(0, params.default),
+        param32(0, params.default),
         move |unit, message| {
             match (message.addr.port, &message.args[..]) {
                 // Saw Attenuation Param

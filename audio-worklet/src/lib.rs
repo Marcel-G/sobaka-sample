@@ -14,6 +14,7 @@ use std::{
 pub mod graph;
 pub mod module;
 pub mod rpc;
+pub mod dsp;
 
 mod get_random;
 pub mod interface;

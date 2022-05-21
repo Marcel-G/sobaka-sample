@@ -4,6 +4,7 @@ import Oscillator from './Oscillator.svelte'
 import Parameter from './Parameter.svelte'
 import Sink from './Sink.svelte'
 import Reverb from './Reverb.svelte'
+import Filter from './Filter.svelte'
 
 /**
  * Modules that can be spawned on the frontend.
@@ -14,7 +15,7 @@ export enum ModuleUI {
   // Clock = 'Clock',
   // Delay = 'Delay',
   // Envelope = 'Envelope',
-  // Filter = 'Filter',
+  Filter = 'Filter',
   // Input = 'Input',
   // Lfo = 'Lfo',
   // Midi = 'Midi',
@@ -35,7 +36,7 @@ export const get_component = (module: Module<ModuleUI>) => {
     // [ModuleUI.Clock]: Clock,
     // [ModuleUI.Delay]: Delay,
     // [ModuleUI.Envelope]: Envelope,
-    // [ModuleUI.Filter]: Filter,
+    [ModuleUI.Filter]: Filter,
     // [ModuleUI.Input]: Input,
     // [ModuleUI.Lfo]: Lfo,
     // [ModuleUI.Midi]: Midi,

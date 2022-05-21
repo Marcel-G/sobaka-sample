@@ -2,6 +2,7 @@ use fundsp::hacker32::*;
 pub mod oscillator;
 pub mod parameter;
 pub mod reverb;
+pub mod filter;
 
 use fundsp::hacker::AudioUnit32;
 use serde::{Deserialize, Serialize};
@@ -11,6 +12,7 @@ use self::{
     oscillator::{oscillator, OscillatorParams},
     parameter::{parameter, ParameterParams},
     reverb::{reverb, ReverbParams},
+    filter::{filter, FilterParams},
 };
 use crate::interface::message::SobakaMessage;
 
@@ -23,6 +25,7 @@ pub enum AudioModuleType {
     // Input(InputNode),
     // Midi(MidiNode),
     // Filter(FilterNode),
+    Filter(FilterParams),
     // Noise(NoiseNode),
     Parameter(ParameterParams),
     Oscillator(OscillatorParams),
@@ -43,6 +46,7 @@ impl From<AudioModuleType> for Box<dyn AudioModule32 + Send> {
             AudioModuleType::Oscillator(params) => Box::new(oscillator(params)),
             AudioModuleType::Parameter(params) => Box::new(parameter(params)),
             AudioModuleType::Reverb(params) => Box::new(reverb(params)),
+            AudioModuleType::Filter(params) =>  Box::new(filter(params)),
         }
     }
 }
