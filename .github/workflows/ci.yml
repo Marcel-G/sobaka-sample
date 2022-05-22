@@ -6,13 +6,9 @@ on:
   pull_request:
     branches: [master, next]
 
-permissions:
-  id-token: write
-  contents: read
-
 jobs:
   terraform:
-    name: "👟 Terraform Apply"
+    name: "👟 Terraform"
     runs-on: ubuntu-latest
     if: github.event_name == 'push'
     environment: ${{ fromJSON('{"refs/heads/master":"production","refs/heads/next":"next"}')[github.ref] }}
@@ -100,6 +96,9 @@ jobs:
     name: "🏃‍♂️ Deploy"
     runs-on: ubuntu-latest
     if: github.event_name == 'push'
+    permissions:
+      id-token: write
+      contents: read
 
     steps:
       - uses: actions/download-artifact@v2
