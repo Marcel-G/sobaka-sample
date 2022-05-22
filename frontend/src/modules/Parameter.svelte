@@ -21,7 +21,7 @@
   let name = 'parameter'
 
   // Set values from the global state if they're present
-  let { min, max, value } = get_sub_state(name, { min: 0, max: 14000, value: 0 })
+  let { min, max, value } = get_sub_state(name, { min: 0, max: 10, value: 0 })
 
   // Create and link sobaka node
   const parameter = new Parameter(context, { min, max, default: value })

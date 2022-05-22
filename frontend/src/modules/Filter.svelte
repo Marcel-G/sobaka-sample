@@ -30,7 +30,7 @@
 
   let { frequency, q, kind } = get_sub_state(name, {
     kind: 'Filter',
-    frequency: 440.0,
+    frequency: 1.0,
     q: 0.25
   })
 
@@ -55,8 +55,8 @@
     <p>Loading...</p>
   {:then}
     <div class="controls">
-      <Knob bind:value={frequency} range={[0, 44100 / 2]} />
-      <Knob bind:value={q} range={[0, 10]} />
+      <Knob bind:value={frequency} range={[1, 8]} />
+      <Knob bind:value={q} range={[0, 1]} />
     </div>
   {/await}
   <div slot="inputs">

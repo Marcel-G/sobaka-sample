@@ -1,5 +1,5 @@
 use super::{module, AudioModule32};
-use crate::{interface::{address::Port, message::SobakaType}, dsp::param::{param}};
+use crate::{interface::{address::Port, message::SobakaType}, dsp::{param::{param}, volt_hz}};
 use fundsp::hacker32::*;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
@@ -12,7 +12,9 @@ pub struct FilterParams {
 }
 
 pub fn filter(params: FilterParams) -> impl AudioModule32 {
-    let input = pass() | param(0, params.frequency) | param(1, params.q);
+    let input = pass()
+            | (param(0, params.frequency)  >> map(|f| volt_hz(f[0])))
+            | param(1, params.q);
 
     let filter = input >> (lowpass() ^ highpass() ^ bandpass() ^ moog());
   

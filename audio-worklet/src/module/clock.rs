@@ -30,7 +30,7 @@ pub fn clock(params: ClockParams) -> impl AudioModule32 {
         match (message.addr.port, &message.args[..]) {
             // Set BPM parameter
             (Some(Port::Parameter(0)), [SobakaType::Float(bpm)]) => {
-                unit.set(0, bpm.clamp(0.0, 240.0) as f64)
+                unit.set(0, bpm.clamp(0.0, 600.0) as f64)
             }
             _ => {}
         }

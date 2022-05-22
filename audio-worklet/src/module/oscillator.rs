@@ -1,6 +1,6 @@
 use fundsp::hacker32::*;
 use serde::{Serialize, Deserialize};
-use crate::{interface::{message::SobakaType, address::Port}, dsp::param::{param32}};
+use crate::{interface::{message::SobakaType, address::Port}, dsp::{param::{param32}, volt_hz}};
 use super::{AudioModule32, module};
 use ts_rs::TS;
 
@@ -14,12 +14,13 @@ pub struct OscillatorParams {
 }
 
 pub fn oscillator(params: OscillatorParams) -> impl AudioModule32 {
+    let input = pass() >> map(|f| volt_hz(f[0]));
     let attenuated_saw = saw() * param32(0, params.saw);
     let attenuated_sine = sine() * param32(1, params.sine);
     let attenuated_square = square() * param32(2, params.square);
     let attenuated_triangle = triangle() * param32(3, params.triangle);
 
-    let unit = oversample(
+    let unit = input >> oversample(
         attenuated_saw &
         attenuated_sine &
         attenuated_square &
