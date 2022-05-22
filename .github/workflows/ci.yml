@@ -11,6 +11,7 @@ jobs:
     name: "👟 Terraform Apply"
     runs-on: ubuntu-latest
     if: github.event_name == 'push'
+    environment: next
     # environment: |
     #   ${{ fromJSON('{
     #     "refs/heads/master": "production",
