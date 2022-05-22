@@ -4,24 +4,23 @@ on:
   push:
     branches: [master, next]
   pull_request:
+    branches:
+      - master
+      - next
 
 jobs:
-  terraform:
-    name: "👟 Terraform"
+  terraform_plan:
+    name: "👟🔍 Terraform Plan"
+    if: github.event_name == 'pull_request'
+    environment: |
+      ${{ fromJSON('{
+        "master": "production",
+        "next": "next"
+      }')[github.event.pull_request.base.ref] }}
+    env:
+      TF_WORKSPACE: ${{ secrets.TF_WORKSPACE }}
     runs-on: ubuntu-latest
-    outputs:
-      deploy_bucket: ${{ steps.collect-outputs.outputs.deploy_bucket }}
-      deploy_role: ${{ steps.collect-outputs.outputs.deploy_role }}
-      website_cdn_root_id: ${{ steps.collect-outputs.outputs.website_cdn_root_id }}
     steps:
-      - name: Set env to next 
-        if: endsWith(github.ref, '/next')
-        run: |
-          echo "TF_WORKSPACE=sobaka-next" >> $GITHUB_ENV
-      - name: Set env to production
-        if: endsWith(github.ref, '/master')
-        run: |
-          echo "TF_WORKSPACE=sobaka-prod" >> $GITHUB_ENV
       - name: Checkout
         uses: actions/checkout@v2
 
@@ -59,13 +58,46 @@ jobs:
         if: steps.plan.outcome == 'failure'
         run: exit 1
 
+  terraform_apply:
+    name: "👟 Terraform Apply"
+    if: github.event_name == 'push'
+    environment: |
+      ${{ fromJSON('{
+        "refs/heads/master": "production",
+        "refs/heads/next": "next"
+      }')[github.ref] }}
+    env:
+      TF_WORKSPACE: ${{ secrets.TF_WORKSPACE }}
+    runs-on: ubuntu-latest
+    outputs:
+      deploy_bucket: ${{ steps.collect-outputs.outputs.deploy_bucket }}
+      deploy_role: ${{ steps.collect-outputs.outputs.deploy_role }}
+      website_cdn_root_id: ${{ steps.collect-outputs.outputs.website_cdn_root_id }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v1
+        with:
+          # https://github.com/hashicorp/setup-terraform/issues/20#issuecomment-679424701
+          terraform_wrapper: false
+          # terraform_version: 0.13.0:
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+
+      - name: Terraform Format
+        working-directory: infrastructure
+        id: fmt
+        run: terraform fmt -check
+
+      - name: Terraform Init
+        working-directory: infrastructure
+        id: init
+        run: terraform init
+      
       - name: Terraform Apply
         working-directory: infrastructure
-        if:
-          contains('
-            refs/heads/master
-            refs/heads/next
-          ', github.ref) && github.event_name == 'push'
+        if: github.event_name == 'push'
         run: terraform apply -auto-approve
       
       - name: Terraform Outputs
@@ -104,11 +136,7 @@ jobs:
   deploy:
     name: "🏃‍♂️ Deploy"
     runs-on: ubuntu-latest
-    if:
-      contains('
-        refs/heads/master
-        refs/heads/next
-      ', github.ref) && github.event_name == 'push'
+    if: github.event_name == 'push'
     permissions:
       id-token: write
       contents: read
@@ -137,7 +165,7 @@ jobs:
             --paths "/index.html"
     needs:
       - build
-      - terraform
+      - terraform_apply
 
 concurrency: 
   group: ${{ github.ref }}
