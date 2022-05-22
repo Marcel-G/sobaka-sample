@@ -2,14 +2,18 @@ name: "CI"
 
 on:
   push:
-    branches:
-      - master
+    branches: [master, next]
   pull_request:
+    branches: [master, next]
 
 jobs:
   terraform:
     name: "👟 Terraform"
     runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    environment: ${{ fromJSON('{"refs/heads/master":"production","refs/heads/next":"next"}')[github.ref] }}
+    env:
+      TF_WORKSPACE: ${{ fromJSON('{"refs/heads/master":"sobaka-prod","refs/heads/next":"sobaka-next"}')[github.ref] }}
     outputs:
       deploy_bucket: ${{ steps.collect-outputs.outputs.deploy_bucket }}
       deploy_role: ${{ steps.collect-outputs.outputs.deploy_role }}
@@ -35,7 +39,7 @@ jobs:
         working-directory: infrastructure
         id: init
         run: terraform init
-      
+
       - name: Terraform Validate
         working-directory: infrastructure
         id: validate
@@ -44,17 +48,15 @@ jobs:
       - name: Terraform Plan
         working-directory: infrastructure
         id: plan
-        if: github.event_name == 'pull_request'
         run: terraform plan -no-color
         continue-on-error: true
 
       - name: Terraform Plan Status
         if: steps.plan.outcome == 'failure'
         run: exit 1
-
+      
       - name: Terraform Apply
         working-directory: infrastructure
-        if: github.ref == 'refs/heads/master' && github.event_name == 'push'
         run: terraform apply -auto-approve
       
       - name: Terraform Outputs
@@ -93,7 +95,7 @@ jobs:
   deploy:
     name: "🏃‍♂️ Deploy"
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    if: github.event_name == 'push'
     permissions:
       id-token: write
       contents: read
