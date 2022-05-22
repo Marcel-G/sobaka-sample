@@ -20,8 +20,10 @@ pub fn clock(params: ClockParams) -> impl AudioModule32 {
         })
     };
 
-    let clock_divider_node = branch::<U4, _, _>(|n| {
-        mul(n as f32 + 1.0) >> lfo_square()
+    let divide = [1.0, 2.0, 4.0, 8.0, 16.0];
+
+    let clock_divider_node = branch::<U5, _, _>(|n| {
+        mul(divide[n as usize]) >> lfo_square()
     });
 
     module(

@@ -37,7 +37,7 @@
   })
 </script>
 
-<Panel {name} height={6} width={5} custom_style={into_style(theme)}>
+<Panel {name} height={7} width={5} custom_style={into_style(theme)}>
   {#await loading}
     <p>Loading...</p>
   {:then}
@@ -47,7 +47,8 @@
   <div slot="outputs">
     <Plug id={0} label="1/1" type={PlugType.Output} for_module={clock} />
     <Plug id={1} label="1/2" type={PlugType.Output} for_module={clock} />
-    <Plug id={2} label="1/3" type={PlugType.Output} for_module={clock} />
-    <Plug id={3} label="1/4" type={PlugType.Output} for_module={clock} />
+    <Plug id={2} label="1/4" type={PlugType.Output} for_module={clock} />
+    <Plug id={3} label="1/8" type={PlugType.Output} for_module={clock} />
+    <Plug id={4} label="1/16" type={PlugType.Output} for_module={clock} />
   </div>
 </Panel>

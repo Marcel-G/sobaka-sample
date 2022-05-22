@@ -44,7 +44,7 @@
   $: void sequencer.message(Param(7), [Float(s7)])
   $: void sequencer.message(Param(0), [Float(s8)])
   
-  const knob_range = [1, 8];
+  const knob_range = [0, 8];
 
   // Update the global state when state changes
   $: update_sub_state(name, { steps: [s1, s2, s3, s4, s5, s6, s7, s8] })
