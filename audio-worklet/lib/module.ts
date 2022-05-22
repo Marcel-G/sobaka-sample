@@ -37,6 +37,12 @@ export class Sequencer extends AbstractModule<'Sequencer'> {
   }
 }
 
+export class Vca extends AbstractModule<'Vca'> {
+  constructor(context: SobakaContext, initial_state: Params<'Vca'>) {
+    super(context, 'Vca', initial_state)
+  }
+}
+
 export class Sink extends AbstractModule<'Sink'> {
   constructor(context: SobakaContext) {
     super(context, 'Sink', undefined as never)

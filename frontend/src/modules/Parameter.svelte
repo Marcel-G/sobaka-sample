@@ -39,7 +39,7 @@
   })
 </script>
 
-<Panel name="parameter" height={6} width={5} custom_style={into_style(theme)}>
+<Panel {name} height={6} width={5} custom_style={into_style(theme)}>
   {#await loading}
     <p>Loading...</p>
   {:then}

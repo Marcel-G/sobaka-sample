@@ -7,6 +7,7 @@ import Reverb from './Reverb.svelte'
 import Filter from './Filter.svelte'
 import Clock from './Clock.svelte'
 import Sequencer from './Sequencer.svelte'
+import Vca from './Vca.svelte'
 
 /**
  * Modules that can be spawned on the frontend.
@@ -30,7 +31,7 @@ export enum ModuleUI {
   // SampleAndHold = 'SampleAndHold',
   // Sampler = 'Sampler',
   Sink = 'Sink',
-  // Vca = 'Vca'
+  Vca = 'Vca'
 }
 
 export const get_component = (module: Module<ModuleUI>) => {
@@ -51,6 +52,6 @@ export const get_component = (module: Module<ModuleUI>) => {
     // [ModuleUI.SampleAndHold]: SampleAndHold,
     // [ModuleUI.Sampler]: Sampler,
     [ModuleUI.Sink]: Sink,
-    // [ModuleUI.Vca]: Volume
+    [ModuleUI.Vca]: Vca
   }[module.type]
 }

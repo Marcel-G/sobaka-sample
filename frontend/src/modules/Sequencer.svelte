@@ -28,7 +28,7 @@
 
   let name = 'sequencer'
 
-  let state = get_sub_state(name, { steps: new Array(8).fill(0) })
+  let state = get_sub_state(name, { steps: new Array(8).fill(1) })
 
   const sequencer = new Sequencer(context, state)
 

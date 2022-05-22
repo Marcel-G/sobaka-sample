@@ -5,6 +5,7 @@ pub mod oscillator;
 pub mod parameter;
 pub mod reverb;
 pub mod sequencer;
+pub mod vca;
 
 use fundsp::hacker::AudioUnit32;
 use serde::{Deserialize, Serialize};
@@ -17,6 +18,7 @@ use self::{
     parameter::{parameter, ParameterParams},
     reverb::{reverb, ReverbParams},
     sequencer::{sequencer, SequencerParams},
+    vca::{vca, VcaParams},
 };
 use crate::interface::message::SobakaMessage;
 
@@ -42,7 +44,7 @@ pub enum AudioModuleType {
     Sequencer(SequencerParams),
     // Sink,
     // Sum(SumNode),
-    // Volume(VolumeNode)
+    Vca(VcaParams)
 }
 
 impl From<AudioModuleType> for Box<dyn AudioModule32 + Send> {
@@ -54,6 +56,7 @@ impl From<AudioModuleType> for Box<dyn AudioModule32 + Send> {
             AudioModuleType::Filter(params) => Box::new(filter(params)),
             AudioModuleType::Clock(params) => Box::new(clock(params)),
             AudioModuleType::Sequencer(params) => Box::new(sequencer(params)),
+            AudioModuleType::Vca(params) => Box::new(vca(params)),
         }
     }
 }
