@@ -1,18 +1,22 @@
 use fundsp::hacker32::*;
+pub mod clock;
+pub mod filter;
 pub mod oscillator;
 pub mod parameter;
 pub mod reverb;
-pub mod filter;
+pub mod sequencer;
 
 use fundsp::hacker::AudioUnit32;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 use self::{
+    clock::{clock, ClockParams},
+    filter::{filter, FilterParams},
     oscillator::{oscillator, OscillatorParams},
     parameter::{parameter, ParameterParams},
     reverb::{reverb, ReverbParams},
-    filter::{filter, FilterParams},
+    sequencer::{sequencer, SequencerParams},
 };
 use crate::interface::message::SobakaMessage;
 
@@ -26,6 +30,7 @@ pub enum AudioModuleType {
     // Midi(MidiNode),
     // Filter(FilterNode),
     Filter(FilterParams),
+    Clock(ClockParams),
     // Noise(NoiseNode),
     Parameter(ParameterParams),
     Oscillator(OscillatorParams),
@@ -34,7 +39,7 @@ pub enum AudioModuleType {
     Reverb(ReverbParams),
     // SampleAndHold(SampleAndHoldNode),
     // Sampler(SamplerNode),
-    // Sequencer(SequencerNode),
+    Sequencer(SequencerParams),
     // Sink,
     // Sum(SumNode),
     // Volume(VolumeNode)
@@ -46,7 +51,9 @@ impl From<AudioModuleType> for Box<dyn AudioModule32 + Send> {
             AudioModuleType::Oscillator(params) => Box::new(oscillator(params)),
             AudioModuleType::Parameter(params) => Box::new(parameter(params)),
             AudioModuleType::Reverb(params) => Box::new(reverb(params)),
-            AudioModuleType::Filter(params) =>  Box::new(filter(params)),
+            AudioModuleType::Filter(params) => Box::new(filter(params)),
+            AudioModuleType::Clock(params) => Box::new(clock(params)),
+            AudioModuleType::Sequencer(params) => Box::new(sequencer(params)),
         }
     }
 }

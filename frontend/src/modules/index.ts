@@ -5,6 +5,8 @@ import Parameter from './Parameter.svelte'
 import Sink from './Sink.svelte'
 import Reverb from './Reverb.svelte'
 import Filter from './Filter.svelte'
+import Clock from './Clock.svelte'
+import Sequencer from './Sequencer.svelte'
 
 /**
  * Modules that can be spawned on the frontend.
@@ -12,14 +14,14 @@ import Filter from './Filter.svelte'
  * Core modules map directly to SobakaNodeTypes.
  */
 export enum ModuleUI {
-  // Clock = 'Clock',
+  Clock = 'Clock',
   // Delay = 'Delay',
   // Envelope = 'Envelope',
   Filter = 'Filter',
   // Input = 'Input',
   // Lfo = 'Lfo',
   // Midi = 'Midi',
-  // MultiSequencer = 'MultiSequencer',
+  Sequencer = 'Sequencer',
   // Noise = 'Noise',
   Oscillator = 'Oscillator',
   Parameter = 'Parameter',
@@ -33,14 +35,14 @@ export enum ModuleUI {
 
 export const get_component = (module: Module<ModuleUI>) => {
   return {
-    // [ModuleUI.Clock]: Clock,
+    [ModuleUI.Clock]: Clock,
     // [ModuleUI.Delay]: Delay,
     // [ModuleUI.Envelope]: Envelope,
     [ModuleUI.Filter]: Filter,
     // [ModuleUI.Input]: Input,
     // [ModuleUI.Lfo]: Lfo,
     // [ModuleUI.Midi]: Midi,
-    // [ModuleUI.MultiSequencer]: MultiSequencer,
+    [ModuleUI.Sequencer]: Sequencer,
     // [ModuleUI.Noise]: Noise,
     [ModuleUI.Oscillator]: Oscillator,
     [ModuleUI.Parameter]: Parameter,

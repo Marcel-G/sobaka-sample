@@ -25,6 +25,18 @@ export class Filter extends AbstractModule<'Filter'> {
   }
 }
 
+export class Clock extends AbstractModule<'Clock'> {
+  constructor(context: SobakaContext, initial_state: Params<'Clock'>) {
+    super(context, 'Clock', initial_state)
+  }
+}
+
+export class Sequencer extends AbstractModule<'Sequencer'> {
+  constructor(context: SobakaContext, initial_state: Params<'Sequencer'>) {
+    super(context, 'Sequencer', initial_state)
+  }
+}
+
 export class Sink extends AbstractModule<'Sink'> {
   constructor(context: SobakaContext) {
     super(context, 'Sink', undefined as never)

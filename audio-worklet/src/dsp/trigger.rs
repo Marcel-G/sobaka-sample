@@ -1,16 +1,16 @@
-use fundsp::hacker::{An, AudioNode, U2, U0, U1, Frame};
+use fundsp::hacker::{An, AudioNode, U2, U0, U1, Frame, Tag};
 
 #[inline]
 pub fn trigger<X>(unit: An<X>) -> An<Trigger<X>>
 where
-    X: AudioNode<Sample = f64, Inputs = U0>,
+    X: AudioNode<Sample = f32, Inputs = U0>,
 {
     An(Trigger::new(unit))
 }
 
 pub struct Trigger<X>
 where
-    X: AudioNode<Sample = f64, Inputs = U0>,
+    X: AudioNode<Sample = f32, Inputs = U0>,
 {
     unit: An<X>,
     is_open: bool,
@@ -18,7 +18,7 @@ where
 
 impl<X> Trigger<X>
 where
-    X: AudioNode<Sample = f64, Inputs = U0>,
+    X: AudioNode<Sample = f32, Inputs = U0>,
 {
     pub fn new(unit: An<X>) -> Self {
         Self {
@@ -30,7 +30,7 @@ where
 
 impl<X> AudioNode for Trigger<X>
 where
-    X: AudioNode<Sample = f64, Inputs = U0>,
+    X: AudioNode<Sample = f32, Inputs = U0>,
 {
     const ID: u64 = 0;
     type Sample = X::Sample;
@@ -51,5 +51,9 @@ where
         }
 
         self.unit.tick(&Frame::default())
+    }
+
+    fn set(&mut self, parameter: Tag, value: f64) {
+        self.unit.set(parameter, value);
     }
 }
