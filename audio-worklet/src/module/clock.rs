@@ -21,7 +21,7 @@ pub fn clock(params: ClockParams) -> impl AudioModule32 {
     };
 
     let clock_divider_node = branch::<U4, _, _>(|n| {
-        mul(1.0 / (n as f32 + 1.0)) >> lfo_square()
+        mul(n as f32 + 1.0) >> lfo_square()
     });
 
     module(

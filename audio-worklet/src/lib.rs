@@ -5,7 +5,7 @@ use interface::{
     error::SobakaError,
     message::SobakaMessage,
 };
-use module::AudioModuleType;
+use module::{AudioModuleType, AudioModule32};
 use petgraph::graph::EdgeIndex;
 use std::{
     sync::{Arc, Mutex, MutexGuard},
@@ -25,6 +25,7 @@ type SharedGraph = Arc<Mutex<Graph32>>;
 // AudioProcessor is the rust entry-point for Web Audio AudioWorkletProcessor
 pub struct AudioProcessor {
     graph: SharedGraph,
+    sample_rate: f64
 }
 
 pub type SobakaResult<T> = Result<T, SobakaError>;
@@ -37,6 +38,7 @@ impl AudioProcessor {
 
         AudioProcessor {
             graph: Arc::new(Mutex::new(graph)),
+            sample_rate,
         }
     }
 
@@ -49,7 +51,14 @@ impl AudioProcessor {
     }
 
     pub fn create(&self, node: AudioModuleType) -> SobakaResult<Address> {
-        Ok(self.graph_mut()?.add(node.into()).into())
+        let mut unit: Box<dyn AudioModule32 + Send> = node.into();
+
+        // Reset `sample_rate` after construction because some
+        // AudioNodes in fundsp reset `sample_rate` to default when constructed
+        // @todo this should be adjusted in fundsp
+        unit.reset(Some(self.sample_rate));
+        
+        Ok(self.graph_mut()?.add(unit).into())
     }
 
     pub fn dispose(&self, address: Address) -> SobakaResult<bool> {
