@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [master, next]
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   terraform:
     name: "👟 Terraform Apply"
@@ -96,9 +100,6 @@ jobs:
     name: "🏃‍♂️ Deploy"
     runs-on: ubuntu-latest
     if: github.event_name == 'push'
-    permissions:
-      id-token: write
-      contents: read
 
     steps:
       - uses: actions/download-artifact@v2
