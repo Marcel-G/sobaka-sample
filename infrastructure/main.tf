@@ -11,7 +11,7 @@ terraform {
     organization = "marcel-gleeson"
 
     workspaces {
-      name = "sobaka-sample"
+      tags = ["sobaka"]
     }
   }
 }
