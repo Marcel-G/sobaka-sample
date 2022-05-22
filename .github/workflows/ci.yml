@@ -4,9 +4,7 @@ on:
   push:
     branches: [master, next]
   pull_request:
-    branches:
-      - master
-      - next
+    branches: [master, next]
 
 jobs:
   terraform:
@@ -54,7 +52,6 @@ jobs:
       - name: Terraform Plan
         working-directory: infrastructure
         id: plan
-        if: github.event_name == 'pull_request'
         run: terraform plan -no-color
         continue-on-error: true
 
@@ -64,7 +61,6 @@ jobs:
       
       - name: Terraform Apply
         working-directory: infrastructure
-        if: github.event_name == 'push'
         run: terraform apply -auto-approve
       
       - name: Terraform Outputs
