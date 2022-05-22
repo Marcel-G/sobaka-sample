@@ -11,6 +11,8 @@
 
     user-select: none;
 
+    touch-action: none;
+
     position: relative;
   }
 
