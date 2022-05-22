@@ -9,15 +9,15 @@ on:
 jobs:
   terraform:
     name: "👟 Terraform Apply"
+    runs-on: ubuntu-latest
     if: github.event_name == 'push'
-    environment: |
-      ${{ fromJSON('{
-        "refs/heads/master": "production",
-        "refs/heads/next": "next"
-      }')[github.ref] }}
+    # environment: |
+    #   ${{ fromJSON('{
+    #     "refs/heads/master": "production",
+    #     "refs/heads/next": "next"
+    #   }')[github.ref] }}
     env:
       TF_WORKSPACE: ${{ secrets.TF_WORKSPACE }}
-    runs-on: ubuntu-latest
     outputs:
       deploy_bucket: ${{ steps.collect-outputs.outputs.deploy_bucket }}
       deploy_role: ${{ steps.collect-outputs.outputs.deploy_role }}
