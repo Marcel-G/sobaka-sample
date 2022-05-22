@@ -11,12 +11,8 @@ jobs:
     name: "👟 Terraform Apply"
     runs-on: ubuntu-latest
     if: github.event_name == 'push'
-    environment: next
-    # environment: |
-    #   ${{ fromJSON('{
-    #     "refs/heads/master": "production",
-    #     "refs/heads/next": "next"
-    #   }')[github.ref] }}
+    environment: |
+      ${{ fromJSON('{ "refs/heads/master": "production", "refs/heads/next": "next" }')[github.ref] }}
     env:
       TF_WORKSPACE: ${{ secrets.TF_WORKSPACE }}
     outputs:
