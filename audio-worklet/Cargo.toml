@@ -72,4 +72,4 @@ wasm-opt = false
 [[example]]
 name = "osc"
 path = "examples/osc.rs"
-required-features = ["osc_exaple"]
+required-features = ["osc_example"]
