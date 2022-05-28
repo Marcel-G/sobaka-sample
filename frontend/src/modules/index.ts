@@ -9,6 +9,7 @@ import Reverb from './Reverb.svelte'
 import Sequencer from './Sequencer.svelte'
 import Sink from './Sink.svelte'
 import Vca from './Vca.svelte'
+import Noise from './Noise.svelte'
 
 /**
  * Modules that can be spawned on the frontend.
@@ -24,7 +25,7 @@ export enum ModuleUI {
   // Lfo = 'Lfo',
   // Midi = 'Midi',
   Sequencer = 'Sequencer',
-  // Noise = 'Noise',
+  Noise = 'Noise',
   Oscillator = 'Oscillator',
   Parameter = 'Parameter',
   // Quantiser = 'Quantiser',
@@ -45,7 +46,7 @@ export const get_component = (module: Module<ModuleUI>) => {
     // [ModuleUI.Lfo]: Lfo,
     // [ModuleUI.Midi]: Midi,
     [ModuleUI.Sequencer]: Sequencer,
-    // [ModuleUI.Noise]: Noise,
+    [ModuleUI.Noise]: Noise,
     [ModuleUI.Oscillator]: Oscillator,
     [ModuleUI.Parameter]: Parameter,
     // [ModuleUI.Quantiser]: Quantiser,

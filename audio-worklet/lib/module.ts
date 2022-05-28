@@ -43,6 +43,12 @@ export class Envelope extends AbstractModule<'Envelope'> {
   }
 }
 
+export class Noise extends AbstractModule<'Noise'> {
+  constructor(context: SobakaContext) {
+    super(context, 'Noise', undefined)
+  }
+}
+
 export class Vca extends AbstractModule<'Vca'> {
   constructor(context: SobakaContext, initial_state: Params<'Vca'>) {
     super(context, 'Vca', initial_state)
