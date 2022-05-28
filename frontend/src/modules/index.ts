@@ -1,12 +1,13 @@
 import { Module } from '../state/modules'
 
+import Clock from './Clock.svelte'
+import Envelope from './Envelope.svelte'
+import Filter from './Filter.svelte'
 import Oscillator from './Oscillator.svelte'
 import Parameter from './Parameter.svelte'
-import Sink from './Sink.svelte'
 import Reverb from './Reverb.svelte'
-import Filter from './Filter.svelte'
-import Clock from './Clock.svelte'
 import Sequencer from './Sequencer.svelte'
+import Sink from './Sink.svelte'
 import Vca from './Vca.svelte'
 
 /**
@@ -17,7 +18,7 @@ import Vca from './Vca.svelte'
 export enum ModuleUI {
   Clock = 'Clock',
   // Delay = 'Delay',
-  // Envelope = 'Envelope',
+  Envelope = 'Envelope',
   Filter = 'Filter',
   // Input = 'Input',
   // Lfo = 'Lfo',
@@ -38,7 +39,7 @@ export const get_component = (module: Module<ModuleUI>) => {
   return {
     [ModuleUI.Clock]: Clock,
     // [ModuleUI.Delay]: Delay,
-    // [ModuleUI.Envelope]: Envelope,
+    [ModuleUI.Envelope]: Envelope,
     [ModuleUI.Filter]: Filter,
     // [ModuleUI.Input]: Input,
     // [ModuleUI.Lfo]: Lfo,

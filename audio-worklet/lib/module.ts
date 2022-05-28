@@ -37,6 +37,12 @@ export class Sequencer extends AbstractModule<'Sequencer'> {
   }
 }
 
+export class Envelope extends AbstractModule<'Envelope'> {
+  constructor(context: SobakaContext, initial_state: Params<'Envelope'>) {
+    super(context, 'Envelope', initial_state)
+  }
+}
+
 export class Vca extends AbstractModule<'Vca'> {
   constructor(context: SobakaContext, initial_state: Params<'Vca'>) {
     super(context, 'Vca', initial_state)
