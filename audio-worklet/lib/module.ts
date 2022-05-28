@@ -55,6 +55,12 @@ export class Vca extends AbstractModule<'Vca'> {
   }
 }
 
+export class Delay extends AbstractModule<'Delay'> {
+  constructor(context: SobakaContext, initial_state: Params<'Delay'>) {
+    super(context, 'Delay', initial_state)
+  }
+}
+
 export class Sink extends AbstractModule<'Sink'> {
   constructor(context: SobakaContext) {
     super(context, 'Sink', undefined as never)

@@ -8,6 +8,7 @@ pub mod parameter;
 pub mod reverb;
 pub mod sequencer;
 pub mod vca;
+pub mod delay;
 
 use fundsp::hacker::AudioUnit32;
 use serde::{Deserialize, Serialize};
@@ -23,6 +24,7 @@ use self::{
     vca::{vca, VcaParams},
     envelope::{ envelope, EnvelopeParams },
     noise::{ noise },
+    delay::{ delay, DelayParams },
 };
 use crate::interface::message::SobakaMessage;
 
@@ -30,7 +32,7 @@ use crate::interface::message::SobakaMessage;
 #[serde(tag = "node_type", content = "data")]
 #[ts(export)]
 pub enum AudioModuleType {
-    // Delay(DelayNode),
+    Delay(DelayParams),
     Envelope(EnvelopeParams),
     // Input(InputNode),
     // Midi(MidiNode),
@@ -62,6 +64,7 @@ impl From<AudioModuleType> for Box<dyn AudioModule32 + Send> {
             AudioModuleType::Vca(params) => Box::new(vca(params)),
             AudioModuleType::Envelope(params) => Box::new(envelope(params)),
             AudioModuleType::Noise => Box::new(noise()),
+            AudioModuleType::Delay(params) => Box::new(delay(params)),
         }
     }
 }

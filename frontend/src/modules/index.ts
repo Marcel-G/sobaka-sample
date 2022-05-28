@@ -10,6 +10,7 @@ import Sequencer from './Sequencer.svelte'
 import Sink from './Sink.svelte'
 import Vca from './Vca.svelte'
 import Noise from './Noise.svelte'
+import Delay from './Delay.svelte'
 
 /**
  * Modules that can be spawned on the frontend.
@@ -18,7 +19,7 @@ import Noise from './Noise.svelte'
  */
 export enum ModuleUI {
   Clock = 'Clock',
-  // Delay = 'Delay',
+  Delay = 'Delay',
   Envelope = 'Envelope',
   Filter = 'Filter',
   // Input = 'Input',
@@ -39,7 +40,7 @@ export enum ModuleUI {
 export const get_component = (module: Module<ModuleUI>) => {
   return {
     [ModuleUI.Clock]: Clock,
-    // [ModuleUI.Delay]: Delay,
+    [ModuleUI.Delay]: Delay,
     [ModuleUI.Envelope]: Envelope,
     [ModuleUI.Filter]: Filter,
     // [ModuleUI.Input]: Input,

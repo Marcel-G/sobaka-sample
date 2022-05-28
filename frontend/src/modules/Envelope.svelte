@@ -46,7 +46,7 @@
   })
 </script>
 
-<Panel name="envelope" height={6} width={8} custom_style={into_style(theme)}>
+<Panel {name} height={6} width={8} custom_style={into_style(theme)}>
   {#await loading}
     <p>Loading...</p>
   {:then}
