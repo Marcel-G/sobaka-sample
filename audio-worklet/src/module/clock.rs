@@ -1,6 +1,6 @@
 use super::{module, AudioModule32};
 use crate::{
-    interface::{address::Port, message::SobakaType},
+    interface::{address::Port, message::SobakaType}, dsp::messaging::handler,
 };
 use fundsp::hacker32::*;
 use serde::{Deserialize, Serialize};
@@ -26,9 +26,9 @@ pub fn clock(params: ClockParams) -> impl AudioModule32 {
         mul(divide[n as usize]) >> lfo_square()
     });
 
-    module(
-      tag(0, params.bpm) >> clock_divider_node,
-      move |unit, message| {
+    let unit = tag(0, params.bpm) >> clock_divider_node;
+
+    let (sender, out) = handler(unit, |unit, message| {
         match (message.addr.port, &message.args[..]) {
             // Set BPM parameter
             (Some(Port::Parameter(0)), [SobakaType::Float(bpm)]) => {
@@ -36,5 +36,8 @@ pub fn clock(params: ClockParams) -> impl AudioModule32 {
             }
             _ => {}
         }
-    })
+    });
+
+    module(out)
+        .with_sender(sender)
 }

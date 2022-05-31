@@ -1,6 +1,6 @@
 use super::{module, AudioModule32};
 use crate::{
-    dsp::param::param32,
+    dsp::{param::param32, messaging::handler},
     interface::{address::Port, message::SobakaType},
 };
 use fundsp::hacker32::*;
@@ -16,14 +16,16 @@ pub struct VcaParams {
 pub fn vca(params: VcaParams) -> impl AudioModule32 {
     let unit = pass() * (pass() + param32(0, params.value));
 
-    module(unit,
-      move |unit, message| {
+    let (sender, out) = handler(unit, move |unit, message| {
         match (message.addr.port, &message.args[..]) {
-            // Manual control
+            // Vca value param
             (Some(Port::Parameter(0)), [SobakaType::Float(value)]) => {
-                unit.set(0, *value as f64)
+                unit.set(0, value.clamp(0.0, 1.0) as f64)
             }
             _ => {}
         }
-    })
+    });
+
+    module(out)
+        .with_sender(sender)
 }

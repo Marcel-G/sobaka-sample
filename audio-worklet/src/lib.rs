@@ -141,7 +141,12 @@ impl AudioProcessor {
             // Node cannot be found
             .ok_or(SobakaError::Something)?
             .unit
-            .on_message(message);
+            .get_sender()
+            // Node does not support sending
+            .ok_or(SobakaError::Something)?
+            .unbounded_send(message)
+            // Sending failed
+            .map_err(|_| SobakaError::Something)?;
 
         Ok(true) // @todo - confirmation that message was handled / matched?
     }

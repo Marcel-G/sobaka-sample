@@ -86,9 +86,9 @@ impl Graph32 {
         let input: An<MultiPass<I, f32>> = An(MultiPass::default());
         let output: An<MultiPass<O, f32>> = An(MultiPass::default());
 
-        let global_input = graph.add_node(Node32::new(Box::new(module(input, |_, _| {}))));
+        let global_input = graph.add_node(Node32::new(Box::new(module(input))));
 
-        let global_output = graph.add_node(Node32::new(Box::new(module(output, |_, _| {}))));
+        let global_output = graph.add_node(Node32::new(Box::new(module(output))));
 
         let net = Self {
             graph,
@@ -531,7 +531,6 @@ fn test_basic() {
     let mut graph = Graph32::new::<U0, U2>();
     let id = graph.add(Box::new(module(
         noise() >> moog_hz(1500.0, 0.8) | noise() >> moog_hz(500.0, 0.4),
-        |_, _| {},
     )));
 
     graph.connect_output(id, 0, 1);

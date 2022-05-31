@@ -1,5 +1,5 @@
 use super::{module, AudioModule32};
-use crate::{interface::{address::Port, message::SobakaType}, dsp::{param::{param}, volt_hz}};
+use crate::{interface::{address::Port, message::SobakaType}, dsp::{param::{param}, volt_hz, messaging::handler}};
 use fundsp::hacker32::*;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
@@ -17,18 +17,17 @@ pub fn filter(params: FilterParams) -> impl AudioModule32 {
             | param(1, params.q);
 
     let filter = input >> (lowpass() ^ highpass() ^ bandpass() ^ moog());
-  
-    module(filter, move |unit, message| {
+
+    let (sender, out) = handler(filter, move |unit, message| {
         match (message.addr.port, &message.args[..]) {
-            // Filter frequency param
-            (Some(Port::Parameter(0)), [SobakaType::Float(value)]) => {
-                unit.set(0, *value as f64)
-            }
-            // Filter frequency param
-            (Some(Port::Parameter(1)), [SobakaType::Float(value)]) => {
-                unit.set(1, *value as f64)
-            }
+            // Frequency param
+            (Some(Port::Parameter(0)), [SobakaType::Float(value)]) => unit.set(0, *value as f64),
+            // Q param
+            (Some(Port::Parameter(1)), [SobakaType::Float(value)]) => unit.set(1, *value as f64),
             _ => {}
         }
-    })
+    });
+  
+    module(out)
+        .with_sender(sender)
 }

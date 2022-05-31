@@ -1,5 +1,8 @@
 use super::{module, AudioModule32};
-use crate::{interface::{address::Port, message::SobakaType}, dsp::param::param};
+use crate::{
+    dsp::{messaging::handler, param::param},
+    interface::{address::Port, message::SobakaType},
+};
 use fundsp::prelude::*;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
@@ -49,7 +52,7 @@ where
 }
 
 pub fn reverb(params: ReverbParams) -> impl AudioModule32 {
-    module(
+    let (sender, out) = handler(
         reverb_stereo::<f32, f32>(params.wet, params.length.into()),
         move |unit, message| {
             match (message.addr.port, &message.args[..]) {
@@ -64,5 +67,7 @@ pub fn reverb(params: ReverbParams) -> impl AudioModule32 {
                 _ => {}
             }
         },
-    )
+    );
+
+    module(out).with_sender(sender)
 }

@@ -1,5 +1,5 @@
 use super::{module, AudioModule32};
-use crate::interface::{address::Port, message::SobakaType};
+use crate::{interface::{address::Port, message::SobakaType}, dsp::messaging::handler};
 use fundsp::hacker32::*;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
@@ -14,7 +14,7 @@ pub fn delay(params: DelayParams) -> impl AudioModule32 {
     let inputs = pass() | tag(0, params.time);
     let unit = inputs >> tap(0.0, 10.0);
 
-    module(unit, move |unit, message| {
+    let (sender, out) = handler(unit, move |unit, message| {
         match (message.addr.port, &message.args[..]) {
             // Delay time param
             (Some(Port::Parameter(0)), [SobakaType::Float(value)]) => {
@@ -22,5 +22,8 @@ pub fn delay(params: DelayParams) -> impl AudioModule32 {
             }
             _ => {}
         }
-    })
+    });
+
+    module(out)
+        .with_sender(sender)
 }
