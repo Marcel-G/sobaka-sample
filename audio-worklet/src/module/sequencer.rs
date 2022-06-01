@@ -1,7 +1,9 @@
+use std::convert::TryInto;
+
 use super::{module, AudioModule32};
 use crate::{
-    dsp::{messaging::handler, stepped::stepped, trigger::trigger},
-    interface::{address::Port, message::SobakaType},
+    dsp::{messaging::{handler, emitter}, stepped::stepped, trigger::trigger},
+    interface::{address::{Port, self, Address}, message::{SobakaType, SobakaMessage}},
 };
 use fundsp::hacker32::*;
 use serde::{Deserialize, Serialize};
@@ -27,6 +29,24 @@ pub fn sequencer(params: SequencerParams) -> impl AudioModule32 {
         tag(6, params.steps[6]),
         tag(7, params.steps[7]),
     ]));
+
+    let mut toggle = false;
+
+    let (receiver, oo) = emitter(|val| {
+        if val > &0.0 && !toggle {
+            toggle = true;
+            Some(SobakaMessage {
+                addr: Address {
+                    port: Some(Port::Output(0)),
+                    id: 0,
+                },
+                args: vec![],
+            })
+        } else {
+            toggle = false;
+            None
+        }
+    });
 
     let (sender, out) = handler(unit, move |unit, message| {
         match (message.addr.port, &message.args[..]) {

@@ -2,7 +2,7 @@ use std::sync::{Mutex, Arc};
 
 use futures::{
   StreamExt,
-  channel::mpsc::{self, UnboundedSender},
+  channel::mpsc::{self, UnboundedSender, UnboundedReceiver},
 };
 
 
@@ -97,12 +97,64 @@ where
     }
 }
 
-// pub struct Emitter<U, F>
-// where
-//     U: AudioNode<Sample = f32>,
-//     F: Fn(&mut U, SobakaMessage),
-// {
-//     rx: Receiver<SobakaMessage>,
-//     unit: An<U>,
-//     message_fn: F,
-// }
+// Handler for incoming messages
+pub fn emitter<F>(message_fn: F) -> (UnboundedReceiver<SobakaMessage>, An<Emitter<F>>)
+where
+    F: FnMut(&f32) -> Option<SobakaMessage>,
+{
+    let (tx, node) = Emitter::new(message_fn);
+    (tx, An(node))
+}
+
+pub struct Emitter<F>
+where
+    F: FnMut(&f32) -> Option<SobakaMessage>,
+{
+    tx: UnboundedSender<SobakaMessage>,
+    message_fn: F,
+}
+
+// implement Emitter with new function that constructs a new emitter
+impl<F> Emitter<F>
+where
+    F: FnMut(&f32) -> Option<SobakaMessage>,
+{
+    pub fn new(message_fn: F) -> (UnboundedReceiver<SobakaMessage>, Self) {
+        let (tx, rx) = mpsc::unbounded();
+        let emitter = Emitter {
+            tx,
+            message_fn,
+        };
+
+        (rx, emitter)
+    }
+
+    fn send_message(&self, message: SobakaMessage) {
+        self.tx.unbounded_send(message).unwrap();
+    }
+}
+
+impl<F> AudioNode for Emitter<F>
+where
+    F: FnMut(&f32) -> Option<SobakaMessage>,
+{
+    const ID: u64 = 77;
+
+    type Sample = f32;
+
+    type Inputs = U1;
+
+    type Outputs = U0;
+
+    fn tick(
+        &mut self,
+        input: &Frame<Self::Sample, Self::Inputs>,
+    ) -> Frame<Self::Sample, Self::Outputs> {
+        let value = input[0];
+        if let Some(message) = (self.message_fn)(&value) {
+            self.send_message(message);
+        }
+        Default::default()
+    }
+
+}
