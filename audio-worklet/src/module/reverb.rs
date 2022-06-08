@@ -73,5 +73,5 @@ pub fn reverb(params: ReverbParams) -> impl AudioModule32 {
             }
         });
 
-    module(reverb).with_sender(handler)
+    module(reverb).set_tx(handler)
 }

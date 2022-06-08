@@ -2,7 +2,6 @@ use fundsp::{
     hacker::AudioUnit32,
     hacker32::{U1, U2},
 };
-use futures::Stream;
 use graph::{Graph32, NodeIndex};
 use interface::{
     address::{Address, Port},
@@ -12,10 +11,9 @@ use interface::{
 use module::{AudioModule32, AudioModuleType};
 use petgraph::graph::EdgeIndex;
 use std::{
-    pin::Pin,
     sync::{Arc, Mutex, MutexGuard},
 };
-use utils::observer::{Observable, Observer, Producer};
+use utils::observer::{Observer, Producer};
 
 pub mod dsp;
 pub mod graph;
@@ -139,11 +137,12 @@ impl AudioProcessor {
                     // Module not found
                     .ok_or(SobakaError::Something)?
                     .unit
-                    .get_receiver()
+                    .get_rx()
+                    // Module does not support subscription
                     .ok_or(SobakaError::Something)
             }
             _ => {
-                //
+                // Bad address
                 Err(SobakaError::Something)
             }
         }
@@ -165,7 +164,7 @@ impl AudioProcessor {
             // Node cannot be found
             .ok_or(SobakaError::Something)?
             .unit
-            .get_sender()
+            .get_tx()
             // Node does not support sending
             .ok_or(SobakaError::Something)?
             .notify(message);

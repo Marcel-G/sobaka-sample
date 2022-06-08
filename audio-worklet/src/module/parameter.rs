@@ -32,5 +32,5 @@ pub fn parameter(params: ParameterParams) -> impl AudioModule32 {
                 _ => {}
             }
         });
-    module(param).with_sender(handler)
+    module(param).set_tx(handler)
 }

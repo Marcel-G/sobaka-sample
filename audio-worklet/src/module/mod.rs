@@ -95,12 +95,16 @@ impl<U> Mod<U>
 where
     U: AudioNode<Sample = f32>,
 {
-    pub fn with_sender(mut self, tx: Subject<SobakaMessage>) -> Self {
+    /// Sets the message transmitter for the module
+    /// Incoming messages get sent into this transmitter
+    pub fn set_tx(mut self, tx: Subject<SobakaMessage>) -> Self {
         self.tx = Some(tx);
         self
     }
 
-    pub fn with_receiver<T: Observable<Output = SobakaMessage> + Send + 'static>(
+    /// Sets the message receiver for the module
+    /// Outgoing messages get sent out via this receiver
+    pub fn set_rx<T: Observable<Output = SobakaMessage> + Send + 'static>(
         mut self,
         rx: T,
     ) -> Self {
@@ -110,8 +114,8 @@ where
 }
 
 pub trait AudioModule32: AudioUnit32 {
-    fn get_sender(&self) -> Option<&Subject<SobakaMessage>>;
-    fn get_receiver(&self) -> Option<Observer<SobakaMessage>>;
+    fn get_tx(&self) -> Option<&Subject<SobakaMessage>>;
+    fn get_rx(&self) -> Option<Observer<SobakaMessage>>;
 }
 
 impl<U> AudioUnit32 for Mod<U>
@@ -159,11 +163,11 @@ impl<U> AudioModule32 for Mod<U>
 where
     U: AudioNode<Sample = f32>,
 {
-    fn get_sender(&self) -> Option<&Subject<SobakaMessage>> {
+    fn get_tx(&self) -> Option<&Subject<SobakaMessage>> {
         self.tx.as_ref()
     }
 
-    fn get_receiver(&self) -> Option<Observer<SobakaMessage>> {
+    fn get_rx(&self) -> Option<Observer<SobakaMessage>> {
         if let Some(rx) = &self.rx {
             Some(rx.observe())
         } else {

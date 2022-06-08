@@ -46,5 +46,5 @@ pub fn clock(params: ClockParams) -> impl AudioModule32 {
             }
         });
 
-    module(unit).with_sender(handler)
+    module(unit).set_tx(handler)
 }

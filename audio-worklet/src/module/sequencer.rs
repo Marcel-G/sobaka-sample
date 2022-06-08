@@ -58,5 +58,5 @@ pub fn sequencer(params: SequencerParams) -> impl AudioModule32 {
 
     let unit = trigger(steps >> stepped);
 
-    module(unit).with_sender(handler).with_receiver(reciever)
+    module(unit).set_tx(handler).set_rx(reciever)
 }

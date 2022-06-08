@@ -40,5 +40,5 @@ pub fn filter(params: FilterParams) -> impl AudioModule32 {
 
     let filter = input >> (lowpass() ^ highpass() ^ bandpass() ^ moog());
 
-    module(filter).with_sender(handler)
+    module(filter).set_tx(handler)
 }

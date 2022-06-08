@@ -58,5 +58,5 @@ pub fn oscillator(params: OscillatorParams) -> impl AudioModule32 {
 
     let unit = input >> oversample(params);
 
-    module(unit).with_sender(handler)
+    module(unit).set_tx(handler)
 }

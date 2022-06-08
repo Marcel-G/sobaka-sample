@@ -48,5 +48,5 @@ pub fn envelope(params: EnvelopeParams) -> impl AudioModule32 {
 
     let unit = trigger(params >> env);
 
-    module(unit).with_sender(handler)
+    module(unit).set_tx(handler)
 }
