@@ -1,5 +1,5 @@
 use fundsp::{
-    hacker::{AFollow},
+    hacker::AFollow,
     hacker32::{An, Pipe, Tag, Tagged},
     prelude::{follow, tag},
     Float,

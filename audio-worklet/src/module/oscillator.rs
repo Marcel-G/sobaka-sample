@@ -1,7 +1,10 @@
 use super::{module, AudioModule32};
 use crate::{
-    dsp::{param::param32, volt_hz, shared::Share, messaging::MessageHandler},
-    interface::{address::Port, message::{SobakaType, SobakaMessage}},
+    dsp::{messaging::MessageHandler, param::param32, shared::Share, volt_hz},
+    interface::{
+        address::Port,
+        message::{SobakaMessage, SobakaType},
+    },
 };
 use fundsp::hacker32::*;
 use serde::{Deserialize, Serialize};
@@ -23,35 +26,37 @@ pub fn oscillator(params: OscillatorParams) -> impl AudioModule32 {
     let attenuated_square = square() * param32(2, params.square);
     let attenuated_triangle = triangle() * param32(3, params.triangle);
 
-    let params = (attenuated_saw & attenuated_sine & attenuated_square & attenuated_triangle).share();
+    let params =
+        (attenuated_saw & attenuated_sine & attenuated_square & attenuated_triangle).share();
 
-    let handler = params.clone().message_handler(|unit, message: SobakaMessage| {
-        match (message.addr.port, &message.args[..]) {
-            // Saw Attenuation Param
-            (Some(Port::Parameter(0)), [SobakaType::Float(value)]) => {
-                unit.set(0, value.clamp(0.0, 1.0) as f64)
+    let handler = params
+        .clone()
+        .message_handler(|unit, message: SobakaMessage| {
+            match (message.addr.port, &message.args[..]) {
+                // Saw Attenuation Param
+                (Some(Port::Parameter(0)), [SobakaType::Float(value)]) => {
+                    unit.set(0, value.clamp(0.0, 1.0) as f64)
+                }
+
+                // Sine Attenuation Param
+                (Some(Port::Parameter(1)), [SobakaType::Float(value)]) => {
+                    unit.set(1, value.clamp(0.0, 1.0) as f64)
+                }
+
+                // Square Attenuation Param
+                (Some(Port::Parameter(2)), [SobakaType::Float(value)]) => {
+                    unit.set(2, value.clamp(0.0, 1.0) as f64)
+                }
+
+                // Triangle Attenuation Param
+                (Some(Port::Parameter(3)), [SobakaType::Float(value)]) => {
+                    unit.set(3, value.clamp(0.0, 1.0) as f64)
+                }
+                _ => {}
             }
+        });
 
-            // Sine Attenuation Param
-            (Some(Port::Parameter(1)), [SobakaType::Float(value)]) => {
-                unit.set(1, value.clamp(0.0, 1.0) as f64)
-            }
-
-            // Square Attenuation Param
-            (Some(Port::Parameter(2)), [SobakaType::Float(value)]) => {
-                unit.set(2, value.clamp(0.0, 1.0) as f64)
-            }
-
-            // Triangle Attenuation Param
-            (Some(Port::Parameter(3)), [SobakaType::Float(value)]) => {
-                unit.set(3, value.clamp(0.0, 1.0) as f64)
-            }
-            _ => {}
-        }
-    });
-
-    let unit = input
-        >> oversample(params);
+    let unit = input >> oversample(params);
 
     module(unit).with_sender(handler)
 }

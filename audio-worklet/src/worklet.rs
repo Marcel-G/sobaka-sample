@@ -1,15 +1,13 @@
 use fundsp::{hacker::AudioUnit32, MAX_BUFFER_SIZE};
 use futures::channel::mpsc::UnboundedSender;
 use jsonrpc_pubsub::{PubSubHandler, Session};
-use std::{sync::{Arc}};
+use std::sync::Arc;
 use wasm_bindgen::prelude::*;
 use web_sys::MessagePort;
 
 use crate::{
-    rpc::AudioProcessorRpc,
-    rpc::interface::SobakaGraphRpc,
-    utils::post_message_transport::PostMessageTransport, AudioProcessor,
-    SharedGraph,
+    rpc::interface::SobakaGraphRpc, rpc::AudioProcessorRpc,
+    utils::post_message_transport::PostMessageTransport, AudioProcessor, SharedGraph,
 };
 // AudioProcessor is the rust entry-point for Web Audio AudioWorkletProcessor
 #[wasm_bindgen]
@@ -52,16 +50,16 @@ impl SobakaAudioWorklet {
                 .chunks_mut(MAX_BUFFER_SIZE)
                 .zip(output_r.chunks_mut(MAX_BUFFER_SIZE))
             {
-                graph.process( MAX_BUFFER_SIZE, &[], &mut [l, r]);
+                graph.process(MAX_BUFFER_SIZE, &[], &mut [l, r]);
             }
         } else {
-        // When input is provided
+            // When input is provided
             for ((l, r), i) in output_l
                 .chunks_mut(MAX_BUFFER_SIZE)
                 .zip(output_r.chunks_mut(MAX_BUFFER_SIZE))
                 .zip(input.chunks(MAX_BUFFER_SIZE))
             {
-                graph.process( MAX_BUFFER_SIZE, &[i], &mut [l, r]);
+                graph.process(MAX_BUFFER_SIZE, &[i], &mut [l, r]);
             }
         }
     }

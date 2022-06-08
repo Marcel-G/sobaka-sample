@@ -1,5 +1,6 @@
 use fundsp::hacker32::*;
 pub mod clock;
+pub mod delay;
 pub mod envelope;
 pub mod filter;
 pub mod noise;
@@ -8,7 +9,6 @@ pub mod parameter;
 pub mod reverb;
 pub mod sequencer;
 pub mod vca;
-pub mod delay;
 
 use fundsp::hacker::AudioUnit32;
 use serde::{Deserialize, Serialize};
@@ -16,19 +16,20 @@ use ts_rs::TS;
 
 use self::{
     clock::{clock, ClockParams},
+    delay::{delay, DelayParams},
+    envelope::{envelope, EnvelopeParams},
     filter::{filter, FilterParams},
+    noise::noise,
     oscillator::{oscillator, OscillatorParams},
     parameter::{parameter, ParameterParams},
     reverb::{reverb, ReverbParams},
     sequencer::{sequencer, SequencerParams},
     vca::{vca, VcaParams},
-    envelope::{ envelope, EnvelopeParams },
-    noise::{ noise },
-    delay::{ delay, DelayParams },
 };
-use crate::{interface::message::SobakaMessage, utils::observer::{Observable, Observer, Subject}};
-
-
+use crate::{
+    interface::message::SobakaMessage,
+    utils::observer::{Observable, Observer, Subject},
+};
 
 #[derive(Serialize, Deserialize, TS)]
 #[serde(tag = "node_type", content = "data")]
@@ -51,7 +52,7 @@ pub enum AudioModuleType {
     // Sampler(SamplerNode),
     Sequencer(SequencerParams),
     // Sum(SumNode),
-    Vca(VcaParams)
+    Vca(VcaParams),
 }
 
 impl From<AudioModuleType> for Box<dyn AudioModule32 + Send> {
@@ -75,7 +76,11 @@ pub fn module<U>(unit: An<U>) -> Mod<U>
 where
     U: AudioNode<Sample = f32>,
 {
-    Mod { unit, tx: None, rx: None }
+    Mod {
+        unit,
+        tx: None,
+        rx: None,
+    }
 }
 
 type Rx = Box<dyn Observable<Output = SobakaMessage> + Send>;
@@ -88,7 +93,7 @@ where
     rx: Option<Rx>,
 }
 
-impl <U> Mod<U>
+impl<U> Mod<U>
 where
     U: AudioNode<Sample = f32>,
 {
@@ -97,7 +102,10 @@ where
         self
     }
 
-    pub fn with_receiver<T: Observable<Output = SobakaMessage> + Send + 'static>(mut self, rx: T) -> Self {
+    pub fn with_receiver<T: Observable<Output = SobakaMessage> + Send + 'static>(
+        mut self,
+        rx: T,
+    ) -> Self {
         self.rx = Some(Box::new(rx));
         self
     }

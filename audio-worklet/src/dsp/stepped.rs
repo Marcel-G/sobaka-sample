@@ -1,11 +1,11 @@
-use std::{marker::PhantomData};
+use std::marker::PhantomData;
 
 use fundsp::{
     hacker::{An, AudioNode, Frame, Size, U1},
     Float,
 };
 
-use crate::utils::observer::{Observable, Observer, Subject, Producer};
+use crate::utils::observer::{Observable, Observer, Producer, Subject};
 
 #[inline]
 pub fn stepped<N: Size<T>, T: Float>() -> An<Stepped<N, T>> {
@@ -39,7 +39,6 @@ impl<N, T> Observable for Stepped<N, T> {
     fn observe(&self) -> Observer<Self::Output> {
         self.subject.observe()
     }
-    
 }
 
 impl<N: Size<T>, T: Float> AudioNode for Stepped<N, T> {

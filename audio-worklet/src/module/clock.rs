@@ -1,6 +1,6 @@
 use super::{module, AudioModule32};
 use crate::{
-    dsp::{shared::Share, messaging::MessageHandler},
+    dsp::{messaging::MessageHandler, shared::Share},
     interface::{
         address::Port,
         message::{SobakaMessage, SobakaType},
@@ -34,15 +34,17 @@ pub fn clock(params: ClockParams) -> impl AudioModule32 {
 
     let unit = (tag(0, params.bpm) >> clock_divider_node).share();
 
-    let handler = unit.clone().message_handler(|unit, message: SobakaMessage| {
-        match (message.addr.port, &message.args[..]) {
-            // Set BPM parameter
-            (Some(Port::Parameter(0)), [SobakaType::Float(bpm)]) => {
-                unit.set(0, bpm.clamp(0.0, 600.0) as f64)
+    let handler = unit
+        .clone()
+        .message_handler(|unit, message: SobakaMessage| {
+            match (message.addr.port, &message.args[..]) {
+                // Set BPM parameter
+                (Some(Port::Parameter(0)), [SobakaType::Float(bpm)]) => {
+                    unit.set(0, bpm.clamp(0.0, 600.0) as f64)
+                }
+                _ => {}
             }
-            _ => {}
-        }
-    });
+        });
 
     module(unit).with_sender(handler)
 }

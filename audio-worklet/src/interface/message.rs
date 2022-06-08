@@ -112,7 +112,7 @@ mod osc_interop {
                 OscType::Array(v) => Ok(SobakaType::Array(v.try_into()?)),
                 OscType::Nil => Ok(SobakaType::Nil),
                 OscType::Inf => Ok(SobakaType::Inf),
-                _ => Err("No type for")
+                _ => Err("No type for"),
             }
         }
     }
@@ -151,8 +151,7 @@ mod osc_interop {
     impl TryFrom<OscArray> for SobakaArray {
         type Error = &'static str;
         fn try_from(value: OscArray) -> Result<Self, Self::Error> {
-            Ok(
-                SobakaArray {
+            Ok(SobakaArray {
                 content: value
                     .content
                     .into_iter()

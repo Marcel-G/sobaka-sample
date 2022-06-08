@@ -1,6 +1,6 @@
 use super::{module, AudioModule32};
 use crate::{
-    dsp::{shared::Share, messaging::MessageHandler},
+    dsp::{messaging::MessageHandler, shared::Share},
     interface::{
         address::Port,
         message::{SobakaMessage, SobakaType},
@@ -20,15 +20,17 @@ pub fn delay(params: DelayParams) -> impl AudioModule32 {
     let inputs = pass() | tag(0, params.time);
     let unit = (inputs >> tap(0.0, 10.0)).share();
 
-    let handler = unit.clone().message_handler(|unit, message: SobakaMessage| {
-        match (message.addr.port, &message.args[..]) {
-            // Delay time param
-            (Some(Port::Parameter(0)), [SobakaType::Float(value)]) => {
-                unit.set(0, value.clamp(0.0, 10.0) as f64)
+    let handler = unit
+        .clone()
+        .message_handler(|unit, message: SobakaMessage| {
+            match (message.addr.port, &message.args[..]) {
+                // Delay time param
+                (Some(Port::Parameter(0)), [SobakaType::Float(value)]) => {
+                    unit.set(0, value.clamp(0.0, 10.0) as f64)
+                }
+                _ => {}
             }
-            _ => {}
-        }
-    });
+        });
 
     module(unit).with_sender(handler)
 }

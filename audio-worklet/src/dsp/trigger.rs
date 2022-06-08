@@ -1,4 +1,4 @@
-use fundsp::hacker::{An, AudioNode, U0, U1, Frame, Tag};
+use fundsp::hacker::{An, AudioNode, Frame, Tag, U0, U1};
 
 #[inline]
 pub fn trigger<X>(unit: An<X>) -> An<Trigger<X>>

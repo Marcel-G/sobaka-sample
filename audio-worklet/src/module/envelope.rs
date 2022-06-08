@@ -1,6 +1,6 @@
 use super::{module, AudioModule32};
 use crate::{
-    dsp::{shared::Share, trigger::trigger, messaging::MessageHandler},
+    dsp::{messaging::MessageHandler, shared::Share, trigger::trigger},
     interface::{
         address::Port,
         message::{SobakaMessage, SobakaType},
@@ -30,15 +30,21 @@ pub fn envelope(params: EnvelopeParams) -> impl AudioModule32 {
 
     let params = (tag(0, params.attack) | tag(1, params.release)).share();
 
-    let handler = params.clone().message_handler(|unit, message: SobakaMessage| {
-        match (message.addr.port, &message.args[..]) {
-            // Envelope attack param
-            (Some(Port::Parameter(0)), [SobakaType::Float(value)]) => unit.set(0, *value as f64),
-            // Envelope release param
-            (Some(Port::Parameter(1)), [SobakaType::Float(value)]) => unit.set(1, *value as f64),
-            _ => {}
-        }
-    });
+    let handler = params
+        .clone()
+        .message_handler(|unit, message: SobakaMessage| {
+            match (message.addr.port, &message.args[..]) {
+                // Envelope attack param
+                (Some(Port::Parameter(0)), [SobakaType::Float(value)]) => {
+                    unit.set(0, *value as f64)
+                }
+                // Envelope release param
+                (Some(Port::Parameter(1)), [SobakaType::Float(value)]) => {
+                    unit.set(1, *value as f64)
+                }
+                _ => {}
+            }
+        });
 
     let unit = trigger(params >> env);
 

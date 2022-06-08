@@ -1,6 +1,6 @@
 use super::{module, AudioModule32};
 use crate::{
-    dsp::{param::param, shared::Share, volt_hz, messaging::MessageHandler},
+    dsp::{messaging::MessageHandler, param::param, shared::Share, volt_hz},
     interface::{
         address::Port,
         message::{SobakaMessage, SobakaType},
@@ -22,15 +22,21 @@ pub fn filter(params: FilterParams) -> impl AudioModule32 {
         (pass() | (param(0, params.frequency) >> map(|f| volt_hz(f[0]))) | param(1, params.q))
             .share();
 
-    let handler = input.clone().message_handler(|unit, message: SobakaMessage| {
-        match (message.addr.port, &message.args[..]) {
-            // Frequency param
-            (Some(Port::Parameter(0)), [SobakaType::Float(value)]) => unit.set(0, *value as f64),
-            // Q param
-            (Some(Port::Parameter(1)), [SobakaType::Float(value)]) => unit.set(1, *value as f64),
-            _ => {}
-        }
-    });
+    let handler = input
+        .clone()
+        .message_handler(|unit, message: SobakaMessage| {
+            match (message.addr.port, &message.args[..]) {
+                // Frequency param
+                (Some(Port::Parameter(0)), [SobakaType::Float(value)]) => {
+                    unit.set(0, *value as f64)
+                }
+                // Q param
+                (Some(Port::Parameter(1)), [SobakaType::Float(value)]) => {
+                    unit.set(1, *value as f64)
+                }
+                _ => {}
+            }
+        });
 
     let filter = input >> (lowpass() ^ highpass() ^ bandpass() ^ moog());
 

@@ -3,14 +3,14 @@ extern crate rosc;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 
 use fundsp::hacker::AudioUnit32;
-use rosc::{OscPacket};
-use sobaka_sample_audio_worklet::AudioProcessor;
-use sobaka_sample_audio_worklet::graph::{Graph32};
+use rosc::OscPacket;
+use sobaka_sample_audio_worklet::graph::Graph32;
 use sobaka_sample_audio_worklet::interface::address::{Address, Port};
 use sobaka_sample_audio_worklet::interface::error::SobakaError;
-use sobaka_sample_audio_worklet::module::AudioModuleType;
 use sobaka_sample_audio_worklet::module::oscillator::OscillatorParams;
 use sobaka_sample_audio_worklet::module::parameter::ParameterParams;
+use sobaka_sample_audio_worklet::module::AudioModuleType;
+use sobaka_sample_audio_worklet::AudioProcessor;
 use std::convert::TryInto;
 use std::net::{SocketAddrV4, UdpSocket};
 use std::str::FromStr;
@@ -36,7 +36,7 @@ fn main() -> Result<(), SobakaError> {
     let frequency = processor.create(AudioModuleType::Parameter(ParameterParams {
         min: 0.0,
         max: 1400.0,
-        default: 440.0
+        default: 440.0,
     }))?;
 
     let oscillator = processor.create(AudioModuleType::Oscillator(OscillatorParams {
@@ -47,19 +47,37 @@ fn main() -> Result<(), SobakaError> {
     }))?;
 
     processor.connect(
-        Address { id: oscillator.id, port: Some(Port::Output(0)) },
+        Address {
+            id: oscillator.id,
+            port: Some(Port::Output(0)),
+        },
         // @ todo global output
-        Address { id: 1, port: Some(Port::Input(0)) },
+        Address {
+            id: 1,
+            port: Some(Port::Input(0)),
+        },
     )?;
     processor.connect(
-        Address { id: oscillator.id, port: Some(Port::Output(0)) },
+        Address {
+            id: oscillator.id,
+            port: Some(Port::Output(0)),
+        },
         // @ todo global output
-        Address { id: 1, port: Some(Port::Input(1)) },
+        Address {
+            id: 1,
+            port: Some(Port::Input(1)),
+        },
     )?;
 
     processor.connect(
-        Address { id: frequency.id, port: Some(Port::Output(0)) },
-        Address { id: oscillator.id, port: Some(Port::Input(0)) },
+        Address {
+            id: frequency.id,
+            port: Some(Port::Output(0)),
+        },
+        Address {
+            id: oscillator.id,
+            port: Some(Port::Input(0)),
+        },
     )?;
 
     let graph = processor.graph();

@@ -1,9 +1,9 @@
+use crate::graph::NodeIndex;
+use serde::{de, Deserialize, Deserializer, Serialize};
 use std::{
     fmt::{self, Display},
-    str::FromStr
+    str::FromStr,
 };
-use serde::{de, Deserialize, Deserializer, Serialize};
-use crate::graph::NodeIndex;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct InvalidTargetError;
@@ -122,7 +122,10 @@ impl Serialize for Address {
 
 impl From<NodeIndex> for Address {
     fn from(id: NodeIndex) -> Self {
-        Address { id: id.index(), port: None }
+        Address {
+            id: id.index(),
+            port: None,
+        }
     }
 }
 

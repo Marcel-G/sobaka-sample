@@ -1,4 +1,7 @@
-use fundsp::{hacker::AudioUnit32, hacker32::{U1, U2}};
+use fundsp::{
+    hacker::AudioUnit32,
+    hacker32::{U1, U2},
+};
 use futures::Stream;
 use graph::{Graph32, NodeIndex};
 use interface::{
@@ -6,17 +9,18 @@ use interface::{
     error::SobakaError,
     message::SobakaMessage,
 };
-use module::{AudioModuleType, AudioModule32};
+use module::{AudioModule32, AudioModuleType};
 use petgraph::graph::EdgeIndex;
-use utils::observer::{Observable, Observer, Producer};
 use std::{
-    sync::{Arc, Mutex, MutexGuard}, pin::Pin,
+    pin::Pin,
+    sync::{Arc, Mutex, MutexGuard},
 };
+use utils::observer::{Observable, Observer, Producer};
 
+pub mod dsp;
 pub mod graph;
 pub mod module;
 pub mod rpc;
-pub mod dsp;
 
 mod get_random;
 pub mod interface;
@@ -27,7 +31,7 @@ type SharedGraph = Arc<Mutex<Graph32>>;
 // AudioProcessor is the rust entry-point for Web Audio AudioWorkletProcessor
 pub struct AudioProcessor {
     graph: SharedGraph,
-    sample_rate: f64
+    sample_rate: f64,
 }
 
 pub type SobakaResult<T> = Result<T, SobakaError>;
@@ -59,7 +63,7 @@ impl AudioProcessor {
         // AudioNodes in fundsp reset `sample_rate` to default when constructed
         // @todo this should be adjusted in fundsp
         unit.reset(Some(self.sample_rate));
-        
+
         Ok(self.graph_mut()?.add(unit).into())
     }
 
@@ -129,23 +133,19 @@ impl AudioProcessor {
 
     fn subscribe(&self, node: Address) -> SobakaResult<Observer<SobakaMessage>> {
         match node {
-            Address {
-            id: _,
-            port: None,
-        } => {
-            self
-                .graph_mut()?
-                .get_mod(node.clone().into())
-                // Module not found
-                .ok_or(SobakaError::Something)?
-                .unit
-                .get_receiver()
-                .ok_or(SobakaError::Something)
-        },
-        _ => {
-            // 
-            Err(SobakaError::Something)
-        }
+            Address { id: _, port: None } => {
+                self.graph_mut()?
+                    .get_mod(node.clone().into())
+                    // Module not found
+                    .ok_or(SobakaError::Something)?
+                    .unit
+                    .get_receiver()
+                    .ok_or(SobakaError::Something)
+            }
+            _ => {
+                //
+                Err(SobakaError::Something)
+            }
         }
     }
 
@@ -157,7 +157,7 @@ impl AudioProcessor {
         match message.addr.port {
             Some(Port::Parameter(_)) => Ok(()),
             // Port must be targeting a parameter
-            _ => Err(SobakaError::Something)
+            _ => Err(SobakaError::Something),
         }?;
 
         self.graph_mut()?
