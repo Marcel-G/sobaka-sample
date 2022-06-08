@@ -68,7 +68,7 @@ impl SobakaGraphRpc for AudioProcessorRpc {
 
     fn subscribe(
         &self,
-        meta: Self::Metadata,
+        _meta: Self::Metadata,
         subscriber: Subscriber<SobakaMessage>,
         node: Address,
     ) {

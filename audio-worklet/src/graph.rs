@@ -90,14 +90,13 @@ impl Graph32 {
 
         let global_output = graph.add_node(Node32::new(Box::new(module(output))));
 
-        let net = Self {
+        Self {
             graph,
             visitor: Default::default(),
             global_input,
             global_output,
             sample_rate: DEFAULT_SR,
-        };
-        net
+        }
     }
 
     pub fn get_mod_mut(&mut self, id: NodeIndex) -> Option<&mut Node32> {
@@ -111,7 +110,7 @@ impl Graph32 {
     /// Add a new unit to the network. Return its ID handle.
     /// ID handles are always consecutive numbers starting from zero.
     /// The unit is reset with the sample rate of the network.
-    pub fn add(&mut self, mut unit: Box<dyn AudioModule32 + Send>) -> NodeIndex {
+    pub fn add(&mut self, unit: Box<dyn AudioModule32 + Send>) -> NodeIndex {
         let inputs = unit.inputs();
         let outputs = unit.outputs();
 
@@ -300,7 +299,7 @@ impl AudioUnit32 for Graph32 {
             // Average signals when multiple edges are attached to the same input
             for (sample, total) in in_buffers.iter_mut().zip(in_totals) {
                 if total > 0 {
-                    *sample = *sample / (total as f32)
+                    *sample /= total as f32
                 }
             }
 
@@ -381,11 +380,9 @@ impl AudioUnit32 for Graph32 {
             }
 
             // Average signals when multiple edges are attached to the same input
-            for (buffer, total) in in_buffers.self_mut().into_iter().zip(in_totals) {
+            for (buffer, total) in in_buffers.self_mut().iter_mut().zip(in_totals) {
                 if total > 0 {
-                    buffer
-                        .iter_mut()
-                        .for_each(|sample| *sample = *sample / (total as f32));
+                    buffer.iter_mut().for_each(|sample| *sample /= total as f32);
                 }
             }
 

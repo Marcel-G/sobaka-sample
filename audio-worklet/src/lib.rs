@@ -131,7 +131,7 @@ impl AudioProcessor {
         match node {
             Address { id: _, port: None } => {
                 self.graph_mut()?
-                    .get_mod(node.clone().into())
+                    .get_mod(node.into())
                     // Module not found
                     .ok_or(SobakaError::Something)?
                     .unit

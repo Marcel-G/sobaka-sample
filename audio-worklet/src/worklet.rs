@@ -45,7 +45,7 @@ impl SobakaAudioWorklet {
     pub fn process(&mut self, input: &[f32], output_l: &mut [f32], output_r: &mut [f32]) {
         let mut graph = self.graph.lock().expect("Cannot lock graph");
         // When no input is provided
-        if input.len() == 0 {
+        if input.is_empty() {
             for (l, r) in output_l
                 .chunks_mut(MAX_BUFFER_SIZE)
                 .zip(output_r.chunks_mut(MAX_BUFFER_SIZE))

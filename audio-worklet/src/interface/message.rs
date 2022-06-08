@@ -18,7 +18,7 @@ pub struct SobakaTime {
     pub fractional: u32,
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[ts(export)]
 pub struct SobakaColor {
     pub red: u8,
@@ -27,7 +27,7 @@ pub struct SobakaColor {
     pub alpha: u8,
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[ts(export)]
 pub struct SobakaMidiMessage {
     pub port: u8,

@@ -39,7 +39,7 @@ where
 
         delay::<T>(DELAYS[i as usize])
             >> fir((T::from_f32(0.5), T::from_f32(0.5)))
-            >> dcblock_hz::<T, F>(F::new(5)) * a
+            >> (dcblock_hz::<T, F>(F::new(5)) * a)
     });
 
     // The feedback structure.

@@ -5,7 +5,7 @@ use std::{
     str::FromStr,
 };
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct InvalidTargetError;
 
 impl fmt::Display for InvalidTargetError {
@@ -14,7 +14,7 @@ impl fmt::Display for InvalidTargetError {
     }
 }
 
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum Port {
     Output(usize),
     Input(usize),
@@ -50,7 +50,7 @@ impl Display for Port {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct InvalidAddressError;
 
 impl fmt::Display for InvalidAddressError {
@@ -59,7 +59,7 @@ impl fmt::Display for InvalidAddressError {
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Address {
     pub id: usize,
     pub port: Option<Port>,
