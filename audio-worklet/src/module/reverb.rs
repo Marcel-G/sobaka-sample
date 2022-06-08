@@ -1,7 +1,10 @@
 use super::{module, AudioModule32};
 use crate::{
-    dsp::{messaging::handler, param::param},
-    interface::{address::Port, message::SobakaType},
+    dsp::{param::param, shared::Share, messaging::MessageHandler},
+    interface::{
+        address::Port,
+        message::{SobakaMessage, SobakaType},
+    },
 };
 use fundsp::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -52,22 +55,21 @@ where
 }
 
 pub fn reverb(params: ReverbParams) -> impl AudioModule32 {
-    let (sender, out) = handler(
-        reverb_stereo::<f32, f32>(params.wet, params.length.into()),
-        move |unit, message| {
-            match (message.addr.port, &message.args[..]) {
-                // Update wet parameter
-                (Some(Port::Parameter(0)), [SobakaType::Float(wet)]) => {
-                    unit.set(0, *wet as f64);
-                }
-                // Update delay length
-                (Some(Port::Parameter(1)), [SobakaType::Float(length)]) => {
-                    unit.set(1, *length as f64);
-                }
-                _ => {}
-            }
-        },
-    );
+    let reverb = reverb_stereo::<f32, f32>(params.wet, params.length.into()).share();
 
-    module(out).with_sender(sender)
+    let handler = reverb.clone().message_handler(|unit, message: SobakaMessage| {
+        match (message.addr.port, &message.args[..]) {
+            // Update wet parameter
+            (Some(Port::Parameter(0)), [SobakaType::Float(wet)]) => {
+                unit.set(0, *wet as f64);
+            }
+            // Update delay length
+            (Some(Port::Parameter(1)), [SobakaType::Float(length)]) => {
+                unit.set(1, *length as f64);
+            }
+            _ => {}
+        }
+    });
+
+    module(reverb).with_sender(handler)
 }

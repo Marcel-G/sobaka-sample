@@ -3,6 +3,7 @@ use fundsp::{Float};
 pub mod param;
 pub mod stepped;
 pub mod trigger;
+pub mod shared;
 pub mod messaging;
 
 /// Convert 1v per octave to hz

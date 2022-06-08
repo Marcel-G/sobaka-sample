@@ -35,7 +35,7 @@ pub trait SobakaGraphRpc {
 
     /// Subscribe to node state changes
     #[pubsub(subscription = "node", subscribe, name = "subscribe")]
-    fn subscribe(&self, meta: Self::Metadata, subscriber: typed::Subscriber<SobakaMessage>);
+    fn subscribe(&self, meta: Self::Metadata, subscriber: typed::Subscriber<SobakaMessage>, node: Address);
 
     /// Unsubscribe to node state changes
     #[pubsub(subscription = "node", unsubscribe, name = "unsubscribe")]

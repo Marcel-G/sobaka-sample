@@ -1,7 +1,7 @@
 use super::{module, AudioModule32};
 use crate::{
-    dsp::{messaging::handler, param::param32, volt_hz},
-    interface::{address::Port, message::SobakaType},
+    dsp::{param::param32, volt_hz, shared::Share, messaging::MessageHandler},
+    interface::{address::Port, message::{SobakaType, SobakaMessage}},
 };
 use fundsp::hacker32::*;
 use serde::{Deserialize, Serialize};
@@ -23,10 +23,9 @@ pub fn oscillator(params: OscillatorParams) -> impl AudioModule32 {
     let attenuated_square = square() * param32(2, params.square);
     let attenuated_triangle = triangle() * param32(3, params.triangle);
 
-    let unit = input
-        >> oversample(attenuated_saw & attenuated_sine & attenuated_square & attenuated_triangle);
+    let params = (attenuated_saw & attenuated_sine & attenuated_square & attenuated_triangle).share();
 
-    let (sender, out) = handler(unit, |unit, message| {
+    let handler = params.clone().message_handler(|unit, message: SobakaMessage| {
         match (message.addr.port, &message.args[..]) {
             // Saw Attenuation Param
             (Some(Port::Parameter(0)), [SobakaType::Float(value)]) => {
@@ -51,5 +50,8 @@ pub fn oscillator(params: OscillatorParams) -> impl AudioModule32 {
         }
     });
 
-    module(out).with_sender(sender)
+    let unit = input
+        >> oversample(params);
+
+    module(unit).with_sender(handler)
 }

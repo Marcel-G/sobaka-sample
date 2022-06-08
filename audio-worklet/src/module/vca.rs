@@ -1,7 +1,7 @@
 use super::{module, AudioModule32};
 use crate::{
-    dsp::{param::param32, messaging::handler},
-    interface::{address::Port, message::SobakaType},
+    dsp::{param::param32, shared::Share, messaging::MessageHandler},
+    interface::{address::Port, message::{SobakaType, SobakaMessage}},
 };
 use fundsp::hacker32::*;
 use serde::{Deserialize, Serialize};
@@ -14,9 +14,9 @@ pub struct VcaParams {
 }
 
 pub fn vca(params: VcaParams) -> impl AudioModule32 {
-    let unit = pass() * (pass() + param32(0, params.value));
+    let unit = (pass() * (pass() + param32(0, params.value))).share();
 
-    let (sender, out) = handler(unit, move |unit, message| {
+    let handler = unit.clone().message_handler(|unit, message: SobakaMessage| {
         match (message.addr.port, &message.args[..]) {
             // Vca value param
             (Some(Port::Parameter(0)), [SobakaType::Float(value)]) => {
@@ -24,8 +24,9 @@ pub fn vca(params: VcaParams) -> impl AudioModule32 {
             }
             _ => {}
         }
+
     });
 
-    module(out)
-        .with_sender(sender)
+    module(unit)
+        .with_sender(handler)
 }

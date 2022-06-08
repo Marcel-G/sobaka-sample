@@ -1,7 +1,10 @@
 use super::{module, AudioModule32};
 use crate::{
-    dsp::{trigger::trigger, messaging::handler},
-    interface::{address::Port, message::SobakaType},
+    dsp::{shared::Share, trigger::trigger, messaging::MessageHandler},
+    interface::{
+        address::Port,
+        message::{SobakaMessage, SobakaType},
+    },
 };
 use fundsp::hacker32::*;
 use serde::{Deserialize, Serialize};
@@ -25,12 +28,9 @@ pub fn envelope(params: EnvelopeParams) -> impl AudioModule32 {
         }
     });
 
-    let params = tag(0, params.attack) | tag(1, params.release);
+    let params = (tag(0, params.attack) | tag(1, params.release)).share();
 
-    // @todo forward all inputs to trigger child
-    let unit = trigger(params >> env);
-
-    let (sender, out) = handler(unit, |unit, message| {
+    let handler = params.clone().message_handler(|unit, message: SobakaMessage| {
         match (message.addr.port, &message.args[..]) {
             // Envelope attack param
             (Some(Port::Parameter(0)), [SobakaType::Float(value)]) => unit.set(0, *value as f64),
@@ -40,5 +40,7 @@ pub fn envelope(params: EnvelopeParams) -> impl AudioModule32 {
         }
     });
 
-    module(out).with_sender(sender)
+    let unit = trigger(params >> env);
+
+    module(unit).with_sender(handler)
 }

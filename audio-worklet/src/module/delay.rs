@@ -1,5 +1,11 @@
 use super::{module, AudioModule32};
-use crate::{interface::{address::Port, message::SobakaType}, dsp::messaging::handler};
+use crate::{
+    dsp::{shared::Share, messaging::MessageHandler},
+    interface::{
+        address::Port,
+        message::{SobakaMessage, SobakaType},
+    },
+};
 use fundsp::hacker32::*;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
@@ -12,9 +18,9 @@ pub struct DelayParams {
 
 pub fn delay(params: DelayParams) -> impl AudioModule32 {
     let inputs = pass() | tag(0, params.time);
-    let unit = inputs >> tap(0.0, 10.0);
+    let unit = (inputs >> tap(0.0, 10.0)).share();
 
-    let (sender, out) = handler(unit, move |unit, message| {
+    let handler = unit.clone().message_handler(|unit, message: SobakaMessage| {
         match (message.addr.port, &message.args[..]) {
             // Delay time param
             (Some(Port::Parameter(0)), [SobakaType::Float(value)]) => {
@@ -24,6 +30,5 @@ pub fn delay(params: DelayParams) -> impl AudioModule32 {
         }
     });
 
-    module(out)
-        .with_sender(sender)
+    module(unit).with_sender(handler)
 }

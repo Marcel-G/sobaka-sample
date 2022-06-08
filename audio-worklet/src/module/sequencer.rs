@@ -1,9 +1,14 @@
-use std::convert::TryInto;
-
 use super::{module, AudioModule32};
 use crate::{
-    dsp::{messaging::{handler, emitter}, stepped::stepped, trigger::trigger},
-    interface::{address::{Port, self, Address}, message::{SobakaType, SobakaMessage}},
+    dsp::{
+        stepped::{stepped, Event},
+        trigger::trigger, messaging::{MessageHandler}, shared::Share,
+    },
+    interface::{
+        address::{Address, Port},
+        message::{SobakaMessage, SobakaType},
+    },
+    utils::observer::{Observable},
 };
 use fundsp::hacker32::*;
 use serde::{Deserialize, Serialize};
@@ -15,48 +20,42 @@ pub struct SequencerParams {
     pub steps: [f32; 8],
 }
 
+#[derive(Serialize, Deserialize, TS)]
+#[ts(export)]
+pub enum SequencerEvents {
+    // Sequencer module emits StepChange whenever the step is changed
+    StepChange(usize),
+    // Sequencer module handles incoming UpdateStep messages
+    // by setting the value of the given step.
+    UpdateStep(usize, f32),
+}
+
 pub fn sequencer(params: SequencerParams) -> impl AudioModule32 {
-    // @todo
-    //  - refactor trigger to use `>>`
-    //  - same for stepped
-    let unit = trigger(stepped([
-        tag(0, params.steps[0]),
-        tag(1, params.steps[1]),
-        tag(2, params.steps[2]),
-        tag(3, params.steps[3]),
-        tag(4, params.steps[4]),
-        tag(5, params.steps[5]),
-        tag(6, params.steps[6]),
-        tag(7, params.steps[7]),
-    ]));
+    let steps = branch::<U8, _, _>(|i| tag(i, params.steps[i as usize])).share();
 
-    let mut toggle = false;
-
-    let (receiver, oo) = emitter(|val| {
-        if val > &0.0 && !toggle {
-            toggle = true;
-            Some(SobakaMessage {
-                addr: Address {
-                    port: Some(Port::Output(0)),
-                    id: 0,
-                },
-                args: vec![],
-            })
-        } else {
-            toggle = false;
-            None
-        }
-    });
-
-    let (sender, out) = handler(unit, move |unit, message| {
+    let handler = steps.clone().message_handler(|unit, message: SobakaMessage| {
         match (message.addr.port, &message.args[..]) {
             // Set step value
             (Some(Port::Parameter(n)), [SobakaType::Float(value)]) if n < 8 => {
                 unit.set(n, *value as f64)
             }
             _ => {}
+        };
+
+    });
+
+    let stepped = stepped::<U8, _>().share();
+
+    let reciever = stepped.clone().map(|event| {
+        match event {
+            Event::StepChange(step) => SobakaMessage {
+                addr: Address { id: 0, port: None },
+                args: vec![SobakaType::Int(step as i32)],
+            },
         }
     });
 
-    module(out).with_sender(sender)
+    let unit = trigger(steps >> stepped);
+
+    module(unit).with_sender(handler).with_receiver(reciever)
 }

@@ -1,4 +1,5 @@
 use fundsp::{hacker::AudioUnit32, hacker32::{U1, U2}};
+use futures::Stream;
 use graph::{Graph32, NodeIndex};
 use interface::{
     address::{Address, Port},
@@ -7,8 +8,9 @@ use interface::{
 };
 use module::{AudioModuleType, AudioModule32};
 use petgraph::graph::EdgeIndex;
+use utils::observer::{Observable, Observer, Producer};
 use std::{
-    sync::{Arc, Mutex, MutexGuard},
+    sync::{Arc, Mutex, MutexGuard}, pin::Pin,
 };
 
 pub mod graph;
@@ -125,6 +127,28 @@ impl AudioProcessor {
             .index())
     }
 
+    fn subscribe(&self, node: Address) -> SobakaResult<Observer<SobakaMessage>> {
+        match node {
+            Address {
+            id: _,
+            port: None,
+        } => {
+            self
+                .graph_mut()?
+                .get_mod(node.clone().into())
+                // Module not found
+                .ok_or(SobakaError::Something)?
+                .unit
+                .get_receiver()
+                .ok_or(SobakaError::Something)
+        },
+        _ => {
+            // 
+            Err(SobakaError::Something)
+        }
+        }
+    }
+
     pub fn disconnect(&self, id: EdgeIndex) -> SobakaResult<bool> {
         Ok(self.graph_mut()?.disconnect(id))
     }
@@ -144,9 +168,7 @@ impl AudioProcessor {
             .get_sender()
             // Node does not support sending
             .ok_or(SobakaError::Something)?
-            .unbounded_send(message)
-            // Sending failed
-            .map_err(|_| SobakaError::Something)?;
+            .notify(message);
 
         Ok(true) // @todo - confirmation that message was handled / matched?
     }

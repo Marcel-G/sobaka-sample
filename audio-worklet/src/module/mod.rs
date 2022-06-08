@@ -1,6 +1,5 @@
 use fundsp::hacker32::*;
 pub mod clock;
-pub mod delay;
 pub mod envelope;
 pub mod filter;
 pub mod noise;
@@ -9,26 +8,27 @@ pub mod parameter;
 pub mod reverb;
 pub mod sequencer;
 pub mod vca;
+pub mod delay;
 
 use fundsp::hacker::AudioUnit32;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-use futures::channel::mpsc::{UnboundedReceiver, UnboundedSender};
-
 use self::{
     clock::{clock, ClockParams},
-    delay::{delay, DelayParams},
-    envelope::{envelope, EnvelopeParams},
     filter::{filter, FilterParams},
-    noise::noise,
     oscillator::{oscillator, OscillatorParams},
     parameter::{parameter, ParameterParams},
     reverb::{reverb, ReverbParams},
     sequencer::{sequencer, SequencerParams},
     vca::{vca, VcaParams},
+    envelope::{ envelope, EnvelopeParams },
+    noise::{ noise },
+    delay::{ delay, DelayParams },
 };
-use crate::interface::message::SobakaMessage;
+use crate::{interface::message::SobakaMessage, utils::observer::{Observable, Observer, Subject}};
+
+
 
 #[derive(Serialize, Deserialize, TS)]
 #[serde(tag = "node_type", content = "data")]
@@ -51,7 +51,7 @@ pub enum AudioModuleType {
     // Sampler(SamplerNode),
     Sequencer(SequencerParams),
     // Sum(SumNode),
-    Vca(VcaParams),
+    Vca(VcaParams)
 }
 
 impl From<AudioModuleType> for Box<dyn AudioModule32 + Send> {
@@ -75,40 +75,37 @@ pub fn module<U>(unit: An<U>) -> Mod<U>
 where
     U: AudioNode<Sample = f32>,
 {
-    Mod {
-        unit,
-        tx: None,
-        rx: None,
-    }
+    Mod { unit, tx: None, rx: None }
 }
 
+type Rx = Box<dyn Observable<Output = SobakaMessage> + Send>;
 pub struct Mod<U>
 where
     U: AudioNode<Sample = f32>,
 {
     unit: An<U>,
-    tx: Option<UnboundedSender<SobakaMessage>>,
-    rx: Option<UnboundedReceiver<SobakaMessage>>,
+    tx: Option<Subject<SobakaMessage>>,
+    rx: Option<Rx>,
 }
 
-impl<U> Mod<U>
+impl <U> Mod<U>
 where
     U: AudioNode<Sample = f32>,
 {
-    pub fn with_sender(mut self, tx: UnboundedSender<SobakaMessage>) -> Self {
+    pub fn with_sender(mut self, tx: Subject<SobakaMessage>) -> Self {
         self.tx = Some(tx);
         self
     }
 
-    pub fn with_receiver(mut self, rx: UnboundedReceiver<SobakaMessage>) -> Self {
-        self.rx = Some(rx);
+    pub fn with_receiver<T: Observable<Output = SobakaMessage> + Send + 'static>(mut self, rx: T) -> Self {
+        self.rx = Some(Box::new(rx));
         self
     }
 }
 
 pub trait AudioModule32: AudioUnit32 {
-    fn get_sender(&self) -> Option<&UnboundedSender<SobakaMessage>>;
-    fn get_receiver(&self) -> Option<&UnboundedReceiver<SobakaMessage>>;
+    fn get_sender(&self) -> Option<&Subject<SobakaMessage>>;
+    fn get_receiver(&self) -> Option<Observer<SobakaMessage>>;
 }
 
 impl<U> AudioUnit32 for Mod<U>
@@ -156,11 +153,15 @@ impl<U> AudioModule32 for Mod<U>
 where
     U: AudioNode<Sample = f32>,
 {
-    fn get_sender(&self) -> Option<&UnboundedSender<SobakaMessage>> {
+    fn get_sender(&self) -> Option<&Subject<SobakaMessage>> {
         self.tx.as_ref()
     }
 
-    fn get_receiver(&self) -> Option<&UnboundedReceiver<SobakaMessage>> {
-        self.rx.as_ref()
+    fn get_receiver(&self) -> Option<Observer<SobakaMessage>> {
+        if let Some(rx) = &self.rx {
+            Some(rx.observe())
+        } else {
+            None
+        }
     }
 }
