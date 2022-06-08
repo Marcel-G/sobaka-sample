@@ -10,9 +10,7 @@ use interface::{
 };
 use module::{AudioModule32, AudioModuleType};
 use petgraph::graph::EdgeIndex;
-use std::{
-    sync::{Arc, Mutex, MutexGuard},
-};
+use std::sync::{Arc, Mutex, MutexGuard};
 use utils::observer::{Observer, Producer};
 
 pub mod dsp;

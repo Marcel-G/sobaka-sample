@@ -28,7 +28,7 @@ use self::{
 };
 use crate::{
     interface::message::SobakaMessage,
-    utils::observer::{Observable, Observer, Subject, BoxedObservable},
+    utils::observer::{BoxedObservable, Observable, Observer, Subject},
 };
 
 #[derive(Serialize, Deserialize, TS)]
@@ -104,10 +104,7 @@ where
 
     /// Sets the message receiver for the module
     /// Outgoing messages get sent out via this receiver
-    pub fn set_rx<T: Observable<Output = SobakaMessage> + Send + 'static>(
-        mut self,
-        rx: T,
-    ) -> Self {
+    pub fn set_rx<T: Observable<Output = SobakaMessage> + Send + 'static>(mut self, rx: T) -> Self {
         self.rx = Some(Box::pin(rx));
         self
     }
