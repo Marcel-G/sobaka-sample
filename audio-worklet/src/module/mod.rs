@@ -28,7 +28,7 @@ use self::{
 };
 use crate::{
     interface::message::SobakaMessage,
-    utils::observer::{Observable, Observer, Subject},
+    utils::observer::{Observable, Observer, Subject, BoxedObservable},
 };
 
 #[derive(Serialize, Deserialize, TS)]
@@ -45,7 +45,6 @@ pub enum AudioModuleType {
     Noise,
     Parameter(ParameterParams),
     Oscillator(OscillatorParams),
-    // Parameter(ParameterNode),
     // Quantiser(QuantiserNode),
     Reverb(ReverbParams),
     // SampleAndHold(SampleAndHoldNode),
@@ -83,14 +82,13 @@ where
     }
 }
 
-type Rx = Box<dyn Observable<Output = SobakaMessage> + Send>;
 pub struct Mod<U>
 where
     U: AudioNode<Sample = f32>,
 {
     unit: An<U>,
     tx: Option<Subject<SobakaMessage>>,
-    rx: Option<Rx>,
+    rx: Option<BoxedObservable<SobakaMessage>>,
 }
 
 impl<U> Mod<U>
@@ -106,7 +104,7 @@ where
         mut self,
         rx: T,
     ) -> Self {
-        self.rx = Some(Box::new(rx));
+        self.rx = Some(Box::pin(rx));
         self
     }
 }
