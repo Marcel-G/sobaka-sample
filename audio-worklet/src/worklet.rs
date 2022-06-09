@@ -33,7 +33,7 @@ impl SobakaAudioWorklet {
 
         let transport = PostMessageTransport::new(io, port);
 
-        transport.start( |sender| { Arc::new(Session::new(sender)) });
+        transport.start(|sender| Arc::new(Session::new(sender)));
 
         worklet
     }

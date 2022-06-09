@@ -1,14 +1,8 @@
-use std::sync::{Arc};
+use std::sync::Arc;
 
-use futures::{
-    FutureExt, SinkExt, StreamExt,
-};
+use futures::{FutureExt, SinkExt, StreamExt};
 use jsonrpc_core::{Error, ErrorCode, Result};
-use jsonrpc_pubsub::{
-    manager::{SubscriptionManager},
-    typed::Subscriber,
-    Session, SubscriptionId,
-};
+use jsonrpc_pubsub::{manager::SubscriptionManager, typed::Subscriber, Session, SubscriptionId};
 use petgraph::graph::EdgeIndex;
 
 pub mod interface;
@@ -16,7 +10,7 @@ pub mod interface;
 use crate::{
     interface::{address::Address, message::SobakaMessage},
     module::AudioModuleType,
-    utils::{wasm_executer::WasmSpawner, id_provider::AtomicIdProvider},
+    utils::{id_provider::AtomicIdProvider, wasm_executer::WasmSpawner},
     AudioProcessor,
 };
 
@@ -128,7 +122,7 @@ mod tests {
     use jsonrpc_pubsub::{manager::SubscriptionManager, PubSubHandler, Session};
     use std::sync::Arc;
 
-    use crate::{AudioProcessor, utils::id_provider::AtomicIdProvider};
+    use crate::{utils::id_provider::AtomicIdProvider, AudioProcessor};
 
     use super::{interface::SobakaGraphRpc, AudioProcessorRpc};
 
