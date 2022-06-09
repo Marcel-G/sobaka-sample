@@ -1,3 +1,4 @@
+#![allow(clippy::unused_unit)]
 use fundsp::{hacker::AudioUnit32, MAX_BUFFER_SIZE};
 use futures::channel::mpsc::UnboundedSender;
 use jsonrpc_pubsub::{PubSubHandler, Session};

@@ -10,7 +10,7 @@ use js_sys::Math;
 // - getrandom JS implementations - https://github.com/rust-random/getrandom/blob/master/src/js.rs
 fn getrandom_inner(dest: &mut [u8]) -> Result<(), Error> {
     for v in dest.iter_mut() {
-        *v = unsafe { (Math::random() * 255.0) as u8 }
+        *v = (Math::random() * 255.0) as u8
     }
     Ok(())
 }

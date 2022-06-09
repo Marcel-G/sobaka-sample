@@ -24,12 +24,8 @@ pub fn parameter(params: ParameterParams) -> impl AudioModule32 {
     let handler = param
         .clone()
         .message_handler(|unit, message: SobakaMessage| {
-            match (message.addr.port, &message.args[..]) {
-                // Set BPM parameter
-                (Some(Port::Parameter(0)), [SobakaType::Float(bpm)]) => {
-                    unit.set(0, bpm.clamp(0.0, 600.0) as f64)
-                }
-                _ => {}
+            if let (Some(Port::Parameter(0)), [SobakaType::Float(bpm)]) = (message.addr.port, &message.args[..]) {
+                unit.set(0, bpm.clamp(0.0, 600.0) as f64)
             }
         });
     module(param).set_tx(handler)

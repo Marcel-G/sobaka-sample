@@ -28,6 +28,12 @@ impl<N: Size<T>, T: Float> Stepped<N, T> {
     }
 }
 
+impl<N: Size<T>, T: Float> Default for Stepped<N, T> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[derive(Clone)]
 pub enum Event {
     StepChange(usize),

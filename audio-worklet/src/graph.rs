@@ -257,9 +257,9 @@ impl AudioUnit32 for Graph32 {
             .node_weight_mut(self.global_input)
             .expect("No global input node");
 
-        for channel in 0..input.len() {
+        (0..input.len()).for_each(|channel| {
             input_node.tick_input[channel] = input[channel];
-        }
+        });
 
         self.visitor.reset(Reversed(&self.graph));
         self.visitor.move_to(self.global_output);
@@ -322,9 +322,9 @@ impl AudioUnit32 for Graph32 {
             .node_weight(self.global_output)
             .expect("No global output node");
 
-        for channel in 0..output.len() {
+        (0..output.len()).for_each(|channel| {
             output[channel] = output_node.tick_output[channel];
-        }
+        });
     }
 
     fn process(&mut self, size: usize, input: &[&[f32]], output: &mut [&mut [f32]]) {
@@ -336,12 +336,12 @@ impl AudioUnit32 for Graph32 {
             .node_weight_mut(self.global_input)
             .expect("No global input node");
 
-        for channel in 0..input.len() {
+        (0..input.len()).for_each(|channel| {
             input_node
                 .input
                 .mut_at(channel)
                 .copy_from_slice(&input[channel][..size]);
-        }
+        });
 
         self.visitor.reset(Reversed(&self.graph));
         self.visitor.move_to(self.global_output);
@@ -407,9 +407,9 @@ impl AudioUnit32 for Graph32 {
             .node_weight(self.global_output)
             .expect("No global output node");
 
-        for channel in 0..output.len() {
+        (0..output.len()).for_each(|channel| {
             output[channel][..size].copy_from_slice(&output_node.output.at(channel)[..size]);
-        }
+        });
     }
 
     fn get_id(&self) -> u64 {

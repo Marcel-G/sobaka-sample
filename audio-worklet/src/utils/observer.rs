@@ -63,6 +63,12 @@ impl<T> Subject<T> {
     }
 }
 
+impl <T> Default for Subject<T> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<T: Clone + Send + 'static> Observable for Subject<T> {
     type Output = T;
     fn observe(&self) -> Observer<Self::Output> {
