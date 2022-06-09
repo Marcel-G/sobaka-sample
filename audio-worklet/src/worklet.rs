@@ -1,6 +1,5 @@
 #![allow(clippy::unused_unit)]
 use fundsp::{hacker::AudioUnit32, MAX_BUFFER_SIZE};
-use futures::channel::mpsc::UnboundedSender;
 use jsonrpc_pubsub::{PubSubHandler, Session};
 use std::sync::Arc;
 use wasm_bindgen::prelude::*;
@@ -32,13 +31,9 @@ impl SobakaAudioWorklet {
 
         io.extend_with(rpc.to_delegate());
 
-        // Metadata should be created on connection
-        // No connection is made in this case
-        // unsure how futures work so this may be broken
-        let metadata_extractor =
-            |sender: &UnboundedSender<String>| Arc::new(Session::new(sender.clone()));
+        let transport = PostMessageTransport::new(io, port);
 
-        PostMessageTransport::connect(io, metadata_extractor, port);
+        transport.start( |sender| { Arc::new(Session::new(sender)) });
 
         worklet
     }

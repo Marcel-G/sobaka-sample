@@ -1,8 +1,14 @@
-use std::sync::Arc;
+use std::sync::{Arc};
 
-use futures::{FutureExt, SinkExt, StreamExt};
+use futures::{
+    FutureExt, SinkExt, StreamExt,
+};
 use jsonrpc_core::{Error, ErrorCode, Result};
-use jsonrpc_pubsub::{typed::Subscriber, Session};
+use jsonrpc_pubsub::{
+    manager::{SubscriptionManager},
+    typed::Subscriber,
+    Session, SubscriptionId,
+};
 use petgraph::graph::EdgeIndex;
 
 pub mod interface;
@@ -10,7 +16,7 @@ pub mod interface;
 use crate::{
     interface::{address::Address, message::SobakaMessage},
     module::AudioModuleType,
-    utils::subscriptions::Subscriptions,
+    utils::{wasm_executer::WasmSpawner, id_provider::AtomicIdProvider},
     AudioProcessor,
 };
 
@@ -18,14 +24,19 @@ use self::interface::SobakaGraphRpc;
 
 pub struct AudioProcessorRpc {
     processor: AudioProcessor,
-    subscriptions: Subscriptions,
+    subscriptions: SubscriptionManager<AtomicIdProvider>,
 }
 
 impl AudioProcessorRpc {
     pub fn new(processor: AudioProcessor) -> Self {
+        let executor = WasmSpawner::new();
+
         Self {
             processor,
-            subscriptions: Default::default(),
+            subscriptions: SubscriptionManager::with_id_provider(
+                AtomicIdProvider::default(),
+                Arc::new(executor),
+            ),
         }
     }
 }
@@ -78,7 +89,7 @@ impl SobakaGraphRpc for AudioProcessorRpc {
             .map_err(|_| Error::invalid_request())
         {
             Ok(stream) => {
-                self.subscriptions.add(subscriber, move |sink| {
+                self.subscriptions.add(subscriber, |sink| {
                     stream
                         .map(|res| Ok(Ok(res)))
                         .forward(
@@ -105,28 +116,33 @@ impl SobakaGraphRpc for AudioProcessorRpc {
     fn unsubscribe(
         &self,
         _meta: Option<Self::Metadata>,
-        subscription: jsonrpc_pubsub::SubscriptionId,
+        subscription_id: SubscriptionId,
     ) -> Result<bool> {
-        Ok(self.subscriptions.cancel(subscription))
+        Ok(self.subscriptions.cancel(subscription_id))
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use futures::channel::mpsc;
-    use jsonrpc_pubsub::{PubSubHandler, Session};
+    use futures::{channel::mpsc, executor::ThreadPool};
+    use jsonrpc_pubsub::{manager::SubscriptionManager, PubSubHandler, Session};
     use std::sync::Arc;
 
-    use crate::AudioProcessor;
+    use crate::{AudioProcessor, utils::id_provider::AtomicIdProvider};
 
     use super::{interface::SobakaGraphRpc, AudioProcessorRpc};
 
     fn build_rpc() -> (PubSubHandler<Arc<Session>>, Arc<Session>) {
         let mut handler = PubSubHandler::default();
 
+        let executor = ThreadPool::new().unwrap();
+
         let rpc = AudioProcessorRpc {
             processor: AudioProcessor::new(44100.0),
-            subscriptions: Default::default(),
+            subscriptions: SubscriptionManager::with_id_provider(
+                AtomicIdProvider::default(),
+                Arc::new(executor),
+            ),
         };
 
         handler.extend_with(rpc.to_delegate());

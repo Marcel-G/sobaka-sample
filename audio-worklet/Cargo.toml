@@ -29,7 +29,7 @@ jsonrpc-core = "18.0.0"
 jsonrpc-derive = "18.0.0"
 jsonrpc-pubsub = "18.0.0"
 jsonrpc-core-client = "18.0" # Why do I need this?
-wasm-bindgen = { version = "0.2.63", features = ["serde-serialize"] }
+wasm-bindgen = { version = "0.2.8", features = ["nightly", "serde-serialize"] }
 async-std = { version = "1.10.0", features = ["unstable"] }
 futures = "0.3.17"
 linkme = "0.2.10"
