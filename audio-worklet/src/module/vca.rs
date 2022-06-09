@@ -22,7 +22,9 @@ pub fn vca(params: VcaParams) -> impl AudioModule32 {
     let handler = unit
         .clone()
         .message_handler(|unit, message: SobakaMessage| {
-            if let (Some(Port::Parameter(0)), [SobakaType::Float(value)]) = (message.addr.port, &message.args[..]) {
+            if let (Some(Port::Parameter(0)), [SobakaType::Float(value)]) =
+                (message.addr.port, &message.args[..])
+            {
                 unit.set(0, value.clamp(0.0, 1.0) as f64)
             }
         });

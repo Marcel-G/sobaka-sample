@@ -63,7 +63,7 @@ impl<T> Subject<T> {
     }
 }
 
-impl <T> Default for Subject<T> {
+impl<T> Default for Subject<T> {
     fn default() -> Self {
         Self::new()
     }
