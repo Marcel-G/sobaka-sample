@@ -8,7 +8,7 @@ use interface::{
     error::SobakaError,
     message::SobakaMessage,
 };
-use module::{AudioModuleType, ModuleContext};
+use module::{AudioModuleType, ModuleContext, ModuleUnit};
 use petgraph::graph::EdgeIndex;
 use std::sync::{Arc, Mutex, MutexGuard};
 use utils::observer::{Observer, Producer};
@@ -53,7 +53,7 @@ impl AudioProcessor {
     }
 
     pub fn create(&self, node: AudioModuleType) -> SobakaResult<Address> {
-        let (mut unit, context): (Box<dyn AudioUnit32 + Send>, ModuleContext) = node.into();
+        let (mut unit, context): (ModuleUnit, ModuleContext) = node.into();
 
         // Reset `sample_rate` after construction because some
         // AudioNodes in fundsp reset `sample_rate` to default when constructed

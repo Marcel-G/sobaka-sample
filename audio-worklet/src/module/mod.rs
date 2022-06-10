@@ -53,11 +53,14 @@ pub enum AudioModuleType {
     Vca(VcaParams),
 }
 
-impl From<AudioModuleType> for (Box<dyn AudioUnit32 + Send>, ModuleContext) {
+
+pub type ModuleUnit = Box<dyn AudioUnit32 + Send>;
+
+impl From<AudioModuleType> for (ModuleUnit, ModuleContext) {
     fn from(node_type: AudioModuleType) -> Self {
         let mut context = ModuleContext::default();
 
-        let node: Box<dyn AudioUnit32 + Send> = match node_type {
+        let node: ModuleUnit = match node_type {
             AudioModuleType::Oscillator(params) => Box::new(oscillator(params, &mut context)),
             AudioModuleType::Parameter(params) => Box::new(parameter(params, &mut context)),
             AudioModuleType::Reverb(params) => Box::new(reverb(params, &mut context)),

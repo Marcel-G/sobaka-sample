@@ -8,7 +8,7 @@ use petgraph::visit::Reversed;
 use petgraph::visit::{DfsPostOrder, Visitable};
 use petgraph::EdgeDirection::Incoming;
 
-use crate::module::ModuleContext;
+use crate::module::{ModuleContext, ModuleUnit};
 
 pub type PortIndex = usize;
 pub type NodeIndex = petgraph::stable_graph::NodeIndex;
@@ -31,7 +31,7 @@ pub fn edge(source: PortIndex, target: PortIndex) -> Edge {
 /// Individual AudioUnits are vertices in the graph.
 pub struct Node32 {
     /// The unit.
-    pub unit: Box<dyn AudioUnit32 + Send>,
+    pub unit: ModuleUnit,
     /// Input buffers. The length indicates the number of inputs.
     pub input: Buffer<f32>,
     /// Output buffers. The length indicates the number of outputs.
@@ -45,7 +45,7 @@ pub struct Node32 {
 }
 
 impl Node32 {
-    pub fn new(unit: Box<dyn AudioUnit32 + Send>, context: ModuleContext) -> Self {
+    pub fn new(unit: ModuleUnit, context: ModuleContext) -> Self {
         let inputs = unit.inputs();
         let outputs = unit.outputs();
 
@@ -113,7 +113,7 @@ impl Graph32 {
     /// Add a new unit to the network. Return its ID handle.
     /// ID handles are always consecutive numbers starting from zero.
     /// The unit is reset with the sample rate of the network.
-    pub fn add(&mut self, unit: Box<dyn AudioUnit32 + Send>, context: ModuleContext) -> NodeIndex {
+    pub fn add(&mut self, unit: ModuleUnit, context: ModuleContext) -> NodeIndex {
         let node = Node32::new(unit, context);
 
         self.graph.add_node(node)
