@@ -1,4 +1,4 @@
-use super::{module, AudioModule32};
+use super::ModuleContext;
 use crate::{
     dsp::{
         messaging::MessageHandler,
@@ -12,7 +12,7 @@ use crate::{
     },
     utils::observer::Observable,
 };
-use fundsp::hacker32::*;
+use fundsp::prelude::*;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
@@ -32,31 +32,31 @@ pub enum SequencerEvents {
     UpdateStep(usize, f32),
 }
 
-pub fn sequencer(params: SequencerParams) -> impl AudioModule32 {
-    let steps = branch::<U8, _, _>(|i| tag(i, params.steps[i as usize])).share();
+pub fn sequencer(params: SequencerParams, context: &mut ModuleContext) -> impl AudioUnit32 {
+    let steps = branch::<U8, _, _, _>(|i| tag(i, params.steps[i as usize])).share();
 
-    let handler = steps
-        .clone()
-        .message_handler(|unit, message: SobakaMessage| {
-            match (message.addr.port, &message.args[..]) {
-                // Set step value
-                (Some(Port::Parameter(n)), [SobakaType::Float(value)]) if n < 8 => {
-                    unit.set(n, *value as f64)
-                }
-                _ => {}
-            };
-        });
+    context.set_tx(
+        steps
+            .clone()
+            .message_handler(|unit, message: SobakaMessage| {
+                match (message.addr.port, &message.args[..]) {
+                    // Set step value
+                    (Some(Port::Parameter(n)), [SobakaType::Float(value)]) if n < 8 => {
+                        unit.set(n, *value as f64)
+                    }
+                    _ => {}
+                };
+            }),
+    );
 
     let stepped = stepped::<U8, _>().share();
 
-    let reciever = stepped.clone().map(|event| match event {
+    context.set_rx(stepped.clone().map(|event| match event {
         Event::StepChange(step) => SobakaMessage {
             addr: Address { id: 0, port: None },
             args: vec![SobakaType::Int(step as i32)],
         },
-    });
+    }));
 
-    let unit = trigger(steps >> stepped);
-
-    module(unit).set_tx(handler).set_rx(reciever)
+    trigger(steps >> stepped)
 }

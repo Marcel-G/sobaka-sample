@@ -63,7 +63,7 @@ where
 
                 spawn_local(async move {
                     // Get incoming message as string (is this making the data get parsed twice?)
-                    let request: String = JSON::stringify(&message.data())
+                    let request: String = JSON::stringify(&message.data()) // not a real error: https://github.com/rust-lang/rust-analyzer/issues/5412
                         .expect("Encountered bad message")
                         .into();
                     // Handle the request via the rust RPC implementation

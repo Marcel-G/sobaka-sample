@@ -38,9 +38,6 @@ impl AudioProcessorRpc {
 impl SobakaGraphRpc for AudioProcessorRpc {
     type Metadata = Arc<Session>;
 
-    // @todo refactor Net to:
-    //  - accept a graph as arg
-    //  - or use graph with Nodes implementing AudioModule + AudioUnit32
     fn create(&self, node: AudioModuleType) -> Result<Address> {
         self.processor
             .create(node)

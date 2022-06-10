@@ -1,4 +1,4 @@
-use super::{module, AudioModule32};
+use super::ModuleContext;
 use crate::{
     dsp::{messaging::MessageHandler, shared::Share},
     interface::{
@@ -6,7 +6,7 @@ use crate::{
         message::{SobakaMessage, SobakaType},
     },
 };
-use fundsp::hacker32::*;
+use fundsp::prelude::*;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
@@ -16,7 +16,7 @@ pub struct ClockParams {
     pub bpm: f32,
 }
 
-pub fn clock(params: ClockParams) -> impl AudioModule32 {
+pub fn clock(params: ClockParams, context: &mut ModuleContext) -> impl AudioUnit32 {
     let lfo_square = || {
         lfo2(|t, pitch| {
             let duty = sin_hz(bpm_hz(pitch), t);
@@ -30,19 +30,20 @@ pub fn clock(params: ClockParams) -> impl AudioModule32 {
 
     let divide = [1.0, 2.0, 4.0, 8.0, 16.0];
 
-    let clock_divider_node = branch::<U5, _, _>(|n| mul(divide[n as usize]) >> lfo_square());
+    let clock_divider_node = branch::<U5, _, _, _>(|n| mul(divide[n as usize]) >> lfo_square());
 
     let unit = (tag(0, params.bpm) >> clock_divider_node).share();
 
-    let handler = unit
-        .clone()
-        .message_handler(|unit, message: SobakaMessage| {
-            if let (Some(Port::Parameter(0)), [SobakaType::Float(bpm)]) =
-                (message.addr.port, &message.args[..])
-            {
-                unit.set(0, bpm.clamp(0.0, 600.0) as f64)
-            }
-        });
+    context.set_tx(
+        unit.clone()
+            .message_handler(|unit, message: SobakaMessage| {
+                if let (Some(Port::Parameter(0)), [SobakaType::Float(bpm)]) =
+                    (message.addr.port, &message.args[..])
+                {
+                    unit.set(0, bpm.clamp(0.0, 600.0) as f64)
+                }
+            }),
+    );
 
-    module(unit).set_tx(handler)
+    unit
 }

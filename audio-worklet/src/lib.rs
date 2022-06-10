@@ -8,7 +8,7 @@ use interface::{
     error::SobakaError,
     message::SobakaMessage,
 };
-use module::{AudioModule32, AudioModuleType};
+use module::{AudioModuleType, ModuleContext};
 use petgraph::graph::EdgeIndex;
 use std::sync::{Arc, Mutex, MutexGuard};
 use utils::observer::{Observer, Producer};
@@ -53,14 +53,14 @@ impl AudioProcessor {
     }
 
     pub fn create(&self, node: AudioModuleType) -> SobakaResult<Address> {
-        let mut unit: Box<dyn AudioModule32 + Send> = node.into();
+        let (mut unit, context): (Box<dyn AudioUnit32 + Send>, ModuleContext) = node.into();
 
         // Reset `sample_rate` after construction because some
         // AudioNodes in fundsp reset `sample_rate` to default when constructed
         // @todo this should be adjusted in fundsp
         unit.reset(Some(self.sample_rate));
 
-        Ok(self.graph_mut()?.add(unit).into())
+        Ok(self.graph_mut()?.add(unit, context).into())
     }
 
     pub fn dispose(&self, address: Address) -> SobakaResult<bool> {
@@ -134,7 +134,7 @@ impl AudioProcessor {
                     .get_mod(node.into())
                     // Module not found
                     .ok_or(SobakaError::Something)?
-                    .unit
+                    .context
                     .get_rx()
                     // Module does not support subscription
                     .ok_or(SobakaError::Something)
@@ -161,7 +161,7 @@ impl AudioProcessor {
             .get_mod(message.addr.clone().into())
             // Node cannot be found
             .ok_or(SobakaError::Something)?
-            .unit
+            .context
             .get_tx()
             // Node does not support sending
             .ok_or(SobakaError::Something)?
