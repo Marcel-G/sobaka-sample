@@ -22,14 +22,19 @@ pub struct SequencerParams {
     pub steps: [f32; 8],
 }
 
-#[derive(Serialize, Deserialize, TS)]
+#[derive(Serialize, Deserialize, TS, Clone)]
 #[ts(export)]
-pub enum SequencerEvents {
+pub enum SequencerEvent {
     // Sequencer module emits StepChange whenever the step is changed
     StepChange(usize),
+}
+
+#[derive(Serialize, Deserialize, TS, Clone)]
+#[ts(export)]
+pub enum SequencerCommand {
     // Sequencer module handles incoming UpdateStep messages
     // by setting the value of the given step.
-    UpdateStep(usize, f32),
+    UpdateStep(usize, f64),
 }
 
 pub fn sequencer(params: SequencerParams, context: &mut ModuleContext) -> impl AudioUnit32 {
