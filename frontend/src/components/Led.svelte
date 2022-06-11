@@ -2,15 +2,17 @@
   .led {
     height: 0.5rem;
     width: 0.5rem;
+    margin: 0.25rem;
     border-radius: 50%;
 
     background-color: brown;
 
-    transition: background-color 0.125s;
+    transition: background-color 200ms ease-out;
   }
 
   .led.on {
     background-color: red;
+    transition-duration: 0ms;
   }
 </style>
 
