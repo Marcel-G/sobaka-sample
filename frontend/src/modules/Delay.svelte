@@ -7,7 +7,7 @@
 </script>
 
 <script lang="ts">
-  import { Delay, Float, Param } from 'sobaka-sample-audio-worklet'
+  import { Delay } from 'sobaka-sample-audio-worklet'
   import { onDestroy } from 'svelte'
   import Panel from './shared/Panel.svelte'
   import Plug from './shared/Plug.svelte'
@@ -26,7 +26,7 @@
   const delay = new Delay(context, { time })
 
   // Update the sobaka node when the state changes
-  $: void delay.message(Param(0), [Float(time)])
+  $: void delay.message({ SetDelay: time })
 
   // Update the global state when state changes
   $: update_sub_state(name, { time })

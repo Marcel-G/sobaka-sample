@@ -1,6 +1,8 @@
-use super::{module, AudioModule32};
-use crate::interface::{address::Port, message::SobakaType};
-use fundsp::hacker32::*;
+use crate::{
+    context::ModuleContext,
+    dsp::{messaging::MessageHandler, shared::Share},
+};
+use fundsp::prelude::*;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
@@ -10,17 +12,24 @@ pub struct DelayParams {
     pub time: f32,
 }
 
-pub fn delay(params: DelayParams) -> impl AudioModule32 {
-    let inputs = pass() | tag(0, params.time);
-    let unit = inputs >> tap(0.0, 10.0);
+/// Incoming commands into the delay module
+#[derive(Serialize, Deserialize, TS, Clone)]
+#[ts(export)]
+pub enum DelayCommand {
+    /// Sets the delay time in seconds
+    SetDelay(f64),
+}
 
-    module(unit, move |unit, message| {
-        match (message.addr.port, &message.args[..]) {
-            // Delay time param
-            (Some(Port::Parameter(0)), [SobakaType::Float(value)]) => {
-                unit.set(0, value.clamp(0.0, 10.0) as f64)
-            }
-            _ => {}
-        }
-    })
+pub fn delay(params: DelayParams, context: &mut ModuleContext<DelayCommand>) -> impl AudioUnit32 {
+    let inputs = pass() | tag(0, params.time);
+    let unit = (inputs >> tap(0.0, 10.0)).share();
+
+    context.set_tx(
+        unit.clone()
+            .message_handler(|unit, command: DelayCommand| match command {
+                DelayCommand::SetDelay(time) => unit.set(0, time.clamp(0.0, 10.0)),
+            }),
+    );
+
+    unit
 }

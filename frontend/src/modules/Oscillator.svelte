@@ -7,7 +7,7 @@
 </script>
 
 <script lang="ts">
-  import { Float, Oscillator, Param } from 'sobaka-sample-audio-worklet'
+  import { Oscillator } from 'sobaka-sample-audio-worklet'
   import { onDestroy } from 'svelte'
   import { get_module_context } from './ModuleWrapper.svelte'
   import Panel from './shared/Panel.svelte'
@@ -27,10 +27,10 @@
   const loading = oscillator.get_address()
 
   // Update the sobaka node when the state changes
-  $: void oscillator.message(Param(0), [Float(state.saw)]);
-  $: void oscillator.message(Param(1), [Float(state.sine)]);
-  $: void oscillator.message(Param(2), [Float(state.square)]);
-  $: void oscillator.message(Param(3), [Float(state.triangle)]);
+  $: void oscillator.message({ SetSawLevel: state.saw });
+  $: void oscillator.message({ SetSineLevel: state.sine });
+  $: void oscillator.message({ SetSquareLevel: state.square });
+  $: void oscillator.message({ SetTriangleLevel: state.triangle });
 
   // Update the global state when state changes
   $: update_sub_state(name, state)

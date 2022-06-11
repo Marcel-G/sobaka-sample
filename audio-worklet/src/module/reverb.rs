@@ -1,5 +1,5 @@
-use super::{module, AudioModule32};
-use crate::{interface::{address::Port, message::SobakaType}, dsp::param::param};
+use super::ModuleContext;
+use crate::dsp::{messaging::MessageHandler, param::param, shared::Share};
 use fundsp::prelude::*;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
@@ -9,6 +9,16 @@ use ts_rs::TS;
 pub struct ReverbParams {
     pub wet: f32,
     pub length: f32,
+}
+
+/// Incoming commands into the reverb module
+#[derive(Serialize, Deserialize, TS, Clone)]
+#[ts(export)]
+pub enum ReverbCommand {
+    /// Sets the wet value of the reverb
+    SetWet(f64),
+    /// Sets the delay length of the reverb
+    SetDelay(f64),
 }
 
 /// Stereo reverb.
@@ -33,7 +43,7 @@ where
 
         delay::<T>(DELAYS[i as usize])
             >> fir((T::from_f32(0.5), T::from_f32(0.5)))
-            >> dcblock_hz::<T, F>(F::new(5)) * a
+            >> (dcblock_hz::<T, F>(F::new(5)) * a)
     });
 
     // The feedback structure.
@@ -48,21 +58,20 @@ where
     multisplit::<U2, U16, T>() >> reverb >> multijoin::<U2, U16, T>() >> wet_mix & dry_mix
 }
 
-pub fn reverb(params: ReverbParams) -> impl AudioModule32 {
-    module(
-        reverb_stereo::<f32, f32>(params.wet, params.length.into()),
-        move |unit, message| {
-            match (message.addr.port, &message.args[..]) {
-                // Update wet parameter
-                (Some(Port::Parameter(0)), [SobakaType::Float(wet)]) => {
-                    unit.set(0, *wet as f64);
-                }
-                // Update delay length
-                (Some(Port::Parameter(1)), [SobakaType::Float(length)]) => {
-                    unit.set(1, *length as f64);
-                }
-                _ => {}
-            }
-        },
-    )
+pub fn reverb(
+    params: ReverbParams,
+    context: &mut ModuleContext<ReverbCommand>,
+) -> impl AudioUnit32 {
+    let reverb = reverb_stereo::<f32, f32>(params.wet, params.length.into()).share();
+
+    context.set_tx(
+        reverb
+            .clone()
+            .message_handler(|unit, message: ReverbCommand| match message {
+                ReverbCommand::SetWet(wet) => unit.set(0, wet.clamp(0.0, 1.0)),
+                ReverbCommand::SetDelay(time) => unit.set(1, time.clamp(0.0, 10.0)),
+            }),
+    );
+
+    reverb
 }

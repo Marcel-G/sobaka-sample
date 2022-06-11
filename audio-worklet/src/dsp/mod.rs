@@ -1,6 +1,8 @@
-use fundsp::{Float};
+use fundsp::Float;
 
+pub mod messaging;
 pub mod param;
+pub mod shared;
 pub mod stepped;
 pub mod trigger;
 

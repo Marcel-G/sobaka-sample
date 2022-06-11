@@ -15,7 +15,7 @@
 </script>
 
 <script lang="ts">
-  import { Float, Param, Reverb } from 'sobaka-sample-audio-worklet'
+  import { Reverb } from 'sobaka-sample-audio-worklet'
   import { onDestroy } from 'svelte'
   import Panel from './shared/Panel.svelte'
   import Plug from './shared/Plug.svelte'
@@ -33,8 +33,8 @@
   const reverb = new Reverb(context, state)
 
   // Update the sobaka node when the state changes
-  $: void reverb.message(Param(0), [Float(state.wet)])
-  $: void reverb.message(Param(1), [Float(state.length)])
+  $: void reverb.message({ SetWet: state.wet })
+  $: void reverb.message({ SetDelay: state.length })
 
   // // Update the global state when state changes
   $: update_sub_state(name, state)

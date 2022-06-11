@@ -1,6 +1,8 @@
-use super::{module, AudioModule32};
-use crate::{interface::{address::Port, message::SobakaType}, dsp::{param::{param}, volt_hz}};
-use fundsp::hacker32::*;
+use crate::{
+    context::ModuleContext,
+    dsp::{messaging::MessageHandler, param::param, shared::Share, volt_hz},
+};
+use fundsp::prelude::*;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
@@ -8,27 +10,39 @@ use ts_rs::TS;
 #[ts(export)]
 pub struct FilterParams {
     pub frequency: f32,
-    pub q: f32
+    pub q: f32,
 }
 
-pub fn filter(params: FilterParams) -> impl AudioModule32 {
-    let input = pass()
-            | (param(0, params.frequency)  >> map(|f| volt_hz(f[0])))
-            | param(1, params.q);
+/// Incoming commands into the filter module
+#[derive(Serialize, Deserialize, TS, Clone)]
+#[ts(export)]
+pub enum FilterCommand {
+    /// Sets the filter cutoff frequency in Hz
+    SetFrequency(f64),
+    /// Sets the filter Q factor
+    SetQ(f64),
+}
 
-    let filter = input >> (lowpass() ^ highpass() ^ bandpass() ^ moog());
-  
-    module(filter, move |unit, message| {
-        match (message.addr.port, &message.args[..]) {
-            // Filter frequency param
-            (Some(Port::Parameter(0)), [SobakaType::Float(value)]) => {
-                unit.set(0, *value as f64)
-            }
-            // Filter frequency param
-            (Some(Port::Parameter(1)), [SobakaType::Float(value)]) => {
-                unit.set(1, *value as f64)
-            }
-            _ => {}
-        }
-    })
+pub fn filter(
+    params: FilterParams,
+    context: &mut ModuleContext<FilterCommand>,
+) -> impl AudioUnit32 {
+    let input =
+        (pass() | (param(0, params.frequency) >> map(|f| volt_hz(f[0]))) | param(1, params.q))
+            .share();
+
+    context.set_tx(
+        input
+            .clone()
+            .message_handler(|unit, message: FilterCommand| match message {
+                FilterCommand::SetFrequency(frequency) => unit.set(0, frequency.clamp(0.0, 10.0)),
+                FilterCommand::SetQ(q) => unit.set(1, q.clamp(0.0, 10.0)),
+            }),
+    );
+
+    input
+        >> (lowpass::<f32, f32>()
+            ^ highpass::<f32, f32>()
+            ^ bandpass::<f32, f32>()
+            ^ moog::<f32, f32>())
 }

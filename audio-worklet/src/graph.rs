@@ -1,14 +1,15 @@
 //! Network of AudioUnits connected together.
 
 use fundsp::buffer::Buffer;
-use fundsp::hacker32::*;
+use fundsp::prelude::*;
 use petgraph::stable_graph::{EdgeIndex, StableGraph};
 use petgraph::visit::EdgeRef;
 use petgraph::visit::Reversed;
 use petgraph::visit::{DfsPostOrder, Visitable};
 use petgraph::EdgeDirection::Incoming;
 
-use crate::module::{module, AudioModule32};
+use crate::context::{GeneralContext, ModuleContext};
+use crate::module::{ModuleUnit, NoOp};
 
 pub type PortIndex = usize;
 pub type NodeIndex = petgraph::stable_graph::NodeIndex;
@@ -31,7 +32,7 @@ pub fn edge(source: PortIndex, target: PortIndex) -> Edge {
 /// Individual AudioUnits are vertices in the graph.
 pub struct Node32 {
     /// The unit.
-    pub unit: Box<dyn AudioModule32 + Send>,
+    pub unit: ModuleUnit,
     /// Input buffers. The length indicates the number of inputs.
     pub input: Buffer<f32>,
     /// Output buffers. The length indicates the number of outputs.
@@ -40,10 +41,12 @@ pub struct Node32 {
     pub tick_input: Vec<f32>,
     /// Output for tick iteration. The length indicates the number of outputs.
     pub tick_output: Vec<f32>,
+    /// Context for the audo module
+    pub context: GeneralContext,
 }
 
 impl Node32 {
-    pub fn new(unit: Box<dyn AudioModule32 + Send>) -> Self {
+    pub fn new(unit: ModuleUnit, context: GeneralContext) -> Self {
         let inputs = unit.inputs();
         let outputs = unit.outputs();
 
@@ -53,6 +56,7 @@ impl Node32 {
             output: Buffer::with_size(outputs),
             tick_input: vec![0.0; inputs],
             tick_output: vec![0.0; outputs],
+            context,
         }
     }
     pub fn inputs(&self) -> usize {
@@ -86,18 +90,23 @@ impl Graph32 {
         let input: An<MultiPass<I, f32>> = An(MultiPass::default());
         let output: An<MultiPass<O, f32>> = An(MultiPass::default());
 
-        let global_input = graph.add_node(Node32::new(Box::new(module(input, |_, _| {}))));
+        let global_input = graph.add_node(Node32::new(
+            Box::new(input),
+            ModuleContext::<NoOp, NoOp>::default().boxed(),
+        ));
 
-        let global_output = graph.add_node(Node32::new(Box::new(module(output, |_, _| {}))));
+        let global_output = graph.add_node(Node32::new(
+            Box::new(output),
+            ModuleContext::<NoOp, NoOp>::default().boxed(),
+        ));
 
-        let net = Self {
+        Self {
             graph,
             visitor: Default::default(),
             global_input,
             global_output,
             sample_rate: DEFAULT_SR,
-        };
-        net
+        }
     }
 
     pub fn get_mod_mut(&mut self, id: NodeIndex) -> Option<&mut Node32> {
@@ -111,17 +120,8 @@ impl Graph32 {
     /// Add a new unit to the network. Return its ID handle.
     /// ID handles are always consecutive numbers starting from zero.
     /// The unit is reset with the sample rate of the network.
-    pub fn add(&mut self, mut unit: Box<dyn AudioModule32 + Send>) -> NodeIndex {
-        let inputs = unit.inputs();
-        let outputs = unit.outputs();
-
-        let node = Node32 {
-            unit,
-            input: Buffer::with_size(inputs),
-            output: Buffer::with_size(outputs),
-            tick_input: vec![0.0; inputs],
-            tick_output: vec![0.0; outputs],
-        };
+    pub fn add(&mut self, unit: ModuleUnit, context: GeneralContext) -> NodeIndex {
+        let node = Node32::new(unit, context);
 
         self.graph.add_node(node)
     }
@@ -258,9 +258,9 @@ impl AudioUnit32 for Graph32 {
             .node_weight_mut(self.global_input)
             .expect("No global input node");
 
-        for channel in 0..input.len() {
+        (0..input.len()).for_each(|channel| {
             input_node.tick_input[channel] = input[channel];
-        }
+        });
 
         self.visitor.reset(Reversed(&self.graph));
         self.visitor.move_to(self.global_output);
@@ -300,7 +300,7 @@ impl AudioUnit32 for Graph32 {
             // Average signals when multiple edges are attached to the same input
             for (sample, total) in in_buffers.iter_mut().zip(in_totals) {
                 if total > 0 {
-                    *sample = *sample / (total as f32)
+                    *sample /= total as f32
                 }
             }
 
@@ -323,9 +323,9 @@ impl AudioUnit32 for Graph32 {
             .node_weight(self.global_output)
             .expect("No global output node");
 
-        for channel in 0..output.len() {
+        (0..output.len()).for_each(|channel| {
             output[channel] = output_node.tick_output[channel];
-        }
+        });
     }
 
     fn process(&mut self, size: usize, input: &[&[f32]], output: &mut [&mut [f32]]) {
@@ -337,12 +337,12 @@ impl AudioUnit32 for Graph32 {
             .node_weight_mut(self.global_input)
             .expect("No global input node");
 
-        for channel in 0..input.len() {
+        (0..input.len()).for_each(|channel| {
             input_node
                 .input
                 .mut_at(channel)
                 .copy_from_slice(&input[channel][..size]);
-        }
+        });
 
         self.visitor.reset(Reversed(&self.graph));
         self.visitor.move_to(self.global_output);
@@ -381,11 +381,9 @@ impl AudioUnit32 for Graph32 {
             }
 
             // Average signals when multiple edges are attached to the same input
-            for (buffer, total) in in_buffers.self_mut().into_iter().zip(in_totals) {
+            for (buffer, total) in in_buffers.self_mut().iter_mut().zip(in_totals) {
                 if total > 0 {
-                    buffer
-                        .iter_mut()
-                        .for_each(|sample| *sample = *sample / (total as f32));
+                    buffer.iter_mut().for_each(|sample| *sample /= total as f32);
                 }
             }
 
@@ -410,9 +408,9 @@ impl AudioUnit32 for Graph32 {
             .node_weight(self.global_output)
             .expect("No global output node");
 
-        for channel in 0..output.len() {
+        (0..output.len()).for_each(|channel| {
             output[channel][..size].copy_from_slice(&output_node.output.at(channel)[..size]);
-        }
+        });
     }
 
     fn get_id(&self) -> u64 {
@@ -529,10 +527,10 @@ fn test_basic() {
     }
 
     let mut graph = Graph32::new::<U0, U2>();
-    let id = graph.add(Box::new(module(
-        noise() >> moog_hz(1500.0, 0.8) | noise() >> moog_hz(500.0, 0.4),
-        |_, _| {},
-    )));
+    let id = graph.add(
+        Box::new(noise() >> moog_hz(1500.0, 0.8) | noise() >> moog_hz(500.0, 0.4)),
+        ModuleContext::<NoOp, NoOp>::default().boxed(),
+    );
 
     graph.connect_output(id, 0, 1);
     graph.connect_output(id, 1, 1);

@@ -15,7 +15,7 @@
 </script>
 
 <script lang="ts">
-  import { Float, Filter, Param } from 'sobaka-sample-audio-worklet'
+  import { Filter } from 'sobaka-sample-audio-worklet'
   import { onDestroy } from 'svelte'
   import Panel from './shared/Panel.svelte'
   import Plug from './shared/Plug.svelte'
@@ -37,8 +37,8 @@
   const filter = new Filter(context, { frequency, q })
 
   // Update the sobaka node when the state changes
-  $: void filter.message(Param(0), [Float(frequency)])
-  $: void filter.message(Param(1), [Float(q)])
+  $: void filter.message({ SetFrequency: frequency })
+  $: void filter.message({ SetQ: q })
 
   // Update the global state when state changes
   $: update_sub_state(name, { frequency, q, kind })

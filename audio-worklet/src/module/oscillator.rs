@@ -1,7 +1,7 @@
-use fundsp::hacker32::*;
-use serde::{Serialize, Deserialize};
-use crate::{interface::{message::SobakaType, address::Port}, dsp::{param::{param32}, volt_hz}};
-use super::{AudioModule32, module};
+use super::ModuleContext;
+use crate::dsp::{messaging::MessageHandler, param::param32, shared::Share, volt_hz};
+use fundsp::prelude::*;
+use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 #[derive(Default, Serialize, Deserialize, TS)]
@@ -10,48 +10,44 @@ pub struct OscillatorParams {
     pub saw: f32,
     pub sine: f32,
     pub square: f32,
-    pub triangle: f32
+    pub triangle: f32,
 }
 
-pub fn oscillator(params: OscillatorParams) -> impl AudioModule32 {
+/// Incoming commands into the oscillator module
+#[derive(Serialize, Deserialize, TS, Clone)]
+#[ts(export)]
+pub enum OscillatorCommand {
+    /// Sets the level of the saw wave (0-1)
+    SetSawLevel(f64),
+    /// Sets the level of the sine wave (0-1)
+    SetSineLevel(f64),
+    /// Sets the level of the square wave (0-1)
+    SetSquareLevel(f64),
+    /// Sets the level of the triangle wave (0-1)
+    SetTriangleLevel(f64),
+}
+
+pub fn oscillator(
+    params: OscillatorParams,
+    context: &mut ModuleContext<OscillatorCommand>,
+) -> impl AudioUnit32 {
     let input = pass() >> map(|f| volt_hz(f[0]));
     let attenuated_saw = saw() * param32(0, params.saw);
     let attenuated_sine = sine() * param32(1, params.sine);
     let attenuated_square = square() * param32(2, params.square);
     let attenuated_triangle = triangle() * param32(3, params.triangle);
 
-    let unit = input >> oversample(
-        attenuated_saw &
-        attenuated_sine &
-        attenuated_square &
-        attenuated_triangle
-    );
+    let params =
+        (attenuated_saw & attenuated_sine & attenuated_square & attenuated_triangle).share();
 
-    module(
-        unit,
-        |unit, message| {
-            match (message.addr.port, &message.args[..]) {
-                // Saw Attenuation Param
-                (Some(Port::Parameter(0)), [SobakaType::Float(value)]) => {
-                    unit.set(0, value.clamp(0.0, 1.0) as f64)
-                }
+    context.set_tx(params.clone().message_handler(
+        |unit, command: OscillatorCommand| match command {
+            OscillatorCommand::SetSawLevel(level) => unit.set(0, level.clamp(0.0, 1.0)),
+            OscillatorCommand::SetSineLevel(level) => unit.set(1, level.clamp(0.0, 1.0)),
+            OscillatorCommand::SetSquareLevel(level) => unit.set(2, level.clamp(0.0, 1.0)),
+            OscillatorCommand::SetTriangleLevel(level) => unit.set(3, level.clamp(0.0, 1.0)),
+        },
+    ));
 
-                // Sine Attenuation Param
-                (Some(Port::Parameter(1)), [SobakaType::Float(value)]) => {
-                    unit.set(1, value.clamp(0.0, 1.0) as f64)
-                }
-
-                // Square Attenuation Param
-                (Some(Port::Parameter(2)), [SobakaType::Float(value)]) => {
-                    unit.set(2, value.clamp(0.0, 1.0) as f64)
-                }
-
-                // Triangle Attenuation Param
-                (Some(Port::Parameter(3)), [SobakaType::Float(value)]) => {
-                    unit.set(3, value.clamp(0.0, 1.0) as f64)
-                }
-                _ => {}
-            }
-        }
-    )
+    input >> oversample(params)
 }

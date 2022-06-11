@@ -81,10 +81,10 @@ jobs:
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
       - uses: actions/setup-node@v2
         with:
-          node-version: 16
+          node-version: 16.14
           cache: 'npm'
           cache-dependency-path: '**/package-lock.json'
-      - run: npm install
+      - run: npm ci 
         working-directory: frontend
       - run: npm run build
         working-directory: frontend
@@ -117,6 +117,11 @@ jobs:
             --acl public-read \
             --metadata-directive REPLACE \
             --cache-control 'max-age=31104000'
+          
+           aws s3 cp frontend/dist/index.html s3://${{ needs.terraform.outputs.deploy_bucket }} \
+            --acl public-read \
+            --metadata-directive REPLACE \
+            --cache-control 'max-age=3600'
       - name: "Invalidate CloudFront Cache"
         run: |
           aws cloudfront create-invalidation \

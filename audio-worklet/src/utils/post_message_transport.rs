@@ -1,130 +1,91 @@
-use std::{
-    cell::RefCell,
-    pin::Pin,
-    rc::Rc,
-    task::{Context, Poll},
-};
+use std::rc::Rc;
 
-use async_std::task;
+use async_std::{future::ready, task::spawn_local};
 use futures::{
     channel::mpsc::{self, UnboundedSender},
-    Future,
+    StreamExt,
 };
-use jsonrpc_core::{MetaIoHandler, Result};
+use js_sys::JSON;
+use jsonrpc_core::{MetaIoHandler, Middleware};
+use jsonrpc_pubsub::PubSubMetadata;
 use wasm_bindgen::{prelude::Closure, JsCast};
 use web_sys::{MessageEvent, MessagePort};
 
-struct SenderFuture(
-    Box<dyn Fn(String) -> Result<()>>,
-    Box<dyn futures::Stream<Item = String> + Send + Unpin>,
-);
-
-impl Future for SenderFuture {
-    type Output = ();
-
-    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        use futures::Stream;
-
-        let this = Pin::into_inner(self);
-        loop {
-            match Pin::new(&mut this.1).poll_next(cx) {
-                Poll::Pending => return Poll::Pending,
-                Poll::Ready(None) => return Poll::Ready(()),
-                Poll::Ready(Some(val)) => {
-                    if (this.0)(val).is_err() {
-                        return Poll::Ready(());
-                    }
-                }
-            }
-        }
-    }
-}
-
 pub struct PostMessageTransport<S, M>
 where
-    M: jsonrpc_core::Metadata,
-    S: jsonrpc_core::Middleware<M>,
+    M: PubSubMetadata,
+    S: Middleware<M>,
 {
-    handler: jsonrpc_core::MetaIoHandler<M, S>,
+    handler: MetaIoHandler<M, S>,
     port: MessagePort,
-    callback: Option<Closure<dyn Fn(MessageEvent)>>,
-    metadata: Option<M>,
 }
 
 impl<S, M> PostMessageTransport<S, M>
 where
-    M: jsonrpc_core::Metadata,
-    S: jsonrpc_core::Middleware<M>,
+    M: PubSubMetadata,
+    S: Middleware<M>,
 {
-    pub fn connect<T, F>(handler: T, metadata_extractor: F, port: MessagePort) -> Rc<RefCell<Self>>
+    pub fn new<T>(handler: T, port: MessagePort) -> Self
     where
         T: Into<MetaIoHandler<M, S>>,
-        F: Fn(&UnboundedSender<String>) -> M,
     {
-        let messenger = Rc::new(RefCell::new(Self {
+        Self {
             handler: handler.into(),
             port,
-            metadata: None,
-            callback: None,
-        }));
-
-        // This sends out to subscriptions
-        let (sender, receiver) = mpsc::unbounded();
-
-        let messenger_1 = messenger.clone();
-        task::spawn_local(SenderFuture(
-            Box::new(move |message| {
-                messenger_1
-                    .borrow()
-                    .port
-                    .post_message(&message.into())
-                    .expect("Failed to post message");
-                Ok(())
-            }),
-            Box::new(receiver),
-        ));
-
-        messenger.borrow_mut().metadata = Some((metadata_extractor)(&sender));
-
-        let messenger_2 = messenger.clone();
-
-        let callback = Closure::wrap(Box::new(move |message| {
-            let messenger_3 = messenger_2.clone();
-            task::spawn_local(async move {
-                messenger_3.borrow().on_message(message).await;
-            });
-        }) as Box<dyn Fn(MessageEvent)>);
-
-        messenger
-            .borrow()
-            .port
-            .set_onmessage(Some(callback.as_ref().unchecked_ref()));
-
-        messenger.borrow_mut().callback = Some(callback);
-
-        messenger
+        }
     }
 
-    async fn on_message(&self, message: MessageEvent) {
-        // Get incoming message as string
-        let req: String = js_sys::JSON::stringify(&message.data())
-            .expect("Encountered bad message")
-            .into();
+    pub fn start<F: FnOnce(UnboundedSender<String>) -> M>(self, func: F) {
+        // Create channel for responding to subscriptions
+        let (sender, receiver) = mpsc::unbounded();
 
-        // This processes and responds to incoming requests
-        let response = self
-            .handler
-            .handle_request(
-                &req,
-                self.metadata
-                    .as_ref()
-                    .expect("Metadata should be set on initialisation")
-                    .clone(),
-            )
-            .await;
+        let shared_transport = Rc::new(self);
 
-        if let Some(reply) = response {
-            self.port.post_message(&reply.into()).unwrap();
-        }
+        // Create metadata, transport only supports a single session
+        let metadata = func(sender);
+
+        let sub_transport = shared_transport.clone();
+        // Send outgoing messages to subscriptions from another task
+        spawn_local(receiver.for_each(move |message| {
+            sub_transport
+                .port
+                .post_message(&message.into())
+                .expect("Failed to post message");
+
+            ready(())
+        }));
+
+        let message_transport = shared_transport.clone();
+        let handle_js_message: Closure<dyn Fn(MessageEvent)> =
+            Closure::wrap(Box::new(move |message: MessageEvent| {
+                let call_transport = message_transport.clone();
+                let metadata = metadata.clone();
+
+                spawn_local(async move {
+                    // Get incoming message as string (is this making the data get parsed twice?)
+                    let request: String =
+                        JSON::stringify(&message.data()) // not a real error: https://github.com/rust-lang/rust-analyzer/issues/5412
+                            .expect("Encountered bad message")
+                            .into();
+                    // Handle the request via the rust RPC implementation
+                    let response = call_transport
+                        .handler
+                        .handle_request(&request, metadata)
+                        .await;
+
+                    // Send response back to over the message port, if any.
+                    if let Some(reply) = response {
+                        call_transport.port.post_message(&reply.into()).unwrap();
+                    }
+                });
+            }));
+
+        // Attach handler to message port
+        shared_transport
+            .port
+            .set_onmessage(Some(handle_js_message.as_ref().unchecked_ref()));
+
+        // Prevent rust from dropping the closure (we'll keep this perminantly)
+        handle_js_message.forget()
     }
 }

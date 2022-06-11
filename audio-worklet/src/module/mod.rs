@@ -1,5 +1,7 @@
-use fundsp::hacker32::*;
+use derive_more::{From, TryInto};
+use fundsp::prelude::*;
 pub mod clock;
+pub mod delay;
 pub mod envelope;
 pub mod filter;
 pub mod noise;
@@ -8,25 +10,25 @@ pub mod parameter;
 pub mod reverb;
 pub mod sequencer;
 pub mod vca;
-pub mod delay;
 
-use fundsp::hacker::AudioUnit32;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 use self::{
-    clock::{clock, ClockParams},
-    filter::{filter, FilterParams},
-    oscillator::{oscillator, OscillatorParams},
-    parameter::{parameter, ParameterParams},
-    reverb::{reverb, ReverbParams},
-    sequencer::{sequencer, SequencerParams},
-    vca::{vca, VcaParams},
-    envelope::{ envelope, EnvelopeParams },
-    noise::{ noise },
-    delay::{ delay, DelayParams },
+    clock::{clock, ClockCommand, ClockParams},
+    delay::{delay, DelayCommand, DelayParams},
+    envelope::{envelope, EnvelopeCommand, EnvelopeParams},
+    filter::{filter, FilterCommand, FilterParams},
+    noise::noise,
+    oscillator::{oscillator, OscillatorCommand, OscillatorParams},
+    parameter::{parameter, ParameterCommand, ParameterParams},
+    reverb::{reverb, ReverbCommand, ReverbParams},
+    sequencer::{sequencer, SequencerCommand, SequencerEvent, SequencerParams},
+    vca::{vca, VcaCommand, VcaParams},
 };
-use crate::interface::message::SobakaMessage;
+use crate::{
+    context::{GeneralContext, ModuleContext},
+};
 
 #[derive(Serialize, Deserialize, TS)]
 #[serde(tag = "node_type", content = "data")]
@@ -42,102 +44,92 @@ pub enum AudioModuleType {
     Noise,
     Parameter(ParameterParams),
     Oscillator(OscillatorParams),
-    // Parameter(ParameterNode),
     // Quantiser(QuantiserNode),
     Reverb(ReverbParams),
     // SampleAndHold(SampleAndHoldNode),
     // Sampler(SamplerNode),
     Sequencer(SequencerParams),
     // Sum(SumNode),
-    Vca(VcaParams)
+    Vca(VcaParams),
 }
 
-impl From<AudioModuleType> for Box<dyn AudioModule32 + Send> {
+#[derive(Serialize, Deserialize, TryInto, Clone, TS)]
+#[serde(tag = "node_type", content = "data")]
+#[ts(export)]
+pub enum AudioModuleCommand {
+    Sequencer(SequencerCommand),
+    Clock(ClockCommand),
+    Delay(DelayCommand),
+    Envelope(EnvelopeCommand),
+    Filter(FilterCommand),
+    Oscillator(OscillatorCommand),
+    Parameter(ParameterCommand),
+    Reverb(ReverbCommand),
+    Vca(VcaCommand),
+
+    #[serde(skip)]
+    NoOp(NoOp),
+}
+
+#[derive(Serialize, Deserialize, From, Clone,  TS)]
+#[serde(tag = "node_type", content = "data")]
+#[ts(export)]
+pub enum AudioModuleEvent {
+    Sequencer(SequencerEvent),
+
+    #[serde(skip)]
+    NoOp(NoOp),
+}
+
+pub type ModuleUnit = Box<dyn AudioUnit32 + Send>;
+
+impl From<AudioModuleType> for (ModuleUnit, GeneralContext) {
     fn from(node_type: AudioModuleType) -> Self {
         match node_type {
-            AudioModuleType::Oscillator(params) => Box::new(oscillator(params)),
-            AudioModuleType::Parameter(params) => Box::new(parameter(params)),
-            AudioModuleType::Reverb(params) => Box::new(reverb(params)),
-            AudioModuleType::Filter(params) => Box::new(filter(params)),
-            AudioModuleType::Clock(params) => Box::new(clock(params)),
-            AudioModuleType::Sequencer(params) => Box::new(sequencer(params)),
-            AudioModuleType::Vca(params) => Box::new(vca(params)),
-            AudioModuleType::Envelope(params) => Box::new(envelope(params)),
-            AudioModuleType::Noise => Box::new(noise()),
-            AudioModuleType::Delay(params) => Box::new(delay(params)),
+            AudioModuleType::Oscillator(params) => {
+                let mut ctx = ModuleContext::default();
+                (Box::new(oscillator(params, &mut ctx)), ctx.boxed())
+            }
+            AudioModuleType::Parameter(params) => {
+                let mut ctx = ModuleContext::default();
+                (Box::new(parameter(params, &mut ctx)), ctx.boxed())
+            }
+            AudioModuleType::Reverb(params) => {
+                let mut ctx = ModuleContext::default();
+                (Box::new(reverb(params, &mut ctx)), ctx.boxed())
+            }
+            AudioModuleType::Filter(params) => {
+                let mut ctx = ModuleContext::default();
+                (Box::new(filter(params, &mut ctx)), ctx.boxed())
+            }
+            AudioModuleType::Clock(params) => {
+                let mut ctx = ModuleContext::default();
+                (Box::new(clock(params, &mut ctx)), ctx.boxed())
+            }
+            AudioModuleType::Sequencer(params) => {
+                let mut ctx = ModuleContext::default();
+                (Box::new(sequencer(params, &mut ctx)), ctx.boxed())
+            }
+            AudioModuleType::Vca(params) => {
+                let mut ctx = ModuleContext::default();
+                (Box::new(vca(params, &mut ctx)), ctx.boxed())
+            }
+            AudioModuleType::Envelope(params) => {
+                let mut ctx = ModuleContext::default();
+                (Box::new(envelope(params, &mut ctx)), ctx.boxed())
+            }
+            AudioModuleType::Noise => {
+                let mut ctx = ModuleContext::default();
+                (Box::new(noise((), &mut ctx)), ctx.boxed())
+            }
+            AudioModuleType::Delay(params) => {
+                let mut ctx = ModuleContext::default();
+                (Box::new(delay(params, &mut ctx)), ctx.boxed())
+            }
         }
     }
 }
 
-pub fn module<U, F>(unit: An<U>, message_fn: F) -> Mod<U, F>
-where
-    U: AudioNode<Sample = f32>,
-    F: Fn(&mut U, SobakaMessage),
-{
-    Mod { unit, message_fn }
-}
-
-pub struct Mod<U, F>
-where
-    U: AudioNode<Sample = f32>,
-    F: Fn(&mut U, SobakaMessage),
-{
-    unit: An<U>,
-    message_fn: F,
-}
-
-pub trait AudioModule32: AudioUnit32 {
-    fn on_message(&mut self, message: SobakaMessage);
-}
-
-impl<U, F> AudioUnit32 for Mod<U, F>
-where
-    U: AudioNode<Sample = f32>,
-    F: Fn(&mut U, SobakaMessage),
-    U::Inputs: Size<f32>,
-    U::Outputs: Size<f32>,
-{
-    fn reset(&mut self, sample_rate: Option<f64>) {
-        self.unit.reset(sample_rate);
-    }
-    fn tick(&mut self, input: &[f32], output: &mut [f32]) {
-        self.unit.tick(input, output);
-    }
-    fn process(&mut self, size: usize, input: &[&[f32]], output: &mut [&mut [f32]]) {
-        self.unit.process(size, input, output);
-    }
-    fn inputs(&self) -> usize {
-        self.unit.inputs()
-    }
-    fn outputs(&self) -> usize {
-        self.unit.outputs()
-    }
-    fn get_id(&self) -> u64 {
-        U::ID
-    }
-    fn set_hash(&mut self, hash: u64) {
-        self.unit.set_hash(hash);
-    }
-    fn ping(&mut self, probe: bool, hash: AttoRand) -> AttoRand {
-        self.unit.ping(probe, hash)
-    }
-    fn route(&self, input: &SignalFrame, frequency: f64) -> SignalFrame {
-        self.unit.route(input, frequency)
-    }
-    fn set(&mut self, parameter: Tag, value: f64) {
-        self.unit.set(parameter, value);
-    }
-    fn get(&self, parameter: Tag) -> Option<f64> {
-        self.unit.get(parameter)
-    }
-}
-
-impl<U, F> AudioModule32 for Mod<U, F>
-where
-    U: AudioNode<Sample = f32>,
-    F: Fn(&mut U, SobakaMessage),
-{
-    fn on_message(&mut self, message: SobakaMessage) {
-        (self.message_fn)(&mut self.unit, message)
-    }
-}
+/// Placeholder type used to represent no-op event or command
+#[derive(Clone)]
+pub struct NoOp;

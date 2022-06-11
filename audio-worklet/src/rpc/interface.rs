@@ -6,8 +6,7 @@ use jsonrpc_derive::rpc;
 use jsonrpc_pubsub::{typed, SubscriptionId};
 
 use crate::interface::address::Address;
-use crate::interface::message::SobakaMessage;
-use crate::module::AudioModuleType;
+use crate::module::{AudioModuleCommand, AudioModuleEvent, AudioModuleType};
 
 #[rpc(server)]
 pub trait SobakaGraphRpc {
@@ -31,11 +30,16 @@ pub trait SobakaGraphRpc {
 
     /// Update the state of a node
     #[rpc(name = "message")]
-    fn message(&self, message: SobakaMessage) -> Result<bool>;
+    fn message(&self, address: Address, message: AudioModuleCommand) -> Result<bool>;
 
     /// Subscribe to node state changes
     #[pubsub(subscription = "node", subscribe, name = "subscribe")]
-    fn subscribe(&self, meta: Self::Metadata, subscriber: typed::Subscriber<SobakaMessage>);
+    fn subscribe(
+        &self,
+        meta: Self::Metadata,
+        subscriber: typed::Subscriber<AudioModuleEvent>,
+        node: Address,
+    );
 
     /// Unsubscribe to node state changes
     #[pubsub(subscription = "node", unsubscribe, name = "unsubscribe")]

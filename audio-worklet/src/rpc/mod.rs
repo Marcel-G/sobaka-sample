@@ -1,28 +1,36 @@
 use std::sync::Arc;
 
-use jsonrpc_core::{Result, Error};
-use jsonrpc_pubsub::{Session, typed::Subscriber};
+use futures::{FutureExt, SinkExt, StreamExt};
+use jsonrpc_core::{Error, ErrorCode, Result};
+use jsonrpc_pubsub::{manager::SubscriptionManager, typed::Subscriber, Session, SubscriptionId};
 use petgraph::graph::EdgeIndex;
 
 pub mod interface;
 
 use crate::{
-    interface::{address::Address, message::SobakaMessage}, module::AudioModuleType,
-    utils::subscriptions::Subscriptions, AudioProcessor,
+    interface::address::Address,
+    module::{AudioModuleCommand, AudioModuleEvent, AudioModuleType},
+    utils::{id_provider::AtomicIdProvider, wasm_executer::WasmSpawner},
+    AudioProcessor,
 };
 
 use self::interface::SobakaGraphRpc;
 
 pub struct AudioProcessorRpc {
     processor: AudioProcessor,
-    subscriptions: Subscriptions,
+    subscriptions: SubscriptionManager<AtomicIdProvider>,
 }
 
 impl AudioProcessorRpc {
     pub fn new(processor: AudioProcessor) -> Self {
+        let executor = WasmSpawner::new();
+
         Self {
             processor,
-            subscriptions: Default::default()
+            subscriptions: SubscriptionManager::with_id_provider(
+                AtomicIdProvider::default(),
+                Arc::new(executor),
+            ),
         }
     }
 }
@@ -30,87 +38,102 @@ impl AudioProcessorRpc {
 impl SobakaGraphRpc for AudioProcessorRpc {
     type Metadata = Arc<Session>;
 
-    // @todo refactor Net to:
-    //  - accept a graph as arg
-    //  - or use graph with Nodes implementing AudioModule + AudioUnit32
     fn create(&self, node: AudioModuleType) -> Result<Address> {
-      self.processor.create(node).map_err(|_| Error::invalid_request())
+        self.processor
+            .create(node)
+            .map_err(|_| Error::invalid_request())
     }
 
     fn dispose(&self, address: Address) -> Result<bool> {
-      self.processor.dispose(address).map_err(|_| Error::invalid_request())
+        self.processor
+            .dispose(address)
+            .map_err(|_| Error::invalid_request())
     }
 
     fn connect(&self, from: Address, to: Address) -> Result<usize> {
-      self.processor.connect(from, to).map_err(|_| Error::invalid_request())
+        self.processor
+            .connect(from, to)
+            .map_err(|_| Error::invalid_request())
     }
 
     fn disconnect(&self, id: usize) -> Result<bool> {
-      self.processor.disconnect(EdgeIndex::new(id)).map_err(|_| Error::invalid_request())
+        self.processor
+            .disconnect(EdgeIndex::new(id))
+            .map_err(|_| Error::invalid_request())
     }
 
-    fn message(&self, message: SobakaMessage) -> Result<bool> {
-      self.processor.message(message).map_err(|_| Error::invalid_request())
+    fn message(&self, address: Address, message: AudioModuleCommand) -> Result<bool> {
+        self.processor
+            .message(address, message)
+            .map_err(|_| Error::invalid_request())
     }
 
-    fn subscribe(&self, meta: Self::Metadata, subscriber: Subscriber<SobakaMessage>) {
-        // let graph = &mut self.graph.lock().expect("Cannot lock graph");
-        // if let Some(module) = graph.get_audio_node(NodeIndex::new(node_id)) {
-        // if let Ok(future) = module.observe() {
-        //     self.subscriptions.add(subscriber, move |sink| {
-        //         future
-        //             .map(|res| Ok(Ok(res)))
-        //             .forward(
-        //                 sink.sink_map_err(|e| panic!("Error sending notifications: {:?}", e)),
-        //             )
-        //             .map(|_| ())
-        //     });
-        // } else {
-        //     subscriber
-        //         .reject(Error {
-        //             code: ErrorCode::ParseError,
-        //             message: "Node not subscribable. Subscription rejected.".into(),
-        //             data: None,
-        //         })
-        //         .unwrap();
-        // }
-        // } else {
-        //     subscriber
-        //         .reject(Error {
-        //             code: ErrorCode::InvalidParams,
-        //             message: "No module found. Subscription rejected.".into(),
-        //             data: None,
-        //         })
-        //         .unwrap();
-        // }
+    fn subscribe(
+        &self,
+        _meta: Self::Metadata,
+        subscriber: Subscriber<AudioModuleEvent>,
+        node: Address,
+    ) {
+        match self
+            .processor
+            .subscribe(node)
+            .map_err(|_| Error::invalid_request())
+        {
+            Ok(stream) => {
+                self.subscriptions.add(subscriber, |sink| {
+                    stream
+                        .map(|res| Ok(Ok(res)))
+                        .forward(
+                            sink
+                                // Failed to send message back to subscriber
+                                .sink_map_err(|e| panic!("Error sending notifications: {:?}", e)),
+                        )
+                        .map(|_| ())
+                });
+            }
+            Err(_error) => {
+                // Failed to subscribe
+                subscriber
+                    .reject(Error {
+                        code: ErrorCode::ParseError,
+                        message: "Node not subscribable. Subscription rejected.".into(),
+                        data: None,
+                    })
+                    .unwrap();
+            }
+        }
     }
 
     fn unsubscribe(
         &self,
         _meta: Option<Self::Metadata>,
-        subscription: jsonrpc_pubsub::SubscriptionId,
+        subscription_id: SubscriptionId,
     ) -> Result<bool> {
-        Ok(self.subscriptions.cancel(subscription))
+        Ok(self.subscriptions.cancel(subscription_id))
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use fundsp::hacker32::{U1, U2};
-    use futures::channel::mpsc;
-    use jsonrpc_pubsub::{PubSubHandler, Session};
-    use std::sync::{Arc, Mutex};
+    use futures::{channel::mpsc, executor::ThreadPool};
+    use jsonrpc_pubsub::{manager::SubscriptionManager, PubSubHandler, Session};
+    use std::sync::Arc;
 
-    use crate::AudioProcessor;
+    use crate::{utils::id_provider::AtomicIdProvider, AudioProcessor};
 
-    use super::{AudioProcessorRpc, interface::SobakaGraphRpc};
+    use super::{interface::SobakaGraphRpc, AudioProcessorRpc};
 
     fn build_rpc() -> (PubSubHandler<Arc<Session>>, Arc<Session>) {
         let mut handler = PubSubHandler::default();
 
+        let executor = ThreadPool::new().unwrap();
+
         let rpc = AudioProcessorRpc {
             processor: AudioProcessor::new(44100.0),
-            subscriptions: Default::default(),
+            subscriptions: SubscriptionManager::with_id_provider(
+                AtomicIdProvider::default(),
+                Arc::new(executor),
+            ),
         };
 
         handler.extend_with(rpc.to_delegate());

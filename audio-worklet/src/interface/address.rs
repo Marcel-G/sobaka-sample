@@ -1,11 +1,11 @@
+use crate::graph::NodeIndex;
+use serde::{de, Deserialize, Deserializer, Serialize};
 use std::{
     fmt::{self, Display},
-    str::FromStr
+    str::FromStr,
 };
-use serde::{de, Deserialize, Deserializer, Serialize};
-use crate::graph::NodeIndex;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct InvalidTargetError;
 
 impl fmt::Display for InvalidTargetError {
@@ -14,11 +14,10 @@ impl fmt::Display for InvalidTargetError {
     }
 }
 
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum Port {
     Output(usize),
     Input(usize),
-    Parameter(i64),
 }
 
 impl FromStr for Port {
@@ -32,9 +31,6 @@ impl FromStr for Port {
             ["out", n] => Ok(Port::Output(
                 n.parse::<usize>().map_err(|_| InvalidTargetError)?,
             )),
-            ["param", n] => Ok(Port::Parameter(
-                n.parse::<i64>().map_err(|_| InvalidTargetError)?,
-            )),
             _ => Err(InvalidTargetError),
         }
     }
@@ -45,12 +41,11 @@ impl Display for Port {
         match self {
             Port::Output(n) => formatter.write_fmt(format_args!("out-{}", n)),
             Port::Input(n) => formatter.write_fmt(format_args!("in-{}", n)),
-            Port::Parameter(n) => formatter.write_fmt(format_args!("param-{}", n)),
         }
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct InvalidAddressError;
 
 impl fmt::Display for InvalidAddressError {
@@ -59,7 +54,7 @@ impl fmt::Display for InvalidAddressError {
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Address {
     pub id: usize,
     pub port: Option<Port>,
@@ -122,7 +117,10 @@ impl Serialize for Address {
 
 impl From<NodeIndex> for Address {
     fn from(id: NodeIndex) -> Self {
-        Address { id: id.index(), port: None }
+        Address {
+            id: id.index(),
+            port: None,
+        }
     }
 }
 
@@ -157,15 +155,6 @@ mod tests {
             Address {
                 id: 100,
                 port: Some(Port::Input(99))
-            }
-        );
-
-        // With param target
-        assert_eq!(
-            Address::from_str("/sobaka/0/param-22").unwrap(),
-            Address {
-                id: 0,
-                port: Some(Port::Parameter(22))
             }
         );
 
@@ -212,18 +201,6 @@ mod tests {
                 }
             ),
             "/sobaka/44/in-0"
-        );
-
-        // With param target
-        assert_eq!(
-            format!(
-                "{}",
-                Address {
-                    id: 44,
-                    port: Some(Port::Parameter(0))
-                }
-            ),
-            "/sobaka/44/param-0"
         );
 
         // With missing target

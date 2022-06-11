@@ -7,11 +7,10 @@
 </script>
 
 <script lang="ts">
-  import { Float, Param, Vca } from 'sobaka-sample-audio-worklet'
+  import { Vca } from 'sobaka-sample-audio-worklet'
   import { onDestroy } from 'svelte'
   import Panel from './shared/Panel.svelte'
   import Plug from './shared/Plug.svelte'
-  import CvParameter from './shared/CvParameter.svelte'
   import { get_module_context } from './ModuleWrapper.svelte'
   import { into_style } from '../components/Theme.svelte'
   import Knob from '../components/Knob.svelte'
@@ -28,7 +27,7 @@
   const vca = new Vca(context, { value })
 
   // Update the sobaka node when the state changes
-  $: void vca.message(Param(0), [Float(value)])
+  $: void vca.message({ SetLevel: value })
 
   // // Update the global state when state changes
   $: update_sub_state(name, { value })

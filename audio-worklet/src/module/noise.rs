@@ -1,7 +1,7 @@
-use fundsp::hacker32::*;
+use fundsp::prelude::*;
 
-use super::{module, AudioModule32};
+use super::ModuleContext;
 
-pub fn noise() -> impl AudioModule32 {
-  module(white(), |_,_| {})
+pub fn noise(_params: (), _context: &mut ModuleContext) -> impl AudioUnit32 {
+    white()
 }

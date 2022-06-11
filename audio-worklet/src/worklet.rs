@@ -1,15 +1,13 @@
+#![allow(clippy::unused_unit)]
 use fundsp::{hacker::AudioUnit32, MAX_BUFFER_SIZE};
-use futures::channel::mpsc::UnboundedSender;
 use jsonrpc_pubsub::{PubSubHandler, Session};
-use std::{sync::{Arc}};
+use std::sync::Arc;
 use wasm_bindgen::prelude::*;
 use web_sys::MessagePort;
 
 use crate::{
-    rpc::AudioProcessorRpc,
-    rpc::interface::SobakaGraphRpc,
-    utils::post_message_transport::PostMessageTransport, AudioProcessor,
-    SharedGraph,
+    rpc::interface::SobakaGraphRpc, rpc::AudioProcessorRpc,
+    utils::post_message_transport::PostMessageTransport, AudioProcessor, SharedGraph,
 };
 // AudioProcessor is the rust entry-point for Web Audio AudioWorkletProcessor
 #[wasm_bindgen]
@@ -33,13 +31,9 @@ impl SobakaAudioWorklet {
 
         io.extend_with(rpc.to_delegate());
 
-        // Metadata should be created on connection
-        // No connection is made in this case
-        // unsure how futures work so this may be broken
-        let metadata_extractor =
-            |sender: &UnboundedSender<String>| Arc::new(Session::new(sender.clone()));
+        let transport = PostMessageTransport::new(io, port);
 
-        PostMessageTransport::connect(io, metadata_extractor, port);
+        transport.start(|sender| Arc::new(Session::new(sender)));
 
         worklet
     }
@@ -47,21 +41,21 @@ impl SobakaAudioWorklet {
     pub fn process(&mut self, input: &[f32], output_l: &mut [f32], output_r: &mut [f32]) {
         let mut graph = self.graph.lock().expect("Cannot lock graph");
         // When no input is provided
-        if input.len() == 0 {
+        if input.is_empty() {
             for (l, r) in output_l
                 .chunks_mut(MAX_BUFFER_SIZE)
                 .zip(output_r.chunks_mut(MAX_BUFFER_SIZE))
             {
-                graph.process( MAX_BUFFER_SIZE, &[], &mut [l, r]);
+                graph.process(MAX_BUFFER_SIZE, &[], &mut [l, r]);
             }
         } else {
-        // When input is provided
+            // When input is provided
             for ((l, r), i) in output_l
                 .chunks_mut(MAX_BUFFER_SIZE)
                 .zip(output_r.chunks_mut(MAX_BUFFER_SIZE))
                 .zip(input.chunks(MAX_BUFFER_SIZE))
             {
-                graph.process( MAX_BUFFER_SIZE, &[i], &mut [l, r]);
+                graph.process(MAX_BUFFER_SIZE, &[i], &mut [l, r]);
             }
         }
     }

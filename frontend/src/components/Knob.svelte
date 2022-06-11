@@ -132,6 +132,7 @@
   <div class="inputs">
     <slot name="inputs" />
   </div>
+
   {#if direct_input}
     <input
       autofocus

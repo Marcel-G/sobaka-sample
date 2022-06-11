@@ -1,8 +1,14 @@
-use super::{module, AudioModule32};
+use super::ModuleContext;
 use crate::{
-    interface::{address::Port, message::SobakaType}, dsp::{stepped::stepped, trigger::trigger},
+    dsp::{
+        messaging::MessageHandler,
+        shared::Share,
+        stepped::{stepped, SteppedEvent},
+        trigger::trigger,
+    },
+    utils::observer::Observable,
 };
-use fundsp::hacker32::*;
+use fundsp::prelude::*;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
@@ -12,31 +18,39 @@ pub struct SequencerParams {
     pub steps: [f32; 8],
 }
 
-pub fn sequencer(params: SequencerParams) -> impl AudioModule32 {
+/// Events emitted by the sequencer module
+#[derive(Serialize, Deserialize, TS, Clone)]
+#[ts(export)]
+pub enum SequencerEvent {
+    /// StepChange is emitted whenever the step is changed
+    StepChange(usize),
+}
 
-    // @todo
-    //  - refactor trigger to use `>>`
-    //  - same for stepped
-    let unit = trigger(stepped([
-      tag(0, params.steps[0]),
-      tag(1, params.steps[1]),
-      tag(2, params.steps[2]),
-      tag(3, params.steps[3]),
-      tag(4, params.steps[4]),
-      tag(5, params.steps[5]),
-      tag(6, params.steps[6]),
-      tag(7, params.steps[7]),
-    ]));
+/// Incoming commands into the sequencer module
+#[derive(Serialize, Deserialize, TS, Clone)]
+#[ts(export)]
+pub enum SequencerCommand {
+    /// Update the value of a given step
+    UpdateStep(usize, f64),
+}
 
-    module(
-      unit,
-      move |unit, message| {
-        match (message.addr.port, &message.args[..]) {
-            // Set step value
-            (Some(Port::Parameter(n)), [SobakaType::Float(value)]) if n < 8 => {
-                unit.set(n, *value as f64)
-            }
-            _ => {}
-        }
-    })
+pub fn sequencer(
+    params: SequencerParams,
+    context: &mut ModuleContext<SequencerCommand, SequencerEvent>,
+) -> impl AudioUnit32 {
+    let steps = branch::<U8, _, _, _>(|i| tag(i, params.steps[i as usize])).share();
+
+    context.set_tx(steps.clone().message_handler(
+        |unit, command: SequencerCommand| match command {
+            SequencerCommand::UpdateStep(i, value) => unit.set(i as i64, value),
+        },
+    ));
+
+    let stepped = stepped::<U8, _>().share();
+
+    context.set_rx(stepped.clone().map(|event| match event {
+        SteppedEvent::StepChange(step) => SequencerEvent::StepChange(step),
+    }));
+
+    trigger(steps >> stepped)
 }

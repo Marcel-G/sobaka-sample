@@ -1,9 +1,6 @@
-use super::{module, AudioModule32};
-use crate::{
-    dsp::param::param32,
-    interface::{address::Port, message::SobakaType},
-};
-use fundsp::hacker32::*;
+use super::ModuleContext;
+use crate::dsp::{messaging::MessageHandler, param::param32, shared::Share};
+use fundsp::prelude::*;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
@@ -13,17 +10,23 @@ pub struct VcaParams {
     pub value: f32,
 }
 
-pub fn vca(params: VcaParams) -> impl AudioModule32 {
-    let unit = pass() * (pass() + param32(0, params.value));
+/// Incoming commands into the reverb module
+#[derive(Serialize, Deserialize, TS, Clone)]
+#[ts(export)]
+pub enum VcaCommand {
+    /// Sets the level of the VCA
+    SetLevel(f64),
+}
 
-    module(unit,
-      move |unit, message| {
-        match (message.addr.port, &message.args[..]) {
-            // Manual control
-            (Some(Port::Parameter(0)), [SobakaType::Float(value)]) => {
-                unit.set(0, *value as f64)
-            }
-            _ => {}
-        }
-    })
+pub fn vca(params: VcaParams, context: &mut ModuleContext<VcaCommand>) -> impl AudioUnit32 {
+    let unit = (pass() * (pass() + param32(0, params.value))).share();
+
+    context.set_tx(
+        unit.clone()
+            .message_handler(|unit, message: VcaCommand| match message {
+                VcaCommand::SetLevel(value) => unit.set(0, value.clamp(0.0, 1.0)),
+            }),
+    );
+
+    unit
 }

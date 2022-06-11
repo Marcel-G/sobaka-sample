@@ -15,7 +15,7 @@
 </script>
 
 <script lang="ts">
-  import { Float, Param, Sequencer } from 'sobaka-sample-audio-worklet'
+  import { Sequencer } from 'sobaka-sample-audio-worklet'
   import Panel from './shared/Panel.svelte'
   import Plug from './shared/Plug.svelte'
   import { get_module_context } from './ModuleWrapper.svelte'
@@ -23,31 +23,37 @@
   import { PlugType } from '../state/plug'
   import { onDestroy } from 'svelte'
   import Knob from '../components/Knob.svelte'
+  import Led from '../components/Led.svelte';
 
   const { context, get_sub_state, update_sub_state } = get_module_context()
 
   let name = 'sequencer'
 
-  let state = get_sub_state(name, { steps: new Array(8).fill(1) })
+  let state = get_sub_state(name, { steps: new Array<number>(8).fill(1) })
+
+  let active_step = 0
 
   const sequencer = new Sequencer(context, state)
 
-  $: ([s1, s2, s3, s4, s5, s6, s7, s8] = state.steps);
+  let { steps } = state
 
   // Update the sobaka node when the state changes
-  $: void sequencer.message(Param(1), [Float(s1)])
-  $: void sequencer.message(Param(2), [Float(s2)])
-  $: void sequencer.message(Param(3), [Float(s3)])
-  $: void sequencer.message(Param(4), [Float(s4)])
-  $: void sequencer.message(Param(5), [Float(s5)])
-  $: void sequencer.message(Param(6), [Float(s6)])
-  $: void sequencer.message(Param(7), [Float(s7)])
-  $: void sequencer.message(Param(0), [Float(s8)])
+  $: void sequencer.message({ UpdateStep: [0, steps[0]]})
+  $: void sequencer.message({ UpdateStep: [1, steps[1]]})
+  $: void sequencer.message({ UpdateStep: [2, steps[2]]})
+  $: void sequencer.message({ UpdateStep: [3, steps[3]]})
+  $: void sequencer.message({ UpdateStep: [4, steps[4]]})
+  $: void sequencer.message({ UpdateStep: [5, steps[5]]})
+  $: void sequencer.message({ UpdateStep: [6, steps[6]]})
+  $: void sequencer.message({ UpdateStep: [7, steps[7]]})
+
+  // Subscribe to step change
+  void sequencer.subscribe('StepChange', step => { active_step = step })
   
   const knob_range = [0, 8];
 
   // Update the global state when state changes
-  $: update_sub_state(name, { steps: [s1, s2, s3, s4, s5, s6, s7, s8] })
+  $: update_sub_state(name, { steps: steps })
 
   const loading = sequencer.get_address()
 
@@ -61,14 +67,13 @@
     <p>Loading...</p>
   {:then}
     <div class="controls">
-      <Knob bind:value={s1} range={knob_range} />
-      <Knob bind:value={s2} range={knob_range} />
-      <Knob bind:value={s3} range={knob_range} />
-      <Knob bind:value={s4} range={knob_range} />
-      <Knob bind:value={s5} range={knob_range} />
-      <Knob bind:value={s6} range={knob_range} />
-      <Knob bind:value={s7} range={knob_range} />
-      <Knob bind:value={s8} range={knob_range} />
+      {#each steps as val, i}
+        <Knob bind:value={val} range={knob_range}>
+          <div slot="inputs">
+            <Led on={active_step === i} />
+          </div>
+        </Knob>
+      {/each}
     </div>
   {/await}
   <div slot="inputs">
