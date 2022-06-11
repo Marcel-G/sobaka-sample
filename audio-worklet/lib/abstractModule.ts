@@ -87,7 +87,7 @@ export abstract class AbstractModule<T extends NodeType> {
       [address],
       value => {
         const response = this.from_module_dto(value.result) as Event<T>
-        if (response[event]) {
+        if (event in response) {
           callback(response[event])
         }
       }
