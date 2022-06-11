@@ -8,7 +8,8 @@ use petgraph::visit::Reversed;
 use petgraph::visit::{DfsPostOrder, Visitable};
 use petgraph::EdgeDirection::Incoming;
 
-use crate::module::{ModuleContext, ModuleUnit};
+use crate::context::{GeneralContext, ModuleContext};
+use crate::module::{ModuleUnit, NoOp};
 
 pub type PortIndex = usize;
 pub type NodeIndex = petgraph::stable_graph::NodeIndex;
@@ -41,11 +42,11 @@ pub struct Node32 {
     /// Output for tick iteration. The length indicates the number of outputs.
     pub tick_output: Vec<f32>,
     /// Context for the audo module
-    pub context: ModuleContext,
+    pub context: GeneralContext,
 }
 
 impl Node32 {
-    pub fn new(unit: ModuleUnit, context: ModuleContext) -> Self {
+    pub fn new(unit: ModuleUnit, context: GeneralContext) -> Self {
         let inputs = unit.inputs();
         let outputs = unit.outputs();
 
@@ -89,9 +90,15 @@ impl Graph32 {
         let input: An<MultiPass<I, f32>> = An(MultiPass::default());
         let output: An<MultiPass<O, f32>> = An(MultiPass::default());
 
-        let global_input = graph.add_node(Node32::new(Box::new(input), ModuleContext::default()));
+        let global_input = graph.add_node(Node32::new(
+            Box::new(input),
+            ModuleContext::<NoOp, NoOp>::default().boxed(),
+        ));
 
-        let global_output = graph.add_node(Node32::new(Box::new(output), ModuleContext::default()));
+        let global_output = graph.add_node(Node32::new(
+            Box::new(output),
+            ModuleContext::<NoOp, NoOp>::default().boxed(),
+        ));
 
         Self {
             graph,
@@ -113,7 +120,7 @@ impl Graph32 {
     /// Add a new unit to the network. Return its ID handle.
     /// ID handles are always consecutive numbers starting from zero.
     /// The unit is reset with the sample rate of the network.
-    pub fn add(&mut self, unit: ModuleUnit, context: ModuleContext) -> NodeIndex {
+    pub fn add(&mut self, unit: ModuleUnit, context: GeneralContext) -> NodeIndex {
         let node = Node32::new(unit, context);
 
         self.graph.add_node(node)
@@ -522,7 +529,7 @@ fn test_basic() {
     let mut graph = Graph32::new::<U0, U2>();
     let id = graph.add(
         Box::new(noise() >> moog_hz(1500.0, 0.8) | noise() >> moog_hz(500.0, 0.4)),
-        ModuleContext::default(),
+        ModuleContext::<NoOp, NoOp>::default().boxed(),
     );
 
     graph.connect_output(id, 0, 1);

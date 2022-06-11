@@ -1,3 +1,4 @@
+use context::GeneralContext;
 use fundsp::{
     hacker::AudioUnit32,
     hacker32::{U1, U2},
@@ -8,7 +9,7 @@ use interface::{
     error::SobakaError,
     message::SobakaMessage,
 };
-use module::{AudioModuleType, ModuleContext, ModuleUnit};
+use module::{AudioModuleType, ModuleUnit, AudioModuleEvent, AudioModuleCommand};
 use petgraph::graph::EdgeIndex;
 use std::sync::{Arc, Mutex, MutexGuard};
 use utils::observer::{Observer, Producer};
@@ -17,6 +18,7 @@ pub mod dsp;
 pub mod graph;
 pub mod module;
 pub mod rpc;
+pub mod context;
 
 mod get_random;
 pub mod interface;
@@ -53,7 +55,7 @@ impl AudioProcessor {
     }
 
     pub fn create(&self, node: AudioModuleType) -> SobakaResult<Address> {
-        let (mut unit, context): (ModuleUnit, ModuleContext) = node.into();
+        let (mut unit, context): (ModuleUnit, GeneralContext) = node.into();
 
         // Reset `sample_rate` after construction because some
         // AudioNodes in fundsp reset `sample_rate` to default when constructed
@@ -127,7 +129,7 @@ impl AudioProcessor {
             .index())
     }
 
-    fn subscribe(&self, node: Address) -> SobakaResult<Observer<SobakaMessage>> {
+    fn subscribe(&self, node: Address) -> SobakaResult<Observer<AudioModuleEvent>> {
         match node {
             Address { id: _, port: None } => {
                 self.graph_mut()?
@@ -135,9 +137,9 @@ impl AudioProcessor {
                     // Module not found
                     .ok_or(SobakaError::Something)?
                     .context
-                    .get_rx()
+                    .try_observe()
                     // Module does not support subscription
-                    .ok_or(SobakaError::Something)
+                    .map_err(|_| SobakaError::Something)
             }
             _ => {
                 // Bad address
@@ -150,22 +152,21 @@ impl AudioProcessor {
         Ok(self.graph_mut()?.disconnect(id))
     }
 
-    pub fn message(&self, message: SobakaMessage) -> SobakaResult<bool> {
-        match &message.addr.port {
+    pub fn message(&self, address: Address, message: AudioModuleCommand) -> SobakaResult<bool> {
+        match &address.port {
             Some(Port::Parameter(_)) => Ok(()),
             // Port must be targeting a parameter
             _ => Err(SobakaError::Something),
         }?;
 
         self.graph_mut()?
-            .get_mod(message.addr.clone().into())
+            .get_mod(address.clone().into())
             // Node cannot be found
             .ok_or(SobakaError::Something)?
             .context
-            .get_tx()
+            .try_notify(message)
             // Node does not support sending
-            .ok_or(SobakaError::Something)?
-            .notify(message);
+            .map_err(|_| SobakaError::Something)?;
 
         Ok(true) // @todo - confirmation that message was handled / matched?
     }

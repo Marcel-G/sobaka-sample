@@ -17,6 +17,16 @@ pub struct ReverbParams {
     pub length: f32,
 }
 
+/// Incoming commands into the reverb module
+#[derive(Serialize, Deserialize, TS, Clone)]
+#[ts(export)]
+pub enum ReverbCommand {
+    /// Sets the wet value of the reverb
+    SetWet(f64),
+    /// Sets the delay length of the reverb
+    SetDelay(f64)
+}
+
 /// Stereo reverb.
 /// `wet` in 0...1 is balance of reverb mixed in, for example, 0.1.
 /// `time` is approximate reverberation time to -60 dB in seconds.
@@ -54,23 +64,20 @@ where
     multisplit::<U2, U16, T>() >> reverb >> multijoin::<U2, U16, T>() >> wet_mix & dry_mix
 }
 
-pub fn reverb(params: ReverbParams, context: &mut ModuleContext) -> impl AudioUnit32 {
+pub fn reverb(params: ReverbParams, context: &mut ModuleContext<ReverbCommand>) -> impl AudioUnit32 {
     let reverb = reverb_stereo::<f32, f32>(params.wet, params.length.into()).share();
 
     context.set_tx(
         reverb
             .clone()
-            .message_handler(|unit, message: SobakaMessage| {
-                match (message.addr.port, &message.args[..]) {
-                    // Update wet parameter
-                    (Some(Port::Parameter(0)), [SobakaType::Float(wet)]) => {
-                        unit.set(0, *wet as f64);
+            .message_handler(|unit, message: ReverbCommand| {
+                match message {
+                    ReverbCommand::SetWet(wet) => {
+                        unit.set(0, wet.clamp(0.0, 1.0))
                     }
-                    // Update delay length
-                    (Some(Port::Parameter(1)), [SobakaType::Float(length)]) => {
-                        unit.set(1, *length as f64);
+                    ReverbCommand::SetDelay(time) => {
+                        unit.set(1, time.clamp(0.0, 10.0))
                     }
-                    _ => {}
                 }
             }),
     );

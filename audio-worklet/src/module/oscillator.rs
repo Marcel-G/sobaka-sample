@@ -19,7 +19,21 @@ pub struct OscillatorParams {
     pub triangle: f32,
 }
 
-pub fn oscillator(params: OscillatorParams, context: &mut ModuleContext) -> impl AudioUnit32 {
+/// Incoming commands into the oscillator module
+#[derive(Serialize, Deserialize, TS, Clone)]
+#[ts(export)]
+pub enum OscillatorCommand {
+    /// Sets the level of the saw wave (0-1)
+    SetSawLevel(f64),
+    /// Sets the level of the sine wave (0-1)
+    SetSineLevel(f64),
+    /// Sets the level of the square wave (0-1)
+    SetSquareLevel(f64),
+    /// Sets the level of the triangle wave (0-1)
+    SetTriangleLevel(f64),
+}
+
+pub fn oscillator(params: OscillatorParams, context: &mut ModuleContext<OscillatorCommand>) -> impl AudioUnit32 {
     let input = pass() >> map(|f| volt_hz(f[0]));
     let attenuated_saw = saw() * param32(0, params.saw);
     let attenuated_sine = sine() * param32(1, params.sine);
@@ -32,28 +46,20 @@ pub fn oscillator(params: OscillatorParams, context: &mut ModuleContext) -> impl
     context.set_tx(
         params
             .clone()
-            .message_handler(|unit, message: SobakaMessage| {
-                match (message.addr.port, &message.args[..]) {
-                    // Saw Attenuation Param
-                    (Some(Port::Parameter(0)), [SobakaType::Float(value)]) => {
-                        unit.set(0, value.clamp(0.0, 1.0) as f64)
+            .message_handler(|unit, command: OscillatorCommand| {
+                match command {
+                    OscillatorCommand::SetSawLevel(level) => {
+                        unit.set(0, level.clamp(0.0, 1.0))
                     }
-
-                    // Sine Attenuation Param
-                    (Some(Port::Parameter(1)), [SobakaType::Float(value)]) => {
-                        unit.set(1, value.clamp(0.0, 1.0) as f64)
+                    OscillatorCommand::SetSineLevel(level) => {
+                        unit.set(1, level.clamp(0.0, 1.0))
                     }
-
-                    // Square Attenuation Param
-                    (Some(Port::Parameter(2)), [SobakaType::Float(value)]) => {
-                        unit.set(2, value.clamp(0.0, 1.0) as f64)
+                    OscillatorCommand::SetSquareLevel(level) => {
+                        unit.set(2, level.clamp(0.0, 1.0))
                     }
-
-                    // Triangle Attenuation Param
-                    (Some(Port::Parameter(3)), [SobakaType::Float(value)]) => {
-                        unit.set(3, value.clamp(0.0, 1.0) as f64)
+                    OscillatorCommand::SetTriangleLevel(level) => {
+                        unit.set(3, level.clamp(0.0, 1.0))
                     }
-                    _ => {}
                 }
             }),
     );

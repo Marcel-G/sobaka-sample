@@ -1,5 +1,7 @@
 use fundsp::prelude::*;
 
-pub fn noise() -> impl AudioUnit32 {
+use super::ModuleContext;
+
+pub fn noise(_params: (), _context: &mut ModuleContext) -> impl AudioUnit32 {
     white()
 }

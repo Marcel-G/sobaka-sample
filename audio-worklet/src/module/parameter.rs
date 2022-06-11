@@ -18,17 +18,25 @@ pub struct ParameterParams {
     pub default: f32,
 }
 
-pub fn parameter(params: ParameterParams, context: &mut ModuleContext) -> impl AudioUnit32 {
+/// Incoming commands into the parameter module
+#[derive(Serialize, Deserialize, TS, Clone)]
+#[ts(export)]
+pub enum ParameterCommand {
+    /// Sets the value of the parameter
+    SetParameter(f64),
+}
+
+pub fn parameter(params: ParameterParams, context: &mut ModuleContext<ParameterCommand>) -> impl AudioUnit32 {
     let param = param32(0, params.default).share();
 
     context.set_tx(
         param
             .clone()
-            .message_handler(|unit, message: SobakaMessage| {
-                if let (Some(Port::Parameter(0)), [SobakaType::Float(bpm)]) =
-                    (message.addr.port, &message.args[..])
-                {
-                    unit.set(0, bpm.clamp(0.0, 600.0) as f64)
+            .message_handler(move |unit, command: ParameterCommand| {
+                match command {
+                    ParameterCommand::SetParameter(value) => {
+                        unit.set(0, value.clamp(params.min as f64, params.max as f64))
+                    }
                 }
             }),
     );

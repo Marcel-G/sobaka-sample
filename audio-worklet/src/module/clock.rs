@@ -1,10 +1,7 @@
-use super::ModuleContext;
 use crate::{
     dsp::{messaging::MessageHandler, shared::Share},
     interface::{
-        address::Port,
-        message::{SobakaMessage, SobakaType},
-    },
+    }, context::ModuleContext,
 };
 use fundsp::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -16,7 +13,15 @@ pub struct ClockParams {
     pub bpm: f32,
 }
 
-pub fn clock(params: ClockParams, context: &mut ModuleContext) -> impl AudioUnit32 {
+/// Incoming commands into the clock module
+#[derive(Serialize, Deserialize, TS, Clone)]
+#[ts(export)]
+pub enum ClockCommand {
+    /// Sets the BPM of the clock
+    SetBPM(f64),
+}
+
+pub fn clock(params: ClockParams, context: &mut ModuleContext<ClockCommand>) -> impl AudioUnit32 {
     let lfo_square = || {
         lfo2(|t, pitch| {
             let duty = sin_hz(bpm_hz(pitch), t);
@@ -36,11 +41,11 @@ pub fn clock(params: ClockParams, context: &mut ModuleContext) -> impl AudioUnit
 
     context.set_tx(
         unit.clone()
-            .message_handler(|unit, message: SobakaMessage| {
-                if let (Some(Port::Parameter(0)), [SobakaType::Float(bpm)]) =
-                    (message.addr.port, &message.args[..])
-                {
-                    unit.set(0, bpm.clamp(0.0, 600.0) as f64)
+            .message_handler(|unit, command: ClockCommand| {
+                match command {
+                    ClockCommand::SetBPM(bpm) => {
+                        unit.set(0, bpm.clamp(0.0, 600.0))
+                    }
                 }
             }),
     );

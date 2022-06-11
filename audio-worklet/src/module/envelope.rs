@@ -1,10 +1,7 @@
-use super::ModuleContext;
 use crate::{
     dsp::{messaging::MessageHandler, shared::Share, trigger::trigger},
     interface::{
-        address::Port,
-        message::{SobakaMessage, SobakaType},
-    },
+    }, context::ModuleContext,
 };
 use fundsp::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -17,7 +14,17 @@ pub struct EnvelopeParams {
     pub release: f32,
 }
 
-pub fn envelope(params: EnvelopeParams, context: &mut ModuleContext) -> impl AudioUnit32 {
+/// Incoming commands into the envelope module
+#[derive(Serialize, Deserialize, TS, Clone)]
+#[ts(export)]
+pub enum EnvelopeCommand {
+    /// Sets the attack time in seconds
+    SetAttack(f64),
+    /// Sets the release time in seconds
+    SetRelease(f64),
+}
+
+pub fn envelope(params: EnvelopeParams, context: &mut ModuleContext<EnvelopeCommand>) -> impl AudioUnit32 {
     let env = envelope3(|time: f32, attack, release| {
         if time < attack {
             time.powf(2.0) / attack.powf(2.0)
@@ -33,17 +40,14 @@ pub fn envelope(params: EnvelopeParams, context: &mut ModuleContext) -> impl Aud
     context.set_tx(
         params
             .clone()
-            .message_handler(|unit, message: SobakaMessage| {
-                match (message.addr.port, &message.args[..]) {
-                    // Envelope attack param
-                    (Some(Port::Parameter(0)), [SobakaType::Float(value)]) => {
-                        unit.set(0, *value as f64)
+            .message_handler(|unit, command: EnvelopeCommand| {
+                match command {
+                    EnvelopeCommand::SetAttack(attack) => {
+                        unit.set(0, attack.clamp(0.0, 10.0))
                     }
-                    // Envelope release param
-                    (Some(Port::Parameter(1)), [SobakaType::Float(value)]) => {
-                        unit.set(1, *value as f64)
+                    EnvelopeCommand::SetRelease(release) => {
+                        unit.set(1, release.clamp(0.0, 10.0))
                     }
-                    _ => {}
                 }
             }),
     );

@@ -14,7 +14,7 @@ pub fn stepped<N: Size<T>, T: Float>() -> An<Stepped<N, T>> {
 
 pub struct Stepped<N, T> {
     active: usize,
-    subject: Subject<Event>,
+    subject: Subject<SteppedEvent>,
     _marker: PhantomData<(N, T)>,
 }
 
@@ -35,12 +35,12 @@ impl<N: Size<T>, T: Float> Default for Stepped<N, T> {
 }
 
 #[derive(Clone)]
-pub enum Event {
+pub enum SteppedEvent {
     StepChange(usize),
 }
 
 impl<N, T> Observable for Stepped<N, T> {
-    type Output = Event;
+    type Output = SteppedEvent;
 
     fn observe(&self) -> Observer<Self::Output> {
         self.subject.observe()
@@ -60,7 +60,7 @@ impl<N: Size<T>, T: Float> AudioNode for Stepped<N, T> {
             self.active += 1;
         }
 
-        self.subject.notify(Event::StepChange(self.active));
+        self.subject.notify(SteppedEvent::StepChange(self.active));
     }
 
     fn tick(

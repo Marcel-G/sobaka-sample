@@ -8,8 +8,8 @@ use petgraph::graph::EdgeIndex;
 pub mod interface;
 
 use crate::{
-    interface::{address::Address, message::SobakaMessage},
-    module::AudioModuleType,
+    interface::{address::Address},
+    module::{AudioModuleType, AudioModuleCommand, AudioModuleEvent},
     utils::{id_provider::AtomicIdProvider, wasm_executer::WasmSpawner},
     AudioProcessor,
 };
@@ -62,16 +62,16 @@ impl SobakaGraphRpc for AudioProcessorRpc {
             .map_err(|_| Error::invalid_request())
     }
 
-    fn message(&self, message: SobakaMessage) -> Result<bool> {
+    fn message(&self, address: Address, message: AudioModuleCommand) -> Result<bool> {
         self.processor
-            .message(message)
+            .message(address, message)
             .map_err(|_| Error::invalid_request())
     }
 
     fn subscribe(
         &self,
         _meta: Self::Metadata,
-        subscriber: Subscriber<SobakaMessage>,
+        subscriber: Subscriber<AudioModuleEvent>,
         node: Address,
     ) {
         match self

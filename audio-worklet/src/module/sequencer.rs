@@ -3,7 +3,7 @@ use crate::{
     dsp::{
         messaging::MessageHandler,
         shared::Share,
-        stepped::{stepped, Event},
+        stepped::{stepped, SteppedEvent},
         trigger::trigger,
     },
     interface::{
@@ -22,45 +22,41 @@ pub struct SequencerParams {
     pub steps: [f32; 8],
 }
 
+/// Events emitted by the sequencer module
 #[derive(Serialize, Deserialize, TS, Clone)]
 #[ts(export)]
 pub enum SequencerEvent {
-    // Sequencer module emits StepChange whenever the step is changed
+    /// StepChange is emitted whenever the step is changed
     StepChange(usize),
 }
 
+/// Incoming commands into the sequencer module
 #[derive(Serialize, Deserialize, TS, Clone)]
 #[ts(export)]
 pub enum SequencerCommand {
-    // Sequencer module handles incoming UpdateStep messages
-    // by setting the value of the given step.
-    UpdateStep(usize, f64),
+    /// Update the value of a given step
+    UpdateStep(i64, f64),
 }
 
-pub fn sequencer(params: SequencerParams, context: &mut ModuleContext) -> impl AudioUnit32 {
+pub fn sequencer(params: SequencerParams, context: &mut ModuleContext<SequencerCommand, SequencerEvent>) -> impl AudioUnit32 {
     let steps = branch::<U8, _, _, _>(|i| tag(i, params.steps[i as usize])).share();
 
     context.set_tx(
         steps
             .clone()
-            .message_handler(|unit, message: SobakaMessage| {
-                match (message.addr.port, &message.args[..]) {
-                    // Set step value
-                    (Some(Port::Parameter(n)), [SobakaType::Float(value)]) if n < 8 => {
-                        unit.set(n, *value as f64)
+            .message_handler(|unit, command: SequencerCommand| {
+                match command {
+                    SequencerCommand::UpdateStep(i, value) => {
+                        unit.set(i, value)
                     }
-                    _ => {}
-                };
+                }
             }),
     );
 
     let stepped = stepped::<U8, _>().share();
 
     context.set_rx(stepped.clone().map(|event| match event {
-        Event::StepChange(step) => SobakaMessage {
-            addr: Address { id: 0, port: None },
-            args: vec![SobakaType::Int(step as i32)],
-        },
+        SteppedEvent::StepChange(step) => SequencerEvent::StepChange(step)
     }));
 
     trigger(steps >> stepped)

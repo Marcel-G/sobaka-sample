@@ -1,10 +1,7 @@
-use super::ModuleContext;
 use crate::{
     dsp::{messaging::MessageHandler, param::param, shared::Share, volt_hz},
     interface::{
-        address::Port,
-        message::{SobakaMessage, SobakaType},
-    },
+    }, context::ModuleContext,
 };
 use fundsp::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -17,7 +14,17 @@ pub struct FilterParams {
     pub q: f32,
 }
 
-pub fn filter(params: FilterParams, context: &mut ModuleContext) -> impl AudioUnit32 {
+/// Incoming commands into the filter module
+#[derive(Serialize, Deserialize, TS, Clone)]
+#[ts(export)]
+pub enum FilterCommand {
+    /// Sets the filter cutoff frequency in Hz
+    SetFrequency(f64),
+    /// Sets the filter Q factor
+    SetQ(f64)
+}
+
+pub fn filter(params: FilterParams, context: &mut ModuleContext<FilterCommand>) -> impl AudioUnit32 {
     let input =
         (pass() | (param(0, params.frequency) >> map(|f| volt_hz(f[0]))) | param(1, params.q))
             .share();
@@ -25,17 +32,14 @@ pub fn filter(params: FilterParams, context: &mut ModuleContext) -> impl AudioUn
     context.set_tx(
         input
             .clone()
-            .message_handler(|unit, message: SobakaMessage| {
-                match (message.addr.port, &message.args[..]) {
-                    // Frequency param
-                    (Some(Port::Parameter(0)), [SobakaType::Float(value)]) => {
-                        unit.set(0, *value as f64)
+            .message_handler(|unit, message: FilterCommand| {
+                match message {
+                    FilterCommand::SetFrequency(frequency) => {
+                        unit.set(0, frequency.clamp(0.0, 10.0))
                     }
-                    // Q param
-                    (Some(Port::Parameter(1)), [SobakaType::Float(value)]) => {
-                        unit.set(1, *value as f64)
+                    FilterCommand::SetQ(q) => {
+                        unit.set(1, q.clamp(0.0, 10.0))
                     }
-                    _ => {}
                 }
             }),
     );

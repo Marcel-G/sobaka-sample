@@ -18,6 +18,7 @@ impl fmt::Display for InvalidTargetError {
 pub enum Port {
     Output(usize),
     Input(usize),
+    // @todo remove this parameter, we'll use commands instead
     Parameter(i64),
 }
 
