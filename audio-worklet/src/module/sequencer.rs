@@ -6,10 +6,6 @@ use crate::{
         stepped::{stepped, SteppedEvent},
         trigger::trigger,
     },
-    interface::{
-        address::{Address, Port},
-        message::{SobakaMessage, SobakaType},
-    },
     utils::observer::Observable,
 };
 use fundsp::prelude::*;
@@ -38,25 +34,22 @@ pub enum SequencerCommand {
     UpdateStep(i64, f64),
 }
 
-pub fn sequencer(params: SequencerParams, context: &mut ModuleContext<SequencerCommand, SequencerEvent>) -> impl AudioUnit32 {
+pub fn sequencer(
+    params: SequencerParams,
+    context: &mut ModuleContext<SequencerCommand, SequencerEvent>,
+) -> impl AudioUnit32 {
     let steps = branch::<U8, _, _, _>(|i| tag(i, params.steps[i as usize])).share();
 
-    context.set_tx(
-        steps
-            .clone()
-            .message_handler(|unit, command: SequencerCommand| {
-                match command {
-                    SequencerCommand::UpdateStep(i, value) => {
-                        unit.set(i, value)
-                    }
-                }
-            }),
-    );
+    context.set_tx(steps.clone().message_handler(
+        |unit, command: SequencerCommand| match command {
+            SequencerCommand::UpdateStep(i, value) => unit.set(i, value),
+        },
+    ));
 
     let stepped = stepped::<U8, _>().share();
 
     context.set_rx(stepped.clone().map(|event| match event {
-        SteppedEvent::StepChange(step) => SequencerEvent::StepChange(step)
+        SteppedEvent::StepChange(step) => SequencerEvent::StepChange(step),
     }));
 
     trigger(steps >> stepped)

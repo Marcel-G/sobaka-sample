@@ -11,24 +11,25 @@ pub mod reverb;
 pub mod sequencer;
 pub mod vca;
 
-use futures::{StreamExt};
+use futures::StreamExt;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 use self::{
-    clock::{clock, ClockParams, ClockCommand},
-    delay::{delay, DelayParams, DelayCommand},
-    envelope::{envelope, EnvelopeParams, EnvelopeCommand},
-    filter::{filter, FilterParams, FilterCommand},
+    clock::{clock, ClockCommand, ClockParams},
+    delay::{delay, DelayCommand, DelayParams},
+    envelope::{envelope, EnvelopeCommand, EnvelopeParams},
+    filter::{filter, FilterCommand, FilterParams},
     noise::noise,
-    oscillator::{oscillator, OscillatorParams, OscillatorCommand},
-    parameter::{parameter, ParameterParams, ParameterCommand},
-    reverb::{reverb, ReverbParams, ReverbCommand},
+    oscillator::{oscillator, OscillatorCommand, OscillatorParams},
+    parameter::{parameter, ParameterCommand, ParameterParams},
+    reverb::{reverb, ReverbCommand, ReverbParams},
     sequencer::{sequencer, SequencerCommand, SequencerEvent, SequencerParams},
-    vca::{vca, VcaParams, VcaCommand},
+    vca::{vca, VcaCommand, VcaParams},
 };
 use crate::{
-    utils::observer::{ Observable}, context::{ GeneralContext, ModuleContext},
+    context::{GeneralContext, ModuleContext},
+    utils::observer::Observable,
 };
 
 #[derive(Serialize, Deserialize, TS)]
@@ -65,9 +66,9 @@ pub enum AudioModuleCommand {
     Parameter(ParameterCommand),
     Reverb(ReverbCommand),
     Vca(VcaCommand),
-    
+
     #[serde(skip)]
-    NoOp(NoOp)
+    NoOp(NoOp),
 }
 
 #[derive(Serialize, Deserialize, From, Clone)]
@@ -75,55 +76,54 @@ pub enum AudioModuleEvent {
     Sequencer(SequencerEvent),
 
     #[serde(skip)]
-    NoOp(NoOp)
+    NoOp(NoOp),
 }
 
 pub type ModuleUnit = Box<dyn AudioUnit32 + Send>;
 
 impl From<AudioModuleType> for (ModuleUnit, GeneralContext) {
     fn from(node_type: AudioModuleType) -> Self {
-
         match node_type {
             AudioModuleType::Oscillator(params) => {
                 let mut ctx = ModuleContext::default();
                 (Box::new(oscillator(params, &mut ctx)), ctx.boxed())
-            },
-            AudioModuleType::Parameter(params) =>{
+            }
+            AudioModuleType::Parameter(params) => {
                 let mut ctx = ModuleContext::default();
                 (Box::new(parameter(params, &mut ctx)), ctx.boxed())
-            },
+            }
             AudioModuleType::Reverb(params) => {
                 let mut ctx = ModuleContext::default();
                 (Box::new(reverb(params, &mut ctx)), ctx.boxed())
-            },
+            }
             AudioModuleType::Filter(params) => {
                 let mut ctx = ModuleContext::default();
                 (Box::new(filter(params, &mut ctx)), ctx.boxed())
-            },
-            AudioModuleType::Clock(params) =>{
+            }
+            AudioModuleType::Clock(params) => {
                 let mut ctx = ModuleContext::default();
                 (Box::new(clock(params, &mut ctx)), ctx.boxed())
-            },
-            AudioModuleType::Sequencer(params) =>{
+            }
+            AudioModuleType::Sequencer(params) => {
                 let mut ctx = ModuleContext::default();
                 (Box::new(sequencer(params, &mut ctx)), ctx.boxed())
-            },
+            }
             AudioModuleType::Vca(params) => {
                 let mut ctx = ModuleContext::default();
                 (Box::new(vca(params, &mut ctx)), ctx.boxed())
-            },
+            }
             AudioModuleType::Envelope(params) => {
                 let mut ctx = ModuleContext::default();
                 (Box::new(envelope(params, &mut ctx)), ctx.boxed())
-            },
+            }
             AudioModuleType::Noise => {
                 let mut ctx = ModuleContext::default();
                 (Box::new(noise((), &mut ctx)), ctx.boxed())
-            },
+            }
             AudioModuleType::Delay(params) => {
                 let mut ctx = ModuleContext::default();
                 (Box::new(delay(params, &mut ctx)), ctx.boxed())
-            },
+            }
         }
     }
 }
@@ -131,4 +131,3 @@ impl From<AudioModuleType> for (ModuleUnit, GeneralContext) {
 /// Placeholder type used to represent no-op event or command
 #[derive(Clone)]
 pub struct NoOp;
-

@@ -7,18 +7,17 @@ use graph::{Graph32, NodeIndex};
 use interface::{
     address::{Address, Port},
     error::SobakaError,
-    message::SobakaMessage,
 };
-use module::{AudioModuleType, ModuleUnit, AudioModuleEvent, AudioModuleCommand};
+use module::{AudioModuleCommand, AudioModuleEvent, AudioModuleType, ModuleUnit};
 use petgraph::graph::EdgeIndex;
 use std::sync::{Arc, Mutex, MutexGuard};
-use utils::observer::{Observer, Producer};
+use utils::observer::Observer;
 
+pub mod context;
 pub mod dsp;
 pub mod graph;
 pub mod module;
 pub mod rpc;
-pub mod context;
 
 mod get_random;
 pub mod interface;
@@ -160,7 +159,7 @@ impl AudioProcessor {
         }?;
 
         self.graph_mut()?
-            .get_mod(address.clone().into())
+            .get_mod(address.into())
             // Node cannot be found
             .ok_or(SobakaError::Something)?
             .context

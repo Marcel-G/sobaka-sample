@@ -1,11 +1,5 @@
 use super::ModuleContext;
-use crate::{
-    dsp::{messaging::MessageHandler, param::param, shared::Share},
-    interface::{
-        address::Port,
-        message::{SobakaMessage, SobakaType},
-    },
-};
+use crate::dsp::{messaging::MessageHandler, param::param, shared::Share};
 use fundsp::prelude::*;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
@@ -24,7 +18,7 @@ pub enum ReverbCommand {
     /// Sets the wet value of the reverb
     SetWet(f64),
     /// Sets the delay length of the reverb
-    SetDelay(f64)
+    SetDelay(f64),
 }
 
 /// Stereo reverb.
@@ -64,21 +58,18 @@ where
     multisplit::<U2, U16, T>() >> reverb >> multijoin::<U2, U16, T>() >> wet_mix & dry_mix
 }
 
-pub fn reverb(params: ReverbParams, context: &mut ModuleContext<ReverbCommand>) -> impl AudioUnit32 {
+pub fn reverb(
+    params: ReverbParams,
+    context: &mut ModuleContext<ReverbCommand>,
+) -> impl AudioUnit32 {
     let reverb = reverb_stereo::<f32, f32>(params.wet, params.length.into()).share();
 
     context.set_tx(
         reverb
             .clone()
-            .message_handler(|unit, message: ReverbCommand| {
-                match message {
-                    ReverbCommand::SetWet(wet) => {
-                        unit.set(0, wet.clamp(0.0, 1.0))
-                    }
-                    ReverbCommand::SetDelay(time) => {
-                        unit.set(1, time.clamp(0.0, 10.0))
-                    }
-                }
+            .message_handler(|unit, message: ReverbCommand| match message {
+                ReverbCommand::SetWet(wet) => unit.set(0, wet.clamp(0.0, 1.0)),
+                ReverbCommand::SetDelay(time) => unit.set(1, time.clamp(0.0, 10.0)),
             }),
     );
 

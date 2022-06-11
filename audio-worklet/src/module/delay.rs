@@ -1,9 +1,6 @@
 use crate::{
+    context::ModuleContext,
     dsp::{messaging::MessageHandler, shared::Share},
-    interface::{
-        address::Port,
-        message::{SobakaMessage, SobakaType},
-    }, context::ModuleContext,
 };
 use fundsp::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -29,12 +26,8 @@ pub fn delay(params: DelayParams, context: &mut ModuleContext<DelayCommand>) -> 
 
     context.set_tx(
         unit.clone()
-            .message_handler(|unit, command: DelayCommand| {
-                match command {
-                    DelayCommand::SetDelay(time) => {
-                        unit.set(0, time.clamp(0.0, 10.0))
-                    }
-                }
+            .message_handler(|unit, command: DelayCommand| match command {
+                DelayCommand::SetDelay(time) => unit.set(0, time.clamp(0.0, 10.0)),
             }),
     );
 

@@ -1,7 +1,6 @@
 use crate::{
+    context::ModuleContext,
     dsp::{messaging::MessageHandler, shared::Share},
-    interface::{
-    }, context::ModuleContext,
 };
 use fundsp::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -41,12 +40,8 @@ pub fn clock(params: ClockParams, context: &mut ModuleContext<ClockCommand>) -> 
 
     context.set_tx(
         unit.clone()
-            .message_handler(|unit, command: ClockCommand| {
-                match command {
-                    ClockCommand::SetBPM(bpm) => {
-                        unit.set(0, bpm.clamp(0.0, 600.0))
-                    }
-                }
+            .message_handler(|unit, command: ClockCommand| match command {
+                ClockCommand::SetBPM(bpm) => unit.set(0, bpm.clamp(0.0, 600.0)),
             }),
     );
 

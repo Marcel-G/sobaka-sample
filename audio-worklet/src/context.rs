@@ -4,7 +4,7 @@ use futures::StreamExt;
 
 use crate::{
     module::{AudioModuleCommand, AudioModuleEvent, NoOp},
-    utils::observer::{BoxedObservable, Observable, Observer, Subject, Producer},
+    utils::observer::{BoxedObservable, Observable, Observer, Producer, Subject},
 };
 
 /// Holds a context for audio modules

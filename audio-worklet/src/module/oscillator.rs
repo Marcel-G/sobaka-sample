@@ -1,11 +1,5 @@
 use super::ModuleContext;
-use crate::{
-    dsp::{messaging::MessageHandler, param::param32, shared::Share, volt_hz},
-    interface::{
-        address::Port,
-        message::{SobakaMessage, SobakaType},
-    },
-};
+use crate::dsp::{messaging::MessageHandler, param::param32, shared::Share, volt_hz};
 use fundsp::prelude::*;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
@@ -33,7 +27,10 @@ pub enum OscillatorCommand {
     SetTriangleLevel(f64),
 }
 
-pub fn oscillator(params: OscillatorParams, context: &mut ModuleContext<OscillatorCommand>) -> impl AudioUnit32 {
+pub fn oscillator(
+    params: OscillatorParams,
+    context: &mut ModuleContext<OscillatorCommand>,
+) -> impl AudioUnit32 {
     let input = pass() >> map(|f| volt_hz(f[0]));
     let attenuated_saw = saw() * param32(0, params.saw);
     let attenuated_sine = sine() * param32(1, params.sine);
@@ -43,26 +40,14 @@ pub fn oscillator(params: OscillatorParams, context: &mut ModuleContext<Oscillat
     let params =
         (attenuated_saw & attenuated_sine & attenuated_square & attenuated_triangle).share();
 
-    context.set_tx(
-        params
-            .clone()
-            .message_handler(|unit, command: OscillatorCommand| {
-                match command {
-                    OscillatorCommand::SetSawLevel(level) => {
-                        unit.set(0, level.clamp(0.0, 1.0))
-                    }
-                    OscillatorCommand::SetSineLevel(level) => {
-                        unit.set(1, level.clamp(0.0, 1.0))
-                    }
-                    OscillatorCommand::SetSquareLevel(level) => {
-                        unit.set(2, level.clamp(0.0, 1.0))
-                    }
-                    OscillatorCommand::SetTriangleLevel(level) => {
-                        unit.set(3, level.clamp(0.0, 1.0))
-                    }
-                }
-            }),
-    );
+    context.set_tx(params.clone().message_handler(
+        |unit, command: OscillatorCommand| match command {
+            OscillatorCommand::SetSawLevel(level) => unit.set(0, level.clamp(0.0, 1.0)),
+            OscillatorCommand::SetSineLevel(level) => unit.set(1, level.clamp(0.0, 1.0)),
+            OscillatorCommand::SetSquareLevel(level) => unit.set(2, level.clamp(0.0, 1.0)),
+            OscillatorCommand::SetTriangleLevel(level) => unit.set(3, level.clamp(0.0, 1.0)),
+        },
+    ));
 
     input >> oversample(params)
 }

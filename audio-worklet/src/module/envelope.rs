@@ -1,7 +1,6 @@
 use crate::{
+    context::ModuleContext,
     dsp::{messaging::MessageHandler, shared::Share, trigger::trigger},
-    interface::{
-    }, context::ModuleContext,
 };
 use fundsp::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -24,7 +23,10 @@ pub enum EnvelopeCommand {
     SetRelease(f64),
 }
 
-pub fn envelope(params: EnvelopeParams, context: &mut ModuleContext<EnvelopeCommand>) -> impl AudioUnit32 {
+pub fn envelope(
+    params: EnvelopeParams,
+    context: &mut ModuleContext<EnvelopeCommand>,
+) -> impl AudioUnit32 {
     let env = envelope3(|time: f32, attack, release| {
         if time < attack {
             time.powf(2.0) / attack.powf(2.0)
@@ -37,20 +39,12 @@ pub fn envelope(params: EnvelopeParams, context: &mut ModuleContext<EnvelopeComm
 
     let params = (tag(0, params.attack) | tag(1, params.release)).share();
 
-    context.set_tx(
-        params
-            .clone()
-            .message_handler(|unit, command: EnvelopeCommand| {
-                match command {
-                    EnvelopeCommand::SetAttack(attack) => {
-                        unit.set(0, attack.clamp(0.0, 10.0))
-                    }
-                    EnvelopeCommand::SetRelease(release) => {
-                        unit.set(1, release.clamp(0.0, 10.0))
-                    }
-                }
-            }),
-    );
+    context.set_tx(params.clone().message_handler(
+        |unit, command: EnvelopeCommand| match command {
+            EnvelopeCommand::SetAttack(attack) => unit.set(0, attack.clamp(0.0, 10.0)),
+            EnvelopeCommand::SetRelease(release) => unit.set(1, release.clamp(0.0, 10.0)),
+        },
+    ));
 
     trigger(params >> env)
 }

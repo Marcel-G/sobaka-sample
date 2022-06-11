@@ -8,8 +8,8 @@ use petgraph::graph::EdgeIndex;
 pub mod interface;
 
 use crate::{
-    interface::{address::Address},
-    module::{AudioModuleType, AudioModuleCommand, AudioModuleEvent},
+    interface::address::Address,
+    module::{AudioModuleCommand, AudioModuleEvent, AudioModuleType},
     utils::{id_provider::AtomicIdProvider, wasm_executer::WasmSpawner},
     AudioProcessor,
 };
