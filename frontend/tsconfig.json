@@ -1,6 +1,7 @@
 {
   "extends": "@tsconfig/svelte/tsconfig.json",
   "compilerOptions": {
+    "importHelpers": true,
     "allowJs": true,
     "resolveJsonModule": true,
     "esModuleInterop": true,
