@@ -28,21 +28,22 @@
 
   let name = 'sequencer'
 
-  let state = get_sub_state(name, { steps: new Array(8).fill(1) })
+  let state = get_sub_state(name, { steps: new Array<number>(8).fill(1) })
 
   const sequencer = new Sequencer(context, state)
 
   $: ([s1, s2, s3, s4, s5, s6, s7, s8] = state.steps);
 
   // Update the sobaka node when the state changes
-  $: void sequencer.message(Param(1), [Float(s1)])
-  $: void sequencer.message(Param(2), [Float(s2)])
-  $: void sequencer.message(Param(3), [Float(s3)])
-  $: void sequencer.message(Param(4), [Float(s4)])
-  $: void sequencer.message(Param(5), [Float(s5)])
-  $: void sequencer.message(Param(6), [Float(s6)])
-  $: void sequencer.message(Param(7), [Float(s7)])
-  $: void sequencer.message(Param(0), [Float(s8)])
+  $: void sequencer.message({ UpdateStep: [0, s1]})
+  $: void sequencer.message({ UpdateStep: [1, s2]})
+  $: void sequencer.message({ UpdateStep: [2, s3]})
+  $: void sequencer.message({ UpdateStep: [3, s4]})
+  $: void sequencer.message({ UpdateStep: [4, s5]})
+  $: void sequencer.message({ UpdateStep: [5, s6]})
+  $: void sequencer.message({ UpdateStep: [6, s7]})
+  $: void sequencer.message({ UpdateStep: [7, s8]})
+
   
   const knob_range = [0, 8];
 

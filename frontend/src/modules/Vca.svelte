@@ -28,7 +28,7 @@
   const vca = new Vca(context, { value })
 
   // Update the sobaka node when the state changes
-  $: void vca.message(Param(0), [Float(value)])
+  $: void vca.message({ SetLevel: value })
 
   // // Update the global state when state changes
   $: update_sub_state(name, { value })

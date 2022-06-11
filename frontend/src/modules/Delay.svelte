@@ -26,7 +26,7 @@
   const delay = new Delay(context, { time })
 
   // Update the sobaka node when the state changes
-  $: void delay.message(Param(0), [Float(time)])
+  $: void delay.message({ SetDelay: time })
 
   // Update the global state when state changes
   $: update_sub_state(name, { time })

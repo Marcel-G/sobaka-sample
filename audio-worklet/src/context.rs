@@ -52,6 +52,7 @@ where
     }
 }
 
+// @todo fix error types here
 pub trait GeneralMessaging {
     /// Try send command using the module specific command type
     fn try_notify(&self, message: AudioModuleCommand) -> Result<(), ()>;

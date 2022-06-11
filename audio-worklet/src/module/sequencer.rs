@@ -31,7 +31,7 @@ pub enum SequencerEvent {
 #[ts(export)]
 pub enum SequencerCommand {
     /// Update the value of a given step
-    UpdateStep(i64, f64),
+    UpdateStep(usize, f64),
 }
 
 pub fn sequencer(
@@ -42,7 +42,7 @@ pub fn sequencer(
 
     context.set_tx(steps.clone().message_handler(
         |unit, command: SequencerCommand| match command {
-            SequencerCommand::UpdateStep(i, value) => unit.set(i, value),
+            SequencerCommand::UpdateStep(i, value) => unit.set(i as i64, value),
         },
     ));
 

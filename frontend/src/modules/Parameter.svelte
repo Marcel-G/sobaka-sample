@@ -27,7 +27,7 @@
   const parameter = new Parameter(context, { min, max, default: value })
 
   // Update the sobaka node when the state changes
-  $: void parameter.message(Param(0), [Float(value)]);
+  $: void parameter.message({ SetParameter: value });
 
   // // Update the global state when state changes
   $: update_sub_state(name, { min, max, value })

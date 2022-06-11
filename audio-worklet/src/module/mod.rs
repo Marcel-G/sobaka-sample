@@ -11,7 +11,6 @@ pub mod reverb;
 pub mod sequencer;
 pub mod vca;
 
-use futures::StreamExt;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
@@ -29,7 +28,6 @@ use self::{
 };
 use crate::{
     context::{GeneralContext, ModuleContext},
-    utils::observer::Observable,
 };
 
 #[derive(Serialize, Deserialize, TS)]
@@ -55,7 +53,9 @@ pub enum AudioModuleType {
     Vca(VcaParams),
 }
 
-#[derive(Serialize, Deserialize, TryInto, Clone)]
+#[derive(Serialize, Deserialize, TryInto, Clone, TS)]
+#[serde(tag = "node_type", content = "data")]
+#[ts(export)]
 pub enum AudioModuleCommand {
     Sequencer(SequencerCommand),
     Clock(ClockCommand),
@@ -71,7 +71,9 @@ pub enum AudioModuleCommand {
     NoOp(NoOp),
 }
 
-#[derive(Serialize, Deserialize, From, Clone)]
+#[derive(Serialize, Deserialize, From, Clone,  TS)]
+#[serde(tag = "node_type", content = "data")]
+#[ts(export)]
 pub enum AudioModuleEvent {
     Sequencer(SequencerEvent),
 

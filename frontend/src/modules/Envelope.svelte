@@ -33,8 +33,8 @@
   const envelope = new Envelope(context, { attack, release })
 
   // Update the sobaka node when the state changes
-  $: void envelope.message(Param(0), [Float(attack)])
-  $: void envelope.message(Param(1), [Float(release)])
+  $: void envelope.message({ SetAttack: attack })
+  $: void envelope.message({ SetRelease: release })
 
   // Update the global state when state changes
   $: update_sub_state(name, { attack, release })

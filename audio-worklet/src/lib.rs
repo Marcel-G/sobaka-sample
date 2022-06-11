@@ -152,12 +152,6 @@ impl AudioProcessor {
     }
 
     pub fn message(&self, address: Address, message: AudioModuleCommand) -> SobakaResult<bool> {
-        match &address.port {
-            Some(Port::Parameter(_)) => Ok(()),
-            // Port must be targeting a parameter
-            _ => Err(SobakaError::Something),
-        }?;
-
         self.graph_mut()?
             .get_mod(address.into())
             // Node cannot be found
