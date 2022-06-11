@@ -7,11 +7,10 @@
 </script>
 
 <script lang="ts">
-  import { Float, Param, Vca } from 'sobaka-sample-audio-worklet'
+  import { Vca } from 'sobaka-sample-audio-worklet'
   import { onDestroy } from 'svelte'
   import Panel from './shared/Panel.svelte'
   import Plug from './shared/Plug.svelte'
-  import CvParameter from './shared/CvParameter.svelte'
   import { get_module_context } from './ModuleWrapper.svelte'
   import { into_style } from '../components/Theme.svelte'
   import Knob from '../components/Knob.svelte'

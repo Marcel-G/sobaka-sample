@@ -18,8 +18,6 @@ impl fmt::Display for InvalidTargetError {
 pub enum Port {
     Output(usize),
     Input(usize),
-    // @todo remove this parameter, we'll use commands instead
-    Parameter(i64),
 }
 
 impl FromStr for Port {
@@ -33,9 +31,6 @@ impl FromStr for Port {
             ["out", n] => Ok(Port::Output(
                 n.parse::<usize>().map_err(|_| InvalidTargetError)?,
             )),
-            ["param", n] => Ok(Port::Parameter(
-                n.parse::<i64>().map_err(|_| InvalidTargetError)?,
-            )),
             _ => Err(InvalidTargetError),
         }
     }
@@ -46,7 +41,6 @@ impl Display for Port {
         match self {
             Port::Output(n) => formatter.write_fmt(format_args!("out-{}", n)),
             Port::Input(n) => formatter.write_fmt(format_args!("in-{}", n)),
-            Port::Parameter(n) => formatter.write_fmt(format_args!("param-{}", n)),
         }
     }
 }
@@ -164,15 +158,6 @@ mod tests {
             }
         );
 
-        // With param target
-        assert_eq!(
-            Address::from_str("/sobaka/0/param-22").unwrap(),
-            Address {
-                id: 0,
-                port: Some(Port::Parameter(22))
-            }
-        );
-
         // No target specified
         assert_eq!(
             Address::from_str("/sobaka/54").unwrap(),
@@ -216,18 +201,6 @@ mod tests {
                 }
             ),
             "/sobaka/44/in-0"
-        );
-
-        // With param target
-        assert_eq!(
-            format!(
-                "{}",
-                Address {
-                    id: 44,
-                    port: Some(Port::Parameter(0))
-                }
-            ),
-            "/sobaka/44/param-0"
         );
 
         // With missing target

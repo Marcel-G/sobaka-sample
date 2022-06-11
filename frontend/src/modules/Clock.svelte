@@ -7,7 +7,7 @@
 </script>
 
 <script lang="ts">
-  import { Clock, Float, Param } from 'sobaka-sample-audio-worklet'
+  import { Clock } from 'sobaka-sample-audio-worklet'
   import { onDestroy } from 'svelte'
   import Panel from './shared/Panel.svelte'
   import Plug from './shared/Plug.svelte'

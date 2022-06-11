@@ -15,7 +15,7 @@
 </script>
 
 <script lang="ts">
-  import { Float, Filter, Param } from 'sobaka-sample-audio-worklet'
+  import { Filter } from 'sobaka-sample-audio-worklet'
   import { onDestroy } from 'svelte'
   import Panel from './shared/Panel.svelte'
   import Plug from './shared/Plug.svelte'

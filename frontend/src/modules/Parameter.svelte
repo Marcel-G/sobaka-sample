@@ -7,7 +7,7 @@
 </script>
 
 <script lang="ts">
-  import { Float, Param, Parameter } from 'sobaka-sample-audio-worklet'
+  import { Parameter } from 'sobaka-sample-audio-worklet'
   import { onDestroy } from 'svelte'
   import Knob from '../components/Knob.svelte'
   import { get_module_context } from './ModuleWrapper.svelte'

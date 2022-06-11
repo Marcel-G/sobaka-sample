@@ -15,7 +15,7 @@
 </script>
 
 <script lang="ts">
-  import { Float, Param, Sequencer } from 'sobaka-sample-audio-worklet'
+  import { Sequencer } from 'sobaka-sample-audio-worklet'
   import Panel from './shared/Panel.svelte'
   import Plug from './shared/Plug.svelte'
   import { get_module_context } from './ModuleWrapper.svelte'

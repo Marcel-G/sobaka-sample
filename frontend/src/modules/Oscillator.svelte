@@ -7,7 +7,7 @@
 </script>
 
 <script lang="ts">
-  import { Float, Oscillator, Param } from 'sobaka-sample-audio-worklet'
+  import { Oscillator } from 'sobaka-sample-audio-worklet'
   import { onDestroy } from 'svelte'
   import { get_module_context } from './ModuleWrapper.svelte'
   import Panel from './shared/Panel.svelte'
