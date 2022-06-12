@@ -21,29 +21,21 @@ pub enum ClockCommand {
 }
 
 pub fn clock(params: ClockParams, context: &mut ModuleContext<ClockCommand>) -> impl AudioUnit32 {
-    let lfo_square = || {
-        lfo2(|t, pitch| {
-            let duty = sin_hz(bpm_hz(pitch), t);
-            if duty > 0.0 {
-                1.0
-            } else {
-                -1.0
-            }
-        })
-    };
+    let clock_square = || sine() >> map(|f| if f[0] > 0.0 { 1.0 } else { -1.0 });
 
     let divide = [1.0, 2.0, 4.0, 8.0, 16.0];
 
-    let clock_divider_node = branch::<U5, _, _, _>(|n| mul(divide[n as usize]) >> lfo_square());
+    let clock_divider_node = branch::<U5, _, _, _>(|n| mul(divide[n as usize]) >> clock_square());
 
-    let unit = (tag(0, params.bpm) >> clock_divider_node).share();
+    let bpm = (tag(0, params.bpm) >> map(|f| bpm_hz(f[0]))).share();
 
     context.set_tx(
-        unit.clone()
+        bpm.clone()
             .message_handler(|unit, command: ClockCommand| match command {
                 ClockCommand::SetBPM(bpm) => unit.set(0, bpm.clamp(0.0, 600.0)),
             }),
     );
 
-    unit
+
+    (bpm >> clock_divider_node).share()
 }
