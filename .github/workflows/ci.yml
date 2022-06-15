@@ -11,7 +11,9 @@ jobs:
     name: "👟 Terraform"
     runs-on: ubuntu-latest
     if: github.event_name == 'push'
-    environment: ${{ fromJSON('{"refs/heads/master":"production","refs/heads/next":"next"}')[github.ref] }}
+    environment: 
+      name: ${{ fromJSON('{"refs/heads/master":"production","refs/heads/next":"next"}')[github.ref] }}
+      url: ${{ fromJSON('{"refs/heads/master":"https://sobaka.marcelgleeson.com","refs/heads/next":"https://next.sobaka.marcelgleeson.com"}')[github.ref] }}
     env:
       TF_WORKSPACE: ${{ fromJSON('{"refs/heads/master":"sobaka-prod","refs/heads/next":"sobaka-next"}')[github.ref] }}
     outputs:
