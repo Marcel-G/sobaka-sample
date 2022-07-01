@@ -21,9 +21,12 @@ pub enum ParameterCommand {
 }
 
 pub fn parameter(
-    params: ParameterParams,
+    params: &ParameterParams,
     context: &mut ModuleContext<ParameterCommand>,
 ) -> impl AudioUnit32 {
+    let min = params.min;
+    let max = params.max;
+
     let param = param32(0, params.default).share();
 
     context.set_tx(
@@ -31,7 +34,7 @@ pub fn parameter(
             .clone()
             .message_handler(move |unit, command: ParameterCommand| match command {
                 ParameterCommand::SetParameter(value) => {
-                    unit.set(0, value.clamp(params.min as f64, params.max as f64))
+                    unit.set(0, value.clamp(min as f64, max as f64))
                 }
             }),
     );

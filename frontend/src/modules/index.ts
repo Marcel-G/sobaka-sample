@@ -7,10 +7,11 @@ import Oscillator from './Oscillator.svelte'
 import Parameter from './Parameter.svelte'
 import Reverb from './Reverb.svelte'
 import Sequencer from './Sequencer.svelte'
-import Sink from './Sink.svelte'
+import Output from './Output.svelte'
 import Vca from './Vca.svelte'
 import Noise from './Noise.svelte'
 import Delay from './Delay.svelte'
+import Scope from './Scope.svelte'
 
 /**
  * Modules that can be spawned on the frontend.
@@ -20,6 +21,7 @@ import Delay from './Delay.svelte'
 export enum ModuleUI {
   Clock = 'Clock',
   Delay = 'Delay',
+  Scope = 'Scope',
   Envelope = 'Envelope',
   Filter = 'Filter',
   // Input = 'Input',
@@ -33,7 +35,7 @@ export enum ModuleUI {
   Reverb = 'Reverb',
   // SampleAndHold = 'SampleAndHold',
   // Sampler = 'Sampler',
-  Sink = 'Sink',
+  Output = 'Output',
   Vca = 'Vca'
 }
 
@@ -41,6 +43,7 @@ export const get_component = (module: Module<ModuleUI>) => {
   return {
     [ModuleUI.Clock]: Clock,
     [ModuleUI.Delay]: Delay,
+    [ModuleUI.Scope]: Scope,
     [ModuleUI.Envelope]: Envelope,
     [ModuleUI.Filter]: Filter,
     // [ModuleUI.Input]: Input,
@@ -54,7 +57,7 @@ export const get_component = (module: Module<ModuleUI>) => {
     [ModuleUI.Reverb]: Reverb,
     // [ModuleUI.SampleAndHold]: SampleAndHold,
     // [ModuleUI.Sampler]: Sampler,
-    [ModuleUI.Sink]: Sink,
+    [ModuleUI.Output]: Output,
     [ModuleUI.Vca]: Vca
   }[module.type]
 }

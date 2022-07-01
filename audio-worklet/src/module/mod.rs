@@ -8,6 +8,7 @@ pub mod noise;
 pub mod oscillator;
 pub mod parameter;
 pub mod reverb;
+pub mod scope;
 pub mod sequencer;
 pub mod vca;
 
@@ -23,12 +24,11 @@ use self::{
     oscillator::{oscillator, OscillatorCommand, OscillatorParams},
     parameter::{parameter, ParameterCommand, ParameterParams},
     reverb::{reverb, ReverbCommand, ReverbParams},
+    scope::{scope, ScopeCommand, ScopeEvent, ScopeParams},
     sequencer::{sequencer, SequencerCommand, SequencerEvent, SequencerParams},
     vca::{vca, VcaCommand, VcaParams},
 };
-use crate::{
-    context::{GeneralContext, ModuleContext},
-};
+use crate::context::{GeneralContext, ModuleContext};
 
 #[derive(Serialize, Deserialize, TS)]
 #[serde(tag = "node_type", content = "data")]
@@ -49,8 +49,11 @@ pub enum AudioModuleType {
     // SampleAndHold(SampleAndHoldNode),
     // Sampler(SamplerNode),
     Sequencer(SequencerParams),
+    Scope(ScopeParams),
     // Sum(SumNode),
     Vca(VcaParams),
+
+    Output,
 }
 
 #[derive(Serialize, Deserialize, TryInto, Clone, TS)]
@@ -66,16 +69,19 @@ pub enum AudioModuleCommand {
     Parameter(ParameterCommand),
     Reverb(ReverbCommand),
     Vca(VcaCommand),
+    Scope(ScopeCommand),
 
     #[serde(skip)]
     NoOp(NoOp),
 }
 
-#[derive(Serialize, Deserialize, From, Clone,  TS)]
+#[derive(Serialize, Deserialize, From, Clone, TS)]
 #[serde(tag = "node_type", content = "data")]
 #[ts(export)]
 pub enum AudioModuleEvent {
     Sequencer(SequencerEvent),
+
+    Scope(ScopeEvent),
 
     #[serde(skip)]
     NoOp(NoOp),
@@ -83,8 +89,8 @@ pub enum AudioModuleEvent {
 
 pub type ModuleUnit = Box<dyn AudioUnit32 + Send>;
 
-impl From<AudioModuleType> for (ModuleUnit, GeneralContext) {
-    fn from(node_type: AudioModuleType) -> Self {
+impl From<&AudioModuleType> for (ModuleUnit, GeneralContext) {
+    fn from(node_type: &AudioModuleType) -> Self {
         match node_type {
             AudioModuleType::Oscillator(params) => {
                 let mut ctx = ModuleContext::default();
@@ -125,6 +131,14 @@ impl From<AudioModuleType> for (ModuleUnit, GeneralContext) {
             AudioModuleType::Delay(params) => {
                 let mut ctx = ModuleContext::default();
                 (Box::new(delay(params, &mut ctx)), ctx.boxed())
+            }
+            AudioModuleType::Scope(params) => {
+                let mut ctx = ModuleContext::default();
+                (Box::new(scope(params, &mut ctx)), ctx.boxed())
+            }
+            AudioModuleType::Output => {
+                let ctx = ModuleContext::<NoOp, NoOp>::default();
+                (Box::new(multipass::<U2, f32>()), ctx.boxed())
             }
         }
     }

@@ -1,7 +1,7 @@
 use context::GeneralContext;
 use fundsp::{
     hacker::AudioUnit32,
-    hacker32::{U1, U2},
+    hacker32::{U1, U3},
 };
 use graph::{Graph32, NodeIndex};
 use interface::{
@@ -10,7 +10,9 @@ use interface::{
 };
 use module::{AudioModuleCommand, AudioModuleEvent, AudioModuleType, ModuleUnit};
 use petgraph::graph::EdgeIndex;
-use std::sync::{Arc, Mutex, MutexGuard};
+use std::{
+    sync::{Arc, Mutex, MutexGuard},
+};
 use utils::observer::Observer;
 
 pub mod context;
@@ -35,7 +37,7 @@ pub type SobakaResult<T> = Result<T, SobakaError>;
 
 impl AudioProcessor {
     pub fn new(sample_rate: f64) -> Self {
-        let mut graph = Graph32::new::<U1, U2>();
+        let mut graph = Graph32::new::<U1, U3>();
 
         graph.reset(Some(sample_rate));
 
@@ -54,14 +56,33 @@ impl AudioProcessor {
     }
 
     pub fn create(&self, node: AudioModuleType) -> SobakaResult<Address> {
-        let (mut unit, context): (ModuleUnit, GeneralContext) = node.into();
+        let (mut unit, context): (ModuleUnit, GeneralContext) = (&node).into(); // @todo there is probably a more semantic way to do this trait to use
 
         // Reset `sample_rate` after construction because some
         // AudioNodes in fundsp reset `sample_rate` to default when constructed
         // @todo this should be adjusted in fundsp
         unit.reset(Some(self.sample_rate));
 
-        Ok(self.graph_mut()?.add(unit, context).into())
+        let address: Address = self.graph_mut()?.add(unit, context).into();
+
+        match node {
+            AudioModuleType::Scope(_) => {
+                // Connect scope output to global output
+                // This channel is not piped to audio output, just used for processing the graph.
+                self.graph_mut()?
+                    .connect_output(address.clone().into(), 0, 2);
+            }
+            AudioModuleType::Output => {
+                // Connect left and right channels to global output
+                self.graph_mut()?
+                    .connect_output(address.clone().into(), 0, 0);
+                self.graph_mut()?
+                    .connect_output(address.clone().into(), 1, 1);
+            }
+            _ => {}
+        }
+
+        Ok(address)
     }
 
     pub fn dispose(&self, address: Address) -> SobakaResult<bool> {

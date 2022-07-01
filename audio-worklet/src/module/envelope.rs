@@ -24,7 +24,7 @@ pub enum EnvelopeCommand {
 }
 
 pub fn envelope(
-    params: EnvelopeParams,
+    params: &EnvelopeParams,
     context: &mut ModuleContext<EnvelopeCommand>,
 ) -> impl AudioUnit32 {
     let env = envelope3(|time: f32, attack, release| {

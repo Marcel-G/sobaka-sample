@@ -18,7 +18,7 @@ pub enum VcaCommand {
     SetLevel(f64),
 }
 
-pub fn vca(params: VcaParams, context: &mut ModuleContext<VcaCommand>) -> impl AudioUnit32 {
+pub fn vca(params: &VcaParams, context: &mut ModuleContext<VcaCommand>) -> impl AudioUnit32 {
     let unit = (pass() * (pass() + param32(0, params.value))).share();
 
     context.set_tx(

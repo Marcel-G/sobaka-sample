@@ -1,5 +1,11 @@
 use super::ModuleContext;
-use crate::dsp::{messaging::MessageHandler, param::param32, shared::Share, volt_hz};
+use crate::dsp::{
+    messaging::MessageHandler,
+    oscillator::{sobaka_saw, sobaka_square, sobaka_triangle},
+    param::param,
+    shared::Share,
+    volt_hz,
+};
 use fundsp::prelude::*;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
@@ -28,14 +34,14 @@ pub enum OscillatorCommand {
 }
 
 pub fn oscillator(
-    params: OscillatorParams,
+    params: &OscillatorParams,
     context: &mut ModuleContext<OscillatorCommand>,
 ) -> impl AudioUnit32 {
     let input = pass() >> map(|f| volt_hz(f[0]));
-    let attenuated_saw = saw() * param32(0, params.saw);
-    let attenuated_sine = sine() * param32(1, params.sine);
-    let attenuated_square = square() * param32(2, params.square);
-    let attenuated_triangle = triangle() * param32(3, params.triangle);
+    let attenuated_saw = sobaka_saw() * param(0, params.saw);
+    let attenuated_sine = sine() * param(1, params.sine);
+    let attenuated_square = sobaka_square() * param(2, params.square);
+    let attenuated_triangle = sobaka_triangle() * param(3, params.triangle);
 
     let params =
         (attenuated_saw & attenuated_sine & attenuated_square & attenuated_triangle).share();

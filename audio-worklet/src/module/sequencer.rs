@@ -35,7 +35,7 @@ pub enum SequencerCommand {
 }
 
 pub fn sequencer(
-    params: SequencerParams,
+    params: &SequencerParams,
     context: &mut ModuleContext<SequencerCommand, SequencerEvent>,
 ) -> impl AudioUnit32 {
     let steps = branch::<U8, _, _, _>(|i| tag(i, params.steps[i as usize])).share();

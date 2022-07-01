@@ -61,16 +61,14 @@ export class Delay extends AbstractModule<'Delay'> {
   }
 }
 
-export class Sink extends AbstractModule<'Sink'> {
+export class Scope extends AbstractModule<'Scope'> {
+  constructor(context: SobakaContext, initial_state: Params<'Scope'>) {
+    super(context, 'Scope', initial_state)
+  }
+}
+
+export class Output extends AbstractModule<'Output'> {
   constructor(context: SobakaContext) {
-    super(context, 'Sink', undefined as never)
-  }
-
-  async create(): Promise<string> {
-    return Promise.resolve('/sobaka/1') // @todo - better way to target the output node
-  }
-
-  async dispose(): Promise<boolean> {
-    return Promise.resolve(true)
+    super(context, 'Output', undefined as never)
   }
 }

@@ -4,7 +4,7 @@ import { AudioModuleEvent } from '../bindings/AudioModuleEvent'
 import { AudioModuleCommand } from '../bindings/AudioModuleCommand'
 import { Subscriber, Unsubscriber } from './interface'
 
-export type NodeType = AudioModuleType['node_type'] | 'Sink'
+export type NodeType = AudioModuleType['node_type']
 
 type Data<T> = T extends { data: any } ? T['data'] : undefined
 
@@ -65,7 +65,7 @@ export abstract class AbstractModule<T extends NodeType> {
     return { node_type: this.type, data: input }
   }
 
-  private from_module_dto<T>(event: { node_type: string, data: T}): T {
+  private from_module_dto<T>(event: { node_type: string, data: T }): T {
     if (event.node_type == this.type) {
       // @ts-ignore-next-line
       return event.data as Event<T>
@@ -86,7 +86,8 @@ export abstract class AbstractModule<T extends NodeType> {
       'unsubscribe',
       [address],
       value => {
-        const response = this.from_module_dto(value.result) as Event<T>
+        // @todo fix this any
+        const response = this.from_module_dto(value.result as any) as Event<T>
         if (event in response) {
           callback(response[event])
         }

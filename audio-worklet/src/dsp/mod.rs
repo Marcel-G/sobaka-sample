@@ -1,7 +1,9 @@
 use fundsp::Float;
 
 pub mod messaging;
+pub mod oscillator;
 pub mod param;
+pub mod scope;
 pub mod shared;
 pub mod stepped;
 pub mod trigger;

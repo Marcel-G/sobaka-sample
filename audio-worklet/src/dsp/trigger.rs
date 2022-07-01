@@ -1,4 +1,7 @@
-use fundsp::hacker::{An, AudioNode, Frame, Tag, U0, U1};
+use fundsp::{
+    hacker::{An, AudioNode, Frame, Tag, U0, U1},
+    Float,
+};
 
 #[inline]
 pub fn trigger<X>(unit: An<X>) -> An<Trigger<X>>
@@ -55,5 +58,42 @@ where
 
     fn set(&mut self, parameter: Tag, value: f64) {
         self.unit.set(parameter, value);
+    }
+}
+
+pub struct SchmittTrigger {
+    is_open: bool,
+}
+
+impl SchmittTrigger {
+    pub fn new() -> Self {
+        Self { is_open: true }
+    }
+    pub fn tick<T: Float>(&mut self, input: T, off_threshold: f64, on_threshold: f64) -> bool {
+        if self.is_open {
+            // High to low
+            if input <= T::from_f64(off_threshold) {
+                self.is_open = false;
+            }
+            // Low to High
+        } else if input >= T::from_f64(on_threshold) {
+            self.is_open = true;
+            return true;
+        }
+        false
+    }
+
+    pub fn is_open(&self) -> bool {
+        self.is_open
+    }
+
+    pub fn reset(&mut self) {
+        self.is_open = true;
+    }
+}
+
+impl Default for SchmittTrigger {
+    fn default() -> Self {
+        Self::new()
     }
 }

@@ -20,7 +20,7 @@ pub enum ClockCommand {
     SetBPM(f64),
 }
 
-pub fn clock(params: ClockParams, context: &mut ModuleContext<ClockCommand>) -> impl AudioUnit32 {
+pub fn clock(params: &ClockParams, context: &mut ModuleContext<ClockCommand>) -> impl AudioUnit32 {
     let clock_square = || sine() >> map(|f| if f[0] > 0.0 { 1.0 } else { -1.0 });
 
     let divide = [1.0, 2.0, 4.0, 8.0, 16.0];
@@ -35,7 +35,6 @@ pub fn clock(params: ClockParams, context: &mut ModuleContext<ClockCommand>) -> 
                 ClockCommand::SetBPM(bpm) => unit.set(0, bpm.clamp(0.0, 600.0)),
             }),
     );
-
 
     (bpm >> clock_divider_node).share()
 }

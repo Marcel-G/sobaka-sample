@@ -24,7 +24,7 @@ pub enum FilterCommand {
 }
 
 pub fn filter(
-    params: FilterParams,
+    params: &FilterParams,
     context: &mut ModuleContext<FilterCommand>,
 ) -> impl AudioUnit32 {
     let input =

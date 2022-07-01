@@ -59,7 +59,7 @@ where
 }
 
 pub fn reverb(
-    params: ReverbParams,
+    params: &ReverbParams,
     context: &mut ModuleContext<ReverbCommand>,
 ) -> impl AudioUnit32 {
     let reverb = reverb_stereo::<f32, f32>(params.wet, params.length.into()).share();

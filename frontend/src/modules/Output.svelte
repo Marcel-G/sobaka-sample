@@ -16,7 +16,7 @@
 </script>
 
 <script lang="ts">
-  import { Sink } from 'sobaka-sample-audio-worklet'
+  import { Output } from 'sobaka-sample-audio-worklet'
   import { onDestroy } from 'svelte'
   import Panel from './shared/Panel.svelte'
   import { get_module_context } from './ModuleWrapper.svelte'
@@ -27,16 +27,16 @@
 
   const { context } = get_module_context()
 
-  const sink = new Sink(context)
+  const output = new Output(context)
 
-  const loading = sink.get_address()
+  const loading = output.get_address()
 
   onDestroy(() => {
-    void sink.dispose()
+    void output.dispose()
   })
 </script>
 
-<Panel name="sink" height={7} width={20} custom_style={into_style(theme)}>
+<Panel name="output" height={7} width={20} custom_style={into_style(theme)}>
   {#await loading}
     <p>Loading...</p>
   {:then}
@@ -46,7 +46,7 @@
   {/await}
 
   <div slot="inputs">
-    <Plug id={0} label="l" type={PlugType.Input} for_module={sink} />
-    <Plug id={1} label="r" type={PlugType.Input} for_module={sink} />
+    <Plug id={0} label="l" type={PlugType.Input} for_module={output} />
+    <Plug id={1} label="r" type={PlugType.Input} for_module={output} />
   </div>
 </Panel>

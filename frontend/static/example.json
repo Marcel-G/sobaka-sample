@@ -50,7 +50,7 @@
     },
     {
       "id": "yaqcjqdd0",
-      "type": "Sink",
+      "type": "Output",
       "position": {
         "x": 65,
         "y": 17
