@@ -40,6 +40,7 @@ pub struct Scope<T: Float> {
     subject: Subject<ScopeEvent>,
     threshold: T,
     time: f64,
+    trigger_enabled: bool,
 }
 
 impl<T: Float> Scope<T> {
@@ -55,6 +56,7 @@ impl<T: Float> Scope<T> {
             tick: 0,
             threshold: T::from_f64(0.0),
             time: 0.0,
+            trigger_enabled: true
         }
     }
 
@@ -73,6 +75,10 @@ impl<T: Float> Scope<T> {
 
     pub fn set_time(&mut self, time: f64) {
         self.time = time;
+    }
+
+    pub fn set_trigger_enabled(&mut self, trigger_enabled: bool) {
+        self.trigger_enabled = trigger_enabled;
     }
 }
 
@@ -108,7 +114,8 @@ impl<T: Float> AudioNode for Scope<T> {
         let y = input[0];
 
         if self.index >= BUFFER_SIZE {
-            if self
+            if !self.trigger_enabled
+            || self
                 .trigger
                 .tick(y, self.threshold.to_f64(), self.threshold.to_f64() + 0.001)
             {

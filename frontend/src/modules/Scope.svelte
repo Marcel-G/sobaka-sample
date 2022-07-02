@@ -9,7 +9,6 @@
     display: flex;
     flex-direction: row;
     padding-top: 0.5rem;
-    max-width: 6rem;
   }
   .oscilloscope-wrapper {
     position: absolute;
@@ -39,6 +38,7 @@
   import { PlugType } from '../state/plug'
   import { onDestroy } from 'svelte'
   import Knob from '../components/Knob.svelte';
+  import Button from '../components/Button.svelte';
 
   let canvas: HTMLCanvasElement
 
@@ -62,7 +62,7 @@
 
   const { context, get_sub_state, update_sub_state } = get_module_context()
 
-  let state = get_sub_state(name, { threshold: 0.0, time: 1.0 })
+  let state = get_sub_state(name, { threshold: 0.0, time: 1.0, trigger: false })
 
   const scope = new Scope(context, { rate: 30 })
 
@@ -135,6 +135,7 @@
   // Update the sobaka node when the state changes
   $: void scope.message({ SetThreshold: state.threshold })
   $: void scope.message({ SetTime: state.time })
+  $: void scope.message({ SetTriggerEnabled: state.trigger })
 
   // // Update the global state when state changes
   $: update_sub_state(name, state)
@@ -153,6 +154,7 @@
       <div class="controls">
         <Knob bind:value={state.threshold} range={[-1, 1]} />
         <Knob bind:value={state.time} range={[0, 12]} />
+        <Button bind:pressed={state.trigger} onClick={() => state.trigger = !state.trigger} />
       </div>
     </div>
   {/await}

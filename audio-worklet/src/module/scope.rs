@@ -33,6 +33,8 @@ pub enum ScopeCommand {
     SetThreshold(f64),
     /// Sets the time (0-10)
     SetTime(f64),
+    /// Sets trigger enabled
+    SetTriggerEnabled(bool),
 }
 
 pub fn scope(
@@ -46,6 +48,7 @@ pub fn scope(
             .message_handler(|unit, message: ScopeCommand| match message {
                 ScopeCommand::SetThreshold(threshold) => unit.set_threshold(threshold),
                 ScopeCommand::SetTime(time) => unit.set_time(time),
+                ScopeCommand::SetTriggerEnabled(enabled) => unit.set_trigger_enabled(enabled),
             }),
     );
 
