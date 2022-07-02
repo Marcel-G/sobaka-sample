@@ -56,5 +56,5 @@ pub fn scope(
         DSPScopeEvent::Update(signal) => ScopeEvent::RenderFrame(signal),
     }));
 
-    (pass() | (pass() >> map(|v| volt_hz(v[0])))) >> sc
+    sc
 }
