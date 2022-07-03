@@ -20,13 +20,14 @@
 
   const { context, get_sub_state, update_sub_state } = get_module_context()
 
-  let state = get_sub_state(name, { sine: 0.25, saw: 0.25, square: 0.25, triangle: 0.25 })
+  let state = get_sub_state(name, { sine: 0.25, saw: 0.25, square: 0.25, triangle: 0.25, pitch: 0.0 })
 
   const oscillator = new Oscillator(context, state)
 
   const loading = oscillator.get_address()
 
   // Update the sobaka node when the state changes
+  $: void oscillator.message({ SetPitch: state.pitch });
   $: void oscillator.message({ SetSawLevel: state.saw });
   $: void oscillator.message({ SetSineLevel: state.sine });
   $: void oscillator.message({ SetSquareLevel: state.square });
@@ -40,23 +41,25 @@
   })
 </script>
 
-<Panel {name} height={15} width={5} custom_style={into_style(theme)}>
+<Panel {name} height={18} width={5} custom_style={into_style(theme)}>
   {#await loading}
     <p>Loading...</p>
   {:then}
+      <Knob bind:value={state.pitch} range={[0, 4]}>
+      <div slot="inputs">
+        <Plug
+          id={0}
+          label="Frequency Cv"
+          type={PlugType.Input}
+          for_module={oscillator}
+        />
+      </div>
+      </Knob>
       <Knob bind:value={state.saw} range={[0, 1]} />
       <Knob bind:value={state.sine} range={[0, 1]} />
       <Knob bind:value={state.square} range={[0, 1]} />
       <Knob bind:value={state.triangle} range={[0, 1]} />
   {/await}
-  <div slot="inputs">
-    <Plug
-      id={0}
-      label="Input"
-      type={PlugType.Input}
-      for_module={oscillator}
-    />
-  </div>
   <div slot="outputs">
     <Plug
       id={0}

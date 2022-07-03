@@ -147,7 +147,7 @@ mod tests {
     #[test]
     fn test_module_creation() {
         let (handler, meta) = build_rpc();
-        let request = r#"{"jsonrpc":"2.0","id":1,"method":"create","params":[{ "node_type": "Oscillator", "data": { "saw": 0.25, "sine": 0.25, "square": 0.25, "triangle": 0.25 }}]}"#;
+        let request = r#"{"jsonrpc":"2.0","id":1,"method":"create","params":[{ "node_type": "Oscillator", "data": { "saw": 0.25, "sine": 0.25, "square": 0.25, "triangle": 0.25, "pitch": 0.0 }}]}"#;
         let response = handler.handle_request_sync(request, meta);
 
         let expected = r#"{"jsonrpc":"2.0","result":"/sobaka/2","id":1}"#;
