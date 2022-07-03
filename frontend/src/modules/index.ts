@@ -12,6 +12,7 @@ import Vca from './Vca.svelte'
 import Noise from './Noise.svelte'
 import Delay from './Delay.svelte'
 import Scope from './Scope.svelte'
+import String from './String.svelte'
 
 /**
  * Modules that can be spawned on the frontend.
@@ -30,6 +31,7 @@ export enum ModuleUI {
   Sequencer = 'Sequencer',
   Noise = 'Noise',
   Oscillator = 'Oscillator',
+  String = 'String',
   Parameter = 'Parameter',
   // Quantiser = 'Quantiser',
   Reverb = 'Reverb',
@@ -46,6 +48,7 @@ export const get_component = (module: Module<ModuleUI>) => {
     [ModuleUI.Scope]: Scope,
     [ModuleUI.Envelope]: Envelope,
     [ModuleUI.Filter]: Filter,
+    [ModuleUI.String]: String,
     // [ModuleUI.Input]: Input,
     // [ModuleUI.Lfo]: Lfo,
     // [ModuleUI.Midi]: Midi,

@@ -4,7 +4,6 @@ use crate::{
         messaging::MessageHandler,
         scope::{scope as dsp_scope, ScopeEvent as DSPScopeEvent},
         shared::Share,
-        volt_hz,
     },
     utils::observer::Observable,
 };

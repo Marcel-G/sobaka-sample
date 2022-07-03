@@ -56,7 +56,7 @@ impl<T: Float> Scope<T> {
             tick: 0,
             threshold: T::from_f64(0.0),
             time: 0.0,
-            trigger_enabled: true
+            trigger_enabled: true,
         }
     }
 
@@ -115,9 +115,9 @@ impl<T: Float> AudioNode for Scope<T> {
 
         if self.index >= BUFFER_SIZE {
             if !self.trigger_enabled
-            || self
-                .trigger
-                .tick(y, self.threshold.to_f64(), self.threshold.to_f64() + 0.001)
+                || self
+                    .trigger
+                    .tick(y, self.threshold.to_f64(), self.threshold.to_f64() + 0.001)
             {
                 self.index = 0;
                 self.trigger.reset();

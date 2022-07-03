@@ -72,3 +72,9 @@ export class Output extends AbstractModule<'Output'> {
     super(context, 'Output', undefined as never)
   }
 }
+
+export class String extends AbstractModule<'String'> {
+  constructor(context: SobakaContext, initial_state: Params<'String'>) {
+    super(context, 'String', initial_state)
+  }
+}

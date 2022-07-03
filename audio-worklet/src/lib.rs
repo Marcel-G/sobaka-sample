@@ -10,9 +10,7 @@ use interface::{
 };
 use module::{AudioModuleCommand, AudioModuleEvent, AudioModuleType, ModuleUnit};
 use petgraph::graph::EdgeIndex;
-use std::{
-    sync::{Arc, Mutex, MutexGuard},
-};
+use std::sync::{Arc, Mutex, MutexGuard};
 use utils::observer::Observer;
 
 pub mod context;

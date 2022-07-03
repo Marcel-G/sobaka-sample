@@ -10,6 +10,7 @@ pub mod parameter;
 pub mod reverb;
 pub mod scope;
 pub mod sequencer;
+pub mod string;
 pub mod vca;
 
 use serde::{Deserialize, Serialize};
@@ -26,6 +27,7 @@ use self::{
     reverb::{reverb, ReverbCommand, ReverbParams},
     scope::{scope, ScopeCommand, ScopeEvent, ScopeParams},
     sequencer::{sequencer, SequencerCommand, SequencerEvent, SequencerParams},
+    string::{string, StringCommand, StringParams},
     vca::{vca, VcaCommand, VcaParams},
 };
 use crate::context::{GeneralContext, ModuleContext};
@@ -45,6 +47,7 @@ pub enum AudioModuleType {
     Parameter(ParameterParams),
     Oscillator(OscillatorParams),
     // Quantiser(QuantiserNode),
+    String(StringParams),
     Reverb(ReverbParams),
     // SampleAndHold(SampleAndHoldNode),
     // Sampler(SamplerNode),
@@ -70,6 +73,7 @@ pub enum AudioModuleCommand {
     Reverb(ReverbCommand),
     Vca(VcaCommand),
     Scope(ScopeCommand),
+    String(StringCommand),
 
     #[serde(skip)]
     NoOp(NoOp),
@@ -139,6 +143,10 @@ impl From<&AudioModuleType> for (ModuleUnit, GeneralContext) {
             AudioModuleType::Output => {
                 let ctx = ModuleContext::<NoOp, NoOp>::default();
                 (Box::new(multipass::<U2, f32>()), ctx.boxed())
+            }
+            AudioModuleType::String(params) => {
+                let mut ctx = ModuleContext::default();
+                (Box::new(string(params, &mut ctx)), ctx.boxed())
             }
         }
     }
