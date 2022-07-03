@@ -14,6 +14,7 @@ import Delay from './Delay.svelte'
 import Scope from './Scope.svelte'
 import String from './String.svelte'
 import Lfo from './Lfo.svelte'
+import Quantiser from './Quantiser.svelte'
 
 /**
  * Modules that can be spawned on the frontend.
@@ -34,7 +35,7 @@ export enum ModuleUI {
   Oscillator = 'Oscillator',
   String = 'String',
   Parameter = 'Parameter',
-  // Quantiser = 'Quantiser',
+  Quantiser = 'Quantiser',
   Reverb = 'Reverb',
   // SampleAndHold = 'SampleAndHold',
   // Sampler = 'Sampler',
@@ -57,7 +58,7 @@ export const get_component = (module: Module<ModuleUI>) => {
     [ModuleUI.Noise]: Noise,
     [ModuleUI.Oscillator]: Oscillator,
     [ModuleUI.Parameter]: Parameter,
-    // [ModuleUI.Quantiser]: Quantiser,
+    [ModuleUI.Quantiser]: Quantiser,
     [ModuleUI.Reverb]: Reverb,
     // [ModuleUI.SampleAndHold]: SampleAndHold,
     // [ModuleUI.Sampler]: Sampler,

@@ -84,3 +84,9 @@ export class Lfo extends AbstractModule<'Lfo'> {
     super(context, 'Lfo', initial_state)
   }
 }
+
+export class Quantiser extends AbstractModule<'Quantiser'> {
+  constructor(context: SobakaContext, initial_state: Params<'Quantiser'>) {
+    super(context, 'Quantiser', initial_state)
+  }
+}

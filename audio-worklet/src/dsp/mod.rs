@@ -4,6 +4,7 @@ pub mod messaging;
 pub mod oscillator;
 pub mod param;
 pub mod pluck;
+pub mod quantiser;
 pub mod scope;
 pub mod shared;
 pub mod stepped;

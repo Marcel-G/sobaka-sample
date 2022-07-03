@@ -8,6 +8,7 @@ pub mod lfo;
 pub mod noise;
 pub mod oscillator;
 pub mod parameter;
+pub mod quantiser;
 pub mod reverb;
 pub mod scope;
 pub mod sequencer;
@@ -26,6 +27,7 @@ use self::{
     noise::noise,
     oscillator::{oscillator, OscillatorCommand, OscillatorParams},
     parameter::{parameter, ParameterCommand, ParameterParams},
+    quantiser::{quantiser, QuantiserCommand, QuantiserParams},
     reverb::{reverb, ReverbCommand, ReverbParams},
     scope::{scope, ScopeCommand, ScopeEvent, ScopeParams},
     sequencer::{sequencer, SequencerCommand, SequencerEvent, SequencerParams},
@@ -48,7 +50,7 @@ pub enum AudioModuleType {
     Noise,
     Parameter(ParameterParams),
     Oscillator(OscillatorParams),
-    // Quantiser(QuantiserNode),
+    Quantiser(QuantiserParams),
     String(StringParams),
     Reverb(ReverbParams),
     // SampleAndHold(SampleAndHoldNode),
@@ -73,6 +75,7 @@ pub enum AudioModuleCommand {
     Filter(FilterCommand),
     Oscillator(OscillatorCommand),
     Parameter(ParameterCommand),
+    Quantiser(QuantiserCommand),
     Reverb(ReverbCommand),
     Vca(VcaCommand),
     Scope(ScopeCommand),
@@ -155,6 +158,10 @@ impl From<&AudioModuleType> for (ModuleUnit, GeneralContext) {
             AudioModuleType::Lfo(params) => {
                 let mut ctx = ModuleContext::default();
                 (Box::new(lfo(params, &mut ctx)), ctx.boxed())
+            }
+            AudioModuleType::Quantiser(params) => {
+                let mut ctx = ModuleContext::default();
+                (Box::new(quantiser(params, &mut ctx)), ctx.boxed())
             }
         }
     }
