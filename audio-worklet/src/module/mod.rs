@@ -4,6 +4,7 @@ pub mod clock;
 pub mod delay;
 pub mod envelope;
 pub mod filter;
+pub mod lfo;
 pub mod noise;
 pub mod oscillator;
 pub mod parameter;
@@ -21,6 +22,7 @@ use self::{
     delay::{delay, DelayCommand, DelayParams},
     envelope::{envelope, EnvelopeCommand, EnvelopeParams},
     filter::{filter, FilterCommand, FilterParams},
+    lfo::{lfo, LfoCommand, LfoParams},
     noise::noise,
     oscillator::{oscillator, OscillatorCommand, OscillatorParams},
     parameter::{parameter, ParameterCommand, ParameterParams},
@@ -53,6 +55,7 @@ pub enum AudioModuleType {
     // Sampler(SamplerNode),
     Sequencer(SequencerParams),
     Scope(ScopeParams),
+    Lfo(LfoParams),
     // Sum(SumNode),
     Vca(VcaParams),
 
@@ -74,6 +77,7 @@ pub enum AudioModuleCommand {
     Vca(VcaCommand),
     Scope(ScopeCommand),
     String(StringCommand),
+    Lfo(LfoCommand),
 
     #[serde(skip)]
     NoOp(NoOp),
@@ -147,6 +151,10 @@ impl From<&AudioModuleType> for (ModuleUnit, GeneralContext) {
             AudioModuleType::String(params) => {
                 let mut ctx = ModuleContext::default();
                 (Box::new(string(params, &mut ctx)), ctx.boxed())
+            }
+            AudioModuleType::Lfo(params) => {
+                let mut ctx = ModuleContext::default();
+                (Box::new(lfo(params, &mut ctx)), ctx.boxed())
             }
         }
     }

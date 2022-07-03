@@ -36,5 +36,5 @@ pub fn clock(params: &ClockParams, context: &mut ModuleContext<ClockCommand>) ->
             }),
     );
 
-    (bpm >> clock_divider_node).share()
+    bpm >> clock_divider_node
 }

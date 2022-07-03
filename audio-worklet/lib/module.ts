@@ -78,3 +78,9 @@ export class String extends AbstractModule<'String'> {
     super(context, 'String', initial_state)
   }
 }
+
+export class Lfo extends AbstractModule<'Lfo'> {
+  constructor(context: SobakaContext, initial_state: Params<'Lfo'>) {
+    super(context, 'Lfo', initial_state)
+  }
+}
