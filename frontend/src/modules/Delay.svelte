@@ -43,7 +43,11 @@
     <p>Loading...</p>
   {:then}
     <div class="controls">
-      <Knob bind:value={time} range={[0, 10]} />
+      <Knob bind:value={time} range={[0, 10]}>
+        <div slot="inputs">
+          <Plug id={1} label="Delay Cv" type={PlugType.Input} for_module={delay} />
+        </div>
+      </Knob>
     </div>
   {/await}
   <div slot="inputs">

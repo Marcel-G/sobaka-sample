@@ -21,7 +21,7 @@ pub enum DelayCommand {
 }
 
 pub fn delay(params: &DelayParams, context: &mut ModuleContext<DelayCommand>) -> impl AudioUnit32 {
-    let inputs = pass() | tag(0, params.time);
+    let inputs = pass() | (pass() + tag(0, params.time));
     let unit = (inputs >> tap(0.0, 10.0)).share();
 
     context.set_tx(

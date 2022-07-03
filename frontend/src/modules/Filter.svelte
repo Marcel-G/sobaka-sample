@@ -55,8 +55,16 @@
     <p>Loading...</p>
   {:then}
     <div class="controls">
-      <Knob bind:value={frequency} range={[1, 8]} />
-      <Knob bind:value={q} range={[0, 1]} />
+      <Knob bind:value={frequency} range={[1, 8]}>
+        <div slot="inputs">
+          <Plug id={1} label="Cutoff Cv" type={PlugType.Input} for_module={filter} />
+        </div>
+      </Knob>
+      <Knob bind:value={q} range={[0, 1]}>
+        <div slot="inputs">
+          <Plug id={2} label="Q Cv" type={PlugType.Input} for_module={filter} />
+        </div>
+      </Knob>
     </div>
   {/await}
   <div slot="inputs">

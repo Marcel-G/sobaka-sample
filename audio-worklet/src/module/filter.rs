@@ -27,9 +27,10 @@ pub fn filter(
     params: &FilterParams,
     context: &mut ModuleContext<FilterCommand>,
 ) -> impl AudioUnit32 {
-    let input =
-        (pass() | (param(0, params.frequency) >> map(|f| volt_hz(f[0]))) | param(1, params.q))
-            .share();
+    let input = (pass()
+        | ((pass() + param(0, params.frequency)) >> map(|f| volt_hz(f[0])))
+        | (pass() + param(1, params.q)))
+    .share();
 
     context.set_tx(
         input
