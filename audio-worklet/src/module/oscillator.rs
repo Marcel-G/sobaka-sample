@@ -46,20 +46,24 @@ pub fn oscillator(
     let attenuated_square = sobaka_square() * param(2, params.square);
     let attenuated_triangle = sobaka_triangle() * param(3, params.triangle);
 
-    let params =
-        attenuated_saw & attenuated_sine & attenuated_square & attenuated_triangle;
+    let params = attenuated_saw & attenuated_sine & attenuated_square & attenuated_triangle;
 
     let out = (input >> oversample(params) >> shape(Shape::Tanh(0.8))).share();
 
-    context.set_tx(out.clone().message_handler(
-        |unit, command: OscillatorCommand| match command {
-            OscillatorCommand::SetPitch(pitch) => unit.set(4, pitch.into()),
-            OscillatorCommand::SetSawLevel(level) => unit.set(0, level.clamp(0.0, 1.0).into()),
-            OscillatorCommand::SetSineLevel(level) => unit.set(1, level.clamp(0.0, 1.0).into()),
-            OscillatorCommand::SetSquareLevel(level) => unit.set(2, level.clamp(0.0, 1.0).into()),
-            OscillatorCommand::SetTriangleLevel(level) => unit.set(3, level.clamp(0.0, 1.0).into()),
-        },
-    ));
+    context.set_tx(
+        out.clone()
+            .message_handler(|unit, command: OscillatorCommand| match command {
+                OscillatorCommand::SetPitch(pitch) => unit.set(4, pitch.into()),
+                OscillatorCommand::SetSawLevel(level) => unit.set(0, level.clamp(0.0, 1.0).into()),
+                OscillatorCommand::SetSineLevel(level) => unit.set(1, level.clamp(0.0, 1.0).into()),
+                OscillatorCommand::SetSquareLevel(level) => {
+                    unit.set(2, level.clamp(0.0, 1.0).into())
+                }
+                OscillatorCommand::SetTriangleLevel(level) => {
+                    unit.set(3, level.clamp(0.0, 1.0).into())
+                }
+            }),
+    );
 
     out
 }

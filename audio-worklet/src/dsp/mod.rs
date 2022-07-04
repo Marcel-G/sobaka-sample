@@ -1,5 +1,6 @@
 use fundsp::Float;
 
+pub mod hold;
 pub mod messaging;
 pub mod oscillator;
 pub mod param;

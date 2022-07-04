@@ -10,6 +10,7 @@ pub mod oscillator;
 pub mod parameter;
 pub mod quantiser;
 pub mod reverb;
+pub mod sample_and_hold;
 pub mod scope;
 pub mod sequencer;
 pub mod string;
@@ -29,6 +30,7 @@ use self::{
     parameter::{parameter, ParameterCommand, ParameterParams},
     quantiser::{quantiser, QuantiserCommand, QuantiserParams},
     reverb::{reverb, ReverbCommand, ReverbParams},
+    sample_and_hold::sample_and_hold,
     scope::{scope, ScopeCommand, ScopeEvent, ScopeParams},
     sequencer::{sequencer, SequencerCommand, SequencerEvent, SequencerParams},
     string::{string, StringCommand, StringParams},
@@ -53,7 +55,7 @@ pub enum AudioModuleType {
     Quantiser(QuantiserParams),
     String(StringParams),
     Reverb(ReverbParams),
-    // SampleAndHold(SampleAndHoldNode),
+    SampleAndHold,
     // Sampler(SamplerNode),
     Sequencer(SequencerParams),
     Scope(ScopeParams),
@@ -162,6 +164,10 @@ impl From<&AudioModuleType> for (ModuleUnit, GeneralContext) {
             AudioModuleType::Quantiser(params) => {
                 let mut ctx = ModuleContext::default();
                 (Box::new(quantiser(params, &mut ctx)), ctx.boxed())
+            }
+            AudioModuleType::SampleAndHold => {
+                let mut ctx = ModuleContext::<NoOp, NoOp>::default();
+                (Box::new(sample_and_hold((), &mut ctx)), ctx.boxed())
             }
         }
     }

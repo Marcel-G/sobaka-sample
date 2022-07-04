@@ -90,3 +90,9 @@ export class Quantiser extends AbstractModule<'Quantiser'> {
     super(context, 'Quantiser', initial_state)
   }
 }
+
+export class SampleAndHold extends AbstractModule<'SampleAndHold'> {
+  constructor(context: SobakaContext) {
+    super(context, 'SampleAndHold', undefined as never)
+  }
+}

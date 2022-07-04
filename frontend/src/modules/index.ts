@@ -15,6 +15,7 @@ import Scope from './Scope.svelte'
 import String from './String.svelte'
 import Lfo from './Lfo.svelte'
 import Quantiser from './Quantiser.svelte'
+import SampleAndHold from './SampleAndHold.svelte'
 
 /**
  * Modules that can be spawned on the frontend.
@@ -37,7 +38,7 @@ export enum ModuleUI {
   Parameter = 'Parameter',
   Quantiser = 'Quantiser',
   Reverb = 'Reverb',
-  // SampleAndHold = 'SampleAndHold',
+  SampleAndHold = 'SampleAndHold',
   // Sampler = 'Sampler',
   Output = 'Output',
   Vca = 'Vca'
@@ -60,7 +61,7 @@ export const get_component = (module: Module<ModuleUI>) => {
     [ModuleUI.Parameter]: Parameter,
     [ModuleUI.Quantiser]: Quantiser,
     [ModuleUI.Reverb]: Reverb,
-    // [ModuleUI.SampleAndHold]: SampleAndHold,
+    [ModuleUI.SampleAndHold]: SampleAndHold,
     // [ModuleUI.Sampler]: Sampler,
     [ModuleUI.Output]: Output,
     [ModuleUI.Vca]: Vca

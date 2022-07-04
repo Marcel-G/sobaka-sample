@@ -20,7 +20,7 @@
   import Plug from './shared/Plug.svelte'
   import { get_module_context } from './ModuleWrapper.svelte'
   import { into_style } from '../components/Theme.svelte'
-import { PlugType } from '../state/plug';
+  import { PlugType } from '../state/plug';
 
   const NOTE_LABELS = [
     'C',
@@ -54,7 +54,7 @@ import { PlugType } from '../state/plug';
     const updated = notes.map((_, index) => selected.includes(index))
 
     // Update the sobaka node when the state changes
-    void quantiser.message({ UpdateNotes: notes })
+    void quantiser.message({ UpdateNotes: updated })
 
     // Update the global state when state changes
     update_sub_state(name, { notes: updated })

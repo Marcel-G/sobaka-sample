@@ -5,13 +5,11 @@ pub struct Quantiser([i32; 24]);
 
 impl Quantiser {
     pub fn new(notes: [bool; 12]) -> Self {
-        let ranges = Self::create_ranges(notes);
-        Self(ranges)
+        Self(Self::create_ranges(notes))
     }
 
     pub fn update_notes(&mut self, notes: [bool; 12]) {
-        let ranges = Self::create_ranges(notes);
-        self.0 = ranges;
+        self.0 = Self::create_ranges(notes);
     }
 
     fn create_ranges(notes: [bool; 12]) -> [i32; 24] {

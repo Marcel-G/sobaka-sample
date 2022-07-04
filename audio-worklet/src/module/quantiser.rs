@@ -36,5 +36,5 @@ pub fn quantiser(
         },
     ));
 
-    (module + 1.0) * 0.5
+    module
 }
