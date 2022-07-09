@@ -1,7 +1,44 @@
 <style>
-  .controls {
-    display: grid;
-    grid-template-columns: auto auto auto;
+  .board {
+    display: flex;
+    flex-direction: row;
+    height: 100%;
+  }
+
+  .key {
+    cursor: pointer;
+    background-color: white;
+    border: 1px solid black;
+    flex-grow: 1;
+    border-radius: 0px 0px 2px 2px;
+  }
+  .key:not(:last-child) {
+    border-width: 1px 0 1px 1px;
+  }
+
+  .key.Cs, .key.Ds, .key.Fs, .key.Gs, .key.As {
+    background-color: black;
+    height: 55%;
+    flex: 0 0 0.75rem;
+    margin: 0 calc(-0.75rem / 2);
+    z-index: 1;
+    border-width: 1px;
+  }
+
+  .key:hover {
+    background-color: #f0f0f0;
+  }
+
+  .key.pressed {
+    background-color: var(--module-highlight);
+  }
+
+  li {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    position: relative;
+    float: left;
   }
 </style>
 
@@ -24,16 +61,16 @@
 
   const NOTE_LABELS = [
     'C',
-    'C#',
+    'Cs',
     'D',
-    'D#',
+    'Ds',
     'E',
     'F',
-    'F#',
+    'Fs',
     'G',
-    'G#',
+    'Gs',
     'A',
-    'A#',
+    'As',
     'B'
   ] as const
 
@@ -65,18 +102,19 @@
   })
 </script>
 
-<Panel name="quantiser" height={8} width={10} custom_style={into_style(theme)}>
+<Panel name="quantiser" height={8} width={15} custom_style={into_style(theme)}>
   {#await loading}
     <p>Loading...</p>
   {:then}
-    <div class="controls">
+    <ul class="board">
       {#each NOTE_LABELS as label, i}
-        <label>
-          <input type="checkbox" bind:group={selected} value={i} />
-          {label}
-        </label>
+        <li
+          class="key {label}"
+          class:pressed={notes[i]}
+          on:click={() => { notes[i] = !notes[i] }}
+        />
       {/each}
-    </div>
+    </ul>
   {/await}
 
   <div slot="inputs">
