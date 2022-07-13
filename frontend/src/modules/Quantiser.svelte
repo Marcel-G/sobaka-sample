@@ -16,7 +16,11 @@
     border-width: 1px 0 1px 1px;
   }
 
-  .key.Cs, .key.Ds, .key.Fs, .key.Gs, .key.As {
+  .key.Cs,
+  .key.Ds,
+  .key.Fs,
+  .key.Gs,
+  .key.As {
     background-color: black;
     height: 55%;
     flex: 0 0 0.75rem;
@@ -57,7 +61,7 @@
   import Plug from './shared/Plug.svelte'
   import { get_module_context } from './ModuleWrapper.svelte'
   import { into_style } from '../components/Theme.svelte'
-  import { PlugType } from '../state/plug';
+  import { PlugType } from '../state/plug'
 
   const NOTE_LABELS = [
     'C',
@@ -81,20 +85,16 @@
     notes: Array(NOTE_LABELS.length).fill(false) as boolean[]
   })
 
-  let selected: number[] = notes.flatMap((val, index) => (val ? [index] : []))
-
   const quantiser = new Quantiser(context, { notes })
 
   const loading = quantiser.get_address()
 
   $: {
-    const updated = notes.map((_, index) => selected.includes(index))
-
     // Update the sobaka node when the state changes
-    void quantiser.message({ UpdateNotes: updated })
+    void quantiser.message({ UpdateNotes: notes })
 
     // Update the global state when state changes
-    update_sub_state(name, { notes: updated })
+    update_sub_state(name, { notes })
   }
 
   onDestroy(() => {
@@ -111,17 +111,25 @@
         <li
           class="key {label}"
           class:pressed={notes[i]}
-          on:click={() => { notes[i] = !notes[i] }}
+          on:click={() => {
+            notes[i] = !notes[i]
+          }}
         />
       {/each}
     </ul>
   {/await}
 
   <div slot="inputs">
-    <Plug id={0} label="Signal" type={PlugType.Input} for_module={quantiser} />
+    <Plug id={0} label="Signal_1" type={PlugType.Input} for_module={quantiser} />
+    <Plug id={1} label="Signal_2" type={PlugType.Input} for_module={quantiser} />
+    <Plug id={2} label="Signal_3" type={PlugType.Input} for_module={quantiser} />
+    <Plug id={3} label="Signal_4" type={PlugType.Input} for_module={quantiser} />
   </div>
 
   <div slot="outputs">
-    <Plug id={0} label="Output" type={PlugType.Output} for_module={quantiser} />
+    <Plug id={0} label="Output_1" type={PlugType.Output} for_module={quantiser} />
+    <Plug id={1} label="Output_2" type={PlugType.Output} for_module={quantiser} />
+    <Plug id={2} label="Output_3" type={PlugType.Output} for_module={quantiser} />
+    <Plug id={3} label="Output_4" type={PlugType.Output} for_module={quantiser} />
   </div>
 </Panel>

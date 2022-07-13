@@ -27,15 +27,15 @@
     border-color: var(--foreground);
   }
 
-	button.pressed {
-		background-color: var(--comment);
+  button.pressed {
+    background-color: var(--comment);
     box-shadow: inset 0 0 5px var(--background);
-	}
+  }
 </style>
 
 <script lang="ts">
   export let pressed = false
-	export let onClick = () => {}
+  export let onClick = () => {}
 </script>
 
-<button class:pressed={pressed} on:click={onClick} />
+<button class:pressed on:click={onClick} />

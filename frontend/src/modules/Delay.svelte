@@ -13,15 +13,14 @@
   import Plug from './shared/Plug.svelte'
   import { get_module_context } from './ModuleWrapper.svelte'
   import { into_style } from '../components/Theme.svelte'
-	import Knob from '../components/Knob.svelte';
-	import { PlugType } from '../state/plug';
-
+  import Knob from '../components/Knob.svelte'
+  import { PlugType } from '../state/plug'
 
   let name = 'delay'
 
   const { context, get_sub_state, update_sub_state } = get_module_context()
 
-  let {time} = get_sub_state(name, { time: 0.5 })
+  let { time } = get_sub_state(name, { time: 0.5 })
 
   const delay = new Delay(context, { time })
 

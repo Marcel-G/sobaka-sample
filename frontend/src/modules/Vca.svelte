@@ -14,7 +14,7 @@
   import { get_module_context } from './ModuleWrapper.svelte'
   import { into_style } from '../components/Theme.svelte'
   import Knob from '../components/Knob.svelte'
-  import { PlugType } from '../state/plug';
+  import { PlugType } from '../state/plug'
 
   const { context, get_sub_state, update_sub_state } = get_module_context()
 

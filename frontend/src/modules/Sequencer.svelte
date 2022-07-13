@@ -23,7 +23,7 @@
   import { PlugType } from '../state/plug'
   import { onDestroy } from 'svelte'
   import Knob from '../components/Knob.svelte'
-  import Led from '../components/Led.svelte';
+  import Led from '../components/Led.svelte'
 
   const { context, get_sub_state, update_sub_state } = get_module_context()
 
@@ -38,19 +38,21 @@
   let { steps } = state
 
   // Update the sobaka node when the state changes
-  $: void sequencer.message({ UpdateStep: [0, steps[0]]})
-  $: void sequencer.message({ UpdateStep: [1, steps[1]]})
-  $: void sequencer.message({ UpdateStep: [2, steps[2]]})
-  $: void sequencer.message({ UpdateStep: [3, steps[3]]})
-  $: void sequencer.message({ UpdateStep: [4, steps[4]]})
-  $: void sequencer.message({ UpdateStep: [5, steps[5]]})
-  $: void sequencer.message({ UpdateStep: [6, steps[6]]})
-  $: void sequencer.message({ UpdateStep: [7, steps[7]]})
+  $: void sequencer.message({ UpdateStep: [0, steps[0]] })
+  $: void sequencer.message({ UpdateStep: [1, steps[1]] })
+  $: void sequencer.message({ UpdateStep: [2, steps[2]] })
+  $: void sequencer.message({ UpdateStep: [3, steps[3]] })
+  $: void sequencer.message({ UpdateStep: [4, steps[4]] })
+  $: void sequencer.message({ UpdateStep: [5, steps[5]] })
+  $: void sequencer.message({ UpdateStep: [6, steps[6]] })
+  $: void sequencer.message({ UpdateStep: [7, steps[7]] })
 
   // Subscribe to step change
-  void sequencer.subscribe('StepChange', step => { active_step = step })
-  
-  const knob_range = [0, 8];
+  void sequencer.subscribe('StepChange', step => {
+    active_step = step
+  })
+
+  const knob_range = [0, 8]
 
   // Update the global state when state changes
   $: update_sub_state(name, { steps: steps })

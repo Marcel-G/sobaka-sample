@@ -28,11 +28,13 @@ pub fn quantiser(
     params: &QuantiserParams,
     context: &mut ModuleContext<QuantiserCommand>,
 ) -> impl AudioUnit32 {
-    let module = dsp_quantiser(params.notes).share();
+    let module = stack::<U4, _, _, _>(|_n| dsp_quantiser(params.notes)).share();
 
     context.set_tx(module.clone().message_handler(
         |unit, command: QuantiserCommand| match command {
-            QuantiserCommand::UpdateNotes(notes) => unit.update_notes(notes),
+            QuantiserCommand::UpdateNotes(notes) => (0..4).for_each(|i| {
+                unit.node_mut(i).update_notes(notes);
+            }),
         },
     ));
 

@@ -84,7 +84,7 @@
 </style>
 
 <script lang="ts">
-  import { clamp } from 'lodash';
+  import { clamp } from 'lodash'
   import { ModuleUI } from '../modules'
   import { into_grid_coords } from '../modules/shared/Panel.svelte'
   import modules from '../state/modules'
@@ -108,7 +108,7 @@
 
   $: list = Object.values(ModuleUI).filter(dumb_fuzzy(search))
   $: selected_index = clamp(selected_index, 0, list.length - 1)
-  $: selection_refs[selected_index]?.scrollIntoView({ block: 'center'})
+  $: selection_refs[selected_index]?.scrollIntoView({ block: 'center' })
 
   function handle_create(type: ModuleUI) {
     modules.create(type, into_grid_coords(position))
@@ -124,16 +124,16 @@
         } else {
           onClose()
         }
-        break;
+        break
       case 'Escape':
         onClose()
-        break;
+        break
       case 'ArrowUp':
         selected_index -= 1
-        break;
+        break
       case 'ArrowDown':
         selected_index += 1
-        break;
+        break
     }
   }
 </script>

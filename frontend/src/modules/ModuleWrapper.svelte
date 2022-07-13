@@ -29,7 +29,7 @@
     context,
     position: module.position,
     get_sub_state: function <T>(name: string, initial: T): T {
-      return module.state?.[name] as T || initial
+      return (module.state?.[name] as T) || initial
     },
     update_sub_state: function <T>(name: string, state: T): void {
       modules.update(module.id, merge(_, { [name]: state }))

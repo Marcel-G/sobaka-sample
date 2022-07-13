@@ -76,7 +76,7 @@
   import plug, { PlugType } from '../../state/plug'
   import { get_module_context } from '../ModuleWrapper.svelte'
 
-  const { id : module_id } = get_module_context()
+  const { id: module_id } = get_module_context()
 
   export let for_module: AbstractModule<NodeType>
   export let type: PlugType

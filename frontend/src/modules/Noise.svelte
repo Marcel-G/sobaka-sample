@@ -13,7 +13,7 @@
   import { get_module_context } from './ModuleWrapper.svelte'
   import Plug from './shared/Plug.svelte'
   import { into_style } from '../components/Theme.svelte'
-	import { PlugType } from '../state/plug';
+  import { PlugType } from '../state/plug'
 
   const { context } = get_module_context()
 

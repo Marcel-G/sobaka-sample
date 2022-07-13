@@ -1,5 +1,4 @@
 <style>
-
   .screen {
     position: relative;
     padding-bottom: 75%;
@@ -37,8 +36,8 @@
   import { into_style } from '../components/Theme.svelte'
   import { PlugType } from '../state/plug'
   import { onDestroy } from 'svelte'
-  import Knob from '../components/Knob.svelte';
-  import Button from '../components/Button.svelte';
+  import Knob from '../components/Knob.svelte'
+  import Button from '../components/Button.svelte'
 
   let canvas: HTMLCanvasElement
 
@@ -68,7 +67,12 @@
 
   let in_buffer: [number, number][] = []
   // Subscribe to step change
-  void scope.subscribe('RenderFrame', raf_debounce((vec) => { in_buffer = vec }))
+  void scope.subscribe(
+    'RenderFrame',
+    raf_debounce(vec => {
+      in_buffer = vec
+    })
+  )
 
   const loading = scope.get_address()
 
@@ -80,12 +84,12 @@
     ctx.fillStyle = get_css_var('--module-background')
     ctx.fillRect(0, 0, width, height)
 
-    ctx.lineWidth = 1;
-    ctx.strokeStyle = get_css_var('--module-highlight');
+    ctx.lineWidth = 1
+    ctx.strokeStyle = get_css_var('--module-highlight')
     new Array(5).fill(0).forEach((_, index) => {
       ctx.beginPath()
-      ctx.moveTo(0, (index * (height - 2) / 4) + 1)
-      ctx.lineTo(width, (index * (height - 2) / 4) + 1)
+      ctx.moveTo(0, (index * (height - 2)) / 4 + 1)
+      ctx.lineTo(width, (index * (height - 2)) / 4 + 1)
       ctx.stroke()
     })
   }
@@ -101,22 +105,25 @@
       let x = i / (data.length - 1)
       let y = max * -0.5 + 0.5
       if (i == 0) {
-        ctx.moveTo(x * width, (y * height) - 1.0)
+        ctx.moveTo(x * width, y * height - 1.0)
       } else {
-        ctx.lineTo(x * width, (y * height) - 1.0)
+        ctx.lineTo(x * width, y * height - 1.0)
       }
     })
 
-    data.slice().reverse().forEach(([, min], i) => {
-      let x = (data.length - (i + 1)) / (data.length - 1)
-      let y = min * -0.5 + 0.5
-      ctx.lineTo(x * width, (y * height) + 1.0)
-    })
+    data
+      .slice()
+      .reverse()
+      .forEach(([, min], i) => {
+        let x = (data.length - (i + 1)) / (data.length - 1)
+        let y = min * -0.5 + 0.5
+        ctx.lineTo(x * width, y * height + 1.0)
+      })
 
     ctx.closePath()
     ctx.fillStyle = get_css_var('--foreground')
     ctx.strokeStyle = get_css_var('--foreground')
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 2
     ctx.fill()
     ctx.stroke()
   }
@@ -129,7 +136,7 @@
 
       draw_background(context, width, height)
       draw_wave(context, in_buffer, width, height)
-    } 
+    }
   }
 
   // Update the sobaka node when the state changes
@@ -154,7 +161,10 @@
       <div class="controls">
         <Knob bind:value={state.threshold} range={[-1, 1]} />
         <Knob bind:value={state.time} range={[0, 12]} />
-        <Button bind:pressed={state.trigger} onClick={() => state.trigger = !state.trigger} />
+        <Button
+          bind:pressed={state.trigger}
+          onClick={() => (state.trigger = !state.trigger)}
+        />
       </div>
     </div>
   {/await}

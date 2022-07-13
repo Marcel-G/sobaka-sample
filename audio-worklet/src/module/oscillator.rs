@@ -1,5 +1,6 @@
 use super::ModuleContext;
 use crate::dsp::{
+    join::dsp_join,
     messaging::MessageHandler,
     oscillator::{sobaka_saw, sobaka_square, sobaka_triangle},
     param::param,
@@ -40,15 +41,21 @@ pub fn oscillator(
     params: &OscillatorParams,
     context: &mut ModuleContext<OscillatorCommand>,
 ) -> impl AudioUnit32 {
-    let input = (pass() + tag(4, 0.0)) >> map(|f| volt_hz(f[0]));
-    let attenuated_saw = sobaka_saw() * param(0, params.saw);
-    let attenuated_sine = sine() * param(1, params.sine);
-    let attenuated_square = sobaka_square() * param(2, params.square);
-    let attenuated_triangle = sobaka_triangle() * param(3, params.triangle);
+    let multi_osc = stack::<U4, _, _, _>(|_n| {
+        let input = (pass() + tag(4, 0.0)) >> map(|f| volt_hz(f[0]));
+        let attenuated_saw = sobaka_saw() * param(0, params.saw);
+        let attenuated_sine = sine() * param(1, params.sine);
+        let attenuated_square = sobaka_square() * param(2, params.square);
+        let attenuated_triangle = sobaka_triangle() * param(3, params.triangle);
 
-    let params = attenuated_saw & attenuated_sine & attenuated_square & attenuated_triangle;
+        input
+            >> oversample(
+                attenuated_saw & attenuated_sine & attenuated_square & attenuated_triangle,
+            )
+    }) >> dsp_join::<U4, _>()
+        >> shape(Shape::Tanh(0.8));
 
-    let out = (input >> oversample(params) >> shape(Shape::Tanh(0.8))).share();
+    let out = multi_osc.share();
 
     context.set_tx(
         out.clone()

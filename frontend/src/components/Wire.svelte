@@ -17,7 +17,7 @@
   import { derived, get } from 'svelte/store'
   import type { Writable } from 'svelte/store'
   import { PlugContext, PlugType } from '../state/plug'
-  import Plug from '../modules/shared/Plug.svelte';
+  import Plug from '../modules/shared/Plug.svelte'
 
   export let on_click: () => void
   export let from: PlugContext

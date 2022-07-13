@@ -14,7 +14,7 @@
   import Plug from './shared/Plug.svelte'
   import Panel from './shared/Panel.svelte'
   import { into_style } from '../components/Theme.svelte'
-  import { PlugType } from '../state/plug';
+  import { PlugType } from '../state/plug'
 
   const { context, get_sub_state, update_sub_state } = get_module_context()
 
@@ -27,7 +27,7 @@
   const parameter = new Parameter(context, { min, max, default: value })
 
   // Update the sobaka node when the state changes
-  $: void parameter.message({ SetParameter: value });
+  $: void parameter.message({ SetParameter: value })
 
   // // Update the global state when state changes
   $: update_sub_state(name, { min, max, value })
@@ -48,11 +48,6 @@
     </span>
   {/await}
   <div slot="outputs">
-    <Plug
-      id={0}
-      label="Output"
-      type={PlugType.Output}
-      for_module={parameter}
-    />
+    <Plug id={0} label="Output" type={PlugType.Output} for_module={parameter} />
   </div>
 </Panel>

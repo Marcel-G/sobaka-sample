@@ -13,8 +13,8 @@
   import Panel from './shared/Panel.svelte'
   import Plug from './shared/Plug.svelte'
   import { into_style } from '../components/Theme.svelte'
-  import { PlugType } from '../state/plug';
-  import Knob from '../components/Knob.svelte';
+  import { PlugType } from '../state/plug'
+  import Knob from '../components/Knob.svelte'
 
   let name = 'string'
 
@@ -22,7 +22,10 @@
 
   let state = get_sub_state(name, { damping: 0.5, decay: 0.5 })
 
-  const string = new String(context, { damping: state.damping, gain_per_second: state.decay })
+  const string = new String(context, {
+    damping: state.damping,
+    gain_per_second: state.decay
+  })
 
   const loading = string.get_address()
 
@@ -46,25 +49,10 @@
     <Knob bind:value={state.decay} range={[0, 1]} />
   {/await}
   <div slot="inputs">
-    <Plug
-      id={0}
-      label="excitation"
-      type={PlugType.Input}
-      for_module={string}
-    />
-    <Plug
-      id={1}
-      label="Freq"
-      type={PlugType.Input}
-      for_module={string}
-    />
+    <Plug id={0} label="excitation" type={PlugType.Input} for_module={string} />
+    <Plug id={1} label="Freq" type={PlugType.Input} for_module={string} />
   </div>
   <div slot="outputs">
-    <Plug
-      id={0}
-      label="Output"
-      type={PlugType.Output}
-      for_module={string}
-    />
+    <Plug id={0} label="Output" type={PlugType.Output} for_module={string} />
   </div>
 </Panel>
