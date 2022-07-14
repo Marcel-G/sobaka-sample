@@ -7,6 +7,7 @@ import Oscillator from './Oscillator.svelte'
 import Parameter from './Parameter.svelte'
 import Reverb from './Reverb.svelte'
 import Sequencer from './Sequencer.svelte'
+import StepSequencer from './StepSequencer.svelte'
 import Output from './Output.svelte'
 import Vca from './Vca.svelte'
 import Noise from './Noise.svelte'
@@ -32,6 +33,7 @@ export enum ModuleUI {
   Lfo = 'Lfo',
   // Midi = 'Midi',
   Sequencer = 'Sequencer',
+  StepSequencer = 'StepSequencer',
   Noise = 'Noise',
   Oscillator = 'Oscillator',
   String = 'String',
@@ -56,6 +58,7 @@ export const get_component = (module: Module<ModuleUI>) => {
     [ModuleUI.Lfo]: Lfo,
     // [ModuleUI.Midi]: Midi,
     [ModuleUI.Sequencer]: Sequencer,
+    [ModuleUI.StepSequencer]: StepSequencer,
     [ModuleUI.Noise]: Noise,
     [ModuleUI.Oscillator]: Oscillator,
     [ModuleUI.Parameter]: Parameter,

@@ -13,6 +13,7 @@ pub mod reverb;
 pub mod sample_and_hold;
 pub mod scope;
 pub mod sequencer;
+pub mod step_sequencer;
 pub mod string;
 pub mod vca;
 
@@ -33,6 +34,9 @@ use self::{
     sample_and_hold::sample_and_hold,
     scope::{scope, ScopeCommand, ScopeEvent, ScopeParams},
     sequencer::{sequencer, SequencerCommand, SequencerEvent, SequencerParams},
+    step_sequencer::{
+        step_sequencer, StepSequencerCommand, StepSequencerEvent, StepSequencerParams,
+    },
     string::{string, StringCommand, StringParams},
     vca::{vca, VcaCommand, VcaParams},
 };
@@ -58,6 +62,7 @@ pub enum AudioModuleType {
     SampleAndHold,
     // Sampler(SamplerNode),
     Sequencer(SequencerParams),
+    StepSequencer(StepSequencerParams),
     Scope(ScopeParams),
     Lfo(LfoParams),
     // Sum(SumNode),
@@ -71,6 +76,7 @@ pub enum AudioModuleType {
 #[ts(export)]
 pub enum AudioModuleCommand {
     Sequencer(SequencerCommand),
+    StepSequencer(StepSequencerCommand),
     Clock(ClockCommand),
     Delay(DelayCommand),
     Envelope(EnvelopeCommand),
@@ -93,6 +99,7 @@ pub enum AudioModuleCommand {
 #[ts(export)]
 pub enum AudioModuleEvent {
     Sequencer(SequencerEvent),
+    StepSequencer(StepSequencerEvent),
 
     Scope(ScopeEvent),
 
@@ -128,6 +135,10 @@ impl From<&AudioModuleType> for (ModuleUnit, GeneralContext) {
             AudioModuleType::Sequencer(params) => {
                 let mut ctx = ModuleContext::default();
                 (Box::new(sequencer(params, &mut ctx)), ctx.boxed())
+            }
+            AudioModuleType::StepSequencer(params) => {
+                let mut ctx = ModuleContext::default();
+                (Box::new(step_sequencer(params, &mut ctx)), ctx.boxed())
             }
             AudioModuleType::Vca(params) => {
                 let mut ctx = ModuleContext::default();

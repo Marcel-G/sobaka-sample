@@ -1050,6 +1050,7 @@ dependencies = [
  "jsonrpc-derive",
  "jsonrpc-pubsub",
  "linkme",
+ "numeric-array",
  "parking_lot_core",
  "petgraph",
  "serde",

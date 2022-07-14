@@ -1,36 +1,63 @@
-use std::marker::PhantomData;
+use std::{
+    marker::PhantomData,
+    ops::{Add, Mul},
+};
 
 use fundsp::{
     hacker::{An, AudioNode, Frame, Size, U1},
-    Float,
+    Float, GenericSequence,
 };
+use numeric_array::typenum::{Prod, Sum};
 
 use crate::utils::observer::{Observable, Observer, Producer, Subject};
 
+use super::trigger::SchmittTrigger;
+
 #[inline]
-pub fn stepped<N: Size<T>, T: Float>() -> An<Stepped<N, T>> {
-    An(Stepped::new())
+pub fn stepped<M, N, T>(gate_passthrough: bool) -> An<Stepped<M, N, T>>
+where
+    M: Size<T> + Mul<N>,
+    N: Size<T>,
+    <M as Mul<N>>::Output: Size<T> + Add<U1>,
+    <<M as Mul<N>>::Output as Add<U1>>::Output: Size<T>,
+    T: Float,
+{
+    An(Stepped::new(gate_passthrough))
 }
 
-pub struct Stepped<N, T> {
+pub struct Stepped<M, N, T> {
     active: usize,
+    trigger: SchmittTrigger,
     subject: Subject<SteppedEvent>,
-    _marker: PhantomData<(N, T)>,
+    gate_passthrough: bool,
+    _marker: PhantomData<(M, N, T)>,
 }
 
-impl<N: Size<T>, T: Float> Stepped<N, T> {
-    pub fn new() -> Self {
+impl<M, N, T> Stepped<M, N, T>
+where
+    M: Size<T> + Mul<N>,
+    N: Size<T>,
+    T: Float,
+{
+    pub fn new(gate_passthrough: bool) -> Self {
         Self {
             active: 0,
             subject: Subject::new(),
+            trigger: SchmittTrigger::default(),
+            gate_passthrough,
             _marker: PhantomData,
         }
     }
 }
 
-impl<N: Size<T>, T: Float> Default for Stepped<N, T> {
+impl<M, N, T> Default for Stepped<M, N, T>
+where
+    M: Size<T> + Mul<N>,
+    N: Size<T>,
+    T: Float,
+{
     fn default() -> Self {
-        Self::new()
+        Self::new(false)
     }
 }
 
@@ -39,7 +66,12 @@ pub enum SteppedEvent {
     StepChange(usize),
 }
 
-impl<N, T> Observable for Stepped<N, T> {
+impl<M, N, T> Observable for Stepped<M, N, T>
+where
+    M: Size<T> + Mul<N>,
+    N: Size<T>,
+    T: Float,
+{
     type Output = SteppedEvent;
 
     fn observe(&self) -> Observer<Self::Output> {
@@ -47,14 +79,21 @@ impl<N, T> Observable for Stepped<N, T> {
     }
 }
 
-impl<N: Size<T>, T: Float> AudioNode for Stepped<N, T> {
+impl<M, N, T> AudioNode for Stepped<M, N, T>
+where
+    M: Size<T> + Mul<N>,
+    N: Size<T>,
+    <M as Mul<N>>::Output: Size<T> + Add<U1>,
+    <<M as Mul<N>>::Output as Add<U1>>::Output: Size<T>,
+    T: Float,
+{
     const ID: u64 = 0;
     type Sample = T;
-    type Inputs = N;
-    type Outputs = U1;
+    type Inputs = Sum<Prod<M, N>, U1>;
+    type Outputs = N;
 
     fn reset(&mut self, _sample_rate: Option<f64>) {
-        if self.active >= self.inputs() - 1 {
+        if self.active >= M::USIZE - 1 {
             self.active = 0;
         } else {
             self.active += 1;
@@ -67,6 +106,23 @@ impl<N: Size<T>, T: Float> AudioNode for Stepped<N, T> {
         &mut self,
         input: &Frame<Self::Sample, Self::Inputs>,
     ) -> Frame<Self::Sample, Self::Outputs> {
-        Frame::splat(input[self.active])
+        // Channel zero is the gate
+        let trigger = input[0];
+
+        if self.trigger.tick(trigger, 0.0, 0.001) {
+            if self.active >= M::USIZE - 1 {
+                self.active = 0;
+            } else {
+                self.active += 1;
+            }
+
+            self.subject.notify(SteppedEvent::StepChange(self.active));
+        }
+        if self.gate_passthrough {
+            // The following M are the step matrix
+            Frame::generate(|i| input[i * M::USIZE + self.active + 1] * trigger)
+        } else {
+            Frame::generate(|i| input[i * M::USIZE + self.active + 1])
+        }
     }
 }

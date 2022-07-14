@@ -3,7 +3,6 @@
     position: relative;
     margin: 0.125rem;
     flex: 1 1 auto;
-    min-width: 45px;
 
     /* position: relative; */
     display: block;

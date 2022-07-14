@@ -4,7 +4,6 @@ use crate::{
         messaging::MessageHandler,
         shared::Share,
         stepped::{stepped, SteppedEvent},
-        trigger::trigger,
     },
     utils::observer::Observable,
 };
@@ -46,11 +45,11 @@ pub fn sequencer(
         },
     ));
 
-    let stepped = stepped::<U8, _>().share();
+    let stepped = stepped::<U8, U1, _>(false).share();
 
     context.set_rx(stepped.clone().map(|event| match event {
         SteppedEvent::StepChange(step) => SequencerEvent::StepChange(step),
     }));
 
-    trigger(steps >> stepped)
+    (pass() | steps) >> stepped
 }

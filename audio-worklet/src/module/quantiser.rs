@@ -1,10 +1,6 @@
 use crate::{
     context::ModuleContext,
-    dsp::{
-        messaging::MessageHandler,
-        quantiser::{self, dsp_quantiser},
-        shared::Share,
-    },
+    dsp::{messaging::MessageHandler, quantiser::dsp_quantiser, shared::Share},
 };
 use fundsp::prelude::*;
 use serde::{Deserialize, Serialize};
