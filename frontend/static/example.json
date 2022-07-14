@@ -38,7 +38,7 @@
       "id": "yaqcjqdd0",
       "type": "Output",
       "position": {
-        "x": 65,
+        "x": 69,
         "y": 17
       }
     },
@@ -79,7 +79,7 @@
       },
       "state": {
         "parameter": {
-          "value": 0.25
+          "value": 0.5137890625
         }
       }
     },
@@ -92,7 +92,7 @@
       },
       "state": {
         "parameter": {
-          "value": 0.5
+          "value": 0.224296875
         }
       }
     },
@@ -174,7 +174,7 @@
       "state": {
         "envelope": {
           "attack": 0,
-          "release": 0.22769531250000008
+          "release": 0.28730468750000004
         }
       }
     },
@@ -182,16 +182,16 @@
       "id": "0bpq73j6q",
       "type": "Oscillator",
       "position": {
-        "x": 45,
-        "y": 31
+        "x": 52,
+        "y": 33
       },
       "state": {
         "oscillator": {
           "sine": 1,
-          "saw": 0,
-          "square": 0.37658203125,
+          "saw": 0.99232421875,
+          "square": 0,
           "triangle": 0,
-          "pitch": 0.514609375
+          "pitch": 0
         }
       }
     },
@@ -204,63 +204,9 @@
       },
       "state": {
         "filter": {
-          "frequency": 1.7943359374999996,
+          "frequency": 2.7825390624999997,
           "q": 0,
           "kind": "Filter"
-        }
-      }
-    },
-    {
-      "id": "8qzoa2poz",
-      "type": "Vca",
-      "position": {
-        "x": 35,
-        "y": 37
-      },
-      "state": {
-        "parameter": {
-          "value": 0.250703125
-        }
-      }
-    },
-    {
-      "id": "f3ibixk1k",
-      "type": "Parameter",
-      "position": {
-        "x": 25,
-        "y": 41
-      },
-      "state": {
-        "parameter": {
-          "min": 0,
-          "max": 10,
-          "value": 2.7267578125
-        }
-      }
-    },
-    {
-      "id": "fbd6tb2fg",
-      "type": "Vca",
-      "position": {
-        "x": 35,
-        "y": 41
-      },
-      "state": {
-        "parameter": {
-          "value": 0.4521875
-        }
-      }
-    },
-    {
-      "id": "302hu32fr",
-      "type": "Vca",
-      "position": {
-        "x": 35,
-        "y": 45
-      },
-      "state": {
-        "parameter": {
-          "value": 0.6913671875
         }
       }
     },
@@ -275,10 +221,10 @@
         "sequencer": {
           "steps": [
             2.8,
-            3,
+            2.25890625,
             2,
             2,
-            2,
+            1.4607812500000001,
             1.92,
             1.84,
             2
@@ -321,8 +267,8 @@
       },
       "state": {
         "string": {
-          "damping": 0.39742187500000004,
-          "decay": 0.11886718750000001
+          "damping": 0.41234375,
+          "decay": 0.23837890625000002
         }
       }
     },
@@ -336,7 +282,7 @@
       "state": {
         "envelope": {
           "attack": 0,
-          "release": 0.09595703125000002
+          "release": 0.035078125000000016
         }
       }
     },
@@ -362,8 +308,8 @@
       },
       "state": {
         "filter": {
-          "frequency": 1,
-          "q": 0.34685546875,
+          "frequency": 2,
+          "q": 0.72849609375,
           "kind": "Filter"
         }
       }
@@ -377,8 +323,8 @@
       },
       "state": {
         "reverb": {
-          "wet": 0.30162109375,
-          "length": 2.7328125
+          "wet": 0.31380859375000003,
+          "length": 5.205273437500001
         }
       }
     },
@@ -386,8 +332,8 @@
       "id": "35imdxgu0",
       "type": "Scope",
       "position": {
-        "x": 57,
-        "y": 31
+        "x": 63,
+        "y": 33
       },
       "state": {
         "scope": {
@@ -396,9 +342,187 @@
           "trigger": true
         }
       }
+    },
+    {
+      "id": "tqq1qheue",
+      "type": "Reverb",
+      "position": {
+        "x": 55,
+        "y": 26
+      },
+      "state": {
+        "reverb": {
+          "wet": 0.0844921875000001,
+          "length": 3.0349609374999997
+        }
+      }
+    },
+    {
+      "id": "ulp6wecvl",
+      "type": "Quantiser",
+      "position": {
+        "x": 32,
+        "y": 39
+      },
+      "state": {
+        "quantiser": {
+          "notes": [
+            true,
+            false,
+            false,
+            false,
+            false,
+            true,
+            false,
+            false,
+            true,
+            false,
+            false,
+            false
+          ]
+        }
+      }
+    },
+    {
+      "id": "p8bwymij8",
+      "type": "Parameter",
+      "position": {
+        "x": 17,
+        "y": 40
+      },
+      "state": {
+        "parameter": {
+          "min": 0,
+          "max": 10,
+          "value": 1.0599609375000005
+        }
+      }
+    },
+    {
+      "id": "f08jcmuhm",
+      "type": "Parameter",
+      "position": {
+        "x": 22,
+        "y": 42
+      },
+      "state": {
+        "parameter": {
+          "min": 0,
+          "max": 10,
+          "value": 2.9306640624999996
+        }
+      }
+    },
+    {
+      "id": "7nma3rjzg",
+      "type": "Parameter",
+      "position": {
+        "x": 27,
+        "y": 44
+      },
+      "state": {
+        "parameter": {
+          "min": 0,
+          "max": 10,
+          "value": 1.5509765625000003
+        }
+      }
+    },
+    {
+      "id": "lwcnhrz0h",
+      "type": "Vca",
+      "position": {
+        "x": 43,
+        "y": 33
+      },
+      "state": {
+        "parameter": {
+          "value": 0
+        }
+      }
+    },
+    {
+      "id": "8lx092eks",
+      "type": "Parameter",
+      "position": {
+        "x": 32,
+        "y": 33
+      },
+      "state": {
+        "parameter": {
+          "min": 0,
+          "max": 10,
+          "value": 3.396484375
+        }
+      }
     }
   ],
   "links": [
+    {
+      "to": "8lx092eks/out-0",
+      "from": "lwcnhrz0h/in-0",
+      "id": "3121a50pn"
+    },
+    {
+      "from": "lwcnhrz0h/in-1",
+      "to": "7lw39dud9/out-0",
+      "id": "hz1hwips6"
+    },
+    {
+      "to": "lwcnhrz0h/out-0",
+      "from": "0bpq73j6q/in-0",
+      "id": "u2pn89drw"
+    },
+    {
+      "to": "7nma3rjzg/out-0",
+      "from": "ulp6wecvl/in-3",
+      "id": "78419mpzv"
+    },
+    {
+      "to": "f08jcmuhm/out-0",
+      "from": "ulp6wecvl/in-2",
+      "id": "fhd4xb04k"
+    },
+    {
+      "to": "p8bwymij8/out-0",
+      "from": "ulp6wecvl/in-1",
+      "id": "3f800rpr8"
+    },
+    {
+      "from": "0bpq73j6q/in-3",
+      "to": "ulp6wecvl/out-3",
+      "id": "w4xhm924w"
+    },
+    {
+      "to": "ulp6wecvl/out-2",
+      "from": "0bpq73j6q/in-2",
+      "id": "cc98ik012"
+    },
+    {
+      "to": "ulp6wecvl/out-1",
+      "from": "0bpq73j6q/in-1",
+      "id": "76oii4u2b"
+    },
+    {
+      "to": "tqq1qheue/out-0",
+      "from": "yaqcjqdd0/in-1",
+      "id": "g9mq3oe2j"
+    },
+    {
+      "to": "tqq1qheue/out-1",
+      "from": "yaqcjqdd0/in-0",
+      "id": "ucdmchr3z"
+    },
+    {
+      "to": "2lzqec5nr/out-0",
+      "from": "tqq1qheue/in-1",
+      "id": "h4d7l0fv5"
+    },
+    {
+      "to": "2lzqec5nr/out-0",
+      "from": "tqq1qheue/in-0",
+      "id": "kc869vrr2"
+    },
     {
       "to": "2lzqec5nr/out-0",
       "from": "35imdxgu0/in-0",
@@ -423,16 +547,6 @@
       "to": "7wgeyrp9o/out-0",
       "from": "yaqcjqdd0/in-0",
       "id": "w9dkl8k17"
-    },
-    {
-      "from": "7wgeyrp9o/in-1",
-      "to": "2lzqec5nr/out-0",
-      "id": "i4bdkk6zu"
-    },
-    {
-      "to": "2lzqec5nr/out-0",
-      "from": "7wgeyrp9o/in-0",
-      "id": "psm8t78x0"
     },
     {
       "from": "f7qp2cjj3/in-0",
@@ -480,64 +594,14 @@
       "id": "64yx60ot9"
     },
     {
-      "from": "302hu32fr/in-1",
-      "to": "f3ibixk1k/out-0",
-      "id": "so3x1eey6"
-    },
-    {
-      "to": "7lw39dud9/out-0",
-      "from": "302hu32fr/in-0",
-      "id": "l29zpv49r"
-    },
-    {
-      "to": "302hu32fr/out-0",
-      "from": "0bpq73j6q/in-3",
-      "id": "pmotpw8ni"
-    },
-    {
-      "to": "f3ibixk1k/out-0",
-      "from": "fbd6tb2fg/in-1",
-      "id": "3fwc7nm58"
-    },
-    {
-      "to": "fbd6tb2fg/out-0",
-      "from": "0bpq73j6q/in-2",
-      "id": "hbq78vc6d"
-    },
-    {
-      "to": "7lw39dud9/out-0",
-      "from": "fbd6tb2fg/in-0",
-      "id": "vvt54mzqd"
-    },
-    {
-      "to": "8qzoa2poz/out-0",
-      "from": "0bpq73j6q/in-1",
-      "id": "dcn8u74c0"
-    },
-    {
       "from": "2lzqec5nr/in-2",
       "to": "7lw39dud9/out-0",
       "id": "4dvyg1wzh"
     },
     {
-      "from": "8qzoa2poz/in-0",
-      "to": "7lw39dud9/out-0",
-      "id": "xh3fsgivm"
-    },
-    {
-      "to": "f3ibixk1k/out-0",
-      "from": "8qzoa2poz/in-1",
-      "id": "tmt6jurky"
-    },
-    {
       "to": "7lw39dud9/out-0",
       "from": "2lzqec5nr/in-1",
       "id": "m5pa3mqa0"
-    },
-    {
-      "to": "7lw39dud9/out-0",
-      "from": "0bpq73j6q/in-0",
-      "id": "yvm59ffa8"
     },
     {
       "to": "2lzqec5nr/out-0",
