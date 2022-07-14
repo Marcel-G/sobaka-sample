@@ -18,29 +18,15 @@
       "type": "Noise",
       "position": {
         "x": 15,
-        "y": 21
-      }
-    },
-    {
-      "id": "9ztq3fmt6",
-      "type": "Envelope",
-      "position": {
-        "x": 16,
-        "y": 27
-      },
-      "state": {
-        "envelope": {
-          "attack": 0,
-          "release": 0.03166015625000001
-        }
+        "y": 4
       }
     },
     {
       "id": "71508lolb",
       "type": "Vca",
       "position": {
-        "x": 33,
-        "y": 21
+        "x": 30,
+        "y": 4
       },
       "state": {
         "parameter": {
@@ -61,7 +47,7 @@
       "type": "Filter",
       "position": {
         "x": 21,
-        "y": 20
+        "y": 4
       },
       "state": {
         "filter": {
@@ -72,211 +58,11 @@
       }
     },
     {
-      "id": "7tw9xen3t",
-      "type": "Envelope",
-      "position": {
-        "x": 27,
-        "y": 6
-      },
-      "state": {
-        "envelope": {
-          "attack": 0.013515625,
-          "release": 0.177578125
-        }
-      }
-    },
-    {
-      "id": "b8yv08f7h",
-      "type": "Oscillator",
-      "position": {
-        "x": 22,
-        "y": 4
-      },
-      "state": {
-        "oscillator": {
-          "sine": 1,
-          "saw": 0,
-          "square": 0,
-          "triangle": 0
-        }
-      }
-    },
-    {
-      "id": "hmmmwii8l",
-      "type": "Vca",
-      "position": {
-        "x": 35,
-        "y": 4
-      },
-      "state": {
-        "parameter": {
-          "value": 0
-        }
-      }
-    },
-    {
-      "id": "7omhh35on",
-      "type": "Parameter",
-      "position": {
-        "x": 17,
-        "y": 4
-      },
-      "state": {
-        "parameter": {
-          "min": 0,
-          "max": 10,
-          "value": 2.0705078125
-        }
-      }
-    },
-    {
-      "id": "0745q8d21",
-      "type": "Sequencer",
-      "position": {
-        "x": 6,
-        "y": 21
-      },
-      "state": {
-        "sequencer": {
-          "steps": [
-            0,
-            0,
-            1,
-            1,
-            0.25,
-            0,
-            1,
-            1
-          ]
-        }
-      }
-    },
-    {
-      "id": "s0qek2nuh",
-      "type": "Vca",
-      "position": {
-        "x": 27,
-        "y": 26
-      },
-      "state": {
-        "parameter": {
-          "value": 0
-        }
-      }
-    },
-    {
-      "id": "4rl4bjri3",
-      "type": "Oscillator",
-      "position": {
-        "x": 32,
-        "y": 37
-      },
-      "state": {
-        "oscillator": {
-          "sine": 0.016425781249999993,
-          "saw": 1,
-          "square": 0,
-          "triangle": 0.79693359375
-        }
-      }
-    },
-    {
-      "id": "uy9xpghtv",
-      "type": "Sequencer",
-      "position": {
-        "x": 15,
-        "y": 36
-      },
-      "state": {
-        "sequencer": {
-          "steps": [
-            4,
-            4,
-            2,
-            3,
-            3,
-            0,
-            0,
-            2
-          ]
-        }
-      }
-    },
-    {
-      "id": "ih89lxahu",
-      "type": "Envelope",
-      "position": {
-        "x": 33,
-        "y": 28
-      },
-      "state": {
-        "envelope": {
-          "attack": 0.21134765625000002,
-          "release": 0.86115234375
-        }
-      }
-    },
-    {
-      "id": "9cng8zzqw",
-      "type": "Filter",
-      "position": {
-        "x": 49,
-        "y": 32
-      },
-      "state": {
-        "filter": {
-          "frequency": 4.144667968749999,
-          "q": 0.38460937500000003,
-          "kind": "Filter"
-        }
-      }
-    },
-    {
-      "id": "j77y7wra7",
-      "type": "Vca",
-      "position": {
-        "x": 43,
-        "y": 32
-      },
-      "state": {
-        "parameter": {
-          "value": 0
-        }
-      }
-    },
-    {
-      "id": "su8gt6np2",
-      "type": "Vca",
-      "position": {
-        "x": 26,
-        "y": 33
-      },
-      "state": {
-        "parameter": {
-          "value": 0
-        }
-      }
-    },
-    {
-      "id": "qiiy5wi1v",
-      "type": "Reverb",
-      "position": {
-        "x": 53,
-        "y": 10
-      },
-      "state": {
-        "reverb": {
-          "wet": 0.23767578125000005,
-          "length": 2.6279296875
-        }
-      }
-    },
-    {
       "id": "31vmuahaj",
       "type": "Delay",
       "position": {
-        "x": 38,
-        "y": 14
+        "x": 36,
+        "y": 4
       },
       "state": {
         "delay": {
@@ -289,7 +75,7 @@
       "type": "Vca",
       "position": {
         "x": 44,
-        "y": 14
+        "y": 4
       },
       "state": {
         "parameter": {
@@ -302,16 +88,492 @@
       "type": "Vca",
       "position": {
         "x": 44,
-        "y": 21
+        "y": 10
       },
       "state": {
         "parameter": {
           "value": 0.5
         }
       }
+    },
+    {
+      "id": "os971qva0",
+      "type": "StepSequencer",
+      "position": {
+        "x": 3,
+        "y": 27
+      },
+      "state": {
+        "step_sequencer": {
+          "steps": [
+            [
+              true,
+              false,
+              true,
+              true,
+              false,
+              true,
+              false,
+              false
+            ],
+            [
+              true,
+              false,
+              false,
+              false,
+              true,
+              false,
+              false,
+              false
+            ],
+            [
+              true,
+              false,
+              true,
+              false,
+              false,
+              false,
+              true,
+              false
+            ],
+            [
+              false,
+              false,
+              true,
+              false,
+              false,
+              true,
+              false,
+              false
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "id": "qqgk6j30p",
+      "type": "Envelope",
+      "position": {
+        "x": 22,
+        "y": 28
+      },
+      "state": {
+        "envelope": {
+          "attack": 0,
+          "release": 0.039140624999999984
+        }
+      }
+    },
+    {
+      "id": "7lw39dud9",
+      "type": "Envelope",
+      "position": {
+        "x": 22,
+        "y": 35
+      },
+      "state": {
+        "envelope": {
+          "attack": 0,
+          "release": 0.22769531250000008
+        }
+      }
+    },
+    {
+      "id": "0bpq73j6q",
+      "type": "Oscillator",
+      "position": {
+        "x": 45,
+        "y": 31
+      },
+      "state": {
+        "oscillator": {
+          "sine": 1,
+          "saw": 0,
+          "square": 0.37658203125,
+          "triangle": 0,
+          "pitch": 0.514609375
+        }
+      }
+    },
+    {
+      "id": "2lzqec5nr",
+      "type": "Filter",
+      "position": {
+        "x": 45,
+        "y": 25
+      },
+      "state": {
+        "filter": {
+          "frequency": 1.7943359374999996,
+          "q": 0,
+          "kind": "Filter"
+        }
+      }
+    },
+    {
+      "id": "8qzoa2poz",
+      "type": "Vca",
+      "position": {
+        "x": 35,
+        "y": 37
+      },
+      "state": {
+        "parameter": {
+          "value": 0.250703125
+        }
+      }
+    },
+    {
+      "id": "f3ibixk1k",
+      "type": "Parameter",
+      "position": {
+        "x": 25,
+        "y": 41
+      },
+      "state": {
+        "parameter": {
+          "min": 0,
+          "max": 10,
+          "value": 2.7267578125
+        }
+      }
+    },
+    {
+      "id": "fbd6tb2fg",
+      "type": "Vca",
+      "position": {
+        "x": 35,
+        "y": 41
+      },
+      "state": {
+        "parameter": {
+          "value": 0.4521875
+        }
+      }
+    },
+    {
+      "id": "302hu32fr",
+      "type": "Vca",
+      "position": {
+        "x": 35,
+        "y": 45
+      },
+      "state": {
+        "parameter": {
+          "value": 0.6913671875
+        }
+      }
+    },
+    {
+      "id": "f7qp2cjj3",
+      "type": "Sequencer",
+      "position": {
+        "x": 8,
+        "y": 12
+      },
+      "state": {
+        "sequencer": {
+          "steps": [
+            2.8,
+            3,
+            2,
+            2,
+            2,
+            1.92,
+            1.84,
+            2
+          ]
+        }
+      }
+    },
+    {
+      "id": "3n2tu3ak2",
+      "type": "Quantiser",
+      "position": {
+        "x": 17,
+        "y": 12
+      },
+      "state": {
+        "quantiser": {
+          "notes": [
+            true,
+            false,
+            false,
+            false,
+            false,
+            true,
+            false,
+            false,
+            true,
+            false,
+            false,
+            false
+          ]
+        }
+      }
+    },
+    {
+      "id": "kjve7mqhw",
+      "type": "String",
+      "position": {
+        "x": 36,
+        "y": 16
+      },
+      "state": {
+        "string": {
+          "damping": 0.39742187500000004,
+          "decay": 0.11886718750000001
+        }
+      }
+    },
+    {
+      "id": "scbgv2l7m",
+      "type": "Envelope",
+      "position": {
+        "x": 22,
+        "y": 22
+      },
+      "state": {
+        "envelope": {
+          "attack": 0,
+          "release": 0.09595703125000002
+        }
+      }
+    },
+    {
+      "id": "r2y1sdnfy",
+      "type": "Vca",
+      "position": {
+        "x": 30,
+        "y": 22
+      },
+      "state": {
+        "parameter": {
+          "value": 0
+        }
+      }
+    },
+    {
+      "id": "cg5s116uh",
+      "type": "Filter",
+      "position": {
+        "x": 43,
+        "y": 17
+      },
+      "state": {
+        "filter": {
+          "frequency": 1,
+          "q": 0.34685546875,
+          "kind": "Filter"
+        }
+      }
+    },
+    {
+      "id": "7wgeyrp9o",
+      "type": "Reverb",
+      "position": {
+        "x": 54,
+        "y": 18
+      },
+      "state": {
+        "reverb": {
+          "wet": 0.30162109375,
+          "length": 2.7328125
+        }
+      }
+    },
+    {
+      "id": "35imdxgu0",
+      "type": "Scope",
+      "position": {
+        "x": 57,
+        "y": 31
+      },
+      "state": {
+        "scope": {
+          "threshold": -0.1237890625,
+          "time": 1.774453125,
+          "trigger": true
+        }
+      }
     }
   ],
   "links": [
+    {
+      "to": "2lzqec5nr/out-0",
+      "from": "35imdxgu0/in-0",
+      "id": "8n41l19oh"
+    },
+    {
+      "from": "7wgeyrp9o/in-0",
+      "to": "cg5s116uh/out-2",
+      "id": "saizwt1ff"
+    },
+    {
+      "from": "7wgeyrp9o/in-1",
+      "to": "cg5s116uh/out-2",
+      "id": "kn5m582u1"
+    },
+    {
+      "to": "7wgeyrp9o/out-1",
+      "from": "yaqcjqdd0/in-1",
+      "id": "xh9t7guwy"
+    },
+    {
+      "to": "7wgeyrp9o/out-0",
+      "from": "yaqcjqdd0/in-0",
+      "id": "w9dkl8k17"
+    },
+    {
+      "from": "7wgeyrp9o/in-1",
+      "to": "2lzqec5nr/out-0",
+      "id": "i4bdkk6zu"
+    },
+    {
+      "to": "2lzqec5nr/out-0",
+      "from": "7wgeyrp9o/in-0",
+      "id": "psm8t78x0"
+    },
+    {
+      "from": "f7qp2cjj3/in-0",
+      "to": "os971qva0/out-3",
+      "id": "eyurxhxqv"
+    },
+    {
+      "from": "cg5s116uh/in-1",
+      "to": "3n2tu3ak2/out-0",
+      "id": "06hyasfbs"
+    },
+    {
+      "to": "kjve7mqhw/out-0",
+      "from": "cg5s116uh/in-0",
+      "id": "2zg05jll6"
+    },
+    {
+      "from": "scbgv2l7m/in-0",
+      "to": "os971qva0/out-2",
+      "id": "pfxjn5a4d"
+    },
+    {
+      "to": "r2y1sdnfy/out-0",
+      "from": "kjve7mqhw/in-0",
+      "id": "dg6xk3ai0"
+    },
+    {
+      "from": "r2y1sdnfy/in-0",
+      "to": "tnubtuqif/out-0",
+      "id": "nk0c3wdgw"
+    },
+    {
+      "to": "scbgv2l7m/out-0",
+      "from": "r2y1sdnfy/in-1",
+      "id": "9vyxq8ueg"
+    },
+    {
+      "from": "kjve7mqhw/in-1",
+      "to": "3n2tu3ak2/out-0",
+      "id": "2b8uutln6"
+    },
+    {
+      "to": "f7qp2cjj3/out-0",
+      "from": "3n2tu3ak2/in-0",
+      "id": "64yx60ot9"
+    },
+    {
+      "from": "302hu32fr/in-1",
+      "to": "f3ibixk1k/out-0",
+      "id": "so3x1eey6"
+    },
+    {
+      "to": "7lw39dud9/out-0",
+      "from": "302hu32fr/in-0",
+      "id": "l29zpv49r"
+    },
+    {
+      "to": "302hu32fr/out-0",
+      "from": "0bpq73j6q/in-3",
+      "id": "pmotpw8ni"
+    },
+    {
+      "to": "f3ibixk1k/out-0",
+      "from": "fbd6tb2fg/in-1",
+      "id": "3fwc7nm58"
+    },
+    {
+      "to": "fbd6tb2fg/out-0",
+      "from": "0bpq73j6q/in-2",
+      "id": "hbq78vc6d"
+    },
+    {
+      "to": "7lw39dud9/out-0",
+      "from": "fbd6tb2fg/in-0",
+      "id": "vvt54mzqd"
+    },
+    {
+      "to": "8qzoa2poz/out-0",
+      "from": "0bpq73j6q/in-1",
+      "id": "dcn8u74c0"
+    },
+    {
+      "from": "2lzqec5nr/in-2",
+      "to": "7lw39dud9/out-0",
+      "id": "4dvyg1wzh"
+    },
+    {
+      "from": "8qzoa2poz/in-0",
+      "to": "7lw39dud9/out-0",
+      "id": "xh3fsgivm"
+    },
+    {
+      "to": "f3ibixk1k/out-0",
+      "from": "8qzoa2poz/in-1",
+      "id": "tmt6jurky"
+    },
+    {
+      "to": "7lw39dud9/out-0",
+      "from": "2lzqec5nr/in-1",
+      "id": "m5pa3mqa0"
+    },
+    {
+      "to": "7lw39dud9/out-0",
+      "from": "0bpq73j6q/in-0",
+      "id": "yvm59ffa8"
+    },
+    {
+      "to": "2lzqec5nr/out-0",
+      "from": "yaqcjqdd0/in-1",
+      "id": "1our1prwr"
+    },
+    {
+      "to": "2lzqec5nr/out-0",
+      "from": "yaqcjqdd0/in-0",
+      "id": "edxtakh8r"
+    },
+    {
+      "from": "2lzqec5nr/in-0",
+      "to": "0bpq73j6q/out-0",
+      "id": "b762k7yro"
+    },
+    {
+      "to": "os971qva0/out-1",
+      "from": "7lw39dud9/in-0",
+      "id": "y4p3b1qhy"
+    },
+    {
+      "to": "qqgk6j30p/out-0",
+      "from": "71508lolb/in-1",
+      "id": "iht6el7b9"
+    },
+    {
+      "from": "qqgk6j30p/in-0",
+      "to": "os971qva0/out-0",
+      "id": "hjslrxxc8"
+    },
+    {
+      "to": "jqkjszphr/out-2",
+      "from": "os971qva0/in-0",
+      "id": "atga7vif2"
+    },
     {
       "to": "1sr6v8goo/out-0",
       "from": "yaqcjqdd0/in-1",
@@ -328,36 +590,6 @@
       "id": "6m689xdou"
     },
     {
-      "to": "hmmmwii8l/out-0",
-      "from": "qiiy5wi1v/in-1",
-      "id": "u5twljz32"
-    },
-    {
-      "to": "hmmmwii8l/out-0",
-      "from": "qiiy5wi1v/in-0",
-      "id": "xsnmvliqw"
-    },
-    {
-      "to": "9cng8zzqw/out-2",
-      "from": "qiiy5wi1v/in-1",
-      "id": "amw4ybxzg"
-    },
-    {
-      "to": "9cng8zzqw/out-2",
-      "from": "qiiy5wi1v/in-0",
-      "id": "z2kdaa3or"
-    },
-    {
-      "to": "qiiy5wi1v/out-1",
-      "from": "yaqcjqdd0/in-1",
-      "id": "75t4zx4lm"
-    },
-    {
-      "to": "qiiy5wi1v/out-0",
-      "from": "yaqcjqdd0/in-0",
-      "id": "kcq23quh1"
-    },
-    {
       "to": "31vmuahaj/out-0",
       "from": "qm23c0g5u/in-0",
       "id": "q4jk1lfpo"
@@ -368,56 +600,6 @@
       "id": "9jbp888kj"
     },
     {
-      "from": "su8gt6np2/in-1",
-      "to": "uy9xpghtv/out-0",
-      "id": "47snj3ulc"
-    },
-    {
-      "to": "su8gt6np2/out-0",
-      "from": "ih89lxahu/in-0",
-      "id": "piat6waqx"
-    },
-    {
-      "from": "su8gt6np2/in-0",
-      "to": "jqkjszphr/out-0",
-      "id": "s076g5dkx"
-    },
-    {
-      "from": "9cng8zzqw/in-0",
-      "to": "j77y7wra7/out-0",
-      "id": "eb8bjtvpw"
-    },
-    {
-      "from": "j77y7wra7/in-0",
-      "to": "4rl4bjri3/out-0",
-      "id": "cu7usn4ra"
-    },
-    {
-      "to": "ih89lxahu/out-0",
-      "from": "j77y7wra7/in-1",
-      "id": "wml3y2f7s"
-    },
-    {
-      "to": "jqkjszphr/out-1",
-      "from": "uy9xpghtv/in-0",
-      "id": "q2fizuatm"
-    },
-    {
-      "to": "uy9xpghtv/out-0",
-      "from": "4rl4bjri3/in-0",
-      "id": "0lmdaaa8u"
-    },
-    {
-      "to": "jqkjszphr/out-2",
-      "from": "9ztq3fmt6/in-0",
-      "id": "m2kh7a2vd"
-    },
-    {
-      "to": "jqkjszphr/out-2",
-      "from": "0745q8d21/in-0",
-      "id": "ylbn4zhjt"
-    },
-    {
       "to": "b31manp01/out-1",
       "from": "71508lolb/in-0",
       "id": "v1tkrqbs1"
@@ -426,46 +608,6 @@
       "to": "tnubtuqif/out-0",
       "from": "b31manp01/in-0",
       "id": "731rkscqh"
-    },
-    {
-      "from": "s0qek2nuh/in-1",
-      "to": "0745q8d21/out-0",
-      "id": "gerfz49mq"
-    },
-    {
-      "from": "s0qek2nuh/in-0",
-      "to": "9ztq3fmt6/out-0",
-      "id": "uv9ri9yba"
-    },
-    {
-      "from": "71508lolb/in-1",
-      "to": "s0qek2nuh/out-0",
-      "id": "z0t9bviyp"
-    },
-    {
-      "to": "7tw9xen3t/out-0",
-      "from": "b8yv08f7h/in-0",
-      "id": "9fjqxodss"
-    },
-    {
-      "to": "7omhh35on/out-0",
-      "from": "b8yv08f7h/in-0",
-      "id": "2phsq9jbe"
-    },
-    {
-      "to": "b8yv08f7h/out-0",
-      "from": "hmmmwii8l/in-0",
-      "id": "ekmnpk3b8"
-    },
-    {
-      "to": "7tw9xen3t/out-0",
-      "from": "hmmmwii8l/in-1",
-      "id": "ju7qexqx4"
-    },
-    {
-      "to": "jqkjszphr/out-0",
-      "from": "7tw9xen3t/in-0",
-      "id": "kanpzorrh"
     }
   ]
 }
