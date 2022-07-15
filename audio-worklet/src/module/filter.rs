@@ -28,8 +28,8 @@ pub fn filter(
     context: &mut ModuleContext<FilterCommand>,
 ) -> impl AudioUnit32 {
     let input = (pass()
-        | ((pass() + param(0, params.frequency)) >> map(|f| volt_hz(f[0])))
-        | (pass() + param(1, params.q)))
+        | ((pass() + param(0, params.frequency)) >> map(|f| volt_hz(f[0])) >> clip_to(2e1, 2e4))
+        | (pass() + param(1, params.q)) >> clip_to(0.0, 10.0))
     .share();
 
     context.set_tx(
