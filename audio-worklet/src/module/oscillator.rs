@@ -42,20 +42,23 @@ pub fn oscillator(
     context: &mut ModuleContext<OscillatorCommand>,
 ) -> impl AudioUnit32 {
     let multi_osc = stack::<U4, _, _, _>(|_n| {
-        let input = (pass() + tag(4, 0.0)) >> map(|f| volt_hz(f[0]));
+        let input = (pass() + tag(4, 0.0))
+            >> split::<U2, _>()
+            >> (map::<_, _, U1, _>(|f| volt_hz(f[0])) | pass());
         let attenuated_saw = sobaka_saw() * param(0, params.saw);
         let attenuated_sine = sine() * param(1, params.sine);
         let attenuated_square = sobaka_square() * param(2, params.square);
         let attenuated_triangle = sobaka_triangle() * param(3, params.triangle);
 
         input
-            >> oversample(
-                attenuated_saw & attenuated_sine & attenuated_square & attenuated_triangle,
-            )
-    }) >> dsp_join::<U4, _>()
-        >> shape(Shape::Tanh(0.8));
+            >> ((attenuated_saw & attenuated_sine & attenuated_square & attenuated_triangle)
+                | pass())
+            // if the pitch is 0, we'll just mute the output
+            >> map(|f| if f[1] > 0.0 { f[0] } else { 0.0 })
+            >> shape(Shape::Tanh(0.8))
+    }) >> dsp_join::<U4, _>();
 
-    let out = multi_osc.share();
+    let out = oversample(multi_osc).share();
 
     context.set_tx(
         out.clone()
