@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars */
 import { IJSONRPCNotification, IJSONRPCRequest } from "@open-rpc/client-js/build/Request";
-import { SobakaAudioWorklet } from ".";
+import type { SobakaAudioWorklet } from "../pkg/sobaka_sample_audio_worklet";
 
 export interface IJSONRPCSubscriptionResponse<T extends object> {
   result: T,
