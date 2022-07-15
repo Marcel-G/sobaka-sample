@@ -67,5 +67,9 @@ pub fn step_sequencer(
         SteppedEvent::StepChange(step) => StepSequencerEvent::StepChange(step),
     }));
 
-    (pass() | steps) >> stepped
+    (
+        pass() | // Gate input
+        pass() | // Reset input
+        steps
+    ) >> stepped
 }

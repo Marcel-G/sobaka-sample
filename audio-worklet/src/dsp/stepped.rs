@@ -4,10 +4,10 @@ use std::{
 };
 
 use fundsp::{
-    hacker::{An, AudioNode, Frame, Size, U1},
+    hacker::{An, AudioNode, Frame, Size, U2},
     Float, GenericSequence,
 };
-use numeric_array::typenum::{Prod, Sum};
+use numeric_array::typenum::{Prod, Sum, Unsigned};
 
 use crate::utils::observer::{Observable, Observer, Producer, Subject};
 
@@ -18,8 +18,8 @@ pub fn stepped<M, N, T>(gate_passthrough: bool) -> An<Stepped<M, N, T>>
 where
     M: Size<T> + Mul<N>,
     N: Size<T>,
-    <M as Mul<N>>::Output: Size<T> + Add<U1>,
-    <<M as Mul<N>>::Output as Add<U1>>::Output: Size<T>,
+    <M as Mul<N>>::Output: Size<T> + Add<U2>,
+    <<M as Mul<N>>::Output as Add<U2>>::Output: Size<T>,
     T: Float,
 {
     An(Stepped::new(gate_passthrough))
@@ -28,6 +28,7 @@ where
 pub struct Stepped<M, N, T> {
     active: usize,
     trigger: SchmittTrigger,
+    reset_trigger: SchmittTrigger,
     subject: Subject<SteppedEvent>,
     gate_passthrough: bool,
     _marker: PhantomData<(M, N, T)>,
@@ -44,6 +45,7 @@ where
             active: 0,
             subject: Subject::new(),
             trigger: SchmittTrigger::default(),
+            reset_trigger: SchmittTrigger::default(),
             gate_passthrough,
             _marker: PhantomData,
         }
@@ -83,13 +85,13 @@ impl<M, N, T> AudioNode for Stepped<M, N, T>
 where
     M: Size<T> + Mul<N>,
     N: Size<T>,
-    <M as Mul<N>>::Output: Size<T> + Add<U1>,
-    <<M as Mul<N>>::Output as Add<U1>>::Output: Size<T>,
+    <M as Mul<N>>::Output: Size<T> + Add<U2>,
+    <<M as Mul<N>>::Output as Add<U2>>::Output: Size<T>,
     T: Float,
 {
     const ID: u64 = 0;
     type Sample = T;
-    type Inputs = Sum<Prod<M, N>, U1>;
+    type Inputs = Sum<Prod<M, N>, U2>;
     type Outputs = N;
 
     fn reset(&mut self, _sample_rate: Option<f64>) {
@@ -108,6 +110,13 @@ where
     ) -> Frame<Self::Sample, Self::Outputs> {
         // Channel zero is the gate
         let trigger = input[0];
+        let reset = input[1];
+
+        if self.reset_trigger.tick(reset, 0.0, 0.001) {
+            self.active = 0;
+
+            self.subject.notify(SteppedEvent::StepChange(self.active));
+        }
 
         if self.trigger.tick(trigger, 0.0, 0.001) {
             if self.active >= M::USIZE - 1 {
@@ -120,9 +129,9 @@ where
         }
         if self.gate_passthrough {
             // The following M are the step matrix
-            Frame::generate(|i| input[i * M::USIZE + self.active + 1] * trigger)
+            Frame::generate(|i| input[i * M::USIZE + self.active + U2::USIZE] * trigger)
         } else {
-            Frame::generate(|i| input[i * M::USIZE + self.active + 1])
+            Frame::generate(|i| input[i * M::USIZE + self.active + U2::USIZE])
         }
     }
 }

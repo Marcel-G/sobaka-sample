@@ -79,7 +79,8 @@
     </div>
   {/await}
   <div slot="inputs">
-    <Plug id={0} label="Input" type={PlugType.Input} for_module={step_sequencer} />
+    <Plug id={0} label="Gate" type={PlugType.Input} for_module={step_sequencer} />
+    <Plug id={1} label="Reset" type={PlugType.Input} for_module={step_sequencer} />
   </div>
 
   <div slot="outputs">

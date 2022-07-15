@@ -51,5 +51,9 @@ pub fn sequencer(
         SteppedEvent::StepChange(step) => SequencerEvent::StepChange(step),
     }));
 
-    (pass() | steps) >> stepped
+    (
+        pass() | // Gate input
+        pass() | // Reset input
+        steps
+    ) >> stepped
 }
