@@ -10,7 +10,7 @@
   "types": "./dist/lib",
   "scripts": {
     "build:tsc": "tsc",
-    "build:wasm": "wasm-pack build --target web && mkdir -p dist && cp -r pkg/*.wasm* dist/pkg",
+    "build:wasm": "wasm-pack build --target web && mkdir -p dist && cp -r pkg dist/",
     "build:types": "cargo test",
     "watch:wasm": "cargo watch -w . -i pkg -i dist -i README.md -s 'npm run build:wasm'",
     "prebuild": "rimraf dist pkg",
