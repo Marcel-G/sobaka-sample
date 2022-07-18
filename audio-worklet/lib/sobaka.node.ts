@@ -54,7 +54,6 @@ export class SobakaContext extends AudioWorkletNode implements SendProgram {
     context: AudioContext
   ): Promise<SobakaContext> {
     // Fetch WASM source
-    // @ts-ignore @todo should use wasm-loader.d.ts
     const src = await fetch(wasm_url);
 
     // Register AudioWorkletProcessor

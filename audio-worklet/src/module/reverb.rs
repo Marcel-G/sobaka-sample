@@ -89,5 +89,3 @@ pub fn reverb(
 
     reverb
 }
-
-// @todo reverb takes a lot of CPU
