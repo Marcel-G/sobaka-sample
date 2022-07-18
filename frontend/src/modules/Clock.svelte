@@ -41,7 +41,11 @@
   {#await loading}
     <p>Loading...</p>
   {:then}
-    <Knob bind:value={state.bpm} range={[0, 240]} />
+    <Knob bind:value={state.bpm} range={[0, 240]} label="bpm">
+      <div slot="inputs">
+        <Plug id={0} label="bpm_cv" type={PlugType.Input} for_module={clock} />
+      </div>
+    </Knob>
   {/await}
 
   <div slot="outputs">

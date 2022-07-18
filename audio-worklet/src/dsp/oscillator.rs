@@ -105,7 +105,7 @@ where
 /// - Output 0: square wave
 #[inline]
 pub fn sobaka_square<T: Real>() -> An<impl AudioNode<Sample = T, Inputs = U1, Outputs = U1>> {
-    An(PhaseOscillator::new(
+    An(PhaseOscillator::with_phase(
         |phase| {
             if phase < T::from_f64(0.5) {
                 T::from_f64(1.0)
@@ -114,6 +114,7 @@ pub fn sobaka_square<T: Real>() -> An<impl AudioNode<Sample = T, Inputs = U1, Ou
             }
         },
         DEFAULT_SR,
+        Some(T::from_f32(0.0)),
     ))
 }
 
@@ -122,12 +123,13 @@ pub fn sobaka_square<T: Real>() -> An<impl AudioNode<Sample = T, Inputs = U1, Ou
 /// - Output 0: triangle wave
 #[inline]
 pub fn sobaka_triangle<T: Real>() -> An<impl AudioNode<Sample = T, Inputs = U1, Outputs = U1>> {
-    An(PhaseOscillator::new(
+    An(PhaseOscillator::with_phase(
         |phase| -> T {
             (phase * T::from_f64(-2.0) + T::from_f64(1.0)).abs() * T::from_f64(2.0)
                 - T::from_f64(1.0)
         },
         DEFAULT_SR,
+        Some(T::from_f32(0.0)),
     ))
 }
 
@@ -136,8 +138,9 @@ pub fn sobaka_triangle<T: Real>() -> An<impl AudioNode<Sample = T, Inputs = U1, 
 /// - Output 0: saw wave
 #[inline]
 pub fn sobaka_saw<T: Real>() -> An<impl AudioNode<Sample = T, Inputs = U1, Outputs = U1>> {
-    An(PhaseOscillator::new(
+    An(PhaseOscillator::with_phase(
         |phase| -> T { phase * T::from_f64(-2.0) + T::from_f64(1.0) },
         DEFAULT_SR,
+        Some(T::from_f32(0.0)),
     ))
 }

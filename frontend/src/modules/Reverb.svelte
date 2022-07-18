@@ -51,8 +51,8 @@
     <p>Loading...</p>
   {:then}
     <div class="controls">
-      <Knob bind:value={state.wet} range={[0, 1]} />
-      <Knob bind:value={state.length} range={[0, 10]} />
+      <Knob bind:value={state.wet} range={[0, 1]} label="wet" />
+      <Knob bind:value={state.length} range={[0, 10]} label="length" />
     </div>
   {/await}
 

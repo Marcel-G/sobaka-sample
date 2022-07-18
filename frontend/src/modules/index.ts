@@ -14,6 +14,7 @@ import Noise from './Noise.svelte'
 import Delay from './Delay.svelte'
 import Scope from './Scope.svelte'
 import String from './String.svelte'
+import Midi from './Midi.svelte'
 import Lfo from './Lfo.svelte'
 import Quantiser from './Quantiser.svelte'
 import SampleAndHold from './SampleAndHold.svelte'
@@ -31,7 +32,7 @@ export enum ModuleUI {
   Filter = 'Filter',
   // Input = 'Input',
   Lfo = 'Lfo',
-  // Midi = 'Midi',
+  Midi = 'Midi',
   Sequencer = 'Sequencer',
   StepSequencer = 'StepSequencer',
   Noise = 'Noise',
@@ -56,7 +57,7 @@ export const get_component = (module: Module<ModuleUI>) => {
     [ModuleUI.String]: String,
     // [ModuleUI.Input]: Input,
     [ModuleUI.Lfo]: Lfo,
-    // [ModuleUI.Midi]: Midi,
+    [ModuleUI.Midi]: Midi,
     [ModuleUI.Sequencer]: Sequencer,
     [ModuleUI.StepSequencer]: StepSequencer,
     [ModuleUI.Noise]: Noise,

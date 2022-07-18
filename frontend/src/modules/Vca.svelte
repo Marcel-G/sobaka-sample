@@ -44,7 +44,7 @@
     <p>Loading...</p>
   {:then}
     <span>
-      <Knob bind:value range={[-1, 1]} />
+      <Knob bind:value range={[-1, 1]} label="attenuverter" />
     </span>
   {/await}
 

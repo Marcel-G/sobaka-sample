@@ -45,14 +45,14 @@
   {#await loading}
     <p>Loading...</p>
   {:then}
-    <Knob bind:value={state.damping} range={[0, 1]} />
-    <Knob bind:value={state.decay} range={[0, 1]} />
+    <Knob bind:value={state.damping} range={[0, 1]} label="damping" />
+    <Knob bind:value={state.decay} range={[0, 1]} label="decay" />
   {/await}
   <div slot="inputs">
     <Plug id={0} label="excitation" type={PlugType.Input} for_module={string} />
-    <Plug id={1} label="Freq" type={PlugType.Input} for_module={string} />
+    <Plug id={1} label="pitch" type={PlugType.Input} for_module={string} />
   </div>
   <div slot="outputs">
-    <Plug id={0} label="Output" type={PlugType.Output} for_module={string} />
+    <Plug id={0} label="output" type={PlugType.Output} for_module={string} />
   </div>
 </Panel>

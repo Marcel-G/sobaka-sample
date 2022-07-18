@@ -55,6 +55,12 @@ export class Noise extends AbstractModule<'Noise'> {
   }
 }
 
+export class Midi extends AbstractModule<'Midi'> {
+  constructor(context: SobakaContext) {
+    super(context, 'Midi', undefined)
+  }
+}
+
 export class Vca extends AbstractModule<'Vca'> {
   constructor(context: SobakaContext, initial_state: Params<'Vca'>) {
     super(context, 'Vca', initial_state)

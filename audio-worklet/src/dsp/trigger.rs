@@ -1,63 +1,86 @@
+use std::ops::Add;
+
 use fundsp::{
-    hacker::{An, AudioNode, Frame, Tag, U0, U1},
-    Float,
+    hacker::{An, AudioNode, Frame, SignalFrame, Size, Tag, U1},
+    math::AttoRand,
+    Float, GenericSequence,
 };
+use numeric_array::typenum::Sum;
 
 #[inline]
-pub fn trigger<X>(unit: An<X>) -> An<Trigger<X>>
+pub fn reset_trigger<X>(unit: An<X>) -> An<Trigger<X>>
 where
-    X: AudioNode<Sample = f32, Inputs = U0>,
+    X: AudioNode<Sample = f32>,
+    <X as AudioNode>::Inputs: Add<U1>,
+    <<X as AudioNode>::Inputs as Add<U1>>::Output: Size<f32>,
 {
     An(Trigger::new(unit))
 }
 
 pub struct Trigger<X>
 where
-    X: AudioNode<Sample = f32, Inputs = U0>,
+    X: AudioNode<Sample = f32>,
 {
-    unit: An<X>,
-    is_open: bool,
+    x: An<X>,
+    trigger: SchmittTrigger,
 }
 
 impl<X> Trigger<X>
 where
-    X: AudioNode<Sample = f32, Inputs = U0>,
+    X: AudioNode<Sample = f32>,
 {
     pub fn new(unit: An<X>) -> Self {
         Self {
-            unit,
-            is_open: false,
+            x: unit,
+            trigger: SchmittTrigger::default(),
         }
     }
 }
 
 impl<X> AudioNode for Trigger<X>
 where
-    X: AudioNode<Sample = f32, Inputs = U0>,
+    X: AudioNode<Sample = f32>,
+    <X as AudioNode>::Inputs: Add<U1>,
+    <<X as AudioNode>::Inputs as Add<U1>>::Output: Size<f32>,
 {
     const ID: u64 = 0;
     type Sample = X::Sample;
-    type Inputs = U1;
+    type Inputs = Sum<X::Inputs, U1>;
     type Outputs = X::Outputs;
 
     fn tick(
         &mut self,
-        input: &fundsp::hacker::Frame<Self::Sample, Self::Inputs>,
-    ) -> fundsp::hacker::Frame<Self::Sample, Self::Outputs> {
-        if input[0] >= 1.0 {
-            if self.is_open {
-                self.unit.reset(None)
-            }
-            self.is_open = false
-        } else {
-            self.is_open = true
+        input: &Frame<Self::Sample, Self::Inputs>,
+    ) -> Frame<Self::Sample, Self::Outputs> {
+        let gate = input[0];
+
+        if self.trigger.tick(gate, 0.0, 0.001) {
+            self.x.reset(None);
         }
 
-        self.unit.tick(&Frame::default())
+        self.x.tick(&Frame::generate(|i| input[i + 1])) // @todo input.offset()?
     }
 
     fn set(&mut self, parameter: Tag, value: f64) {
-        self.unit.set(parameter, value);
+        self.x.set(parameter, value);
+    }
+
+    fn reset(&mut self, sample_rate: Option<f64>) {
+        let inner_sr = sample_rate.map(|sr| sr * 2.0);
+        self.x.reset(inner_sr);
+        self.trigger.reset();
+    }
+
+    fn route(&self, input: &SignalFrame, frequency: f64) -> SignalFrame {
+        self.x.route(input, frequency)
+    }
+
+    fn ping(&mut self, probe: bool, hash: AttoRand) -> AttoRand {
+        self.x.ping(probe, hash.hash(Self::ID))
+    }
+
+    fn get(&self, parameter: Tag) -> Option<f64> {
+        self.x.get(parameter)
     }
 }
 

@@ -1,6 +1,6 @@
 use crate::{
     context::ModuleContext,
-    dsp::{messaging::MessageHandler, shared::Share},
+    dsp::{messaging::MessageHandler, shared::Share, trigger::reset_trigger},
 };
 use fundsp::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -22,7 +22,8 @@ pub enum DelayCommand {
 
 pub fn delay(params: &DelayParams, context: &mut ModuleContext<DelayCommand>) -> impl AudioUnit32 {
     let inputs = pass() | (pass() + tag(0, params.time));
-    let unit = (inputs >> tap(0.0, 10.0)).share();
+    // @todo resetting the tap delay is expensive so I should add a way to limit it
+    let unit = reset_trigger(inputs >> tap(0.0, 10.0)).share();
 
     context.set_tx(
         unit.clone()

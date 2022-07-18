@@ -45,25 +45,27 @@
     height: number
   ) {
     ctx.beginPath()
-    for (let i = 0; i < data.length; i++) {
+    const reduced = data.filter((_, i) => !Boolean(i % 32)) // Take every 32nd sample
+
+    reduced.forEach((value, i, data) => {
       let x = i * (width / data.length) // need to fix x
-      let v = data[i] / 128.0
+      let v = value / 128.0
       let y = (v * height) / 2
       if (i === 0) ctx.moveTo(x, y)
       else ctx.lineTo(x, y)
-    }
+    })
     ctx.stroke()
 
-    for (let i = 0; i < data.length; i++) {
+    reduced.forEach((value, i, data) => {
       let x = i * (width / data.length) // need to fix x
-      let v = data[i] / 128.0
+      let v = value / 128.0
       if (v >= 2.0 || v <= 0.0) {
         let fill = ctx.fillStyle
         ctx.fillStyle = get_css_var('--red')
         ctx.fillRect(x, v, 1, height)
         ctx.fillStyle = fill
       }
-    }
+    })
   }
   onMount(() => {
     const width = canvas.width

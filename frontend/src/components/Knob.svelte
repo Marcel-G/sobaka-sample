@@ -74,9 +74,11 @@
 
 <script lang="ts">
   import { throttle } from 'lodash'
+  import Tooltip from './Tooltip.svelte'
 
   export let value = 0.0
   export let range: number[] = [0, 20000]
+  export let label: string
 
   let [min, max] = range
   let rot_range = 2 * Math.PI * 0.83
@@ -123,12 +125,15 @@
 </script>
 
 <div class="wrapper">
-  <div
-    class="knob"
-    style="--rotation: {rotation}"
-    on:dblclick={() => (direct_input = true)}
-    on:pointerdown={pointerDown}
-  />
+  <Tooltip {label}>
+    <div
+      class="knob"
+      style="--rotation: {rotation}"
+      on:dblclick={() => (direct_input = true)}
+      on:pointerdown={pointerDown}
+    />
+  </Tooltip>
+
   <div class="inputs">
     <slot name="inputs" />
   </div>

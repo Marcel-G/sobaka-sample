@@ -44,10 +44,10 @@
     <p>Loading...</p>
   {:then}
     <span>
-      <Knob bind:value range={[min, max]} />
+      <Knob bind:value range={[min, max]} label="value" />
     </span>
   {/await}
   <div slot="outputs">
-    <Plug id={0} label="Output" type={PlugType.Output} for_module={parameter} />
+    <Plug id={0} label="output" type={PlugType.Output} for_module={parameter} />
   </div>
 </Panel>

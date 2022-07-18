@@ -121,15 +121,21 @@
 
   <div slot="inputs">
     <Plug id={0} label="Signal_1" type={PlugType.Input} for_module={quantiser} />
-    <Plug id={1} label="Signal_2" type={PlugType.Input} for_module={quantiser} />
-    <Plug id={2} label="Signal_3" type={PlugType.Input} for_module={quantiser} />
-    <Plug id={3} label="Signal_4" type={PlugType.Input} for_module={quantiser} />
+    <!-- @todo polyphony
+      <Plug id={1} label="Signal_2" type={PlugType.Input} for_module={quantiser} />
+      <Plug id={2} label="Signal_3" type={PlugType.Input} for_module={quantiser} />
+      <Plug id={3} label="Signal_4" type={PlugType.Input} for_module={quantiser} />
+    -->
   </div>
 
   <div slot="outputs">
     <Plug id={0} label="Output_1" type={PlugType.Output} for_module={quantiser} />
-    <Plug id={1} label="Output_2" type={PlugType.Output} for_module={quantiser} />
-    <Plug id={2} label="Output_3" type={PlugType.Output} for_module={quantiser} />
-    <Plug id={3} label="Output_4" type={PlugType.Output} for_module={quantiser} />
+    <!-- @todo polyphony
+      <Plug id={1} label="Output_2" type={PlugType.Output} for_module={quantiser} />
+      <Plug id={2} label="Output_3" type={PlugType.Output} for_module={quantiser} />
+      <Plug id={3} label="Output_4" type={PlugType.Output} for_module={quantiser} />
+    -->
   </div>
 </Panel>
+
+<!-- @todo fix minor key z-index -->

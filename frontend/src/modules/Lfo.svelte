@@ -20,14 +20,14 @@
 
   const { context, get_sub_state, update_sub_state } = get_module_context()
 
-  let state = get_sub_state(name, { frequency: 5 })
+  let state = get_sub_state(name, { bpm: 5 })
 
   const lfo = new Lfo(context, state)
 
   const loading = lfo.get_address()
 
   // Update the sobaka node when the state changes
-  $: void lfo.message({ SetFrequency: state.frequency })
+  $: void lfo.message({ SetBPM: state.bpm })
 
   // Update the global state when state changes
   $: update_sub_state(name, state)
@@ -41,10 +41,18 @@
   {#await loading}
     <p>Loading...</p>
   {:then}
-    <Knob bind:value={state.frequency} range={[0, 20]} />
+    <Knob bind:value={state.bpm} range={[0, 600]} label="bpm">
+      <div slot="inputs">
+        <Plug id={1} label="bpm_cv" type={PlugType.Input} for_module={lfo} />
+      </div>
+    </Knob>
   {/await}
 
+  <div slot="inputs">
+    <Plug id={0} label="reset" type={PlugType.Input} for_module={lfo} />
+  </div>
+
   <div slot="outputs">
-    <Plug id={0} label="Signal" type={PlugType.Output} for_module={lfo} />
+    <Plug id={0} label="signal" type={PlugType.Output} for_module={lfo} />
   </div>
 </Panel>

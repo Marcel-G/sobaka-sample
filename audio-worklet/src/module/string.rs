@@ -34,5 +34,8 @@ pub fn string(
         },
     ));
 
-    (pass() | (pass() >> map(|f| volt_hz(f[0])))) >> oscillator
+    (pass() | (pass() >> map(|f| volt_hz(f[0])))) >> oscillator >> shape(Shape::Tanh(0.8))
 }
+
+// @todo string module is unstable
+// @todo maybe noise generator / envelope should be built in

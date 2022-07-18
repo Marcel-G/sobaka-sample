@@ -115,6 +115,7 @@ where
         if self.reset_trigger.tick(reset, 0.0, 0.001) {
             self.active = 0;
 
+            // @todo these messages could be fired at near audio rate. Probably need to throttle this somewhere.
             self.subject.notify(SteppedEvent::StepChange(self.active));
         }
 

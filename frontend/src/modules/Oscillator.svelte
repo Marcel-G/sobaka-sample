@@ -21,10 +21,10 @@
   const { context, get_sub_state, update_sub_state } = get_module_context()
 
   let state = get_sub_state(name, {
-    sine: 0.25,
-    saw: 0.25,
-    square: 0.25,
-    triangle: 0.25,
+    sine: 0.0,
+    saw: 1.0,
+    square: 0.0,
+    triangle: 0.0,
     pitch: 0.0
   })
 
@@ -51,19 +51,22 @@
   {#await loading}
     <p>Loading...</p>
   {:then}
-    <Knob bind:value={state.pitch} range={[0, 4]} />
-    <Knob bind:value={state.saw} range={[0, 1]} />
-    <Knob bind:value={state.sine} range={[0, 1]} />
-    <Knob bind:value={state.square} range={[0, 1]} />
-    <Knob bind:value={state.triangle} range={[0, 1]} />
+    <Knob bind:value={state.pitch} range={[0, 4]} label="pitch" />
+    <Knob bind:value={state.saw} range={[0, 1]} label="saw" />
+    <Knob bind:value={state.sine} range={[0, 1]} label="sine" />
+    <Knob bind:value={state.square} range={[0, 1]} label="square" />
+    <Knob bind:value={state.triangle} range={[0, 1]} label="triangle" />
   {/await}
   <div slot="inputs">
-    <Plug id={0} label="Frequency_1 Cv" type={PlugType.Input} for_module={oscillator} />
-    <Plug id={1} label="Frequency_2 Cv" type={PlugType.Input} for_module={oscillator} />
-    <Plug id={2} label="Frequency_3 Cv" type={PlugType.Input} for_module={oscillator} />
-    <Plug id={3} label="Frequency_4 Cv" type={PlugType.Input} for_module={oscillator} />
+    <Plug id={1} label="pitch_1 cv" type={PlugType.Input} for_module={oscillator} />
+    <!-- @todo polyphony
+      <Plug id={2} label="pitch_2 cv" type={PlugType.Input} for_module={oscillator} />
+      <Plug id={3} label="pitch_3 cv" type={PlugType.Input} for_module={oscillator} />
+      <Plug id={4} label="pitch_4 cv" type={PlugType.Input} for_module={oscillator} />
+    -->
+    <Plug id={0} label="reset" type={PlugType.Input} for_module={oscillator} />
   </div>
   <div slot="outputs">
-    <Plug id={0} label="Output" type={PlugType.Output} for_module={oscillator} />
+    <Plug id={0} label="output" type={PlugType.Output} for_module={oscillator} />
   </div>
 </Panel>

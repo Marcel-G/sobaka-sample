@@ -36,3 +36,5 @@ pub fn quantiser(
 
     module
 }
+
+// @todo chord generator

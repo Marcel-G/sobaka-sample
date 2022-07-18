@@ -42,17 +42,18 @@
     <p>Loading...</p>
   {:then}
     <div class="controls">
-      <Knob bind:value={time} range={[0, 10]}>
+      <Knob bind:value={time} range={[0, 10]} label="seconds">
         <div slot="inputs">
-          <Plug id={1} label="Delay Cv" type={PlugType.Input} for_module={delay} />
+          <Plug id={2} label="seconds_cv" type={PlugType.Input} for_module={delay} />
         </div>
       </Knob>
     </div>
   {/await}
   <div slot="inputs">
-    <Plug id={0} label="Input" type={PlugType.Input} for_module={delay} />
+    <Plug id={1} label="signal" type={PlugType.Input} for_module={delay} />
+    <Plug id={0} label="reset" type={PlugType.Input} for_module={delay} />
   </div>
   <div slot="outputs">
-    <Plug id={0} label="Output" type={PlugType.Output} for_module={delay} />
+    <Plug id={0} label="output" type={PlugType.Output} for_module={delay} />
   </div>
 </Panel>

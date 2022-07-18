@@ -3,8 +3,8 @@ use crate::dsp::{
     join::dsp_join,
     messaging::MessageHandler,
     oscillator::{sobaka_saw, sobaka_square, sobaka_triangle},
-    param::param,
     shared::Share,
+    trigger::reset_trigger,
     volt_hz,
 };
 use fundsp::prelude::*;
@@ -42,13 +42,13 @@ pub fn oscillator(
     context: &mut ModuleContext<OscillatorCommand>,
 ) -> impl AudioUnit32 {
     let multi_osc = stack::<U4, _, _, _>(|_n| {
-        let input = (pass() + tag(4, 0.0))
-            >> split::<U2, _>()
-            >> (map::<_, _, U1, _>(|f| volt_hz(f[0])) | pass());
-        let attenuated_saw = sobaka_saw() * param(0, params.saw);
-        let attenuated_sine = sine() * param(1, params.sine);
-        let attenuated_square = sobaka_square() * param(2, params.square);
-        let attenuated_triangle = sobaka_triangle() * param(3, params.triangle);
+        let input = split::<U2, _>()
+            >> ((pass() + tag(4, 0.0)) | pass())
+            >> (map::<_, _, U1, _>(|pitch| volt_hz(pitch[0])) | pass());
+        let attenuated_saw = sobaka_saw() * tag(0, params.saw);
+        let attenuated_sine = sine_phase(0.0) * tag(1, params.sine);
+        let attenuated_square = sobaka_square() * tag(2, params.square);
+        let attenuated_triangle = sobaka_triangle() * tag(3, params.triangle);
 
         input
             >> ((attenuated_saw & attenuated_sine & attenuated_square & attenuated_triangle)
@@ -58,7 +58,7 @@ pub fn oscillator(
             >> shape(Shape::Tanh(0.8))
     }) >> dsp_join::<U4, _>();
 
-    let out = oversample(multi_osc).share();
+    let out = reset_trigger(oversample(multi_osc)).share();
 
     context.set_tx(
         out.clone()

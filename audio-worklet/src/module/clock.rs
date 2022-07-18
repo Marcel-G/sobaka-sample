@@ -27,7 +27,7 @@ pub fn clock(params: &ClockParams, context: &mut ModuleContext<ClockCommand>) ->
 
     let clock_divider_node = branch::<U5, _, _, _>(|n| mul(divide[n as usize]) >> clock_square());
 
-    let bpm = (tag(0, params.bpm) >> map(|f| bpm_hz(f[0]))).share();
+    let bpm = ((pass() + tag(0, params.bpm)) >> map(|f| bpm_hz(f[0]))).share();
 
     context.set_tx(
         bpm.clone()

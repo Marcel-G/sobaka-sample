@@ -1,6 +1,6 @@
 use crate::{
     context::ModuleContext,
-    dsp::{messaging::MessageHandler, shared::Share, trigger::trigger},
+    dsp::{messaging::MessageHandler, shared::Share, trigger::reset_trigger},
 };
 use fundsp::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -46,5 +46,8 @@ pub fn envelope(
         },
     ));
 
-    trigger(params >> env)
+    reset_trigger(params >> env)
 }
+
+// @todo add ADSR options
+// @todo envelope clips when release is interupted by attack

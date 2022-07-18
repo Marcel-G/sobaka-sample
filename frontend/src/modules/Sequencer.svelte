@@ -70,7 +70,7 @@
   {:then}
     <div class="controls">
       {#each steps as val, i}
-        <Knob bind:value={val} range={knob_range}>
+        <Knob bind:value={val} range={knob_range} label={`step_${i + 1}`}>
           <div slot="inputs">
             <Led on={active_step === i} />
           </div>
@@ -79,11 +79,11 @@
     </div>
   {/await}
   <div slot="inputs">
-    <Plug id={0} label="Gate" type={PlugType.Input} for_module={sequencer} />
-    <Plug id={1} label="Reset" type={PlugType.Input} for_module={sequencer} />
+    <Plug id={0} label="gate" type={PlugType.Input} for_module={sequencer} />
+    <Plug id={1} label="reset" type={PlugType.Input} for_module={sequencer} />
   </div>
 
   <div slot="outputs">
-    <Plug id={0} label="Output" type={PlugType.Output} for_module={sequencer} />
+    <Plug id={0} label="output" type={PlugType.Output} for_module={sequencer} />
   </div>
 </Panel>

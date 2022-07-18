@@ -160,7 +160,7 @@
       "state": {
         "envelope": {
           "attack": 0,
-          "release": 0.039140624999999984
+          "release": 0.05199218749999998
         }
       }
     },
@@ -188,7 +188,7 @@
       "state": {
         "oscillator": {
           "sine": 1,
-          "saw": 0.99232421875,
+          "saw": 0,
           "square": 0,
           "triangle": 0,
           "pitch": 0
@@ -204,7 +204,7 @@
       },
       "state": {
         "filter": {
-          "frequency": 2.7825390624999997,
+          "frequency": 1.9790625,
           "q": 0,
           "kind": "Filter"
         }
@@ -268,7 +268,7 @@
       "state": {
         "string": {
           "damping": 0.41234375,
-          "decay": 0.23837890625000002
+          "decay": 0.07855468750000003
         }
       }
     },
@@ -358,77 +358,6 @@
       }
     },
     {
-      "id": "ulp6wecvl",
-      "type": "Quantiser",
-      "position": {
-        "x": 32,
-        "y": 39
-      },
-      "state": {
-        "quantiser": {
-          "notes": [
-            true,
-            false,
-            false,
-            false,
-            false,
-            true,
-            false,
-            false,
-            true,
-            false,
-            false,
-            false
-          ]
-        }
-      }
-    },
-    {
-      "id": "p8bwymij8",
-      "type": "Parameter",
-      "position": {
-        "x": 17,
-        "y": 40
-      },
-      "state": {
-        "parameter": {
-          "min": 0,
-          "max": 10,
-          "value": 1.0599609375000005
-        }
-      }
-    },
-    {
-      "id": "f08jcmuhm",
-      "type": "Parameter",
-      "position": {
-        "x": 22,
-        "y": 42
-      },
-      "state": {
-        "parameter": {
-          "min": 0,
-          "max": 10,
-          "value": 2.9306640624999996
-        }
-      }
-    },
-    {
-      "id": "7nma3rjzg",
-      "type": "Parameter",
-      "position": {
-        "x": 27,
-        "y": 44
-      },
-      "state": {
-        "parameter": {
-          "min": 0,
-          "max": 10,
-          "value": 1.5509765625000003
-        }
-      }
-    },
-    {
       "id": "lwcnhrz0h",
       "type": "Vca",
       "position": {
@@ -452,12 +381,22 @@
         "parameter": {
           "min": 0,
           "max": 10,
-          "value": 3.396484375
+          "value": 4.401953125
         }
       }
     }
   ],
   "links": [
+    {
+      "to": "lwcnhrz0h/out-0",
+      "from": "0bpq73j6q/in-1",
+      "id": "larvbswkk"
+    },
+    {
+      "to": "71508lolb/out-0",
+      "from": "31vmuahaj/in-1",
+      "id": "zn8hnzvfy"
+    },
     {
       "to": "8lx092eks/out-0",
       "from": "lwcnhrz0h/in-0",
@@ -467,26 +406,6 @@
       "from": "lwcnhrz0h/in-1",
       "to": "7lw39dud9/out-0",
       "id": "hz1hwips6"
-    },
-    {
-      "to": "lwcnhrz0h/out-0",
-      "from": "0bpq73j6q/in-0",
-      "id": "u2pn89drw"
-    },
-    {
-      "to": "7nma3rjzg/out-0",
-      "from": "ulp6wecvl/in-3",
-      "id": "78419mpzv"
-    },
-    {
-      "to": "f08jcmuhm/out-0",
-      "from": "ulp6wecvl/in-2",
-      "id": "fhd4xb04k"
-    },
-    {
-      "to": "p8bwymij8/out-0",
-      "from": "ulp6wecvl/in-1",
-      "id": "3f800rpr8"
     },
     {
       "from": "0bpq73j6q/in-3",
@@ -657,11 +576,6 @@
       "to": "31vmuahaj/out-0",
       "from": "qm23c0g5u/in-0",
       "id": "q4jk1lfpo"
-    },
-    {
-      "from": "31vmuahaj/in-0",
-      "to": "71508lolb/out-0",
-      "id": "9jbp888kj"
     },
     {
       "to": "b31manp01/out-1",

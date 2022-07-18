@@ -7,7 +7,7 @@
   .controls {
     display: flex;
     flex-direction: row;
-    padding-top: 0.5rem;
+    padding: 0.5rem;
   }
   .oscilloscope-wrapper {
     position: absolute;
@@ -159,8 +159,8 @@
         </div>
       </div>
       <div class="controls">
-        <Knob bind:value={state.threshold} range={[-1, 1]} />
-        <Knob bind:value={state.time} range={[0, 12]} />
+        <Knob bind:value={state.threshold} range={[-1, 1]} label="threshold" />
+        <Knob bind:value={state.time} range={[0, 12]} label="time" />
         <Button
           bind:pressed={state.trigger}
           onClick={() => (state.trigger = !state.trigger)}
@@ -169,6 +169,6 @@
     </div>
   {/await}
   <div slot="inputs">
-    <Plug id={0} label="Input" type={PlugType.Input} for_module={scope} />
+    <Plug id={0} label="signal" type={PlugType.Input} for_module={scope} />
   </div>
 </Panel>

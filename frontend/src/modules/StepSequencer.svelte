@@ -23,14 +23,15 @@
   import { onDestroy } from 'svelte'
   import Button from '../components/Button.svelte'
   import Led from '../components/Led.svelte'
-  import { fill } from 'lodash'
 
   const { context, get_sub_state, update_sub_state } = get_module_context()
 
   let name = 'step_sequencer'
 
   let state = get_sub_state(name, {
-    steps: new Array<boolean[]>(4).fill(new Array<boolean>(8).fill(false))
+    steps: new Array<boolean[]>(4)
+      .fill(undefined)
+      .map(() => new Array<boolean>(8).fill(false))
   })
 
   let active_step = 0

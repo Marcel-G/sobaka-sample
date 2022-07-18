@@ -21,6 +21,20 @@ pub enum ReverbCommand {
     SetDelay(f64),
 }
 
+/// Raises 2 to a floating point power.
+#[inline]
+pub fn pow2(p: f32) -> f32 {
+    let clipp = if p < -126.0 { -126.0_f32 } else { p };
+    let v = ((1 << 23) as f32 * (clipp + 126.942_696_f32)) as u32;
+    f32::from_bits(v)
+}
+
+/// Raises a number to a floating point power.
+#[inline]
+pub fn fast_pow(x: f32, p: f32) -> f32 {
+    pow2(p * log2(x))
+}
+
 /// Stereo reverb.
 /// `wet` in 0...1 is balance of reverb mixed in, for example, 0.1.
 /// `time` is approximate reverberation time to -60 dB in seconds.
@@ -39,7 +53,7 @@ where
 
     let line = stack::<U32, T, _, _>(|i| {
         let a = param::<T>(1, T::from_f64(time))
-            >> map(|t: &Frame<T, U1>| T::from_f64(pow(db_amp(-60.0), 0.03 / t[0].to_f64())));
+            >> map(|t: &Frame<T, U1>| T::from_f32(fast_pow(db_amp(-60.0), 0.03 / t[0].to_f32())));
 
         delay::<T>(DELAYS[i as usize])
             >> fir((T::from_f32(0.5), T::from_f32(0.5)))
@@ -75,3 +89,5 @@ pub fn reverb(
 
     reverb
 }
+
+// @todo reverb takes a lot of CPU

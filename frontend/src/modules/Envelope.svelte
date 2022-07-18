@@ -51,14 +51,14 @@
     <p>Loading...</p>
   {:then}
     <div class="controls">
-      <Knob bind:value={attack} range={[0, 1]} />
-      <Knob bind:value={release} range={[0, 1]} />
+      <Knob bind:value={attack} range={[0, 1]} label="attack" />
+      <Knob bind:value={release} range={[0, 1]} label="release" />
     </div>
   {/await}
   <div slot="inputs">
-    <Plug id={0} label="Trigger" type={PlugType.Input} for_module={envelope} />
+    <Plug id={0} label="gate" type={PlugType.Input} for_module={envelope} />
   </div>
   <div slot="outputs">
-    <Plug id={0} label="Envelope" type={PlugType.Output} for_module={envelope} />
+    <Plug id={0} label="envelope" type={PlugType.Output} for_module={envelope} />
   </div>
 </Panel>

@@ -67,9 +67,10 @@ pub fn step_sequencer(
         SteppedEvent::StepChange(step) => StepSequencerEvent::StepChange(step),
     }));
 
-    (
-        pass() | // Gate input
+    (pass() | // Gate input
         pass() | // Reset input
-        steps
-    ) >> stepped
+        steps)
+        >> stepped
 }
+
+// @todo first position in the sequencer comes a bit after reset gate
