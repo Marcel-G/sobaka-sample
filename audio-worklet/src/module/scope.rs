@@ -57,3 +57,6 @@ pub fn scope(
 
     sc
 }
+
+
+// @todo auto adjust scope y axis

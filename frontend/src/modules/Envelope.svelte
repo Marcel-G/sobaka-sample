@@ -28,16 +28,23 @@
 
   const { context, get_sub_state, update_sub_state } = get_module_context()
 
-  let { attack, release } = get_sub_state(name, { attack: 0.125, release: 0.5 })
+  let { attack, decay, sustain, release } = get_sub_state(name, {
+    attack: 0.125,
+    decay: 0.1,
+    sustain: 0.5,
+    release: 0.5
+  })
 
-  const envelope = new Envelope(context, { attack, release })
+  const envelope = new Envelope(context, { attack, release, decay, sustain })
 
   // Update the sobaka node when the state changes
   $: void envelope.message({ SetAttack: attack })
+  $: void envelope.message({ SetDecay: decay })
+  $: void envelope.message({ SetSustain: sustain })
   $: void envelope.message({ SetRelease: release })
 
   // Update the global state when state changes
-  $: update_sub_state(name, { attack, release })
+  $: update_sub_state(name, { attack, decay, sustain, release })
 
   const loading = envelope.get_address()
 
@@ -46,12 +53,14 @@
   })
 </script>
 
-<Panel {name} height={6} width={8} custom_style={into_style(theme)}>
+<Panel {name} height={9} width={8} custom_style={into_style(theme)}>
   {#await loading}
     <p>Loading...</p>
   {:then}
     <div class="controls">
       <Knob bind:value={attack} range={[0, 1]} label="attack" />
+      <Knob bind:value={decay} range={[0, 1]} label="decay" />
+      <Knob bind:value={sustain} range={[0, 1]} label="sustain" />
       <Knob bind:value={release} range={[0, 1]} label="release" />
     </div>
   {/await}

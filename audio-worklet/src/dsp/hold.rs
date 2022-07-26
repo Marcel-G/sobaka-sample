@@ -29,7 +29,7 @@ impl<T: Float> AudioNode for Hold<T> {
     ) -> fundsp::hacker::Frame<Self::Sample, Self::Outputs> {
         let signal = input[0];
         let trigger = input[1];
-        if self.trigger.tick(trigger, 0.0, 0.001) {
+        if self.trigger.tick(trigger, 0.0, 0.001) == Some(false) {
             self.sample = signal;
         }
         Frame::splat(self.sample)
