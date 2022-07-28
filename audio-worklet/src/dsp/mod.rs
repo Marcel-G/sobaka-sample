@@ -12,6 +12,7 @@ pub mod scope;
 pub mod shared;
 pub mod stepped;
 pub mod trigger;
+pub mod envelope;
 
 /// Convert 1v per octave to hz
 pub fn volt_hz<T: Float>(voltage: T) -> T {

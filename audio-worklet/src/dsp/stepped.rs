@@ -112,14 +112,14 @@ where
         let trigger = input[0];
         let reset = input[1];
 
-        if self.reset_trigger.tick(reset, 0.0, 0.001) {
+        if self.reset_trigger.tick(reset, 0.0, 0.001) == Some(true) {
             self.active = 0;
 
             // @todo these messages could be fired at near audio rate. Probably need to throttle this somewhere.
             self.subject.notify(SteppedEvent::StepChange(self.active));
         }
 
-        if self.trigger.tick(trigger, 0.0, 0.001) {
+        if self.trigger.tick(trigger, 0.0, 0.001) == Some(true) {
             if self.active >= M::USIZE - 1 {
                 self.active = 0;
             } else {

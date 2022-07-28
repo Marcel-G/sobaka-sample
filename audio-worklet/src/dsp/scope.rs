@@ -117,7 +117,7 @@ impl<T: Float> AudioNode for Scope<T> {
             if !self.trigger_enabled
                 || self
                     .trigger
-                    .tick(y, self.threshold.to_f64(), self.threshold.to_f64() + 0.001)
+                    .tick(y, self.threshold.to_f64(), self.threshold.to_f64() + 0.001) == Some(true)
             {
                 self.index = 0;
                 self.trigger.reset();

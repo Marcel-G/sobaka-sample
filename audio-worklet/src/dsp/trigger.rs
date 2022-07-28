@@ -1,4 +1,4 @@
-use std::ops::Add;
+use std::{ops::Add, sync::atomic::{AtomicBool, Ordering}};
 
 use fundsp::{
     hacker::{An, AudioNode, Frame, SignalFrame, Size, Tag, U1},
@@ -6,16 +6,6 @@ use fundsp::{
     Float, GenericSequence,
 };
 use numeric_array::typenum::Sum;
-
-#[inline]
-pub fn reset_trigger<X>(unit: An<X>) -> An<Trigger<X>>
-where
-    X: AudioNode<Sample = f32>,
-    <X as AudioNode>::Inputs: Add<U1>,
-    <<X as AudioNode>::Inputs as Add<U1>>::Output: Size<f32>,
-{
-    An(Trigger::new(unit))
-}
 
 pub struct Trigger<X>
 where
@@ -54,7 +44,7 @@ where
     ) -> Frame<Self::Sample, Self::Outputs> {
         let gate = input[0];
 
-        if self.trigger.tick(gate, 0.0, 0.001) {
+        if self.trigger.tick(gate, 0.0, 0.001) == Some(true) {
             self.x.reset(None);
         }
 
@@ -85,33 +75,34 @@ where
 }
 
 pub struct SchmittTrigger {
-    is_open: bool,
+    is_open: AtomicBool,
 }
 
 impl SchmittTrigger {
     pub fn new() -> Self {
-        Self { is_open: true }
+        Self { is_open: AtomicBool::new(false) }
     }
-    pub fn tick<T: Float>(&mut self, input: T, off_threshold: f64, on_threshold: f64) -> bool {
-        if self.is_open {
+    pub fn tick<T: Float>(&self, input: T, off_threshold: f64, on_threshold: f64) -> Option<bool> {
+        if self.is_open.load(Ordering::SeqCst) {
             // High to low
             if input <= T::from_f64(off_threshold) {
-                self.is_open = false;
+                self.is_open.store(false, Ordering::SeqCst);
+                return Some(false)
             }
             // Low to High
         } else if input >= T::from_f64(on_threshold) {
-            self.is_open = true;
-            return true;
+            self.is_open.store(true, Ordering::SeqCst);
+            return Some(true);
         }
-        false
+        None
     }
 
     pub fn is_open(&self) -> bool {
-        self.is_open
+        self.is_open.load(Ordering::SeqCst)
     }
 
     pub fn reset(&mut self) {
-        self.is_open = true;
+        self.is_open.store(true, Ordering::SeqCst);
     }
 }
 
@@ -119,4 +110,14 @@ impl Default for SchmittTrigger {
     fn default() -> Self {
         Self::new()
     }
+}
+
+#[inline]
+pub fn reset_trigger<X>(unit: An<X>) -> An<Trigger<X>>
+where
+    X: AudioNode<Sample = f32>,
+    <X as AudioNode>::Inputs: Add<U1>,
+    <<X as AudioNode>::Inputs as Add<U1>>::Output: Size<f32>,
+{
+    An(Trigger::new(unit))
 }
