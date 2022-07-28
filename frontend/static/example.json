@@ -49,23 +49,9 @@
             true,
             false,
             true,
-            false,
-            true
+            true,
+            false
           ]
-        }
-      }
-    },
-    {
-      "id": "f2aecak0a",
-      "type": "Envelope",
-      "position": {
-        "x": 24,
-        "y": 15
-      },
-      "state": {
-        "envelope": {
-          "attack": 0,
-          "release": 0.6165820312499999
         }
       }
     },
@@ -91,7 +77,7 @@
       "type": "Vca",
       "position": {
         "x": 58,
-        "y": 18
+        "y": 19
       },
       "state": {
         "parameter": {
@@ -103,8 +89,8 @@
       "id": "81dw507nk",
       "type": "Output",
       "position": {
-        "x": 68,
-        "y": 17
+        "x": 73,
+        "y": 19
       }
     },
     {
@@ -131,7 +117,7 @@
         "parameter": {
           "min": 0,
           "max": 10,
-          "value": 2
+          "value": 1.5
         }
       }
     },
@@ -149,31 +135,16 @@
       }
     },
     {
-      "id": "epezoqpjw",
-      "type": "Parameter",
-      "position": {
-        "x": 6,
-        "y": 27
-      },
-      "state": {
-        "parameter": {
-          "min": 0,
-          "max": 10,
-          "value": 3
-        }
-      }
-    },
-    {
       "id": "f90jcuw4s",
       "type": "Scope",
       "position": {
-        "x": 51,
-        "y": 31
+        "x": 50,
+        "y": 29
       },
       "state": {
         "scope": {
-          "threshold": 0.39960937500000004,
-          "time": 6.3475,
+          "threshold": 0.1,
+          "time": 5.844062500000001,
           "trigger": true
         }
       }
@@ -217,7 +188,7 @@
               false,
               false,
               false,
-              true,
+              false,
               false,
               false,
               false
@@ -274,20 +245,6 @@
       }
     },
     {
-      "id": "woeiimvyo",
-      "type": "Envelope",
-      "position": {
-        "x": 36,
-        "y": 12
-      },
-      "state": {
-        "envelope": {
-          "attack": 0,
-          "release": 0.18966796874999997
-        }
-      }
-    },
-    {
       "id": "nost88tyy",
       "type": "Lfo",
       "position": {
@@ -296,7 +253,7 @@
       },
       "state": {
         "lfo": {
-          "bpm": 5
+          "bpm": 10
         }
       }
     },
@@ -309,22 +266,7 @@
       },
       "state": {
         "parameter": {
-          "value": 0.360625
-        }
-      }
-    },
-    {
-      "id": "x71yxn7sr",
-      "type": "Parameter",
-      "position": {
-        "x": 29,
-        "y": 41
-      },
-      "state": {
-        "parameter": {
-          "min": 0,
-          "max": 10,
-          "value": 1
+          "value": 0.5
         }
       }
     },
@@ -333,12 +275,12 @@
       "type": "Filter",
       "position": {
         "x": 49,
-        "y": 18
+        "y": 21
       },
       "state": {
         "filter": {
-          "frequency": 5.2559375,
-          "q": 0.69078125,
+          "frequency": 3.8859375000000003,
+          "q": 0.7684374999999999,
           "kind": "Filter"
         }
       }
@@ -348,7 +290,7 @@
       "type": "Vca",
       "position": {
         "x": 48,
-        "y": 11
+        "y": 15
       },
       "state": {
         "parameter": {
@@ -360,13 +302,13 @@
       "id": "x1mv3nhsf",
       "type": "Reverb",
       "position": {
-        "x": 62,
-        "y": 10
+        "x": 65,
+        "y": 19
       },
       "state": {
         "reverb": {
-          "wet": 0.272734375,
-          "length": 4.69453125
+          "wet": 0.09685546874999992,
+          "length": 5.6449218750000005
         }
       }
     },
@@ -392,12 +334,214 @@
       },
       "state": {
         "parameter": {
+          "value": 0.95
+        }
+      }
+    },
+    {
+      "id": "fweb1am3a",
+      "type": "Envelope",
+      "position": {
+        "x": 32,
+        "y": 7
+      },
+      "state": {
+        "envelope": {
+          "attack": 0.0541015625,
+          "decay": 0.11849609375,
+          "sustain": 0.21853515625,
+          "release": 0.88181640625
+        }
+      }
+    },
+    {
+      "id": "4udjmfyuw",
+      "type": "Scope",
+      "position": {
+        "x": 53,
+        "y": 4
+      },
+      "state": {
+        "scope": {
+          "threshold": 0.051484375,
+          "time": 1.441171875,
+          "trigger": true
+        }
+      }
+    },
+    {
+      "id": "lb023uzgb",
+      "type": "Parameter",
+      "position": {
+        "x": 43,
+        "y": 15
+      },
+      "state": {
+        "parameter": {
+          "min": 0,
+          "max": 10,
+          "value": 6.976171875
+        }
+      }
+    },
+    {
+      "id": "5vq7y448g",
+      "type": "Vca",
+      "position": {
+        "x": 22,
+        "y": 32
+      },
+      "state": {
+        "parameter": {
           "value": 0
+        }
+      }
+    },
+    {
+      "id": "05iep1ljk",
+      "type": "Parameter",
+      "position": {
+        "x": 6,
+        "y": 27
+      },
+      "state": {
+        "parameter": {
+          "min": 0,
+          "max": 10,
+          "value": 5
+        }
+      }
+    },
+    {
+      "id": "ilrp63f1n",
+      "type": "Lfo",
+      "position": {
+        "x": 17,
+        "y": 33
+      },
+      "state": {
+        "lfo": {
+          "bpm": 2
+        }
+      }
+    },
+    {
+      "id": "hwlz06yyy",
+      "type": "Parameter",
+      "position": {
+        "x": 30,
+        "y": 43
+      },
+      "state": {
+        "parameter": {
+          "min": 0,
+          "max": 10,
+          "value": 1
         }
       }
     }
   ],
   "links": [
+    {
+      "to": "9ftfgoe5z/out-0",
+      "from": "x1mv3nhsf/in-0",
+      "id": "096kdysgj"
+    },
+    {
+      "to": "hwlz06yyy/out-0",
+      "from": "174lfavbv/in-1",
+      "id": "6s89vatb2"
+    },
+    {
+      "to": "zge4pzu0k/out-0",
+      "from": "f90jcuw4s/in-0",
+      "id": "ki9bi6dpl"
+    },
+    {
+      "to": "9ftfgoe5z/out-0",
+      "from": "x1mv3nhsf/in-1",
+      "id": "ul1b5rh68"
+    },
+    {
+      "to": "jqdde5piy/out-0",
+      "from": "rsy2etqlv/in-1",
+      "id": "rw8voxmb2"
+    },
+    {
+      "to": "n7dk6gf9x/out-0",
+      "from": "5vq7y448g/in-1",
+      "id": "j3b0i9obz"
+    },
+    {
+      "from": "zge4pzu0k/in-2",
+      "to": "nost88tyy/out-0",
+      "id": "btqolxq7w"
+    },
+    {
+      "to": "ilrp63f1n/out-0",
+      "from": "5vq7y448g/in-1",
+      "id": "pupz7cojb"
+    },
+    {
+      "to": "05iep1ljk/out-0",
+      "from": "5vq7y448g/in-0",
+      "id": "8f0qcqh87"
+    },
+    {
+      "to": "5vq7y448g/out-0",
+      "from": "5myvaysaw/in-0",
+      "id": "2qh9qkeiz"
+    },
+    {
+      "from": "4udjmfyuw/in-0",
+      "to": "fweb1am3a/out-0",
+      "id": "3qsp3vvqe"
+    },
+    {
+      "from": "0sxxouwpc/in-1",
+      "to": "fweb1am3a/out-0",
+      "id": "q5kksgco8"
+    },
+    {
+      "to": "pm2iwwy1q/out-0",
+      "from": "zge4pzu0k/in-1",
+      "id": "xw3ph9vhz"
+    },
+    {
+      "to": "0sxxouwpc/out-0",
+      "from": "9ftfgoe5z/in-1",
+      "id": "1jlbz5r9x"
+    },
+    {
+      "to": "0sxxouwpc/out-0",
+      "from": "x1mv3nhsf/in-0",
+      "id": "yurvtzrjq"
+    },
+    {
+      "to": "0sxxouwpc/out-0",
+      "from": "9ftfgoe5z/in-1",
+      "id": "qmk0i4q9z"
+    },
+    {
+      "to": "lb023uzgb/out-0",
+      "from": "pm2iwwy1q/in-0",
+      "id": "boqh8xneb"
+    },
+    {
+      "from": "fweb1am3a/in-0",
+      "to": "c5e10gry3/out-0",
+      "id": "cwmendaxo"
+    },
+    {
+      "to": "fweb1am3a/out-0",
+      "from": "pm2iwwy1q/in-1",
+      "id": "rsf4p2rj3"
+    },
+    {
+      "to": "rsy2etqlv/out-0",
+      "from": "fweb1am3a/in-0",
+      "id": "vzttfonv3"
+    },
     {
       "from": "z8xtzl2gg/in-1",
       "to": "nost88tyy/out-0",
@@ -409,24 +553,9 @@
       "id": "pumpegl7s"
     },
     {
-      "to": "z8xtzl2gg/out-0",
-      "from": "x1mv3nhsf/in-1",
-      "id": "t2nzqmjf2"
-    },
-    {
-      "to": "z8xtzl2gg/out-0",
-      "from": "x1mv3nhsf/in-0",
-      "id": "jnmxr1n4v"
-    },
-    {
       "to": "9ftfgoe5z/out-0",
       "from": "z8xtzl2gg/in-0",
       "id": "w7tqrujch"
-    },
-    {
-      "to": "0sxxouwpc/out-0",
-      "from": "9ftfgoe5z/in-1",
-      "id": "nx57fyttm"
     },
     {
       "to": "x1mv3nhsf/out-1",
@@ -437,16 +566,6 @@
       "to": "x1mv3nhsf/out-0",
       "from": "81dw507nk/in-0",
       "id": "qv8kvuw24"
-    },
-    {
-      "from": "x1mv3nhsf/in-1",
-      "to": "0sxxouwpc/out-0",
-      "id": "bsdp24vsc"
-    },
-    {
-      "to": "0sxxouwpc/out-0",
-      "from": "x1mv3nhsf/in-0",
-      "id": "tygwgcs2e"
     },
     {
       "from": "0sxxouwpc/in-0",
@@ -464,26 +583,6 @@
       "id": "lw8schqqt"
     },
     {
-      "to": "pm2iwwy1q/out-0",
-      "from": "zge4pzu0k/in-1",
-      "id": "gkf4mzsox"
-    },
-    {
-      "from": "pm2iwwy1q/in-0",
-      "to": "1ozpiqx2r/out-0",
-      "id": "karicyjuu"
-    },
-    {
-      "to": "woeiimvyo/out-0",
-      "from": "pm2iwwy1q/in-1",
-      "id": "t1a5a897l"
-    },
-    {
-      "to": "x71yxn7sr/out-0",
-      "from": "174lfavbv/in-1",
-      "id": "fxu94hi7s"
-    },
-    {
       "to": "174lfavbv/out-0",
       "from": "l0lcheyfk/in-1",
       "id": "u5un5aerh"
@@ -497,16 +596,6 @@
       "to": "1ozpiqx2r/out-0",
       "from": "174lfavbv/in-0",
       "id": "4ldpx4q71"
-    },
-    {
-      "from": "f90jcuw4s/in-0",
-      "to": "l0lcheyfk/out-0",
-      "id": "ix37zdux5"
-    },
-    {
-      "to": "c5e10gry3/out-0",
-      "from": "woeiimvyo/in-0",
-      "id": "7fmpcokxn"
     },
     {
       "to": "s5vx18rwe/out-0",
@@ -524,11 +613,6 @@
       "id": "nneva6dxp"
     },
     {
-      "to": "rsy2etqlv/out-0",
-      "from": "f2aecak0a/in-0",
-      "id": "80r3nn1eq"
-    },
-    {
       "to": "jqdde5piy/out-3",
       "from": "rsy2etqlv/in-0",
       "id": "jacprzili"
@@ -539,11 +623,6 @@
       "id": "cm1h4zi1e"
     },
     {
-      "to": "c5e10gry3/out-0",
-      "from": "f2aecak0a/in-0",
-      "id": "lglsoonq1"
-    },
-    {
       "to": "cne276ggh/out-0",
       "from": "c5e10gry3/in-0",
       "id": "5zatwudlw"
@@ -552,11 +631,6 @@
       "to": "o5cu3y2ih/out-0",
       "from": "qgdp7t08n/in-0",
       "id": "maq7zfiv2"
-    },
-    {
-      "to": "epezoqpjw/out-0",
-      "from": "5myvaysaw/in-0",
-      "id": "ermttktwg"
     },
     {
       "to": "p9xmy5h1a/out-0",
@@ -572,11 +646,6 @@
       "to": "n7dk6gf9x/out-0",
       "from": "5myvaysaw/in-1",
       "id": "4t2jxo2wk"
-    },
-    {
-      "to": "f2aecak0a/out-0",
-      "from": "0sxxouwpc/in-1",
-      "id": "96qidukja"
     },
     {
       "to": "1ozpiqx2r/out-0",
