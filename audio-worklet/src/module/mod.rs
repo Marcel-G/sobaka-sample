@@ -17,6 +17,7 @@ pub mod sequencer;
 pub mod step_sequencer;
 pub mod string;
 pub mod vca;
+pub mod sampler;
 
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
@@ -40,7 +41,7 @@ use self::{
         step_sequencer, StepSequencerCommand, StepSequencerEvent, StepSequencerParams,
     },
     string::{string, StringCommand, StringParams},
-    vca::{vca, VcaCommand, VcaParams},
+    vca::{vca, VcaCommand, VcaParams}, sampler::{sampler, SamplerParams, SamplerCommand},
 };
 use crate::context::{GeneralContext, ModuleContext};
 
@@ -62,7 +63,7 @@ pub enum AudioModuleType {
     String(StringParams),
     Reverb(ReverbParams),
     SampleAndHold,
-    // Sampler(SamplerNode),
+    Sampler(SamplerParams),
     Sequencer(SequencerParams),
     StepSequencer(StepSequencerParams),
     Scope(ScopeParams),
@@ -88,6 +89,7 @@ pub enum AudioModuleCommand {
     Parameter(ParameterCommand),
     Quantiser(QuantiserCommand),
     Reverb(ReverbCommand),
+    Sampler(SamplerCommand),
     Vca(VcaCommand),
     Scope(ScopeCommand),
     String(StringCommand),
@@ -187,6 +189,10 @@ impl From<&AudioModuleType> for (ModuleUnit, GeneralContext) {
                 let mut ctx = ModuleContext::default();
                 (Box::new(midi((), &mut ctx)), ctx.boxed())
             }
+            AudioModuleType::Sampler(params) => {
+                let mut ctx = ModuleContext::default();
+                (Box::new(sampler(params, &mut ctx)), ctx.boxed())
+            },
         }
     }
 }

@@ -31,6 +31,12 @@ export class Clock extends AbstractModule<'Clock'> {
   }
 }
 
+export class Sampler extends AbstractModule<'Sampler'> {
+  constructor(context: SobakaContext, initial_state: Params<'Sampler'>) {
+    super(context, 'Sampler', initial_state)
+  }
+}
+
 export class Sequencer extends AbstractModule<'Sequencer'> {
   constructor(context: SobakaContext, initial_state: Params<'Sequencer'>) {
     super(context, 'Sequencer', initial_state)

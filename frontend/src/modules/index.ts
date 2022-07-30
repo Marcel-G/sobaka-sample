@@ -18,6 +18,7 @@ import Midi from './Midi.svelte'
 import Lfo from './Lfo.svelte'
 import Quantiser from './Quantiser.svelte'
 import SampleAndHold from './SampleAndHold.svelte'
+import Sampler from './Sampler.svelte'
 
 /**
  * Modules that can be spawned on the frontend.
@@ -42,7 +43,7 @@ export enum ModuleUI {
   Quantiser = 'Quantiser',
   Reverb = 'Reverb',
   SampleAndHold = 'SampleAndHold',
-  // Sampler = 'Sampler',
+  Sampler = 'Sampler',
   Output = 'Output',
   Vca = 'Vca'
 }
@@ -66,7 +67,7 @@ export const get_component = (module: Module<ModuleUI>) => {
     [ModuleUI.Quantiser]: Quantiser,
     [ModuleUI.Reverb]: Reverb,
     [ModuleUI.SampleAndHold]: SampleAndHold,
-    // [ModuleUI.Sampler]: Sampler,
+    [ModuleUI.Sampler]: Sampler,
     [ModuleUI.Output]: Output,
     [ModuleUI.Vca]: Vca
   }[module.type]
