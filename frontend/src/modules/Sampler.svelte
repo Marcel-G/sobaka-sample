@@ -28,6 +28,11 @@
   .file-input:hover {
     border-color: var(--foreground);
   }
+
+  .canvas {
+    width: 100%;
+    height: 100%;
+  }
 </style>
 
 <script context="module" lang="ts">
@@ -52,6 +57,7 @@
   import { into_style } from '../components/Theme.svelte'
   import { PlugType } from '../state/plug'
 
+  let canvas: HTMLCanvasElement
   let name = 'sampler'
   const { context, update_sub_state, get_sub_state } = get_module_context()
 
@@ -77,16 +83,34 @@
   const sampler = new Sampler(context, { audio_data: null }) // @todo make the data all optional
   const loading = sampler.get_address()
 
-
-  $: if (sampler_data?.audio_data) {
+  $: if (sampler_data?.audio_data && canvas) {
     // Update persistent sample data. Clone ArrayBuffer as it will be consumed by the decoding process
     update_sub_state(name, { audio_data: sampler_data.audio_data.slice(0) })
+
+    const width = canvas.width
+    const height = canvas.height
+
+    const context = canvas.getContext('2d')!
 
     // Update data in the audio node
     void decode_sample(sampler_data.audio_data).then(audio_data => {
       void sampler.message({
         UpdateData: audio_data!
       })
+
+      // Draw to canvas  (WIP)
+      const step = Math.ceil(audio_data!.data.length / width)
+      const amp = height / 2
+      for (var i = 0; i < width; i++) {
+        var min = 1.0
+        var max = -1.0
+        for (var j = 0; j < step; j++) {
+          var datum = audio_data!.data[i * step + j]
+          if (datum < min) min = datum
+          if (datum > max) max = datum
+        }
+        context.fillRect(i, (1 + min) * amp, 1, Math.max(1, (max - min) * amp))
+      }
     })
   }
 
@@ -122,7 +146,7 @@
   {:then}
     <div class="controls">
       {#if sampler_data.audio_data}
-        🎻
+        <canvas class="canvas" bind:this={canvas} />
       {:else}
         <label class="file-input">
           <input on:change={handle_change} type="file" accept="audio/*" />
