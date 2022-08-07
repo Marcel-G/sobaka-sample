@@ -1,0 +1,345 @@
+use std::f64::consts::PI;
+
+use num_traits::{Float, FromPrimitive, NumCast, NumOps};
+use rustfft::{num_complex::Complex, FftPlanner};
+
+struct Filter {
+    weights: Vec<Vec<f32>>,
+}
+
+pub fn linspace<T: Float + FromPrimitive>(x0: T, xend: T, n: usize) -> Vec<T> {
+    let to_float = |i: usize| T::from_usize(i).unwrap_or_else(|| panic!());
+    let dx = (xend - x0) / to_float(n - 1);
+    (0..n).map(|i| x0 + to_float(i) * dx).collect()
+}
+
+/// Generates a window of length `n` with the Hann function.
+///
+/// # Examples
+///
+/// ```
+/// use sobaka_sample_audio_worklet::dsp::onset::hanning;
+/// assert_eq!(hanning::<f32>(10), vec![0.0, 0.11697778, 0.4131759, 0.75, 0.9698463, 0.9698463, 0.75, 0.4131759, 0.11697778, 0.0])
+/// ```
+pub fn hanning<T: Float + FromPrimitive>(n: usize) -> Vec<T> {
+    let alphas = [0.5, -0.5];
+    let mut window = Vec::with_capacity(n);
+    let f0 = 2.0 * PI / ((n - 1) as f64);
+    for i in 0..n {
+        let mut wi = 0.0;
+        for (k, ak) in alphas.iter().enumerate() {
+            wi += ak * (f0 * k as f64 * i as f64).cos();
+        }
+        window.push(T::from_f64(wi).unwrap_or_else(|| panic!()));
+    }
+    window
+}
+
+/// Implementation of `librosa.fft_frequencies`
+///
+/// # Examples
+///
+/// ```
+/// use sobaka_sample_audio_worklet::dsp::onset::fft_frequencies;
+/// assert_eq!(fft_frequencies::<f32>(22050.0, 16), vec![   0.   ,   1378.125,   2756.25 ,   4134.375,
+///                                                                5512.5  ,   6890.625,   8268.75 ,   9646.875,  11025.]);
+/// ```
+///
+pub fn fft_frequencies<T: Float + NumOps + FromPrimitive>(sr: f32, n_fft: usize) -> Vec<T> {
+    linspace(T::zero(), NumCast::from(sr / 2.).unwrap(), 1 + n_fft / 2)
+}
+
+/// Returns a list of frequencies aligned on a logarithmic scale
+///
+/// # Examples
+///
+/// ```
+/// use sobaka_sample_audio_worklet::dsp::onset::frequencies;
+/// assert_eq!(frequencies(3, 17000.0, 30.0, None), vec![27.499998, 34.647827, 43.653526, 54.999996, 69.295654, 87.30705, 109.99999, 138.59131, 174.6141, 219.99998, 277.18262, 349.2282, 440.0, 554.3653, 698.45654, 880.0001, 1108.7307, 1396.9132, 1760.0004, 2217.4617, 2793.8267, 3520.001, 4434.9233, 5587.6533, 7040.002, 8869.847, 11175.307, 14080.004, 17739.693])
+/// ```
+///
+pub fn band_frequencies(bands: usize, fmin: f32, fmax: f32, a: Option<f32>) -> Vec<f32> {
+    // @todo make use of linspace here then convert to exp.
+    let factor = 2.0_f32.powf(1.0 / bands as f32);
+    let mut freq = a.unwrap_or(440.0);
+    let mut frequencies = Vec::with_capacity(bands);
+
+    frequencies.push(freq);
+
+    while freq <= fmax {
+        freq *= factor;
+        frequencies.push(freq);
+    }
+
+    freq = a.unwrap_or(440.0);
+
+    while freq >= fmin {
+        freq /= factor;
+        frequencies.push(freq);
+    }
+
+    frequencies.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+
+    frequencies
+}
+
+impl Filter {
+    pub fn new(sr: f32, n_fft: usize, bands_per_oct: usize) -> Self {
+        let fmin = 30.0;
+        let fmax = 17000.0;
+        let num_fft_bins = 1 + n_fft / 2;
+
+        let fft_f = fft_frequencies::<f32>(sr, n_fft);
+
+        // get a list of frequencies
+        let band_f = band_frequencies(bands_per_oct, fmin, fmax, None);
+
+        // // number of bands
+        let n_bands = band_f.len() - 2;
+
+        // init the filter matrix with size: number of FFT bins x filter bands
+        let mut weights = vec![vec![0.0; num_fft_bins]; n_bands];
+
+        let fdiff: Vec<_> = band_f[..band_f.len() - 1]
+            .iter()
+            .zip(band_f[1..].iter())
+            .map(|(x, y)| *y - *x)
+            .collect();
+
+        let mut ramps = vec![vec![0.0; fft_f.len()]; band_f.len()];
+
+        band_f.iter().enumerate().for_each(|(i, m)| {
+            fft_f.iter().enumerate().for_each(|(j, f)| {
+                ramps[i][j] = *m - *f;
+            });
+        });
+
+        for i in 0..n_bands {
+            for j in 0..num_fft_bins {
+                // lower and upper slopes for all bins
+                let lower = -ramps[i][j] / fdiff[i];
+                let upper = ramps[i + 2][j] / fdiff[i + 1]; // +2 is safe since we create `n_bands` is - 2
+
+                // .. then intersect them with each other and zero
+                weights[i][j] = 0.0.max(lower.min(upper));
+            }
+        }
+        Self { weights }
+    }
+
+    pub fn process(&self, spec: &[f32]) -> Vec<f32> {
+        assert!(
+            spec.len() == self.weights[0].len(),
+            "spectrogram length does not match filter length"
+        );
+
+        dot(spec, &self.weights)
+    }
+}
+
+pub fn dot(a: &[f32], b: &[Vec<f32>]) -> Vec<f32> {
+    // calculate the dot product of the spectrogram and the filterbank
+    b.iter()
+        .map(|y| a.iter().zip(y).map(|(x, y)| x * y).sum())
+        .collect()
+}
+#[cfg(test)]
+mod filter_tests {
+    use super::Filter;
+
+    #[test]
+    fn test_filter() {
+        let filter = Filter::new(44100.0, 128, 1);
+
+        assert_eq!(filter.weights.len(), 9); // n_bands
+        assert_eq!(filter.weights[0].len(), 65); // fft bins
+
+        // 440 Hz sine wave spectrogram
+        let spec = vec![
+            0.6120027,
+            31.023468,
+            22.28843,
+            2.5304267,
+            0.5280031,
+            0.20544228,
+            0.10342992,
+            0.059602015,
+            0.038008604,
+            0.025380593,
+            0.0179684,
+            0.01315524,
+            0.010050413,
+            0.007824012,
+            0.006126815,
+            0.0045150537,
+            0.004252252,
+            0.0029265513,
+            0.003413936,
+            0.0011783353,
+            0.002728246,
+            0.0006245904,
+            0.0026407668,
+            0.0004517355,
+            0.0016468683,
+            0.00055006257,
+            0.0009420839,
+            0.00047994716,
+            0.0007081633,
+            0.00059729593,
+            0.0004822407,
+            0.00048225,
+            0.00071622984,
+            0.0005343817,
+            0.00011641792,
+            0.00030519612,
+            0.00034398233,
+            0.00022121446,
+            0.0005641531,
+            0.0005580637,
+            0.0009751413,
+            0.00066330394,
+            0.00091257977,
+            0.0005134642,
+            0.0004797577,
+            0.00021577322,
+            0.00012325642,
+            0.00013198884,
+            0.00019620662,
+            0.00026412742,
+            0.00022709105,
+            0.0001234166,
+            9.5533425e-5,
+            0.0003447883,
+            0.0007921236,
+            0.000882052,
+            0.00081021007,
+            0.0010494932,
+            0.000702389,
+            0.000266621,
+            0.00028528328,
+            0.0002191098,
+            0.0011191642,
+            0.0015193672,
+            0.0011852384,
+        ];
+        assert_eq!(
+            filter.process(&spec),
+            vec![
+                0.0,
+                0.0,
+                13.462599,
+                27.232908,
+                14.943005,
+                1.0834682,
+                0.13449663,
+                0.028311979,
+                0.014158637
+            ]
+        )
+    }
+}
+
+pub struct Spectrogram {
+    fft_size: usize,
+    sample_rate: f32,
+    fps: usize,
+    window: Vec<f32>,
+    filter: Filter,
+    fft: FftPlanner<f32>,
+}
+
+impl Spectrogram {
+    pub fn new(sample_rate: f32, fft_size: usize, fps: usize) -> Self {
+        let window = hanning(fft_size);
+        let filter = Filter::new(sample_rate, fft_size, 24);
+        let fft = FftPlanner::new();
+        Self {
+            fps,
+            fft_size,
+            sample_rate,
+            window,
+            filter,
+            fft,
+        }
+    }
+
+    // @todo reorganise params
+    pub fn process(&mut self, audio: Vec<f32>) -> Vec<Vec<f32>> {
+        let window_size = self.fft_size;
+        let hop_size = (self.sample_rate / self.fps as f32).floor() as usize; // wav sample rate
+        let num_bins = self.filter.weights[0].len();
+
+        let mut spec: Vec<Vec<f32>> = vec![];
+
+        let fft = self.fft.plan_fft_forward(window_size);
+
+        let mut cur_pos: usize = 0;
+
+        while cur_pos + window_size < audio.len() {
+            let signal = &audio[cur_pos..cur_pos + window_size];
+            let mut fft_buffer_real = signal.to_vec();
+
+            fft_buffer_real
+                .iter_mut()
+                .zip(&self.window)
+                .for_each(|(v, w)| *v *= w);
+
+            let mut fft_buffer_comp: Vec<Complex<f32>> = fft_buffer_real
+                .iter()
+                .map(|&value| Complex::new(value, 0f32))
+                .collect();
+
+            fft.process(&mut fft_buffer_comp);
+
+            let frame_spec: Vec<f32> = fft_buffer_comp[..num_bins]
+                .iter()
+                .map(|v| v.norm())
+                .collect();
+
+            spec.push(self.filter.process(&frame_spec));
+
+            cur_pos += hop_size;
+        }
+
+        spec
+    }
+}
+
+fn argmax<T: Float>(slice: &[T]) -> usize {
+    let (index, _) = slice
+        .iter()
+        .enumerate()
+        .fold((0, slice[0]), |(idx_max, val_max), (idx, val)| {
+            if &val_max > val {
+                (idx_max, val_max)
+            } else {
+                (idx, *val)
+            }
+        });
+
+    index
+}
+
+#[cfg(test)]
+mod spectrogram_tests {
+    use crate::dsp::onset::argmax;
+    use fundsp::math::sin_hz;
+
+    // write a test that loads a wav file, initialises a Spectrogram and processes the wave file.
+    #[test]
+    fn test_spectrogram() {
+        let mut spectrogram = super::Spectrogram::new(44100.0, 2048, 200);
+        // generate 1s sine wave of 440Hz at 44100Hz
+        let audio = (0..44100)
+            .map(|x| sin_hz(440.0, x as f32 / 44100.0))
+            .collect();
+
+        let spec = spectrogram.process(audio);
+
+        assert_eq!(spec.len(), 192);
+
+        // Expect a peak at 440hz
+        // 93 is 440hz in this configuration
+        assert_eq!(argmax(&spec[0]), 93);
+    }
+}
