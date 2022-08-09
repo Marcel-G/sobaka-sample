@@ -1,6 +1,6 @@
 use crate::{
     context::ModuleContext,
-    dsp::{messaging::MessageHandler, shared::Share, player::player, trigger::reset_trigger},
+    dsp::{messaging::MessageHandler, shared::Share, player::{player, PlayerEvent}, trigger::reset_trigger}, utils::observer::Observable,
 };
 use fundsp::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -27,10 +27,18 @@ pub enum SamplerCommand {
     UpdateData(AudioData),
 }
 
+/// Incoming commands into the sampler module.
+#[derive(Serialize, Deserialize, TS, Clone)]
+#[ts(export)]
+pub enum SamplerEvent {
+    /// Event when onsets have been detected
+    OnDetect(Vec<f32>),
+}
+
 
 pub fn sampler(
     params: &SamplerParams,
-    context: &mut ModuleContext<SamplerCommand>,
+    context: &mut ModuleContext<SamplerCommand, SamplerEvent>,
 ) -> impl AudioUnit32 {
     let mut player = player(0, None);
     if let Some(audio_data) = &params.audio_data {
@@ -48,6 +56,10 @@ pub fn sampler(
                 },
             }),
     );
+
+    context.set_rx(module.clone().map(|event| match event {
+        PlayerEvent::OnDetect(step) => SamplerEvent::OnDetect(step),
+    }));
 
     reset_trigger(module)
 }

@@ -13,14 +13,9 @@ pub fn linspace<T: Float + FromPrimitive>(x0: T, xend: T, n: usize) -> Vec<T> {
     (0..n).map(|i| x0 + to_float(i) * dx).collect()
 }
 
+
+
 /// Generates a window of length `n` with the Hann function.
-///
-/// # Examples
-///
-/// ```
-/// use sobaka_sample_audio_worklet::dsp::onset::hanning;
-/// assert_eq!(hanning::<f32>(10), vec![0.0, 0.11697778, 0.4131759, 0.75, 0.9698463, 0.9698463, 0.75, 0.4131759, 0.11697778, 0.0])
-/// ```
 pub fn hanning<T: Float + FromPrimitive>(n: usize) -> Vec<T> {
     let alphas = [0.5, -0.5];
     let mut window = Vec::with_capacity(n);
@@ -36,28 +31,11 @@ pub fn hanning<T: Float + FromPrimitive>(n: usize) -> Vec<T> {
 }
 
 /// Implementation of `librosa.fft_frequencies`
-///
-/// # Examples
-///
-/// ```
-/// use sobaka_sample_audio_worklet::dsp::onset::fft_frequencies;
-/// assert_eq!(fft_frequencies::<f32>(22050.0, 16), vec![   0.   ,   1378.125,   2756.25 ,   4134.375,
-///                                                                5512.5  ,   6890.625,   8268.75 ,   9646.875,  11025.]);
-/// ```
-///
 pub fn fft_frequencies<T: Float + NumOps + FromPrimitive>(sr: f32, n_fft: usize) -> Vec<T> {
     linspace(T::zero(), NumCast::from(sr / 2.).unwrap(), 1 + n_fft / 2)
 }
 
 /// Returns a list of frequencies aligned on a logarithmic scale
-///
-/// # Examples
-///
-/// ```
-/// use sobaka_sample_audio_worklet::dsp::onset::frequencies;
-/// assert_eq!(frequencies(3, 17000.0, 30.0, None), vec![27.499998, 34.647827, 43.653526, 54.999996, 69.295654, 87.30705, 109.99999, 138.59131, 174.6141, 219.99998, 277.18262, 349.2282, 440.0, 554.3653, 698.45654, 880.0001, 1108.7307, 1396.9132, 1760.0004, 2217.4617, 2793.8267, 3520.001, 4434.9233, 5587.6533, 7040.002, 8869.847, 11175.307, 14080.004, 17739.693])
-/// ```
-///
 pub fn band_frequencies(bands: usize, fmin: f32, fmax: f32, a: Option<f32>) -> Vec<f32> {
     // @todo make use of linspace here then convert to exp.
     let factor = 2.0_f32.powf(1.0 / bands as f32);
@@ -264,7 +242,7 @@ impl Spectrogram {
     }
 
     // @todo reorganise params
-    pub fn process(&mut self, audio: Vec<f32>) -> Vec<Vec<f32>> {
+    pub fn process(&mut self, audio: &Vec<f32>) -> Vec<Vec<f32>> {
         let window_size = self.fft_size;
         let hop_size = (self.sample_rate / self.fps as f32).floor() as usize; // wav sample rate
         let num_bins = self.filter.weights[0].len();
@@ -336,7 +314,7 @@ mod spectrogram_tests {
             .map(|x| sin_hz(440.0, x as f32 / 44100.0))
             .collect();
 
-        let spec = spectrogram.process(audio);
+        let spec = spectrogram.process(&audio);
 
         assert_eq!(spec.len(), 192);
 
@@ -346,11 +324,7 @@ mod spectrogram_tests {
     }
 }
 
-fn superflux_diff_spec(spec: Vec<Vec<f32>>, diff_frames: usize, max_bins: usize) -> Vec<f32> {
-    let n_samples = spec.len();
-    let num_bins = spec[0].len();
-
-    // @todo this is NQR... try again maximum_filter2d
+pub fn superflux_diff_spec(spec: Vec<Vec<f32>>, diff_frames: usize, max_bins: usize) -> Vec<f32> {
     let max_spec = spec.iter().map(|v| maximum_filter(v, max_bins));
 
     let diff_spec = spec[diff_frames..]
@@ -367,7 +341,7 @@ fn superflux_diff_spec(spec: Vec<Vec<f32>>, diff_frames: usize, max_bins: usize)
     diff_spec.iter().map(|v| v.iter().sum()).collect()
 }
 
-fn onset(threshold: f32, activations: Vec<f32>, fps: usize) -> Vec<f32> {
+pub fn onset(threshold: f32, activations: Vec<f32>, fps: usize) -> Vec<f32> {
     // moving maximum
     let mov_max = maximum_filter(&activations, 3);
 
@@ -418,7 +392,7 @@ mod odf_tests {
             .chain((0..44100 / 2).map(|x| sin_hz(880.0, x as f32 / 44100.0)))
             .collect();
 
-        let spec = spectrogram.process(audio);
+        let spec = spectrogram.process(&audio);
 
         let diff_spec = superflux_diff_spec(spec, 1, 3);
 
@@ -515,5 +489,25 @@ mod filters {
             maximum_filter(&vec![31., 41., 59., 26., 53., 58., 97.], 3),
             vec![41., 59., 59., 59., 58., 97., 97.]
         );
+    }
+}
+
+#[cfg(test)]
+mod freq_tests {
+    use super::{hanning, band_frequencies, fft_frequencies};
+
+    #[test]
+    fn test_hanning() {
+        assert_eq!(hanning::<f32>(10), vec![0.0, 0.11697778, 0.4131759, 0.75, 0.9698463, 0.9698463, 0.75, 0.4131759, 0.11697778, 0.0])
+    }
+
+    #[test]
+    fn test_fft_frequencies() {
+        assert_eq!(fft_frequencies::<f32>(22050.0, 16), vec![   0.   ,   1378.125,   2756.25 ,   4134.375, 5512.5  ,   6890.625,   8268.75 ,   9646.875,  11025.]);
+    }
+
+    #[test]
+    fn test_band_frequencies() {
+        assert_eq!(band_frequencies(3, 30.0, 17000.0, None), vec![27.499998, 34.647827, 43.653526, 54.999996, 69.295654, 87.30705, 109.99999, 138.59131, 174.6141, 219.99998, 277.18262, 349.2282, 440.0, 554.3653, 698.45654, 880.0001, 1108.7307, 1396.9132, 1760.0004, 2217.4617, 2793.8267, 3520.001, 4434.9233, 5587.6533, 7040.002, 8869.847, 11175.307, 14080.004, 17739.693])
     }
 }

@@ -82,6 +82,25 @@
 
   const sampler = new Sampler(context, { audio_data: null }) // @todo make the data all optional
   const loading = sampler.get_address()
+  let detections: number[] = []
+
+  $: if (sampler_data?.audio_data && canvas && detections.length) {
+    const context = canvas.getContext('2d')!
+
+    const width = canvas.width
+    const height = canvas.height
+
+    for (const detection of detections) {
+      const x = detection * width
+
+      let fill = context.fillStyle
+      context.fillStyle = 'red'
+      context.globalAlpha = 0.8
+      context.fillRect(x, 0, 1.0, height)
+      context.fillStyle = fill
+      context.globalAlpha = 1.0
+    }
+  }
 
   $: if (sampler_data?.audio_data && canvas) {
     // Update persistent sample data. Clone ArrayBuffer as it will be consumed by the decoding process
@@ -101,11 +120,11 @@
       // Draw to canvas  (WIP)
       const step = Math.ceil(audio_data!.data.length / width)
       const amp = height / 2
-      for (var i = 0; i < width; i++) {
-        var min = 1.0
-        var max = -1.0
-        for (var j = 0; j < step; j++) {
-          var datum = audio_data!.data[i * step + j]
+      for (let i = 0; i < width; i++) {
+        let min = 1.0
+        let max = -1.0
+        for (let j = 0; j < step; j++) {
+          const datum = audio_data!.data[i * step + j]
           if (datum < min) min = datum
           if (datum > max) max = datum
         }
@@ -135,25 +154,30 @@
     }
   }
 
+  void sampler.subscribe('OnDetect', detect => {
+    console.log(detect)
+    detections = detect
+  })
+
   onDestroy(() => {
     void sampler.dispose()
   })
 </script>
 
-<Panel {name} height={10} width={8} custom_style={into_style(theme)}>
+<Panel {name} height={8} width={20} custom_style={into_style(theme)}>
   {#await loading}
     <p>Loading...</p>
   {:then}
-    <div class="controls">
-      {#if sampler_data.audio_data}
-        <canvas class="canvas" bind:this={canvas} />
-      {:else}
+    {#if sampler_data.audio_data}
+      <canvas class="canvas" bind:this={canvas} />
+    {:else}
+      <div class="controls">
         <label class="file-input">
           <input on:change={handle_change} type="file" accept="audio/*" />
           Add Sample
         </label>
-      {/if}
-    </div>
+      </div>
+    {/if}
   {/await}
 
   <div slot="inputs">

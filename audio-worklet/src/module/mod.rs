@@ -41,7 +41,7 @@ use self::{
         step_sequencer, StepSequencerCommand, StepSequencerEvent, StepSequencerParams,
     },
     string::{string, StringCommand, StringParams},
-    vca::{vca, VcaCommand, VcaParams}, sampler::{sampler, SamplerParams, SamplerCommand},
+    vca::{vca, VcaCommand, VcaParams}, sampler::{sampler, SamplerParams, SamplerCommand, SamplerEvent},
 };
 use crate::context::{GeneralContext, ModuleContext};
 
@@ -105,6 +105,7 @@ pub enum AudioModuleCommand {
 pub enum AudioModuleEvent {
     Sequencer(SequencerEvent),
     StepSequencer(StepSequencerEvent),
+    Sampler(SamplerEvent),
 
     Scope(ScopeEvent),
 
