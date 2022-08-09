@@ -68,8 +68,13 @@
     })
   }
   onMount(() => {
-    const width = canvas.width
-    const height = canvas.height
+    const width = canvas.clientWidth
+    const height = canvas.clientHeight
+
+    if (canvas.width !== width || canvas.height !== height) {
+      canvas.width = width
+      canvas.height = height
+    }
 
     const context = canvas.getContext('2d')!
     init(context, width, height)

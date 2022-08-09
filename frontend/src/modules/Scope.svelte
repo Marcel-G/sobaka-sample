@@ -123,15 +123,20 @@
     ctx.closePath()
     ctx.fillStyle = get_css_var('--foreground')
     ctx.strokeStyle = get_css_var('--foreground')
-    ctx.lineWidth = 2
+    ctx.lineWidth = 1
     ctx.fill()
     ctx.stroke()
   }
 
   $: {
     if (canvas) {
-      const width = canvas.width
-      const height = canvas.height
+      const width = canvas.clientWidth
+      const height = canvas.clientHeight
+
+      if (canvas.width !== width || canvas.height !== height) {
+        canvas.width = width
+        canvas.height = height
+      }
       const context = canvas.getContext('2d')!
 
       draw_background(context, width, height)

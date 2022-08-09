@@ -103,11 +103,15 @@
   }
 
   $: if (sampler_data?.audio_data && canvas) {
-    // Update persistent sample data. Clone ArrayBuffer as it will be consumed by the decoding process
     update_sub_state(name, { audio_data: sampler_data.audio_data.slice(0) })
 
-    const width = canvas.width
-    const height = canvas.height
+    const width = canvas.clientWidth
+    const height = canvas.clientHeight
+
+    if (canvas.width !== width || canvas.height !== height) {
+      canvas.width = width
+      canvas.height = height
+    }
 
     const context = canvas.getContext('2d')!
 
@@ -164,7 +168,7 @@
   })
 </script>
 
-<Panel {name} height={8} width={20} custom_style={into_style(theme)}>
+<Panel {name} height={8} width={30} custom_style={into_style(theme)}>
   {#await loading}
     <p>Loading...</p>
   {:then}

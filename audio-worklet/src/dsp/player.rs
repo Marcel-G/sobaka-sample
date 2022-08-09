@@ -43,14 +43,14 @@ impl<T: Float> Wave32Player<T> {
 
         // @todo do this in a seperate task
         let fps = 200;
-        let mut spectrogram = Spectrogram::new(44100.0, 2048, fps, 24);
+        let mut spectrogram = Spectrogram::new(sample_rate, 2048, fps, 24);
 
         let spec = spectrogram.process(detect_wave.channel(0));
 
         let diff_spec = superflux_diff_spec(spec, 1, 3);
 
-        let detections = onset(40.0, diff_spec, fps);
-        let length_seconds = detect_wave.len() as f32 / 44100.0;
+        let detections = onset(28.0, diff_spec, fps);
+        let length_seconds = detect_wave.len() as f32 / sample_rate;
         let percent = detections
             .iter()
             .map(|d| d / length_seconds)
