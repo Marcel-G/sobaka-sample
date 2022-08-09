@@ -6,7 +6,6 @@ use fundsp::prelude::*;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-
 #[derive(Default, Serialize, Deserialize, TS)]
 #[ts(export)]
 pub struct FilterParams {

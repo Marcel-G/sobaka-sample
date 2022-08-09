@@ -1,7 +1,7 @@
 use std::{marker::PhantomData, sync::Arc};
 
-use fundsp::prelude::*;
 use crate::utils::observer::{Observable, Observer, Producer, Subject};
+use fundsp::prelude::*;
 
 use super::onset::{onset, superflux_diff_spec, Spectrogram};
 
@@ -51,8 +51,11 @@ impl<T: Float> Wave32Player<T> {
 
         let detections = onset(40.0, diff_spec, fps);
         let length_seconds = detect_wave.len() as f32 / 44100.0;
-        let percent = detections.iter().map(|d| d / length_seconds).collect::<Vec<_>>();
-    
+        let percent = detections
+            .iter()
+            .map(|d| d / length_seconds)
+            .collect::<Vec<_>>();
+
         self.subject.notify(PlayerEvent::OnDetect(percent));
     }
 }

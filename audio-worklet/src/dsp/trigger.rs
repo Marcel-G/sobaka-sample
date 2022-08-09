@@ -1,4 +1,7 @@
-use std::{ops::Add, sync::atomic::{AtomicBool, Ordering}};
+use std::{
+    ops::Add,
+    sync::atomic::{AtomicBool, Ordering},
+};
 
 use fundsp::{
     hacker::{An, AudioNode, Frame, SignalFrame, Size, Tag, U1},
@@ -80,14 +83,16 @@ pub struct SchmittTrigger {
 
 impl SchmittTrigger {
     pub fn new() -> Self {
-        Self { is_open: AtomicBool::new(false) }
+        Self {
+            is_open: AtomicBool::new(false),
+        }
     }
     pub fn tick<T: Float>(&self, input: T, off_threshold: f64, on_threshold: f64) -> Option<bool> {
         if self.is_open.load(Ordering::SeqCst) {
             // High to low
             if input <= T::from_f64(off_threshold) {
                 self.is_open.store(false, Ordering::SeqCst);
-                return Some(false)
+                return Some(false);
             }
             // Low to High
         } else if input >= T::from_f64(on_threshold) {

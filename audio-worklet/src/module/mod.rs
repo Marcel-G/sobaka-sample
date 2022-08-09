@@ -12,12 +12,12 @@ pub mod parameter;
 pub mod quantiser;
 pub mod reverb;
 pub mod sample_and_hold;
+pub mod sampler;
 pub mod scope;
 pub mod sequencer;
 pub mod step_sequencer;
 pub mod string;
 pub mod vca;
-pub mod sampler;
 
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
@@ -35,13 +35,14 @@ use self::{
     quantiser::{quantiser, QuantiserCommand, QuantiserParams},
     reverb::{reverb, ReverbCommand, ReverbParams},
     sample_and_hold::sample_and_hold,
+    sampler::{sampler, SamplerCommand, SamplerEvent, SamplerParams},
     scope::{scope, ScopeCommand, ScopeEvent, ScopeParams},
     sequencer::{sequencer, SequencerCommand, SequencerEvent, SequencerParams},
     step_sequencer::{
         step_sequencer, StepSequencerCommand, StepSequencerEvent, StepSequencerParams,
     },
     string::{string, StringCommand, StringParams},
-    vca::{vca, VcaCommand, VcaParams}, sampler::{sampler, SamplerParams, SamplerCommand, SamplerEvent},
+    vca::{vca, VcaCommand, VcaParams},
 };
 use crate::context::{GeneralContext, ModuleContext};
 
@@ -193,7 +194,7 @@ impl From<&AudioModuleType> for (ModuleUnit, GeneralContext) {
             AudioModuleType::Sampler(params) => {
                 let mut ctx = ModuleContext::default();
                 (Box::new(sampler(params, &mut ctx)), ctx.boxed())
-            },
+            }
         }
     }
 }

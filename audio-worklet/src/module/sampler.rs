@@ -1,6 +1,12 @@
 use crate::{
     context::ModuleContext,
-    dsp::{messaging::MessageHandler, shared::Share, player::{player, PlayerEvent}, trigger::reset_trigger}, utils::observer::Observable,
+    dsp::{
+        messaging::MessageHandler,
+        player::{player, PlayerEvent},
+        shared::Share,
+        trigger::reset_trigger,
+    },
+    utils::observer::Observable,
 };
 use fundsp::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -16,7 +22,7 @@ pub struct AudioData {
 #[derive(Default, Serialize, Deserialize, TS)]
 #[ts(export)]
 pub struct SamplerParams {
-    pub audio_data: Option<AudioData>
+    pub audio_data: Option<AudioData>,
 }
 
 /// Incoming commands into the sampler module.
@@ -35,7 +41,6 @@ pub enum SamplerEvent {
     OnDetect(Vec<f32>),
 }
 
-
 pub fn sampler(
     params: &SamplerParams,
     context: &mut ModuleContext<SamplerCommand, SamplerEvent>,
@@ -48,12 +53,12 @@ pub fn sampler(
     let module = player.share();
 
     context.set_tx(
-      module
+        module
             .clone()
             .message_handler(|unit, command: SamplerCommand| match command {
                 SamplerCommand::UpdateData(audio_data) => {
-                  unit.set_data(&audio_data.data, audio_data.sample_rate);
-                },
+                    unit.set_data(&audio_data.data, audio_data.sample_rate);
+                }
             }),
     );
 
