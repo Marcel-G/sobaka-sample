@@ -1,4 +1,4 @@
-use std::f64::consts::PI;
+use std::{f64::consts::PI, iter::repeat};
 
 use num_traits::{Float, FromPrimitive, NumCast, NumOps};
 use rustfft::{num_complex::Complex, FftPlanner};
@@ -249,9 +249,9 @@ pub struct Spectrogram {
 }
 
 impl Spectrogram {
-    pub fn new(sample_rate: f32, fft_size: usize, fps: usize) -> Self {
+    pub fn new(sample_rate: f32, fft_size: usize, fps: usize, bands_per_oct: usize) -> Self {
         let window = hanning(fft_size);
-        let filter = Filter::new(sample_rate, fft_size, 24);
+        let filter = Filter::new(sample_rate, fft_size, bands_per_oct);
         let fft = FftPlanner::new();
         Self {
             fps,
@@ -275,6 +275,8 @@ impl Spectrogram {
 
         let mut cur_pos: usize = 0;
 
+        // https://doc.rust-lang.org/std/primitive.slice.html#method.windows
+        // What about windows
         while cur_pos + window_size < audio.len() {
             let signal = &audio[cur_pos..cur_pos + window_size];
             let mut fft_buffer_real = signal.to_vec();
@@ -305,30 +307,30 @@ impl Spectrogram {
     }
 }
 
-fn argmax<T: Float>(slice: &[T]) -> usize {
-    let (index, _) = slice
-        .iter()
-        .enumerate()
-        .fold((0, slice[0]), |(idx_max, val_max), (idx, val)| {
-            if &val_max > val {
-                (idx_max, val_max)
-            } else {
-                (idx, *val)
-            }
-        });
-
-    index
-}
-
 #[cfg(test)]
 mod spectrogram_tests {
-    use crate::dsp::onset::argmax;
-    use fundsp::math::sin_hz;
+    use fundsp::{math::sin_hz, Float};
+
+    fn argmax<T: Float>(slice: &[T]) -> usize {
+        let (index, _) =
+            slice
+                .iter()
+                .enumerate()
+                .fold((0, slice[0]), |(idx_max, val_max), (idx, val)| {
+                    if &val_max > val {
+                        (idx_max, val_max)
+                    } else {
+                        (idx, *val)
+                    }
+                });
+
+        index
+    }
 
     // write a test that loads a wav file, initialises a Spectrogram and processes the wave file.
     #[test]
     fn test_spectrogram() {
-        let mut spectrogram = super::Spectrogram::new(44100.0, 2048, 200);
+        let mut spectrogram = super::Spectrogram::new(44100.0, 2048, 200, 24);
         // generate 1s sine wave of 440Hz at 44100Hz
         let audio = (0..44100)
             .map(|x| sin_hz(440.0, x as f32 / 44100.0))
@@ -341,5 +343,177 @@ mod spectrogram_tests {
         // Expect a peak at 440hz
         // 93 is 440hz in this configuration
         assert_eq!(argmax(&spec[0]), 93);
+    }
+}
+
+fn superflux_diff_spec(spec: Vec<Vec<f32>>, diff_frames: usize, max_bins: usize) -> Vec<f32> {
+    let n_samples = spec.len();
+    let num_bins = spec[0].len();
+
+    // @todo this is NQR... try again maximum_filter2d
+    let max_spec = spec.iter().map(|v| maximum_filter(v, max_bins));
+
+    let diff_spec = spec[diff_frames..]
+        .iter()
+        .zip(max_spec)
+        .map(|(s, m)| {
+            s.iter()
+                .zip(m.iter())
+                .map(|(x, d)| (x - d).max(0.0))
+                .collect()
+        })
+        .collect::<Vec<Vec<f32>>>();
+
+    diff_spec.iter().map(|v| v.iter().sum()).collect()
+}
+
+fn onset(threshold: f32, activations: Vec<f32>, fps: usize) -> Vec<f32> {
+    // moving maximum
+    let mov_max = maximum_filter(&activations, 3);
+
+    // moving average
+    let mov_avg = uniform_filter(&activations, 3);
+
+    let detections: Vec<f32> = activations
+        .iter()
+        // detections are activation equal to the moving maximum
+        .zip(mov_max.into_iter())
+        .map(|(activation, max)| if *activation == max { *activation } else { 0.0 })
+        // detections must be greater or equal than the mov. average + threshold
+        .zip(mov_avg.into_iter())
+        .map(|(activation, avg)| {
+            if activation >= avg + threshold {
+                activation
+            } else {
+                0.0
+            }
+        })
+        // convert detected onsets to a list of timestamps
+        .enumerate()
+        .filter_map(|(index, activation)| {
+            if activation > 0.0 {
+                Some(index as f32 / fps as f32)
+            } else {
+                None
+            }
+        })
+        .collect();
+
+    detections
+}
+
+#[cfg(test)]
+mod odf_tests {
+    use crate::dsp::onset::{onset, superflux_diff_spec};
+    use fundsp::math::sin_hz;
+
+    // write a test that loads a wav file, initialises a Spectrogram and processes the wave file.
+    #[test]
+    fn test_odf() {
+        let fps = 200;
+        let mut spectrogram = super::Spectrogram::new(44100.0, 512, fps, 3);
+        // generate 1s sine wave of 440Hz at 44100Hz
+        let audio: Vec<f32> = (0..44100 / 2)
+            .map(|x| sin_hz(440.0, x as f32 / 44100.0))
+            .chain((0..44100 / 2).map(|x| sin_hz(880.0, x as f32 / 44100.0)))
+            .collect();
+
+        let spec = spectrogram.process(audio);
+
+        let diff_spec = superflux_diff_spec(spec, 1, 3);
+
+        let detections = onset(0.1, diff_spec, fps);
+
+        assert!(!detections.is_empty());
+        assert_eq!(detections[0], 0.49);
+    }
+}
+
+fn uniform_filter(input: &Vec<f32>, size: usize) -> Vec<f32> {
+    pad(input, size - 1)
+        .windows(size)
+        .map(|window| window.iter().cloned().sum::<f32>() / size as f32)
+        .collect()
+}
+
+fn maximum_filter(input: &Vec<f32>, size: usize) -> Vec<f32> {
+    // possible optimisation: https://www.nayuki.io/page/sliding-window-minimum-maximum-algorithm/
+    pad(input, size - 1)
+        .windows(size)
+        .map(|window| {
+            window
+                .iter()
+                .cloned()
+                .max_by(|i, j| i.partial_cmp(j).unwrap())
+                .unwrap()
+        })
+        .collect()
+}
+
+fn pad<T: Clone>(input: &Vec<T>, size: usize) -> Vec<T> {
+    if let (Some(first), Some(last)) = (input.first(), input.last()) {
+        let right = size / 2;
+        let left = size - right;
+
+        repeat(first)
+            .take(left)
+            .chain(input.iter())
+            .chain(repeat(last).take(right))
+            .cloned()
+            .collect()
+    } else {
+        panic!("input must have at least one element");
+    }
+}
+
+#[cfg(test)]
+mod filters {
+    use crate::dsp::onset::{maximum_filter, pad, uniform_filter};
+
+    #[test]
+    fn test_pad() {
+        assert_eq!(pad(&vec![1, 2, 3, 4, 5], 1), vec![1, 1, 2, 3, 4, 5]);
+
+        assert_eq!(pad(&vec![1, 2, 3, 4, 5], 2), vec![1, 1, 2, 3, 4, 5, 5]);
+
+        assert_eq!(pad(&vec![1, 2, 3, 4, 5], 3), vec![1, 1, 1, 2, 3, 4, 5, 5]);
+    }
+
+    #[test]
+    fn test_uniform_filter() {
+        //
+        // ```python
+        // >>> from scipy.ndimage import uniform_filter1d
+        // >>> uniform_filter1d([2., 8., 0., 4., 1., 9., 9., 0.], size=3)
+        // array([4.        , 3.33333333, 4.        , 1.66666667, 4.66666667,
+        //        6.33333333, 6.        , 3.        ])
+        // ```
+        //
+        assert_eq!(
+            uniform_filter(&vec![2.0, 8.0, 0.0, 4.0, 1.0, 9.0, 9.0, 0.0], 3),
+            vec![4.0, 3.33333333, 4.0, 1.66666667, 4.66666667, 6.33333333, 6.0, 3.0]
+        );
+
+        // ```python
+        // >>> from scipy.ndimage import uniform_filter1d
+        // >>> uniform_filter1d([2., 8., 0., 4., 1., 9., 9., 0.], size=2)
+        // array([2. , 5. , 4. , 2. , 2.5, 5. , 9. , 4.5])
+        // ```
+        assert_eq!(
+            uniform_filter(&vec![2.0, 8.0, 0.0, 4.0, 1.0, 9.0, 9.0, 0.0], 2),
+            vec![2., 5., 4., 2., 2.5, 5., 9., 4.5]
+        );
+    }
+
+    #[test]
+    fn test_maximum_filter() {
+        // ```python
+        // >>> maximum_filter([[31., 41., 59., 26., 53., 58., 97.]], size=[1, 3])
+        // array([[41., 59., 59., 59., 58., 97., 97.]])
+        // ```
+        assert_eq!(
+            maximum_filter(&vec![31., 41., 59., 26., 53., 58., 97.], 3),
+            vec![41., 59., 59., 59., 58., 97., 97.]
+        );
     }
 }
