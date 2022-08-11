@@ -38,7 +38,7 @@ pub enum SamplerCommand {
 #[ts(export)]
 pub enum SamplerEvent {
     /// Event when onsets have been detected
-    OnDetect(Vec<f32>),
+    OnDetect(Vec<usize>),
 }
 
 pub fn sampler(
@@ -66,5 +66,5 @@ pub fn sampler(
         PlayerEvent::OnDetect(step) => SamplerEvent::OnDetect(step),
     }));
 
-    reset_trigger(module)
+    reset_trigger(module) >> declick::<f32, f32>()
 }

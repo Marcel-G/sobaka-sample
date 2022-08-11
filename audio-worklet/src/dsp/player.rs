@@ -2,16 +2,19 @@ use std::{marker::PhantomData, sync::Arc};
 
 use crate::utils::observer::{Observable, Observer, Producer, Subject};
 use fundsp::prelude::*;
+use rand::{Rng};
 
 use super::onset::{onset, superflux_diff_spec, Spectrogram};
 
 /// Play back one channel of a wave.
 pub struct Wave32Player<T: Float> {
     wave: Arc<Wave32>,
+    sample: usize,
     channel: usize,
     index: usize,
     subject: Subject<PlayerEvent>,
     loop_point: Option<usize>,
+    detections: Vec<usize>,
     _marker: PhantomData<T>,
 }
 
@@ -20,9 +23,11 @@ impl<T: Float> Wave32Player<T> {
         Self {
             wave,
             channel,
+            sample: 0,
             index: 0,
             subject: Default::default(),
             loop_point,
+            detections: Default::default(),
             _marker: PhantomData::default(),
         }
     }
@@ -49,20 +54,22 @@ impl<T: Float> Wave32Player<T> {
 
         let diff_spec = superflux_diff_spec(spec, 1, 3);
 
-        let detections = onset(28.0, diff_spec, fps);
-        let length_seconds = detect_wave.len() as f32 / sample_rate;
-        let percent = detections
+        let detections = onset(20.0, diff_spec, fps);
+
+        self.sample = 0;
+
+        self.detections = detections
             .iter()
-            .map(|d| d / length_seconds)
+            .map(|d| (d * sample_rate) as usize)
             .collect::<Vec<_>>();
 
-        self.subject.notify(PlayerEvent::OnDetect(percent));
+        self.subject.notify(PlayerEvent::OnDetect(self.detections.clone()));
     }
 }
 
 #[derive(Clone)]
 pub enum PlayerEvent {
-    OnDetect(Vec<f32>),
+    OnDetect(Vec<usize>),
 }
 
 impl<T> Observable for Wave32Player<T>
@@ -83,6 +90,10 @@ impl<T: Float> AudioNode for Wave32Player<T> {
     type Outputs = U1;
 
     fn reset(&mut self, _sample_rate: Option<f64>) {
+        if !self.detections.is_empty() {
+            let mut rng = rand::thread_rng();
+            self.sample = rng.gen_range(0..self.detections.len() - 1);
+        }
         self.index = 0;
     }
 
@@ -91,10 +102,20 @@ impl<T: Float> AudioNode for Wave32Player<T> {
         &mut self,
         _input: &Frame<Self::Sample, Self::Inputs>,
     ) -> Frame<Self::Sample, Self::Outputs> {
-        if self.index < self.wave.length() {
-            let value = self.wave.at(self.channel, self.index);
+        let wave = {
+            if !self.detections.is_empty() {
+                let start = self.detections[self.sample];
+                let end = self.detections[self.sample + 1];
+                &self.wave.channel(self.channel)[start..end]
+            } else {
+                self.wave.channel(self.channel)
+            }
+        };
+
+        if self.index < wave.len() {
+            let value = wave[self.index];
             self.index += 1;
-            if self.index == self.wave.length() {
+            if self.index == wave.len() {
                 if let Some(point) = self.loop_point {
                     self.index = point;
                 }

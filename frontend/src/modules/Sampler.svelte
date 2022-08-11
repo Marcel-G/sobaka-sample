@@ -91,7 +91,8 @@
     const height = canvas.height
 
     for (const detection of detections) {
-      const x = detection * width
+      // @todo not sure about this - pretty sure it's not correct
+      const x = detection / width
 
       let fill = context.fillStyle
       context.fillStyle = 'red'

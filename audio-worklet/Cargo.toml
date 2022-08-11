@@ -16,6 +16,7 @@ fundsp = "0.6.3"
 petgraph = { version = "0.6", features = ["stable_graph"] }
 numeric-array = "0.5.2"
 num-traits = "0.2.15"
+rand = "0.8.5"
 
 # Todo check all the below
 serde = { version = "1.0", features = ["derive", "rc"] }
