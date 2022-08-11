@@ -86,46 +86,42 @@ impl Spectrogram {
     }
 
     // @todo reorganise params
-    pub fn process(&mut self, audio: &Vec<f32>) -> Vec<Vec<f32>> {
+    pub fn process(&mut self, audio: &[f32]) -> Vec<Vec<f32>> {
         let window_size = self.fft_size;
         let hop_size = (self.sample_rate / self.fps as f32).floor() as usize; // wav sample rate
         let num_bins = self.filter.weights[0].len();
 
-        let mut spec: Vec<Vec<f32>> = vec![];
-
         let fft = self.fft.plan_fft_forward(window_size);
 
-        let mut cur_pos: usize = 0;
+        // split audio into frames.
+        pad(audio, window_size - 1)
+          .windows(window_size)
+          // Filter to match fps
+          .enumerate()
+          .filter_map(|(index, frame)|
+            if index % (hop_size + 1) == 0 { Some(frame) } else { None }
+          )
+          // Apply henning window fn to frame
+          .map(|frame| frame
+            .iter()
+            .zip(&self.window)
+            .map(|(v, w)| v * w)
+            .collect::<Vec<_>>()
+          )
+          // Perform FFT
+          .map(|frame| -> Vec<f32> {
+            let mut buffer = frame
+              .into_iter()
+              .map(|v| Complex::new(v, 0.0))
+              .collect::<Vec<_>>();
 
-        // https://doc.rust-lang.org/std/primitive.slice.html#method.windows
-        // What about windows
-        while cur_pos + window_size < audio.len() {
-            let signal = &audio[cur_pos..cur_pos + window_size];
-            let mut fft_buffer_real = signal.to_vec();
+            fft.process(&mut buffer);
 
-            fft_buffer_real
-                .iter_mut()
-                .zip(&self.window)
-                .for_each(|(v, w)| *v *= w);
-
-            let mut fft_buffer_comp: Vec<Complex<f32>> = fft_buffer_real
-                .iter()
-                .map(|&value| Complex::new(value, 0f32))
-                .collect();
-
-            fft.process(&mut fft_buffer_comp);
-
-            let frame_spec: Vec<f32> = fft_buffer_comp[..num_bins]
-                .iter()
-                .map(|v| v.norm())
-                .collect();
-
-            spec.push(self.filter.process(&frame_spec));
-
-            cur_pos += hop_size;
-        }
-
-        spec
+            buffer.into_iter().map(|v| v.norm()).collect()
+          })
+          // Apply filter
+          .map(|frame| self.filter.process(&frame[..num_bins]))
+          .collect()
     }
 }
 
@@ -519,18 +515,17 @@ mod spectrogram_tests {
         index
     }
 
-    // write a test that loads a wav file, initialises a Spectrogram and processes the wave file.
     #[test]
     fn test_spectrogram() {
         let mut spectrogram = super::Spectrogram::new(44100.0, 2048, 200, 24);
         // generate 1s sine wave of 440Hz at 44100Hz
         let audio = (0..44100)
             .map(|x| sin_hz(440.0, x as f32 / 44100.0))
-            .collect();
+            .collect::<Vec<_>>();
 
         let spec = spectrogram.process(&audio);
 
-        assert_eq!(spec.len(), 192);
+        assert_eq!(spec.len(), 200);
 
         // Expect a peak at 440hz
         // 93 is 440hz in this configuration
@@ -540,27 +535,32 @@ mod spectrogram_tests {
 
 #[cfg(test)]
 mod odf_tests {
-    use crate::dsp::onset::{onset, superflux_diff_spec};
+    use crate::dsp::onset::{onset, superflux_diff_spec, hanning};
     use fundsp::math::sin_hz;
 
     // write a test that loads a wav file, initialises a Spectrogram and processes the wave file.
     #[test]
     fn test_odf() {
         let fps = 200;
-        let mut spectrogram = super::Spectrogram::new(44100.0, 512, fps, 3);
-        // generate 1s sine wave of 440Hz at 44100Hz
+        let window: Vec<f32> = hanning(44100);
+        let mut spectrogram = super::Spectrogram::new(44100.0, 512, fps, 24);
+        // Generate 0.5s sine wave of 440Hz at 44100Hz
         let audio: Vec<f32> = (0..44100 / 2)
             .map(|x| sin_hz(440.0, x as f32 / 44100.0))
+            // Then add 0.5s of 880Hz onto the end
             .chain((0..44100 / 2).map(|x| sin_hz(880.0, x as f32 / 44100.0)))
+            // Apply a window, so it fades in and out slowly
+            .zip(window.iter())
+            .map(|(x, w)| x * w)
             .collect();
 
         let spec = spectrogram.process(&audio);
 
         let diff_spec = superflux_diff_spec(spec, 1, 3);
 
-        let detections = onset(0.1, diff_spec, fps);
+        let detections = onset(30.0, diff_spec, fps);
 
         assert!(!detections.is_empty());
-        assert_eq!(detections[0], 0.49);
+        assert_eq!(detections[0], 0.495);
     }
 }
