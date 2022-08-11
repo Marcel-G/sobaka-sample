@@ -142,12 +142,12 @@ pub fn superflux_diff_spec(spec: Vec<Vec<f32>>, diff_frames: usize, max_bins: us
     diff_spec.iter().map(|v| v.iter().sum()).collect()
 }
 
-pub fn onset(threshold: f32, activations: Vec<f32>, fps: usize) -> Vec<f32> {
+pub fn onset(threshold: f32, activations: &[f32], fps: usize) -> Vec<f32> {
     // moving maximum
-    let mov_max = maximum_filter(&activations, 3);
+    let mov_max = maximum_filter(activations, 3);
 
     // moving average
-    let mov_avg = uniform_filter(&activations, 3);
+    let mov_avg = uniform_filter(activations, 3);
 
     let detections: Vec<f32> = activations
         .iter()
@@ -558,7 +558,7 @@ mod odf_tests {
 
         let diff_spec = superflux_diff_spec(spec, 1, 3);
 
-        let detections = onset(30.0, diff_spec, fps);
+        let detections = onset(30.0, &diff_spec, fps);
 
         assert!(!detections.is_empty());
         assert_eq!(detections[0], 0.495);

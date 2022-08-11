@@ -23,6 +23,7 @@ pub struct AudioData {
 #[ts(export)]
 pub struct SamplerParams {
     pub audio_data: Option<AudioData>,
+    pub threshold: f32,
 }
 
 /// Incoming commands into the sampler module.
@@ -31,6 +32,7 @@ pub struct SamplerParams {
 pub enum SamplerCommand {
     /// Send new audio data
     UpdateData(AudioData),
+    SetThreshold(f32),
 }
 
 /// Incoming commands into the sampler module.
@@ -38,14 +40,14 @@ pub enum SamplerCommand {
 #[ts(export)]
 pub enum SamplerEvent {
     /// Event when onsets have been detected
-    OnDetect(Vec<usize>),
+    OnDetect(Vec<f32>),
 }
 
 pub fn sampler(
     params: &SamplerParams,
     context: &mut ModuleContext<SamplerCommand, SamplerEvent>,
 ) -> impl AudioUnit32 {
-    let mut player = player(0, None);
+    let mut player = player(0, None, params.threshold);
     if let Some(audio_data) = &params.audio_data {
         player.set_data(&audio_data.data, audio_data.sample_rate);
     }
@@ -59,6 +61,9 @@ pub fn sampler(
                 SamplerCommand::UpdateData(audio_data) => {
                     unit.set_data(&audio_data.data, audio_data.sample_rate);
                 }
+                SamplerCommand::SetThreshold(threshold) => {
+                    unit.set_threshold(threshold);
+                },
             }),
     );
 

@@ -10,6 +10,12 @@
     align-items: center;
   }
 
+  .sampler-controls {
+    display: flex;
+    width: 100%;
+    height: 100%;
+  }
+
   .file-input input {
     display: none;
   }
@@ -56,6 +62,7 @@
   import { get_module_context } from './ModuleWrapper.svelte'
   import { into_style } from '../components/Theme.svelte'
   import { PlugType } from '../state/plug'
+  import Knob from '../components/Knob.svelte'
 
   let canvas: HTMLCanvasElement
   let name = 'sampler'
@@ -76,36 +83,19 @@
     }
   }
 
-  let sampler_data = get_sub_state(name, {
-    audio_data: null as ArrayBuffer | null
+  let state = get_sub_state(name, {
+    audio_data: null as ArrayBuffer | null,
+    threshold: 30.0
   })
 
-  const sampler = new Sampler(context, { audio_data: null }) // @todo make the data all optional
+  const sampler = new Sampler(context, { audio_data: null, threshold: state.threshold || 40 }) // @todo make the data all optional
   const loading = sampler.get_address()
   let detections: number[] = []
 
-  $: if (sampler_data?.audio_data && canvas && detections.length) {
-    const context = canvas.getContext('2d')!
+  // @todo little hack for testing
+  let loaded: AudioData | null = null
 
-    const width = canvas.width
-    const height = canvas.height
-
-    for (const detection of detections) {
-      // @todo not sure about this - pretty sure it's not correct
-      const x = detection / width
-
-      let fill = context.fillStyle
-      context.fillStyle = 'red'
-      context.globalAlpha = 0.8
-      context.fillRect(x, 0, 1.0, height)
-      context.fillStyle = fill
-      context.globalAlpha = 1.0
-    }
-  }
-
-  $: if (sampler_data?.audio_data && canvas) {
-    update_sub_state(name, { audio_data: sampler_data.audio_data.slice(0) })
-
+  $: if (loaded && canvas) {
     const width = canvas.clientWidth
     const height = canvas.clientHeight
 
@@ -115,13 +105,8 @@
     }
 
     const context = canvas.getContext('2d')!
-
-    // Update data in the audio node
-    void decode_sample(sampler_data.audio_data).then(audio_data => {
-      void sampler.message({
-        UpdateData: audio_data!
-      })
-
+    context.clearRect(0, 0, width, height)
+      const audio_data = loaded
       // Draw to canvas  (WIP)
       const step = Math.ceil(audio_data!.data.length / width)
       const amp = height / 2
@@ -135,7 +120,31 @@
         }
         context.fillRect(i, (1 + min) * amp, 1, Math.max(1, (max - min) * amp))
       }
-    })
+
+      for (const detection of detections) {
+        const x = detection * width
+
+        let fill = context.fillStyle
+        context.fillStyle = 'red'
+        context.globalAlpha = 0.8
+        context.fillRect(x, 0, 1.0, height)
+        context.fillStyle = fill
+        context.globalAlpha = 1.0
+      }
+  }
+
+  $: if (state.audio_data) {
+    if (loaded === null) {
+      // update_sub_state(name, { audio_data: state.audio_data.slice(0) })
+
+      // Update data in the audio node
+      void decode_sample(state.audio_data).then(audio_data => {
+        loaded = audio_data;
+        void sampler.message({
+          UpdateData: audio_data!
+        })
+      })
+    }
   }
 
   type InputChangeEvent = Event & {
@@ -145,7 +154,7 @@
   function handle_file_load(event: ProgressEvent<FileReader>) {
     const result = event.target?.result
     if (is_array_buffer(result)) {
-      sampler_data = { audio_data: result }
+      state.audio_data = result
     }
   }
 
@@ -159,10 +168,16 @@
     }
   }
 
+  // Update the sobaka node when the state changes
+  $: void sampler.message({ SetThreshold: state.threshold })
+
   void sampler.subscribe('OnDetect', detect => {
     console.log(detect)
     detections = detect
   })
+
+  // Update the global state when state changes
+  // $: update_sub_state(name, state)
 
   onDestroy(() => {
     void sampler.dispose()
@@ -173,8 +188,11 @@
   {#await loading}
     <p>Loading...</p>
   {:then}
-    {#if sampler_data.audio_data}
-      <canvas class="canvas" bind:this={canvas} />
+    {#if state.audio_data}
+      <div class="sampler-controls">
+        <canvas class="canvas" bind:this={canvas} />
+        <Knob bind:value={state.threshold} range={[0, 100]} label="threshold" />
+      </div>
     {:else}
       <div class="controls">
         <label class="file-input">

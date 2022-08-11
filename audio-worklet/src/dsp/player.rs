@@ -11,6 +11,8 @@ pub struct Wave32Player<T: Float> {
     wave: Arc<Wave32>,
     sample: usize,
     channel: usize,
+    threshold: f32,
+    diff_spec: Option<Vec<f32>>,
     index: usize,
     subject: Subject<PlayerEvent>,
     loop_point: Option<usize>,
@@ -19,17 +21,25 @@ pub struct Wave32Player<T: Float> {
 }
 
 impl<T: Float> Wave32Player<T> {
-    pub fn new(wave: Arc<Wave32>, channel: usize, loop_point: Option<usize>) -> Self {
+    pub fn new(wave: Arc<Wave32>, channel: usize, loop_point: Option<usize>, threshold: f32) -> Self {
         Self {
             wave,
             channel,
             sample: 0,
             index: 0,
+            threshold,
+            diff_spec: None,
             subject: Default::default(),
             loop_point,
             detections: Default::default(),
             _marker: PhantomData::default(),
         }
+    }
+
+    pub fn set_threshold(&mut self, threshold: f32) {
+        self.threshold = threshold;
+        self.sample = 0;
+        self.detect_peaks();
     }
 
     // @todo cleanup & fix naming
@@ -44,32 +54,47 @@ impl<T: Float> Wave32Player<T> {
 
         self.wave = Arc::new(wave);
 
-        let detect_wave = self.wave.clone();
 
         // @todo do this in a seperate task
+        // and clean up this messy interface
         let fps = 200;
         let mut spectrogram = Spectrogram::new(sample_rate, 2048, fps, 24);
 
-        let spec = spectrogram.process(detect_wave.channel(0));
+        let spec = spectrogram.process(self.wave.channel(0));
 
-        let diff_spec = superflux_diff_spec(spec, 1, 3);
-
-        let detections = onset(20.0, diff_spec, fps);
+        self.diff_spec = Some(superflux_diff_spec(spec, 1, 3));
 
         self.sample = 0;
 
-        self.detections = detections
-            .iter()
-            .map(|d| (d * sample_rate) as usize)
-            .collect::<Vec<_>>();
+        self.detect_peaks();
+    }
 
-        self.subject.notify(PlayerEvent::OnDetect(self.detections.clone()));
+    fn detect_peaks(&mut self) {
+        // @todo this needs cleanup
+        let fps = 200;
+        if let Some(diff_spec) = &self.diff_spec {
+            let detections = onset(self.threshold, diff_spec, fps);
+
+            // Send detections as sample indexs
+            self.detections = detections
+                .iter()
+                .map(|d| (d * self.wave.sample_rate() as f32) as usize)
+                .collect::<Vec<_>>();
+    
+            let length_seconds = self.wave.len() as f32 / self.wave.sample_rate() as f32;
+
+            // Send detections as seconds
+            self.subject.notify(PlayerEvent::OnDetect(detections
+                .iter()
+                .map(|d| d / length_seconds)
+                .collect::<Vec<_>>()));
+            }
     }
 }
 
 #[derive(Clone)]
 pub enum PlayerEvent {
-    OnDetect(Vec<usize>),
+    OnDetect(Vec<f32>),
 }
 
 impl<T> Observable for Wave32Player<T>
@@ -130,10 +155,11 @@ impl<T: Float> AudioNode for Wave32Player<T> {
 /// Play back a channel of a Wave32.
 /// Optional loop point is the index to jump to at the end of the wave.
 /// - Output 0: wave
-pub fn player<T: Float>(channel: usize, loop_point: Option<usize>) -> An<Wave32Player<T>> {
+pub fn player<T: Float>(channel: usize, loop_point: Option<usize>, threshold: f32) -> An<Wave32Player<T>> {
     An(Wave32Player::new(
         Arc::new(Wave32::new(1, DEFAULT_SR)),
         channel,
         loop_point,
+        threshold
     ))
 }

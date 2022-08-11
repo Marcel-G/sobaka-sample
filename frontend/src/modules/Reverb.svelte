@@ -36,7 +36,7 @@
   $: void reverb.message({ SetWet: state.wet })
   $: void reverb.message({ SetDelay: state.length })
 
-  // // Update the global state when state changes
+  // Update the global state when state changes
   $: update_sub_state(name, state)
 
   const loading = reverb.get_address()
