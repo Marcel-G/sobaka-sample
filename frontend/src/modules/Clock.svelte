@@ -4,49 +4,57 @@
     highlight: 'var(--pink)',
     background: 'var(--pink-dark)'
   }
+
+  type State = { bpm: number }
+
+  export const initialState: State = { bpm: 120 }
 </script>
 
 <script lang="ts">
-  import { Clock } from 'sobaka-sample-audio-worklet'
-  import { onDestroy } from 'svelte'
+  import type { Clock } from 'sobaka-sample-audio-worklet'
+  import { onDestroy, onMount } from 'svelte'
   import Panel from './shared/Panel.svelte'
   import Plug from './shared/Plug.svelte'
-  import { get_module_context } from './ModuleWrapper.svelte'
   import { into_style } from '../components/Theme.svelte'
-  import { PlugType } from '../state/plug'
+  import { PlugType } from '../workspace/plugs'
   import Knob from '../components/Knob.svelte'
+  import { get_audio_context } from '../routes/workspace/[slug]/+layout.svelte'
+  import { SubStore } from '../utils/patches'
 
+  export let state: SubStore<State>
   let name = 'clock'
+  let clock: Clock
+  let loading = true
 
-  const { context, get_sub_state, update_sub_state } = get_module_context()
+  const context = get_audio_context()
 
-  let state = get_sub_state(name, { bpm: 120 })
+  onMount(async () => {
+    const { Clock } = await import('sobaka-sample-audio-worklet')
+    clock = new Clock($context, $state)
+    await clock.get_address()
+    loading = false
+  })
 
-  const clock = new Clock(context, state)
-
-  const loading = clock.get_address()
+  const bpm = state.select(s => s.bpm)
 
   // Update the sobaka node when the state changes
-  $: void clock.message({ SetBPM: state.bpm })
-
-  // Update the global state when state changes
-  $: update_sub_state(name, state)
+  $: void clock?.message({ SetBPM: $bpm })
 
   onDestroy(() => {
-    void clock.dispose()
+    void clock?.dispose()
   })
 </script>
 
 <Panel {name} height={7} width={5} custom_style={into_style(theme)}>
-  {#await loading}
+  {#if loading}
     <p>Loading...</p>
-  {:then}
-    <Knob bind:value={state.bpm} range={[0, 240]} label="bpm">
+  {:else}
+    <Knob bind:value={$bpm} range={[0, 240]} label="bpm">
       <div slot="inputs">
         <Plug id={0} label="bpm_cv" type={PlugType.Input} for_module={clock} />
       </div>
     </Knob>
-  {/await}
+  {/if}
 
   <div slot="outputs">
     <Plug id={0} label="1/1" type={PlugType.Output} for_module={clock} />

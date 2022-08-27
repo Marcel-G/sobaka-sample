@@ -1,6 +1,4 @@
-import { SobakaContext } from 'sobaka-sample-audio-worklet'
-import samplerWorkletUrl from 'sobaka-sample-audio-worklet/dist/lib/sobaka.worklet'
-import samplerWasmUrl from 'sobaka-sample-audio-worklet/dist/pkg/sobaka_sample_audio_worklet_bg.wasm'
+import type { SobakaContext } from 'sobaka-sample-audio-worklet'
 
 export async function init_sampler(): Promise<SobakaContext> {
   const context = new AudioContext()
@@ -13,11 +11,9 @@ export async function init_sampler(): Promise<SobakaContext> {
     { once: true }
   )
 
-  const sampler = await SobakaContext.register(
-    samplerWasmUrl as unknown as string,
-    samplerWorkletUrl as unknown as string,
-    context
-  )
+  const { SobakaContext } = await import('sobaka-sample-audio-worklet')
+
+  const sampler = await SobakaContext.register(context)
   sampler.connect(context.destination)
 
   return sampler

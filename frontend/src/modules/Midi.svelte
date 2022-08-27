@@ -4,27 +4,34 @@
     highlight: 'var(--cyan)',
     background: 'var(--cyan-dark)'
   }
+
+  export const initialState: Record<string, never> = {}
 </script>
 
 <script lang="ts">
   import { WebMidi, Input } from 'webmidi'
   import { onDestroy, onMount } from 'svelte'
   import Panel from './shared/Panel.svelte'
-  import { get_module_context } from './ModuleWrapper.svelte'
   import Dropdown from '../components/Dropdown.svelte'
   import { matches } from 'lodash'
-  import { Midi } from 'sobaka-sample-audio-worklet'
+  import type { Midi } from 'sobaka-sample-audio-worklet'
   import Plug from './shared/Plug.svelte'
   import { into_style } from '../components/Theme.svelte'
-  import { PlugType } from '../state/plug'
+  import { PlugType } from '../workspace/plugs'
+  import { get_audio_context } from '../routes/workspace/[slug]/+layout.svelte'
 
   let active_device_id: string
   let default_device: Input
   let inputs: Input[] = []
+  let midi: Midi
 
-  const { context } = get_module_context()
+  const context = get_audio_context()
 
-  const midi = new Midi(context)
+  onMount(async () => {
+    const { Midi } = await import('sobaka-sample-audio-worklet')
+    midi = new Midi($context)
+    await midi.get_address()
+  })
 
   $: {
     // Cleanup previous
@@ -34,10 +41,10 @@
     // Attach new device
     default_device = inputs.find(matches({ id: active_device_id }))!
     default_device?.addListener('noteon', event => {
-      midi.message({ NoteOn: event.note.number })
+      midi?.message({ NoteOn: event.note.number })
     })
     default_device?.addListener('noteoff', event => {
-      midi.message({ NoteOff: event.note.number })
+      midi?.message({ NoteOff: event.note.number })
     })
   }
 
@@ -54,7 +61,7 @@
     // Cleanup previous
     default_device?.removeListener('noteon')
     default_device?.removeListener('noteoff')
-    void midi.dispose()
+    void midi?.dispose()
   })
 </script>
 

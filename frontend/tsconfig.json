@@ -1,14 +1,13 @@
 {
-  "extends": "@tsconfig/svelte/tsconfig.json",
+  "extends": "./.svelte-kit/tsconfig.json",
   "compilerOptions": {
+    "lib": ["es2021", "DOM"],
     "importHelpers": true,
     "allowJs": true,
     "resolveJsonModule": true,
     "esModuleInterop": true,
     "importsNotUsedAsValues": "remove",
-    "strict": true,
-    "module": "ESNext"
-  },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules/*", "__sapper__/*", "public/*"]
+    "preserveValueImports": false,
+    "strict": true
+  }
 }

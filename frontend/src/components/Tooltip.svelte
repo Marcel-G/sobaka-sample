@@ -1,3 +1,19 @@
+<script lang="ts">
+  export let position: 'left' | 'right' = 'right'
+  export let label: string
+</script>
+
+<div class="wrapper">
+  <slot />
+  <span
+    class:left={position === 'left'}
+    class:right={position === 'right'}
+    class="tooltip"
+  >
+    {label}
+  </span>
+</div>
+
 <style>
   .wrapper {
     position: relative;
@@ -51,19 +67,3 @@
     visibility: visible;
   }
 </style>
-
-<script lang="ts">
-  export let position: 'left' | 'right' = 'right'
-  export let label: string
-</script>
-
-<div class="wrapper">
-  <slot />
-  <span
-    class:left={position === 'left'}
-    class:right={position === 'right'}
-    class="tooltip"
-  >
-    {label}
-  </span>
-</div>

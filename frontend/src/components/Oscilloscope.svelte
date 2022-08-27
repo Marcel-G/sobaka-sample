@@ -1,16 +1,10 @@
-<style>
-  .canvas {
-    width: 100%;
-    height: 100%;
-  }
-</style>
-
 <script lang="ts">
   import type { SobakaContext } from 'sobaka-sample-audio-worklet'
-  import { getContext, onMount } from 'svelte'
-  import { get } from 'svelte/store'
+  import { onMount } from 'svelte'
+  import { get } from '@crikey/stores-immer'
   import type { Writable } from 'svelte/store'
-  const context: Writable<SobakaContext> = getContext('sampler')
+  import { get_audio_context } from '../routes/workspace/[slug]/+layout.svelte'
+  const context: Writable<SobakaContext> = get_audio_context()
 
   let canvas: HTMLCanvasElement
 
@@ -30,7 +24,7 @@
 
   let draw_fn: () => void // @todo this is wird
 
-  function init(ctx: CanvasRenderingContext2D, width: number, height: number) {
+  function init(ctx: CanvasRenderingContext2D) {
     ctx.fillStyle = get_css_var('--module-background')
     ctx.strokeStyle = get_css_var('--module-foreground')
     ctx.lineWidth = 2
@@ -45,7 +39,7 @@
     height: number
   ) {
     ctx.beginPath()
-    const reduced = data.filter((_, i) => !Boolean(i % 32)) // Take every 32nd sample
+    const reduced = data.filter((_, i) => !(i % 32)) // Take every 32nd sample
 
     reduced.forEach((value, i, data) => {
       let x = i * (width / data.length) // need to fix x
@@ -68,8 +62,13 @@
     })
   }
   onMount(() => {
-    const width = canvas.width
-    const height = canvas.height
+    const width = canvas.clientWidth
+    const height = canvas.clientHeight
+
+    if (canvas.width !== width || canvas.height !== height) {
+      canvas.width = width
+      canvas.height = height
+    }
 
     const context = canvas.getContext('2d')!
     init(context, width, height)
@@ -100,3 +99,10 @@
 </script>
 
 <canvas class="canvas" bind:this={canvas} on:click={handle_click} />
+
+<style>
+  .canvas {
+    width: 100%;
+    height: 100%;
+  }
+</style>

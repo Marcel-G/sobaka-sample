@@ -4,59 +4,77 @@
     highlight: 'var(--pink)',
     background: 'var(--pink-dark)'
   }
+
+  type State = Readonly<{
+    sine: number
+    square: number
+    saw: number
+    triangle: number
+    pitch: number
+  }>
+
+  export const initialState: State = {
+    sine: 0,
+    square: 0,
+    saw: 0,
+    triangle: 0,
+    pitch: 0
+  }
 </script>
 
 <script lang="ts">
-  import { Oscillator } from 'sobaka-sample-audio-worklet'
-  import { onDestroy } from 'svelte'
-  import { get_module_context } from './ModuleWrapper.svelte'
+  import type { Oscillator } from 'sobaka-sample-audio-worklet'
+  import { onDestroy, onMount } from 'svelte'
   import Panel from './shared/Panel.svelte'
   import Plug from './shared/Plug.svelte'
   import { into_style } from '../components/Theme.svelte'
-  import { PlugType } from '../state/plug'
+  import { PlugType } from '../workspace/plugs'
   import Knob from '../components/Knob.svelte'
+  import { SubStore } from '../utils/patches'
+  import { get_audio_context } from '../routes/workspace/[slug]/+layout.svelte'
 
+  export let state: SubStore<State>
   let name = 'oscillator'
+  let oscillator: Oscillator
+  let loading = true
 
-  const { context, get_sub_state, update_sub_state } = get_module_context()
+  const context = get_audio_context()
 
-  let state = get_sub_state(name, {
-    sine: 0.0,
-    saw: 1.0,
-    square: 0.0,
-    triangle: 0.0,
-    pitch: 0.0
+  onMount(async () => {
+    const { Oscillator } = await import('sobaka-sample-audio-worklet')
+    oscillator = new Oscillator($context, $state)
+    await oscillator.get_address()
+    loading = false
   })
 
-  const oscillator = new Oscillator(context, state)
-
-  const loading = oscillator.get_address()
+  const pitch = state.select(s => s.pitch)
+  const saw = state.select(s => s.saw)
+  const sine = state.select(s => s.sine)
+  const square = state.select(s => s.square)
+  const triangle = state.select(s => s.triangle)
 
   // Update the sobaka node when the state changes
-  $: void oscillator.message({ SetPitch: state.pitch })
-  $: void oscillator.message({ SetSawLevel: state.saw })
-  $: void oscillator.message({ SetSineLevel: state.sine })
-  $: void oscillator.message({ SetSquareLevel: state.square })
-  $: void oscillator.message({ SetTriangleLevel: state.triangle })
-
-  // Update the global state when state changes
-  $: update_sub_state(name, state)
+  $: void oscillator?.message({ SetPitch: $pitch })
+  $: void oscillator?.message({ SetSawLevel: $saw })
+  $: void oscillator?.message({ SetSineLevel: $sine })
+  $: void oscillator?.message({ SetSquareLevel: $square })
+  $: void oscillator?.message({ SetTriangleLevel: $triangle })
 
   onDestroy(() => {
-    void oscillator.dispose()
+    void oscillator?.dispose()
   })
 </script>
 
 <Panel {name} height={18} width={5} custom_style={into_style(theme)}>
-  {#await loading}
+  {#if loading}
     <p>Loading...</p>
-  {:then}
-    <Knob bind:value={state.pitch} range={[0, 4]} label="pitch" />
-    <Knob bind:value={state.saw} range={[0, 1]} label="saw" />
-    <Knob bind:value={state.sine} range={[0, 1]} label="sine" />
-    <Knob bind:value={state.square} range={[0, 1]} label="square" />
-    <Knob bind:value={state.triangle} range={[0, 1]} label="triangle" />
-  {/await}
+  {:else}
+    <Knob bind:value={$pitch} range={[0, 4]} label="pitch" />
+    <Knob bind:value={$saw} range={[0, 1]} label="saw" />
+    <Knob bind:value={$sine} range={[0, 1]} label="sine" />
+    <Knob bind:value={$square} range={[0, 1]} label="square" />
+    <Knob bind:value={$triangle} range={[0, 1]} label="triangle" />
+  {/if}
   <div slot="inputs">
     <Plug id={1} label="pitch_1 cv" type={PlugType.Input} for_module={oscillator} />
     <!-- @todo polyphony

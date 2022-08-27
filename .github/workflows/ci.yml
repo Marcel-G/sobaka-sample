@@ -95,7 +95,7 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           name: build-output
-          path: frontend/dist 
+          path: frontend/build 
   deploy:
     name: "🏃‍♂️ Deploy"
     runs-on: ubuntu-latest
@@ -108,7 +108,7 @@ jobs:
       - uses: actions/download-artifact@v2
         with:
           name: build-output
-          path: frontend/dist
+          path: frontend/build
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
@@ -117,12 +117,12 @@ jobs:
           role-session-name: DeploySession
       - name: "Copy files to S3"
         run: |
-          aws s3 sync frontend/dist s3://${{ needs.terraform.outputs.deploy_bucket }} \
+          aws s3 sync frontend/build s3://${{ needs.terraform.outputs.deploy_bucket }} \
             --acl public-read \
             --metadata-directive REPLACE \
             --cache-control 'max-age=31104000'
           
-           aws s3 cp frontend/dist/index.html s3://${{ needs.terraform.outputs.deploy_bucket }} \
+           aws s3 cp frontend/build/index.html s3://${{ needs.terraform.outputs.deploy_bucket }} \
             --acl public-read \
             --metadata-directive REPLACE \
             --cache-control 'max-age=3600'

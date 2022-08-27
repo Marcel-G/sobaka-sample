@@ -1,3 +1,9 @@
+<div class="container">
+  <div class="spinner" />
+  <div class="spinner" />
+  <div class="spinner" />
+</div>
+
 <style>
   .container {
     display: flex;
@@ -33,9 +39,3 @@
     }
   }
 </style>
-
-<div class="container">
-  <div class="spinner" />
-  <div class="spinner" />
-  <div class="spinner" />
-</div>

@@ -1,73 +1,81 @@
-import { Module } from '../state/modules'
+import Clock, { initialState as clockInitialState } from './Clock.svelte'
+import Envelope, { initialState as envelopeInitialState } from './Envelope.svelte'
+import Filter, { initialState as filterInitialState } from './Filter.svelte'
+import Oscillator, { initialState as oscillatorInitialState } from './Oscillator.svelte'
+import Parameter, { initialState as ParameterInitialState } from './Parameter.svelte'
+import Reverb, { initialState as reverbInitialState } from './Reverb.svelte'
+import Sequencer, { initialState as sequencerInitialState } from './Sequencer.svelte'
+import StepSequencer, {
+  initialState as stepSequencerInitialState
+} from './StepSequencer.svelte'
+import Output, { initialState as outputInitialState } from './Output.svelte'
+import Vca, { initialState as vcaInitialState } from './Vca.svelte'
+import Noise, { initialState as noiseInitialState } from './Noise.svelte'
+import Delay, { initialState as delayInitialState } from './Delay.svelte'
+import Scope, { initialState as scopeInitialState } from './Scope.svelte'
+import String, { initialState as stringInitialState } from './String.svelte'
+import Midi, { initialState as midiInitialState } from './Midi.svelte'
+import Lfo, { initialState as lfoInitialState } from './Lfo.svelte'
+import Quantiser, { initialState as quantiserInitialState } from './Quantiser.svelte'
+import SampleAndHold, {
+  initialState as sampleAndHoldInitialState
+} from './SampleAndHold.svelte'
+import Sampler, { initialState as samplerInitialState } from './Sampler/Sampler.svelte'
+import { Module } from 'src/workspace/state'
 
-import Clock from './Clock.svelte'
-import Envelope from './Envelope.svelte'
-import Filter from './Filter.svelte'
-import Oscillator from './Oscillator.svelte'
-import Parameter from './Parameter.svelte'
-import Reverb from './Reverb.svelte'
-import Sequencer from './Sequencer.svelte'
-import StepSequencer from './StepSequencer.svelte'
-import Output from './Output.svelte'
-import Vca from './Vca.svelte'
-import Noise from './Noise.svelte'
-import Delay from './Delay.svelte'
-import Scope from './Scope.svelte'
-import String from './String.svelte'
-import Midi from './Midi.svelte'
-import Lfo from './Lfo.svelte'
-import Quantiser from './Quantiser.svelte'
-import SampleAndHold from './SampleAndHold.svelte'
+export const MODULES = {
+  Clock,
+  Envelope,
+  Filter,
+  Oscillator,
+  Parameter,
+  Reverb,
+  Sequencer,
+  StepSequencer,
+  Output,
+  Vca,
+  Noise,
+  Delay,
+  Scope,
+  String,
+  Midi,
+  Lfo,
+  Quantiser,
+  SampleAndHold,
+  Sampler
+} as const
 
-/**
- * Modules that can be spawned on the frontend.
- * These can be made up of several SobakaNodeTypes.
- * Core modules map directly to SobakaNodeTypes.
- */
-export enum ModuleUI {
-  Clock = 'Clock',
-  Delay = 'Delay',
-  Scope = 'Scope',
-  Envelope = 'Envelope',
-  Filter = 'Filter',
-  // Input = 'Input',
-  Lfo = 'Lfo',
-  Midi = 'Midi',
-  Sequencer = 'Sequencer',
-  StepSequencer = 'StepSequencer',
-  Noise = 'Noise',
-  Oscillator = 'Oscillator',
-  String = 'String',
-  Parameter = 'Parameter',
-  Quantiser = 'Quantiser',
-  Reverb = 'Reverb',
-  SampleAndHold = 'SampleAndHold',
-  // Sampler = 'Sampler',
-  Output = 'Output',
-  Vca = 'Vca'
-}
+export type ModuleUI = keyof typeof MODULES
 
-export const get_component = (module: Module<ModuleUI>) => {
-  return {
-    [ModuleUI.Clock]: Clock,
-    [ModuleUI.Delay]: Delay,
-    [ModuleUI.Scope]: Scope,
-    [ModuleUI.Envelope]: Envelope,
-    [ModuleUI.Filter]: Filter,
-    [ModuleUI.String]: String,
-    // [ModuleUI.Input]: Input,
-    [ModuleUI.Lfo]: Lfo,
-    [ModuleUI.Midi]: Midi,
-    [ModuleUI.Sequencer]: Sequencer,
-    [ModuleUI.StepSequencer]: StepSequencer,
-    [ModuleUI.Noise]: Noise,
-    [ModuleUI.Oscillator]: Oscillator,
-    [ModuleUI.Parameter]: Parameter,
-    [ModuleUI.Quantiser]: Quantiser,
-    [ModuleUI.Reverb]: Reverb,
-    [ModuleUI.SampleAndHold]: SampleAndHold,
-    // [ModuleUI.Sampler]: Sampler,
-    [ModuleUI.Output]: Output,
-    [ModuleUI.Vca]: Vca
-  }[module.type]
+// TS doesn't know about svelte module imports - https://github.com/sveltejs/svelte/issues/5817
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+export const INITIAL_STATE = {
+  Clock: clockInitialState,
+  Envelope: envelopeInitialState,
+  Filter: filterInitialState,
+  Oscillator: oscillatorInitialState,
+  Parameter: ParameterInitialState,
+  Reverb: reverbInitialState,
+  Sequencer: sequencerInitialState,
+  StepSequencer: stepSequencerInitialState,
+  Output: outputInitialState,
+  Vca: vcaInitialState,
+  Noise: noiseInitialState,
+  Delay: delayInitialState,
+  Scope: scopeInitialState,
+  String: stringInitialState,
+  Midi: midiInitialState,
+  Lfo: lfoInitialState,
+  Quantiser: quantiserInitialState,
+  SampleAndHold: sampleAndHoldInitialState,
+  Sampler: samplerInitialState
+} as const
+/* eslint-enable @typescript-eslint/no-unsafe-assignment */
+
+// Maybe it's better to use props somehow?
+// https://github.com/sveltejs/language-tools/issues/442#issuecomment-1145948441
+// type Props = Clock['$$prop_def']['pricing']
+
+export const get_component = (module: Module) => {
+  return MODULES[module.type]
 }

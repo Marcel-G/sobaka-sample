@@ -8,16 +8,10 @@ check back on wasm-pack serve https://github.com/rustwasm/wasm-pack/pull/745
 ## Usage
 
 ```ts
-import sobaka_sample_wasm_url from 'sobaka-sample-audio-worklet/wasm'
-import sobaka_sample_worklet_url from 'sobaka-sample-audio-worklet/worklet'
 import { SobakaContext, Oscillator, Output } from 'sobaka-sample-audio-worklet'
 
 const audioContext = new AudioContext()
-const context = await SobakaContext.register(
-  sobaka_sample_wasm_url,
-  sobaka_sample_worklet_url,
-  audioContext
-)
+const context = await SobakaContext.register(audioContext)
 
 // Connect SobakaAudio to WebAudio context
 context.connect(audioContext.destination)

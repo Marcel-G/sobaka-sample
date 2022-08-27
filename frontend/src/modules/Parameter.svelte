@@ -4,38 +4,54 @@
     highlight: 'var(--cyan)',
     background: 'var(--cyan-dark)'
   }
+
+  type State = Readonly<{ min: number; max: number; value: number }>
+
+  export const initialState: State = {
+    min: 0,
+    max: 1,
+    value: 0.5
+  }
 </script>
 
 <script lang="ts">
-  import { Parameter } from 'sobaka-sample-audio-worklet'
-  import { onDestroy } from 'svelte'
+  import type { Parameter } from 'sobaka-sample-audio-worklet'
+  import { onDestroy, onMount } from 'svelte'
   import Knob from '../components/Knob.svelte'
-  import { get_module_context } from './ModuleWrapper.svelte'
   import Plug from './shared/Plug.svelte'
   import Panel from './shared/Panel.svelte'
   import { into_style } from '../components/Theme.svelte'
-  import { PlugType } from '../state/plug'
+  import { PlugType } from '../workspace/plugs'
+  import { SubStore } from '../utils/patches'
+  import { get_audio_context } from '../routes/workspace/[slug]/+layout.svelte'
 
-  const { context, get_sub_state, update_sub_state } = get_module_context()
+  const context = get_audio_context()
 
+  export let state: SubStore<State>
   let name = 'parameter'
+  let parameter: Parameter
+  let loading = true
 
-  // Set values from the global state if they're present
-  let { min, max, value } = get_sub_state(name, { min: 0, max: 10, value: 0 })
+  onMount(async () => {
+    const { Parameter } = await import('sobaka-sample-audio-worklet')
+    parameter = new Parameter($context, {
+      min: $state.min,
+      max: $state.max,
+      default: $state.value
+    })
+    await parameter.get_address()
+    loading = false
+  })
 
-  // Create and link sobaka node
-  const parameter = new Parameter(context, { min, max, default: value })
+  const value = state.select(s => s.value)
+  const min = state.select(s => s.min)
+  const max = state.select(s => s.max)
 
   // Update the sobaka node when the state changes
-  $: void parameter.message({ SetParameter: value })
-
-  // // Update the global state when state changes
-  $: update_sub_state(name, { min, max, value })
-
-  const loading = parameter.get_address()
+  $: void parameter?.message({ SetParameter: $value })
 
   onDestroy(() => {
-    void parameter.dispose()
+    void parameter?.dispose()
   })
 </script>
 
@@ -44,7 +60,7 @@
     <p>Loading...</p>
   {:then}
     <span>
-      <Knob bind:value range={[min, max]} label="value" />
+      <Knob bind:value={$value} range={[$min, $max]} label="value" />
     </span>
   {/await}
   <div slot="outputs">

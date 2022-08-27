@@ -4,49 +4,57 @@
     highlight: 'var(--pink)',
     background: 'var(--pink-dark)'
   }
+
+  type State = Readonly<{ bpm: number }>
+
+  export const initialState: State = { bpm: 120 }
 </script>
 
 <script lang="ts">
-  import { Lfo } from 'sobaka-sample-audio-worklet'
-  import { onDestroy } from 'svelte'
+  import type { Lfo } from 'sobaka-sample-audio-worklet'
+  import { onDestroy, onMount } from 'svelte'
   import Panel from './shared/Panel.svelte'
   import Plug from './shared/Plug.svelte'
-  import { get_module_context } from './ModuleWrapper.svelte'
   import { into_style } from '../components/Theme.svelte'
-  import { PlugType } from '../state/plug'
+  import { PlugType } from '../workspace/plugs'
   import Knob from '../components/Knob.svelte'
+  import { SubStore } from '../utils/patches'
+  import { get_audio_context } from '../routes/workspace/[slug]/+layout.svelte'
 
+  export let state: SubStore<State>
   let name = 'lfo'
+  let lfo: Lfo
+  let loading = false
 
-  const { context, get_sub_state, update_sub_state } = get_module_context()
+  const context = get_audio_context()
 
-  let state = get_sub_state(name, { bpm: 5 })
+  onMount(async () => {
+    const { Lfo } = await import('sobaka-sample-audio-worklet')
+    lfo = new Lfo($context, $state)
+    await lfo.get_address()
+    loading = false
+  })
 
-  const lfo = new Lfo(context, state)
-
-  const loading = lfo.get_address()
+  const bpm = state.select(s => s.bpm)
 
   // Update the sobaka node when the state changes
-  $: void lfo.message({ SetBPM: state.bpm })
-
-  // Update the global state when state changes
-  $: update_sub_state(name, state)
+  $: void lfo?.message({ SetBPM: $bpm })
 
   onDestroy(() => {
-    void lfo.dispose()
+    void lfo?.dispose()
   })
 </script>
 
 <Panel {name} height={6} width={5} custom_style={into_style(theme)}>
-  {#await loading}
+  {#if loading}
     <p>Loading...</p>
-  {:then}
-    <Knob bind:value={state.bpm} range={[0, 600]} label="bpm">
+  {:else}
+    <Knob bind:value={$bpm} range={[0, 600]} label="bpm">
       <div slot="inputs">
         <Plug id={1} label="bpm_cv" type={PlugType.Input} for_module={lfo} />
       </div>
     </Knob>
-  {/await}
+  {/if}
 
   <div slot="inputs">
     <Plug id={0} label="reset" type={PlugType.Input} for_module={lfo} />

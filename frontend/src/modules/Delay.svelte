@@ -4,51 +4,59 @@
     highlight: 'var(--purple)',
     background: 'var(--purple-dark)'
   }
+
+  type State = Readonly<{ time: number }>
+
+  export const initialState: State = { time: 2 }
 </script>
 
 <script lang="ts">
-  import { Delay } from 'sobaka-sample-audio-worklet'
-  import { onDestroy } from 'svelte'
+  import type { Delay } from 'sobaka-sample-audio-worklet'
+  import { onDestroy, onMount } from 'svelte'
   import Panel from './shared/Panel.svelte'
   import Plug from './shared/Plug.svelte'
-  import { get_module_context } from './ModuleWrapper.svelte'
   import { into_style } from '../components/Theme.svelte'
   import Knob from '../components/Knob.svelte'
-  import { PlugType } from '../state/plug'
+  import { PlugType } from '../workspace/plugs'
+  import { SubStore } from '../utils/patches'
+  import { get_audio_context } from '../routes/workspace/[slug]/+layout.svelte'
 
+  export let state: SubStore<State>
   let name = 'delay'
+  let delay: Delay
+  let loading = true
 
-  const { context, get_sub_state, update_sub_state } = get_module_context()
+  const context = get_audio_context()
 
-  let { time } = get_sub_state(name, { time: 0.5 })
+  onMount(async () => {
+    const { Delay } = await import('sobaka-sample-audio-worklet')
+    delay = new Delay($context, $state)
+    await delay.get_address()
+    loading = false
+  })
 
-  const delay = new Delay(context, { time })
+  const time = state.select(s => s.time)
 
   // Update the sobaka node when the state changes
-  $: void delay.message({ SetDelay: time })
-
-  // Update the global state when state changes
-  $: update_sub_state(name, { time })
-
-  const loading = delay.get_address()
+  $: void delay?.message({ SetDelay: $time })
 
   onDestroy(() => {
-    void delay.dispose()
+    void delay?.dispose()
   })
 </script>
 
 <Panel {name} height={6} width={5} custom_style={into_style(theme)}>
-  {#await loading}
+  {#if loading}
     <p>Loading...</p>
-  {:then}
+  {:else}
     <div class="controls">
-      <Knob bind:value={time} range={[0, 10]} label="seconds">
+      <Knob bind:value={$time} range={[0, 10]} label="seconds">
         <div slot="inputs">
           <Plug id={2} label="seconds_cv" type={PlugType.Input} for_module={delay} />
         </div>
       </Knob>
     </div>
-  {/await}
+  {/if}
   <div slot="inputs">
     <Plug id={1} label="signal" type={PlugType.Input} for_module={delay} />
     <Plug id={0} label="reset" type={PlugType.Input} for_module={delay} />

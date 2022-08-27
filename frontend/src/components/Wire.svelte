@@ -1,35 +1,22 @@
-<style>
-  .wire {
-    stroke: var(--orange);
-    fill: var(--orange);
-    pointer-events: all;
-    cursor: pointer;
-  }
-  .wire:hover {
-    stroke: var(--red);
-    fill: var(--red);
-  }
-</style>
-
 <script lang="ts">
-  import { SobakaContext } from 'sobaka-sample-audio-worklet'
-  import { getContext, onDestroy } from 'svelte'
-  import { derived, get } from 'svelte/store'
+  import type { SobakaContext } from 'sobaka-sample-audio-worklet'
+  import { onDestroy } from 'svelte'
+  import { derived, get } from '@crikey/stores-immer'
   import type { Writable } from 'svelte/store'
-  import { PlugContext, PlugType } from '../state/plug'
-  import Plug from '../modules/shared/Plug.svelte'
+  import { PlugContext, PlugType } from '../workspace/plugs'
+  import { get_audio_context } from '../routes/workspace/[slug]/+layout.svelte'
 
   export let on_click: () => void
   export let from: PlugContext
   export let to: PlugContext
-  const context: Writable<SobakaContext> = getContext('sampler')
+  const context: Writable<SobakaContext> = get_audio_context()
 
   interface Position {
     x: number
     y: number
   }
 
-  const to_center_point = (node: Element): Position => {
+  const to_center_point = (node: Element | null): Position => {
     if (!node) return { x: 0, y: 0 } // @todo
 
     const box = node.getBoundingClientRect()
@@ -65,3 +52,16 @@
   <circle cx={$from_pos.x} cy={$from_pos.y} r="3" />
   <circle cx={$to_pos.x} cy={$to_pos.y} r="3" />
 </g>
+
+<style>
+  .wire {
+    stroke: var(--orange);
+    fill: var(--orange);
+    pointer-events: all;
+    cursor: pointer;
+  }
+  .wire:hover {
+    stroke: var(--red);
+    fill: var(--red);
+  }
+</style>

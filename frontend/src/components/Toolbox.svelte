@@ -1,3 +1,76 @@
+<script lang="ts">
+  import { clamp } from 'lodash'
+  import { get_workspace } from '../workspace/context'
+  import { MODULES, ModuleUI } from '../modules'
+  import { into_grid_coords } from '../modules/shared/Panel.svelte'
+
+  export let position = { x: 0, y: 0 }
+  export let onClose: () => void
+
+  const space = get_workspace()
+
+  let search = ''
+  let selected_index = 0
+  let selection_refs: HTMLButtonElement[] = []
+
+  const dumb_fuzzy =
+    (query: string) =>
+    (module_name: string): boolean => {
+      if (!query.trim()) {
+        return true
+      }
+
+      return module_name.toLowerCase().includes(query.trim().toLowerCase())
+    }
+
+  $: list = (Object.keys(MODULES) as ModuleUI[]).filter(dumb_fuzzy(search))
+  $: selected_index = clamp(selected_index, 0, list.length - 1)
+  $: selection_refs[selected_index]?.scrollIntoView({ block: 'center' })
+
+  function handle_create(type: ModuleUI) {
+    space.create_module(type, into_grid_coords(position))
+    onClose()
+  }
+
+  const handle_key_down = (event: KeyboardEvent) => {
+    switch (event.code) {
+      case 'Enter':
+        if (list[selected_index]) {
+          handle_create(list[selected_index])
+        } else {
+          onClose()
+        }
+        break
+      case 'Escape':
+        onClose()
+        break
+      case 'ArrowUp':
+        selected_index -= 1
+        break
+      case 'ArrowDown':
+        selected_index += 1
+        break
+    }
+  }
+</script>
+
+<div class="toolbox" style={`left: ${position.x}px; top: ${position.y}px`}>
+  <input autofocus bind:value={search} on:keydown={handle_key_down} />
+  <div class="list-wrapper">
+    <div class="list">
+      {#each list as module, index}
+        <button
+          bind:this={selection_refs[index]}
+          class:selected={index === selected_index}
+          on:click={() => handle_create(module)}
+        >
+          {module}
+        </button>
+      {/each}
+    </div>
+  </div>
+</div>
+
 <style>
   .toolbox {
     z-index: 100;
@@ -82,75 +155,3 @@
     border-color: var(--cyan);
   }
 </style>
-
-<script lang="ts">
-  import { clamp } from 'lodash'
-  import { ModuleUI } from '../modules'
-  import { into_grid_coords } from '../modules/shared/Panel.svelte'
-  import modules from '../state/modules'
-
-  export let position = { x: 0, y: 0 }
-  export let onClose: () => void
-
-  let search = ''
-  let selected_index = 0
-  let selection_refs: HTMLButtonElement[] = []
-
-  const dumb_fuzzy =
-    (query: string) =>
-    (module_name: string): boolean => {
-      if (!query.trim()) {
-        return true
-      }
-
-      return module_name.toLowerCase().includes(query.trim().toLowerCase())
-    }
-
-  $: list = Object.values(ModuleUI).filter(dumb_fuzzy(search))
-  $: selected_index = clamp(selected_index, 0, list.length - 1)
-  $: selection_refs[selected_index]?.scrollIntoView({ block: 'center' })
-
-  function handle_create(type: ModuleUI) {
-    modules.create(type, into_grid_coords(position))
-    onClose()
-  }
-
-  const handle_key_down = (event: KeyboardEvent) => {
-    switch (event.code) {
-      case 'Enter':
-        const selected = list[selected_index]
-        if (selected) {
-          handle_create(selected)
-        } else {
-          onClose()
-        }
-        break
-      case 'Escape':
-        onClose()
-        break
-      case 'ArrowUp':
-        selected_index -= 1
-        break
-      case 'ArrowDown':
-        selected_index += 1
-        break
-    }
-  }
-</script>
-
-<div class="toolbox" style={`left: ${position.x}px; top: ${position.y}px`}>
-  <input autofocus bind:value={search} on:keydown={handle_key_down} />
-  <div class="list-wrapper">
-    <div class="list">
-      {#each list as module, index}
-        <button
-          bind:this={selection_refs[index]}
-          class:selected={index === selected_index}
-          on:click={() => handle_create(module)}
-        >
-          {module}
-        </button>
-      {/each}
-    </div>
-  </div>
-</div>

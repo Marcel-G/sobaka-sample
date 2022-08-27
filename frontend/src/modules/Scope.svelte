@@ -1,43 +1,56 @@
-<style>
-  .screen {
-    position: relative;
-    padding-bottom: 75%;
-    margin: 0 -0.5rem;
-  }
-  .controls {
-    display: flex;
-    flex-direction: row;
-    padding: 0.5rem;
-  }
-  .oscilloscope-wrapper {
-    position: absolute;
-    inset: 0;
-    overflow: hidden;
-  }
-  .canvas {
-    width: 100%;
-    height: 100%;
-  }
-</style>
-
 <script context="module" lang="ts">
   import { ModuleTheme } from '../components/Theme.svelte'
   export const theme: Partial<ModuleTheme> = {
     highlight: 'var(--cyan)',
     background: 'var(--cyan-dark)'
   }
+
+  type State = Readonly<{
+    threshold: number
+    time: number
+    trigger: boolean
+  }>
+
+  export const initialState: State = {
+    threshold: 0.5,
+    time: 0,
+    trigger: false
+  }
 </script>
 
 <script lang="ts">
-  import { Scope } from 'sobaka-sample-audio-worklet'
+  import { Draft } from 'immer'
+  import type { Scope } from 'sobaka-sample-audio-worklet'
   import Panel from './shared/Panel.svelte'
   import Plug from './shared/Plug.svelte'
-  import { get_module_context } from './ModuleWrapper.svelte'
   import { into_style } from '../components/Theme.svelte'
-  import { PlugType } from '../state/plug'
-  import { onDestroy } from 'svelte'
+  import { PlugType } from '../workspace/plugs'
+  import { onDestroy, onMount } from 'svelte'
   import Knob from '../components/Knob.svelte'
   import Button from '../components/Button.svelte'
+  import { get_audio_context } from '../routes/workspace/[slug]/+layout.svelte'
+  import { SubStore } from '../utils/patches'
+
+  export let state: SubStore<State>
+  let name = 'scope'
+  let scope: Scope
+  let loading = true
+
+  const context = get_audio_context()
+
+  onMount(async () => {
+    const { Scope } = await import('sobaka-sample-audio-worklet')
+    scope = new Scope($context, { rate: 30 })
+    await scope.get_address()
+    loading = false
+
+    void scope.subscribe(
+      'RenderFrame',
+      raf_debounce(vec => {
+        in_buffer = vec
+      })
+    )
+  })
 
   let canvas: HTMLCanvasElement
 
@@ -57,27 +70,11 @@
     }
   }
 
-  let name = 'scope'
-
-  const { context, get_sub_state, update_sub_state } = get_module_context()
-
-  let state = get_sub_state(name, { threshold: 0.0, time: 1.0, trigger: false })
-
-  const scope = new Scope(context, { rate: 30 })
-
   let in_buffer: [number, number][] = []
   // Subscribe to step change
-  void scope.subscribe(
-    'RenderFrame',
-    raf_debounce(vec => {
-      in_buffer = vec
-    })
-  )
-
-  const loading = scope.get_address()
 
   onDestroy(() => {
-    void scope.dispose()
+    void scope?.dispose()
   })
 
   function draw_background(ctx: CanvasRenderingContext2D, width: number, height: number) {
@@ -123,15 +120,20 @@
     ctx.closePath()
     ctx.fillStyle = get_css_var('--foreground')
     ctx.strokeStyle = get_css_var('--foreground')
-    ctx.lineWidth = 2
+    ctx.lineWidth = 1
     ctx.fill()
     ctx.stroke()
   }
 
   $: {
     if (canvas) {
-      const width = canvas.width
-      const height = canvas.height
+      const width = canvas.clientWidth
+      const height = canvas.clientHeight
+
+      if (canvas.width !== width || canvas.height !== height) {
+        canvas.width = width
+        canvas.height = height
+      }
       const context = canvas.getContext('2d')!
 
       draw_background(context, width, height)
@@ -139,19 +141,26 @@
     }
   }
 
-  // Update the sobaka node when the state changes
-  $: void scope.message({ SetThreshold: state.threshold })
-  $: void scope.message({ SetTime: state.time })
-  $: void scope.message({ SetTriggerEnabled: state.trigger })
+  function handle_toggle() {
+    state.update((s: Draft<State>) => {
+      s.trigger = !s.trigger
+    })
+  }
 
-  // // Update the global state when state changes
-  $: update_sub_state(name, state)
+  const threshold = state.select(s => s.threshold)
+  const time = state.select(s => s.time)
+  const trigger = state.select(s => s.trigger)
+
+  // Update the sobaka node when the state changes
+  $: void scope.message({ SetThreshold: $threshold })
+  $: void scope.message({ SetTime: $time })
+  $: void scope.message({ SetTriggerEnabled: $trigger })
 </script>
 
 <Panel {name} height={15} width={13} custom_style={into_style(theme)}>
-  {#await loading}
+  {#if loading}
     <p>Loading...</p>
-  {:then}
+  {:else}
     <div>
       <div class="screen">
         <div class="oscilloscope-wrapper">
@@ -159,16 +168,35 @@
         </div>
       </div>
       <div class="controls">
-        <Knob bind:value={state.threshold} range={[-1, 1]} label="threshold" />
-        <Knob bind:value={state.time} range={[0, 12]} label="time" />
-        <Button
-          bind:pressed={state.trigger}
-          onClick={() => (state.trigger = !state.trigger)}
-        />
+        <Knob bind:value={$threshold} range={[-1, 1]} label="threshold" />
+        <Knob bind:value={$time} range={[0, 12]} label="time" />
+        <Button bind:pressed={$trigger} onClick={handle_toggle} />
       </div>
     </div>
-  {/await}
+  {/if}
   <div slot="inputs">
     <Plug id={0} label="signal" type={PlugType.Input} for_module={scope} />
   </div>
 </Panel>
+
+<style>
+  .screen {
+    position: relative;
+    padding-bottom: 75%;
+    margin: 0 -0.5rem;
+  }
+  .controls {
+    display: flex;
+    flex-direction: row;
+    padding: 0.5rem;
+  }
+  .oscilloscope-wrapper {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+  }
+  .canvas {
+    width: 100%;
+    height: 100%;
+  }
+</style>

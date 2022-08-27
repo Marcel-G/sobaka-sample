@@ -1,83 +1,82 @@
-<style>
-  .controls {
-    display: grid;
-    grid-template-columns: auto auto;
-    pointer-events: none;
-  }
-</style>
-
 <script context="module" lang="ts">
   import { ModuleTheme } from '../components/Theme.svelte'
   export const theme: Partial<ModuleTheme> = {
     highlight: 'var(--cyan)',
     background: 'var(--cyan-dark)'
   }
+
+  type State = Readonly<{
+    steps: number[]
+  }>
+
+  export const initialState: State = {
+    steps: new Array(8).fill(1)
+  }
 </script>
 
 <script lang="ts">
-  import { Sequencer } from 'sobaka-sample-audio-worklet'
+  import type { Sequencer } from 'sobaka-sample-audio-worklet'
   import Panel from './shared/Panel.svelte'
   import Plug from './shared/Plug.svelte'
-  import { get_module_context } from './ModuleWrapper.svelte'
   import { into_style } from '../components/Theme.svelte'
-  import { PlugType } from '../state/plug'
-  import { onDestroy } from 'svelte'
-  import Knob from '../components/Knob.svelte'
-  import Led from '../components/Led.svelte'
+  import { PlugType } from '../workspace/plugs'
+  import { onDestroy, onMount } from 'svelte'
+  import { SubStore } from '../utils/patches'
+  import SequencerRow from './Sequencer.Row.svelte'
+  import { get_audio_context } from '../routes/workspace/[slug]/+layout.svelte'
 
-  const { context, get_sub_state, update_sub_state } = get_module_context()
+  const context = get_audio_context()
 
+  export let state: SubStore<State>
   let name = 'sequencer'
+  let sequencer: Sequencer
+  let loading = true
 
-  let state = get_sub_state(name, { steps: new Array<number>(8).fill(1) })
+  onMount(async () => {
+    const { Sequencer } = await import('sobaka-sample-audio-worklet')
+    sequencer = new Sequencer($context, $state)
+    await sequencer.get_address()
+    loading = false
+
+    // Subscribe to step change
+    void sequencer.subscribe('StepChange', step => {
+      active_step = step
+    })
+  })
 
   let active_step = 0
 
-  const sequencer = new Sequencer(context, state)
+  const steps = $state.steps.map((_, i) => state.select(s => s.steps[i]))
 
-  let { steps } = state
-
-  // Update the sobaka node when the state changes
-  $: void sequencer.message({ UpdateStep: [0, steps[0]] })
-  $: void sequencer.message({ UpdateStep: [1, steps[1]] })
-  $: void sequencer.message({ UpdateStep: [2, steps[2]] })
-  $: void sequencer.message({ UpdateStep: [3, steps[3]] })
-  $: void sequencer.message({ UpdateStep: [4, steps[4]] })
-  $: void sequencer.message({ UpdateStep: [5, steps[5]] })
-  $: void sequencer.message({ UpdateStep: [6, steps[6]] })
-  $: void sequencer.message({ UpdateStep: [7, steps[7]] })
-
-  // Subscribe to step change
-  void sequencer.subscribe('StepChange', step => {
-    active_step = step
-  })
+  const cleanup = steps.map((step, i) =>
+    step.subscribe(v => {
+      if (v) void sequencer?.message({ UpdateStep: [i, v] })
+    })
+  )
 
   const knob_range = [0, 8]
 
-  // Update the global state when state changes
-  $: update_sub_state(name, { steps: steps })
-
-  const loading = sequencer.get_address()
-
   onDestroy(() => {
-    void sequencer.dispose()
+    cleanup.forEach(unsubscribe => unsubscribe())
+    void sequencer?.dispose()
   })
 </script>
 
 <Panel {name} height={15} width={8} custom_style={into_style(theme)}>
-  {#await loading}
+  {#if loading}
     <p>Loading...</p>
-  {:then}
+  {:else}
     <div class="controls">
       {#each steps as val, i}
-        <Knob bind:value={val} range={knob_range} label={`step_${i + 1}`}>
-          <div slot="inputs">
-            <Led on={active_step === i} />
-          </div>
-        </Knob>
+        <SequencerRow
+          index={i}
+          active={i === active_step}
+          value={val}
+          range={knob_range}
+        />
       {/each}
     </div>
-  {/await}
+  {/if}
   <div slot="inputs">
     <Plug id={0} label="gate" type={PlugType.Input} for_module={sequencer} />
     <Plug id={1} label="reset" type={PlugType.Input} for_module={sequencer} />
@@ -87,3 +86,11 @@
     <Plug id={0} label="output" type={PlugType.Output} for_module={sequencer} />
   </div>
 </Panel>
+
+<style>
+  .controls {
+    display: grid;
+    grid-template-columns: auto auto;
+    pointer-events: none;
+  }
+</style>

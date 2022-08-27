@@ -4,49 +4,57 @@
     highlight: 'var(--purple)',
     background: 'var(--purple-dark)'
   }
+
+  type State = Readonly<{ value: number }>
+
+  export const initialState: State = {
+    value: 0.5
+  }
 </script>
 
 <script lang="ts">
-  import { Vca } from 'sobaka-sample-audio-worklet'
-  import { onDestroy } from 'svelte'
+  import type { Vca } from 'sobaka-sample-audio-worklet'
+  import { onDestroy, onMount } from 'svelte'
   import Panel from './shared/Panel.svelte'
   import Plug from './shared/Plug.svelte'
-  import { get_module_context } from './ModuleWrapper.svelte'
   import { into_style } from '../components/Theme.svelte'
   import Knob from '../components/Knob.svelte'
-  import { PlugType } from '../state/plug'
+  import { PlugType } from '../workspace/plugs'
+  import { SubStore } from '../utils/patches'
+  import { get_audio_context } from '../routes/workspace/[slug]/+layout.svelte'
 
-  const { context, get_sub_state, update_sub_state } = get_module_context()
+  export let state: SubStore<State>
+  let name = 'vca'
+  let vca: Vca
+  let loading = true
 
-  let name = 'parameter'
+  const context = get_audio_context()
 
-  // Set values from the global state if they're present
-  let { value } = get_sub_state(name, { value: 0 })
+  onMount(async () => {
+    const { Vca } = await import('sobaka-sample-audio-worklet')
+    vca = new Vca($context, $state)
+    await vca.get_address()
+    loading = false
+  })
 
-  // Create and link sobaka node
-  const vca = new Vca(context, { value })
+  const value = state.select(s => s.value)
 
   // Update the sobaka node when the state changes
-  $: void vca.message({ SetLevel: value })
-
-  // // Update the global state when state changes
-  $: update_sub_state(name, { value })
-
-  const loading = vca.get_address()
+  $: void vca?.message({ SetLevel: $value })
 
   onDestroy(() => {
-    void vca.dispose()
+    void vca?.dispose()
   })
 </script>
 
-<Panel name="vca" height={6} width={5} custom_style={into_style(theme)}>
-  {#await loading}
+<Panel {name} height={6} width={5} custom_style={into_style(theme)}>
+  {#if loading}
     <p>Loading...</p>
-  {:then}
+  {:else}
     <span>
-      <Knob bind:value range={[-1, 1]} label="attenuverter" />
+      <Knob bind:value={$value} range={[-1, 1]} label="attenuverter" />
     </span>
-  {/await}
+  {/if}
 
   <div slot="inputs">
     <Plug id={0} label="Signal" type={PlugType.Input} for_module={vca} />

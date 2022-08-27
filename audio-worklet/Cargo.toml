@@ -5,7 +5,8 @@ authors = ["Marcel Gleeson <gleeson.marcel@gmail.com>"]
 edition = "2018"
 
 [lib]
-crate-type = ["cdylib", "rlib"]
+crate-type = ["cdylib"]
+path = "src/worklet/lib.rs"
 
 [features]
 all = ["default"]
@@ -15,22 +16,24 @@ default = ["console_error_panic_hook"]
 fundsp = "0.6.3"
 petgraph = { version = "0.6", features = ["stable_graph"] }
 numeric-array = "0.5.2"
-
-# Todo check all the below
+num-traits = "0.2.15"
+rand = "0.8.5"
 serde = { version = "1.0", features = ["derive", "rc"] }
 derive_more = "0.99.0"
 jsonrpc-core = "18.0.0"
 jsonrpc-derive = "18.0.0"
 jsonrpc-pubsub = "18.0.0"
-jsonrpc-core-client = "18.0" # Why do I need this?
-wasm-bindgen = { version = "0.2.8", features = ["nightly", "serde-serialize"] }
+
 async-std = { version = "1.10.0", features = ["unstable"] }
 futures = "0.3.17"
-linkme = "0.2.10"
+
+rustfft = { version = "6.0.1" }
 
 # Wasm Dependencies
-js-sys = "0.3.51"
-web-sys = { version = "0.3.55", features = ["MessagePort", "console"] }
+wasm-bindgen = { version = "0.2.82", features = ["serde-serialize"] }
+wasm-bindgen-futures = { version = "0.4.32" }
+js-sys = "0.3.59"
+
 getrandom = { version = "0.2", features = ["custom"] }
 ts-rs = { version = "6.1.2", features = ["serde-compat"] }
 
@@ -47,8 +50,31 @@ console_error_panic_hook = { version = "0.1.6", optional = true }
 # Unfortunately, `wee_alloc` requires nightly Rust when targeting wasm for now.
 wee_alloc = { version = "0.4.5", optional = true }
 
-# https://github.com/rustwasm/wasm-pack/issues/743#issuecomment-798881356
-parking_lot_core = "=0.8.0"
+# @todo waiting for this feature to be released 
+# https://github.com/rustwasm/wasm-bindgen/pull/3016
+# Maybe this is needed to get the build to work:
+# `cargo install -f wasm-bindgen-cli --git https://github.com/rustwasm/wasm-bindgen`
+[patch.crates-io]
+wasm-bindgen = { git = "https://github.com/rustwasm/wasm-bindgen" }
+
+[dependencies.web-sys]
+version = "0.3.59"
+features = [
+	"console",
+	"MessagePort",
+  "AudioContext",
+  "AudioDestinationNode",
+  "AudioWorklet",
+  "AudioWorkletNode",
+  "AudioWorkletNodeOptions",
+  "Blob",
+  "BlobPropertyBag",
+  "Document",
+  "HtmlInputElement",
+  "HtmlLabelElement",
+  "Url",
+  "Window",
+]
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3.13"
@@ -62,3 +88,12 @@ opt-level = 3
 # [package.metadata.wasm-pack.profile.release]
 # dwarf-debug-info = true 
 # wasm-opt = ['-O4', '-g']
+
+# [package.metadata.wasm-pack.profile.release]
+# wasm-opt = [
+#   "-Oz",
+#   "--enable-mutable-globals",
+#   "--enable-bulk-memory",
+#   # "--enable-atomics"
+# ]
+

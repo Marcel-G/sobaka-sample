@@ -1,3 +1,10 @@
+<script lang="ts">
+  export let pressed = false
+  export let onClick = () => {}
+</script>
+
+<button class:pressed on:click={onClick} />
+
 <style>
   button {
     position: relative;
@@ -31,10 +38,3 @@
     box-shadow: inset 0 0 5px var(--background);
   }
 </style>
-
-<script lang="ts">
-  export let pressed = false
-  export let onClick = () => {}
-</script>
-
-<button class:pressed on:click={onClick} />

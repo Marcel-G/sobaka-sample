@@ -1,77 +1,3 @@
-<style>
-  .wrapper {
-    position: relative;
-    margin: 0.125rem;
-    pointer-events: none;
-    flex: 1 1 auto;
-    min-width: 45px;
-  }
-  .knob {
-    position: relative;
-    display: block;
-
-    cursor: pointer;
-    pointer-events: all;
-
-    aspect-ratio: 1;
-
-    padding: 0;
-    border-radius: 50%;
-    border: 2px solid var(--module-highlight);
-    transform: rotate(calc(var(--rotation) * 1rad));
-    background-color: var(--module-knob-background);
-    transform-origin: 50% 50%;
-
-    box-shadow: inset 0 0 10px var(--background);
-
-    transition: border-color 0.25s;
-  }
-
-  .knob:hover {
-    border-color: var(--foreground);
-  }
-
-  .knob::after {
-    content: '';
-    display: block;
-    position: absolute;
-    left: 50%;
-    top: 4px;
-
-    width: 3px;
-    height: 0.5rem;
-
-    border-radius: 1.5px;
-
-    background-color: var(--module-highlight);
-    transform: translateX(-50%);
-
-    transition: background-color 0.25s;
-  }
-
-  .knob:hover:after {
-    background-color: var(--foreground);
-  }
-
-  .inputs {
-    position: absolute;
-    bottom: -0.5rem;
-    left: -0.5rem;
-    pointer-events: all;
-  }
-  .direct-input {
-    position: absolute;
-    padding: 0.5rem;
-    box-sizing: border-box;
-    text-align: left;
-    top: 50%;
-    transform: translateY(-50%);
-    border: none;
-    background: none;
-    outline: none;
-  }
-</style>
-
 <script lang="ts">
   import { throttle } from 'lodash'
   import Tooltip from './Tooltip.svelte'
@@ -150,3 +76,77 @@
     />
   {/if}
 </div>
+
+<style>
+  .wrapper {
+    position: relative;
+    margin: 0.125rem;
+    pointer-events: none;
+    flex: 1 1 auto;
+    min-width: 45px;
+  }
+  .knob {
+    position: relative;
+    display: block;
+
+    cursor: pointer;
+    pointer-events: all;
+
+    aspect-ratio: 1;
+
+    padding: 0;
+    border-radius: 50%;
+    border: 2px solid var(--module-highlight);
+    transform: rotate(calc(var(--rotation) * 1rad));
+    background-color: var(--module-knob-background);
+    transform-origin: 50% 50%;
+
+    box-shadow: inset 0 0 10px var(--background);
+
+    transition: border-color 0.25s;
+  }
+
+  .knob:hover {
+    border-color: var(--foreground);
+  }
+
+  .knob::after {
+    content: '';
+    display: block;
+    position: absolute;
+    left: 50%;
+    top: 4px;
+
+    width: 3px;
+    height: 0.5rem;
+
+    border-radius: 1.5px;
+
+    background-color: var(--module-highlight);
+    transform: translateX(-50%);
+
+    transition: background-color 0.25s;
+  }
+
+  .knob:hover:after {
+    background-color: var(--foreground);
+  }
+
+  .inputs {
+    position: absolute;
+    bottom: -0.5rem;
+    left: -0.5rem;
+    pointer-events: all;
+  }
+  .direct-input {
+    position: absolute;
+    padding: 0.5rem;
+    box-sizing: border-box;
+    text-align: left;
+    top: 50%;
+    transform: translateY(-50%);
+    border: none;
+    background: none;
+    outline: none;
+  }
+</style>
