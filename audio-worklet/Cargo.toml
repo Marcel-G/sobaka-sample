@@ -60,8 +60,8 @@ wasm-bindgen = { git = "https://github.com/rustwasm/wasm-bindgen" }
 [dependencies.web-sys]
 version = "0.3.59"
 features = [
-	"console",
-	"MessagePort",
+  "console",
+  "MessagePort",
   "AudioContext",
   "AudioDestinationNode",
   "AudioWorklet",
@@ -83,17 +83,4 @@ anyhow = "1.0.56"
 [profile.release]
 # Tell `rustc` to optimize for small code size.
 opt-level = 3
-
-# Improves debug info
-# [package.metadata.wasm-pack.profile.release]
-# dwarf-debug-info = true 
-# wasm-opt = ['-O4', '-g']
-
-# [package.metadata.wasm-pack.profile.release]
-# wasm-opt = [
-#   "-Oz",
-#   "--enable-mutable-globals",
-#   "--enable-bulk-memory",
-#   # "--enable-atomics"
-# ]
 

@@ -5,7 +5,9 @@
  * https://searchfox.org/mozilla-central/source/dom/webidl/AudioWorkletGlobalScope.webidl
  */
 
+import type { IJSONRPCRequest } from '@open-rpc/client-js/build/Request';
 import type * as Bindgen from '../../pkg/sobaka_sample_audio_worklet'
+import { is_destroy_destroy_event } from '../main/interface';
 
 declare const bindgen: typeof Bindgen
 
@@ -24,6 +26,16 @@ class SobakaProcessor extends AudioWorkletProcessor {
     this.processor.init_messaging(this.port)
     // eslint-disable-next-line no-undef
     // this.processor.set_sample_rate(sampleRate)
+
+    // Temporary hack for loading the wasm binary
+    // See sampler.node.ts#register
+    this.port.onmessage = () => {}
+    this.port.addEventListener('message', (event: MessageEvent<IJSONRPCRequest>) => {
+      const message = event.data;
+      if (is_destroy_destroy_event(message)) {
+        this.destroy()
+      }
+    })
   }
 
   private destroy () {
