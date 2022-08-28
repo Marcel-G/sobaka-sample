@@ -1,28 +1,17 @@
-<script context="module" lang="ts">
-  export const AUDIO_CONTEXT = 'AUDIO_CONTEXT'
-  export const get_audio_context = () =>
-    getContext<Writable<SobakaContext>>(AUDIO_CONTEXT)
-</script>
-
 <script lang="ts">
-  import type { SobakaContext } from 'sobaka-sample-audio-worklet'
-
-  import { getContext, onDestroy, onMount, setContext } from 'svelte'
-  import { get, writable } from '@crikey/stores-immer'
-  import type { Writable } from 'svelte/store'
+  import { onDestroy, onMount } from 'svelte'
   import Spinner from '../../../components/Spinner.svelte'
-  import { init_sampler } from '../../../audio'
+  import { get_context as get_audio_context, init_audio } from '../../../audio'
 
-  const audio_context: Writable<SobakaContext | null> = writable(null)
-  setContext(AUDIO_CONTEXT, audio_context)
+  const audio = init_audio()
+  const audio_context = get_audio_context()
 
   onMount(async () => {
-    $audio_context = await init_sampler()
+    await audio.load()
   })
 
   onDestroy(() => {
-    void get(audio_context)?.destroy()
-    $audio_context = null
+    audio.cleanup()
   })
 </script>
 

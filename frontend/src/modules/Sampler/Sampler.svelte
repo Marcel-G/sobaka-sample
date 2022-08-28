@@ -26,7 +26,7 @@
   import { PlugType } from '../../workspace/plugs'
   import Knob from '../../components/Knob.svelte'
   import { SubStore } from '../../utils/patches'
-  import { get_audio_context } from '../../routes/workspace/[slug]/+layout.svelte'
+  import { get_context as get_audio_context } from '../../audio'
   import type { Command } from 'sobaka-sample-audio-worklet/dist/src/main/abstractModule'
   import { load_audio, store_audio } from '../../worker/media'
   import { init_canvas } from './render'

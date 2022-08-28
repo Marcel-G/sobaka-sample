@@ -3,7 +3,7 @@
   import { onMount } from 'svelte'
   import { get } from '@crikey/stores-immer'
   import type { Writable } from 'svelte/store'
-  import { get_audio_context } from '../routes/workspace/[slug]/+layout.svelte'
+  import { get_context as get_audio_context } from '../audio'
   const context: Writable<SobakaContext> = get_audio_context()
 
   let canvas: HTMLCanvasElement

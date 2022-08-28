@@ -7,12 +7,12 @@
 
 import type { IJSONRPCRequest } from '@open-rpc/client-js/build/Request';
 import type * as Bindgen from '../../pkg/sobaka_sample_audio_worklet'
-import { is_destroy_destroy_event } from '../main/interface';
 
 declare const bindgen: typeof Bindgen
 
-// @todo initSync & WasmAudioProcessor come from the worklet dts
-
+export const is_destroy_destroy_event = (message: IJSONRPCRequest): message is IJSONRPCRequest => {
+  return message.method === 'destroy'
+}
 class SobakaProcessor extends AudioWorkletProcessor {
   private processor: Bindgen.SobakaAudioWorkletProcessor | null = null
   private is_destroyed = false

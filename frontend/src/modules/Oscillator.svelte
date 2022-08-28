@@ -31,7 +31,7 @@
   import { PlugType } from '../workspace/plugs'
   import Knob from '../components/Knob.svelte'
   import { SubStore } from '../utils/patches'
-  import { get_audio_context } from '../routes/workspace/[slug]/+layout.svelte'
+  import { get_context as get_audio_context } from '../audio'
 
   export let state: SubStore<State>
   let name = 'oscillator'

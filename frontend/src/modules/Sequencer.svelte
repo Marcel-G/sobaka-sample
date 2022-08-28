@@ -23,7 +23,7 @@
   import { onDestroy, onMount } from 'svelte'
   import { SubStore } from '../utils/patches'
   import SequencerRow from './Sequencer.Row.svelte'
-  import { get_audio_context } from '../routes/workspace/[slug]/+layout.svelte'
+  import { get_context as get_audio_context } from '../audio'
 
   const context = get_audio_context()
 

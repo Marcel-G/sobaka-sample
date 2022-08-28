@@ -36,7 +36,7 @@
   import Plug from './shared/Plug.svelte'
   import { into_style } from '../components/Theme.svelte'
   import { PlugType } from '../workspace/plugs'
-  import { get_audio_context } from '../routes/workspace/[slug]/+layout.svelte'
+  import { get_context as get_audio_context } from '../audio'
   import type { SubStore } from 'src/utils/patches'
 
   export let state: SubStore<State>

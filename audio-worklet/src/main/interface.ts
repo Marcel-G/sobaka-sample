@@ -23,7 +23,3 @@ export type Subscriber<T> = (value: T) => void;
 export type Unsubscriber = () => void;
 
 export type WasmProgramEvent = IJSONRPCRequest & { params: [ArrayBuffer] };
-
-export const is_destroy_destroy_event = (message: IJSONRPCRequest): message is IJSONRPCRequest => {
-  return message.method === 'destroy'
-}

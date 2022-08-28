@@ -4,7 +4,7 @@
   import { derived, get } from '@crikey/stores-immer'
   import type { Writable } from 'svelte/store'
   import { PlugContext, PlugType } from '../workspace/plugs'
-  import { get_audio_context } from '../routes/workspace/[slug]/+layout.svelte'
+  import { get_context as get_audio_context } from '../audio'
 
   export let on_click: () => void
   export let from: PlugContext

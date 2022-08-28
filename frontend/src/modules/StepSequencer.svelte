@@ -24,7 +24,7 @@
   import Button from '../components/Button.svelte'
   import Led from '../components/Led.svelte'
   import { SubStore } from '../utils/patches'
-  import { get_audio_context } from '../routes/workspace/[slug]/+layout.svelte'
+  import { get_context as get_audio_context } from '../audio'
 
   export let state: SubStore<State>
   let name = 'step_sequencer'

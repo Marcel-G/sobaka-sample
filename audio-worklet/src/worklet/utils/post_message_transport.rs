@@ -83,7 +83,8 @@ where
         // Attach handler to message port
         shared_transport
             .port
-            .set_onmessage(Some(handle_js_message.as_ref().unchecked_ref()));
+            .add_event_listener_with_callback("message", handle_js_message.as_ref().unchecked_ref())
+            .unwrap();
 
         // Prevent rust from dropping the closure (we'll keep this perminantly)
         handle_js_message.forget()

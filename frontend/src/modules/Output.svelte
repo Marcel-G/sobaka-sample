@@ -16,7 +16,7 @@
   import { into_style } from '../components/Theme.svelte'
   import Oscilloscope from '../components/Oscilloscope.svelte'
   import { PlugType } from '../workspace/plugs'
-  import { get_audio_context } from '../routes/workspace/[slug]/+layout.svelte'
+  import { get_context as get_audio_context } from '../audio'
 
   let output: Output
   let loading = true
