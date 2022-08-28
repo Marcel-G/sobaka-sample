@@ -78,6 +78,7 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
             toolchain: nightly
+            components: rust-src
             override: true
       - name: Install wasm-pack
         uses: jetli/wasm-pack-action@v0.3.0
