@@ -5,20 +5,37 @@ interface ActionResult<P> {
 
 export type Action<P> = (node: Element, parameters: P) => ActionResult<P>
 
-export type OnDrag = (x: number, y: number, box: DOMRect) => void
+export type OnDrag = (x: number, y: number) => void
 
-const isMouseEvent = (event: Event): event is MouseEvent => {
+const is_mouse_event = (event: Event): event is MouseEvent => {
   return 'clientX' in event && 'clientY' in event
 }
 
-const isTouchEvent = (event: Event): event is TouchEvent => {
+const is_touch_event = (event: Event): event is TouchEvent => {
   return 'touches' in event
 }
 
-export const useDrag: Action<OnDrag> = (node, onDrag) => {
-  let offset: number
+const get_interaction_position = (event: Event) => {
+  if (is_mouse_event(event)) {
+    return {
+      client_x: event.clientX,
+      client_y: event.clientY
+    }
+  } else if (is_touch_event(event)) {
+    return {
+      client_x: event.touches[0].clientX,
+      client_y: event.touches[0].clientY
+    }
+  } else {
+    throw new Error('Event type not supported')
+  }
+}
 
-  const onMousedown = (event: Event) => {
+export const useDrag: Action<OnDrag> = (node, onDrag) => {
+  let origin_x: number
+  let origin_y: number
+
+  const handle_mousedown = (event: Event) => {
     if (
       event.target !== node &&
       (event.target as HTMLElement).getAttribute('draggable') === null
@@ -26,47 +43,47 @@ export const useDrag: Action<OnDrag> = (node, onDrag) => {
       return
     }
 
-    if (isMouseEvent(event)) {
-      offset = event.clientX - node.getBoundingClientRect().left
-    } else if (isTouchEvent(event)) {
-      offset = event.touches[0].clientX - node.getBoundingClientRect().left
+    // Calculate click / tap offset and use it as the movement origin.
+    const rect = node.getBoundingClientRect()
+    const interaction = get_interaction_position(event)
+    origin_x = interaction.client_x - rect.left
+    origin_y = interaction.client_y - rect.top
+
+    window.addEventListener('mousemove', handle_mouse_move, { passive: true })
+    window.addEventListener('touchmove', handle_mouse_move, { passive: true })
+    window.addEventListener('mouseup', handle_mouseup, { passive: true })
+    window.addEventListener('touchend', handle_mouseup, { passive: true })
+  }
+
+  const handle_mouse_move = (event: MouseEvent | TouchEvent) => {
+    // All coordinates are relative to the parent element, not entire page.
+    const parent = node.parentElement
+    if (parent instanceof Element) {
+      const parent_rect = parent.getBoundingClientRect()
+      const clientX = 'clientX' in event ? event.clientX : event.touches[0].clientX
+      const clientY = 'clientY' in event ? event.clientY : event.touches[0].clientY
+
+      const x = clientX - parent_rect.left - origin_x
+      const y = clientY - parent_rect.top - origin_y
+
+      onDrag(x, y)
     }
-
-    window.addEventListener('mousemove', onMousemove, { passive: true })
-    window.addEventListener('touchmove', onMousemove, { passive: true })
-    window.addEventListener('mouseup', onMouseup, { passive: true })
-    window.addEventListener('touchend', onMouseup, { passive: true })
   }
 
-  const onMousemove = (event: MouseEvent | TouchEvent) => {
-    const box = node.getBoundingClientRect()
-
-    const scrollX = document.documentElement.scrollLeft || document.body.scrollLeft
-    const scrollY = document.documentElement.scrollTop || document.body.scrollTop
-
-    const clientX = 'clientX' in event ? event.clientX : event.touches[0].clientX
-    const clientY = 'clientY' in event ? event.clientY : event.touches[0].clientY
-
-    const x = clientX + scrollX - offset
-    const y = clientY + scrollY
-
-    onDrag(x, y, box)
+  const handle_mouseup = () => {
+    window.removeEventListener('mousemove', handle_mouse_move)
+    window.removeEventListener('touchmove', handle_mouse_move)
+    window.removeEventListener('mouseup', handle_mouseup)
+    window.removeEventListener('touchend', handle_mouseup)
   }
 
-  const onMouseup = () => {
-    window.removeEventListener('mousemove', onMousemove)
-    window.removeEventListener('touchmove', onMousemove)
-    window.removeEventListener('mouseup', onMouseup)
-    window.removeEventListener('touchend', onMouseup)
-  }
-
-  node.addEventListener('mousedown', onMousedown, { passive: true })
-  node.addEventListener('touchstart', onMousedown, { passive: true })
+  node.addEventListener('mousedown', handle_mousedown, { passive: true })
+  node.addEventListener('touchstart', handle_mousedown, { passive: true })
 
   return {
     destroy() {
-      node.removeEventListener('mousedown', onMousedown)
-      node.removeEventListener('touchstart', onMousedown)
+      node.removeEventListener('mousedown', handle_mousedown)
+      node.removeEventListener('touchstart', handle_mousedown)
     }
   }
 }

@@ -144,6 +144,7 @@
   function handle_toggle() {
     state.update((s: Draft<State>) => {
       s.trigger = !s.trigger
+      return s
     })
   }
 
@@ -152,9 +153,9 @@
   const trigger = state.select(s => s.trigger)
 
   // Update the sobaka node when the state changes
-  $: void scope.message({ SetThreshold: $threshold })
-  $: void scope.message({ SetTime: $time })
-  $: void scope.message({ SetTriggerEnabled: $trigger })
+  $: void scope?.message({ SetThreshold: $threshold })
+  $: void scope?.message({ SetTime: $time })
+  $: void scope?.message({ SetTriggerEnabled: $trigger })
 </script>
 
 <Panel {name} height={15} width={13} custom_style={into_style(theme)}>

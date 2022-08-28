@@ -3,6 +3,9 @@
  * many features are missing eg. setTimeout, setInterval, fetch, crypto api etc.
  * 
  * https://searchfox.org/mozilla-central/source/dom/webidl/AudioWorkletGlobalScope.webidl
+ * 
+ * @todo Sending WebAssembly.Memory & WebAssembly.Module does not work on Safari
+ * https://bugs.webkit.org/show_bug.cgi?id=220038
  */
 
 import type { IJSONRPCRequest } from '@open-rpc/client-js/build/Request';
@@ -18,14 +21,14 @@ class SobakaProcessor extends AudioWorkletProcessor {
   private is_destroyed = false
   constructor(options?: AudioWorkletNodeOptions) {
     super();
-    let [module, memory, handle] = options!.processorOptions as [BufferSource, WebAssembly.Memory, number];
+    let [module, memory, handle] = options!.processorOptions as [WebAssembly.Module, WebAssembly.Memory, number];
 
     bindgen.initSync(module, memory);
     this.processor = bindgen.SobakaAudioWorkletProcessor.unpack(handle);
 
     this.processor.init_messaging(this.port)
     // eslint-disable-next-line no-undef
-    // this.processor.set_sample_rate(sampleRate)
+    this.processor.set_sample_rate(sampleRate)
 
     // Temporary hack for loading the wasm binary
     // See sampler.node.ts#register

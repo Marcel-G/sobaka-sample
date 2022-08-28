@@ -1,8 +1,7 @@
 <script lang="ts">
   import type { AbstractModule, NodeType } from 'sobaka-sample-audio-worklet'
-  import { getContext, onDestroy } from 'svelte'
-  import { writable } from 'svelte/store'
-  import type { Writable } from 'svelte/store'
+  import { onDestroy } from 'svelte'
+  import { writable, Writable } from 'svelte/store'
   import context, { PlugType } from '../../workspace/plugs'
   import Tooltip from '../../components/Tooltip.svelte'
   import { get_workspace } from '../../workspace/context'
@@ -10,13 +9,13 @@
 
   const space = get_workspace()
   const { id: module_id } = get_module_context()
+  const module = space.get_module_substore(module_id)
+  const position = module.select(state => state.position)
 
   export let for_module: AbstractModule<NodeType>
   export let type: PlugType
   export let id: number
   export let label: string
-
-  const move_context: EventTarget = getContext('move_context')
 
   const node: Writable<Element | null> = writable(null)
 
@@ -30,14 +29,17 @@
   }
 
   function on_move() {
-    node.update(element => element)
+    requestAnimationFrame(() => {
+      // Trigger a state update so that dependencies re-calculate the new position
+      node.update(plug_element => plug_element)
+    })
   }
 
-  move_context.addEventListener('move', on_move)
+  const cleanup = position.subscribe(on_move)
 
   onDestroy(() => {
+    cleanup()
     context.remove(space, module_id, type, id)
-    move_context.removeEventListener('move', on_move)
   })
 </script>
 

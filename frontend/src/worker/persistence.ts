@@ -5,7 +5,7 @@ import { Link, Module } from '../workspace/state'
 import { differenceInHours } from 'date-fns'
 import { Operation } from 'fast-json-patch'
 import { debounce, pick } from 'lodash'
-import { Entity } from '../utils/entity'
+import { Entity } from '../@types/entity'
 
 immer.enablePatches()
 

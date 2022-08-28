@@ -15,7 +15,6 @@
 <script lang="ts">
   import { useDrag } from '../../actions/drag'
   import type { OnDrag } from '../../actions/drag'
-  import { setContext } from 'svelte'
   import { get_workspace } from '../../workspace/context'
   import { get_module_context } from '../context'
 
@@ -30,23 +29,15 @@
   const module = space.get_module_substore(id)
   const position = module.select(state => state.position)
 
-  const moveContext = new EventTarget()
-  setContext('move_context', moveContext)
-
   $: col = `${$position.x + 1} / span ${width}`
   $: row = `${$position.y + 1} / span ${height}`
 
-  const onMove: OnDrag = (x_in, y_in, box) => {
+  const onMove: OnDrag = (x_in, y_in) => {
     let { x, y } = into_grid_coords({ x: x_in, y: y_in })
     if (x < 0 || y < 0) {
       return
     }
-    if (x !== box.x || y !== box.y) {
-      const moved = space.move_module(id, x, y)
-      if (moved) {
-        moveContext.dispatchEvent(new CustomEvent('move'))
-      }
-    }
+    space.move_module(id, x, y)
   }
 </script>
 

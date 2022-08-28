@@ -29,7 +29,7 @@ type SharedGraph = Arc<Mutex<Graph32>>;
 // AudioProcessor is the rust entry-point for Web Audio AudioWorkletProcessor
 pub struct AudioProcessor {
     graph: SharedGraph,
-    sample_rate: f64,
+    sample_rate: Mutex<f64>,
 }
 
 pub type SobakaResult<T> = Result<T, SobakaError>;
@@ -40,12 +40,13 @@ impl AudioProcessor {
 
         AudioProcessor {
             graph: Arc::new(Mutex::new(graph)),
-            sample_rate: DEFAULT_SR,
+            sample_rate: Mutex::new(DEFAULT_SR),
         }
     }
 
-    pub fn set_sample_rate(&mut self, sample_rate: f64) {
-        self.sample_rate = sample_rate;
+    pub fn set_sample_rate(&self, sample_rate: f64) {
+        let mut sr = self.sample_rate.lock().unwrap();
+        *sr = sample_rate;
         self.graph.lock().unwrap().reset(Some(sample_rate));
     }
 
@@ -63,7 +64,7 @@ impl AudioProcessor {
         // Reset `sample_rate` after construction because some
         // AudioNodes in fundsp reset `sample_rate` to default when constructed
         // @todo this should be adjusted in fundsp
-        unit.reset(Some(self.sample_rate));
+        unit.reset(Some(*self.sample_rate.lock().unwrap()));
 
         let address: Address = self.graph_mut()?.add(unit, context).into();
 

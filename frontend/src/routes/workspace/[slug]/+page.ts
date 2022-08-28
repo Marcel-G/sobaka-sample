@@ -15,7 +15,7 @@ export const load: PageLoad = async event => {
     // Try load the workspace from localstorage
     const workspace = await load_workspace(id)
     if (!workspace) {
-      throw error(404, "Sorry, couldn't find that workspace.")
+      throw error(404, 'Workspace does not exist')
     }
     return {
       workspace

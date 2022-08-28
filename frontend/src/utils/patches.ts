@@ -2,17 +2,20 @@ import { Readable, Writable } from '@crikey/stores-base'
 import { Selectable } from '@crikey/stores-selectable'
 import { compare, Operation } from 'fast-json-patch'
 import { Patch } from 'immer'
+import { omit } from 'lodash'
 
-export const subscribe_patches = <T, S extends Readable<T>>(
+export const subscribe_patches = <T extends object, S extends Readable<T>>(
   store: S,
-  cb: (change: Operation[]) => void
+  cb: (change: Operation[]) => void,
+  without: Array<keyof T>
 ) => {
-  let previousState: T | null = null
-  return store.subscribe(newState => {
+  let previousState: Omit<T, keyof T> | null = null
+  return store.subscribe(new_state => {
+    const reduced_state = omit({ ...new_state }, without)
     if (previousState !== null) {
-      cb(compare(previousState, newState))
+      cb(compare(previousState, reduced_state))
     }
-    previousState = newState
+    previousState = reduced_state
   })
 }
 

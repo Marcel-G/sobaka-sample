@@ -6,7 +6,7 @@ import { WorkspaceDocument } from '../worker/persistence'
 import { selectable } from '@crikey/stores-selectable'
 import { Operation } from 'fast-json-patch'
 import { pick } from 'lodash'
-import { Entity } from '../utils/entity'
+import { Entity } from '../@types/entity'
 
 export interface Workspace {
   id: string
@@ -153,6 +153,13 @@ export const workspace = (initialState: Workspace | WorkspaceDocument) => {
     return store.select(workspace => workspace.active_link)
   }
 
+  const get_active_link_position = () => {
+    return derived([get_active_link_substore(), plug_store], ([link, plugs]) => {
+      if (!link || (link?.from && link?.to)) return [null, null]
+      return [link.to ? plugs[link.to] : null, link.from ? plugs[link.from] : null]
+    })
+  }
+
   const get_link_positions = () => {
     return derived([links, plug_store], ([links, plugs]) =>
       Object.values(links.entities)
@@ -163,29 +170,15 @@ export const workspace = (initialState: Workspace | WorkspaceDocument) => {
     )
   }
 
+  const update_title = (title: string) => {
+    store.update(s => {
+      s.title = title
+      return s
+    })
+  }
+
   const subscribe_changes = (cb: (change: Operation[]) => void): (() => void) => {
-    const modules_cleanup = subscribe_patches(modules, (change: Operation[]) => {
-      void cb(
-        change.map(op => ({
-          ...op,
-          path: '/modules' + op.path
-        }))
-      )
-    })
-
-    const links_cleanup = subscribe_patches(links, (change: Operation[]) => {
-      void cb(
-        change.map(op => ({
-          ...op,
-          path: '/links' + op.path
-        }))
-      )
-    })
-
-    return () => {
-      modules_cleanup()
-      links_cleanup()
-    }
+    return subscribe_patches(store, cb, ['id', 'active_link', 'undoStack', 'redoStack'])
   }
 
   return {
@@ -197,11 +190,13 @@ export const workspace = (initialState: Workspace | WorkspaceDocument) => {
     list_modules,
     get_module_substore,
     get_module_state_substore,
+    update_title,
     add_link,
     remove_link,
     list_links,
     get_link_substore,
     get_active_link_substore,
+    get_active_link_position,
     get_link_positions
   }
 }

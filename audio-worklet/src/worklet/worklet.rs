@@ -34,9 +34,9 @@ impl SobakaAudioWorkletProcessor {
         transport.start(|sender| Arc::new(Session::new(sender)));
     }
 
-    // pub fn set_sample_rate(&mut self, sample_rate: f64) {
-    //     self.0.set_sample_rate(sample_rate)
-    // }
+    pub fn set_sample_rate(&mut self, sample_rate: f64) {
+        self.0.set_sample_rate(sample_rate)
+    }
 
     pub fn process(&mut self, input: &[f32], output_l: &mut [f32], output_r: &mut [f32]) {
         let mut graph = self.0.graph_mut().unwrap();
@@ -101,7 +101,7 @@ pub async fn prepare_sobaka_audio(ctx: AudioContext) -> Result<(), JsValue> {
 // TextEncoder and TextDecoder are not available in Audio Worklets, but there
 // is a dirty workaround: Import polyfill.js to install stub implementations
 // of these classes in globalThis.
-#[wasm_bindgen(module = "/src/worklet/utils/polyfill.js")]
+#[wasm_bindgen(module = "/src/worklet/polyfill.js")]
 extern "C" {
     fn nop();
 }

@@ -6,4 +6,6 @@
   export let data: PageData
 </script>
 
-<Workspace workspace_document={data.workspace} />
+{#key data.workspace.id}
+  <Workspace workspace_document={data.workspace} />
+{/key}
