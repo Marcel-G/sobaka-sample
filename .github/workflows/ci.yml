@@ -84,6 +84,7 @@ jobs:
         uses: jetli/wasm-pack-action@v0.3.0
         with:
           version: 'latest'
+      - uses: Swatinem/rust-cache@v2
       - uses: actions/setup-node@v2
         with:
           node-version: 16.14
