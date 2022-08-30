@@ -2,7 +2,6 @@ import { IJSONRPCSubscription, IJSONRPCSubscriptionResponse, is_subscription, Su
 import { RequestManager, Client } from "@open-rpc/client-js";
 import { PostMessageTransport } from "./postMessageTransport";
 import { AbstractModule } from "./abstractModule";
-import init, * as bindgen from '../../pkg/sobaka_sample_audio_worklet'
 import { In, Out } from "./conversion";
 export class SobakaContext extends AudioWorkletNode {
   client: Client
@@ -32,19 +31,24 @@ export class SobakaContext extends AudioWorkletNode {
   }
 
   static async register(
-    context: AudioContext
+    context: AudioContext,
+    worklet_url: string
   ): Promise<SobakaContext> {
-    await init();
-    // Register AudioWorkletProcessor
-    await bindgen.prepare_sobaka_audio(context);
+    const url = new URL('../../pkg/sobaka_sample_audio_worklet_bg.wasm', import.meta.url)
+    // @todo 'Type 'URL' is not assignable to type 'string'.'
+    const src = await fetch(url as any)
 
-    const options = {
-      ...bindgen.sobaka_options(),
+    // Register AudioWorkletProcessor
+    await context.audioWorklet.addModule(worklet_url)
+
+    const node = new SobakaContext(context, {
       numberOfInputs: 1,
       outputChannelCount: [2]
-    }
+    });
 
-    return new SobakaContext(context, options);
+    await node.send_wasm_program(await src.arrayBuffer())
+
+    return node
   }
 
   private handle_subscription(data: IJSONRPCSubscription<any>) {
@@ -108,19 +112,16 @@ export class SobakaContext extends AudioWorkletNode {
     }
   }
 
+  public async send_wasm_program(data: ArrayBuffer): Promise<void> {
+    await this.client.request({
+      method: 'send_wasm_program',
+      params: [data]
+    })
+  }
+
   public async destroy(): Promise<void> {
     await this.client.notify({
       method: 'destroy',
     })
   }
 }
-
-// eslint-disable-next-line no-unused-vars
-const noop = (thing: any) => {}
-
-/**
- * Small hack to make sure these exports don't get
- * removed by bundlers.
- */
-noop(bindgen.initSync);
-noop(bindgen.SobakaAudioWorkletProcessor);

@@ -58,7 +58,6 @@
   }
 
   const unsubscribe = space.subscribe_changes(change => {
-    console.log(change)
     patch_workspace(space.id, change)
   })
 

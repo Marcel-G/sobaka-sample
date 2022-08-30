@@ -1,9 +1,6 @@
-use crate::dependent_module;
 use std::sync::Arc;
 use wasm_bindgen::prelude::*;
-use wasm_bindgen::JsValue;
-use wasm_bindgen_futures::JsFuture;
-use web_sys::{AudioContext, AudioWorkletNodeOptions, MessagePort};
+use web_sys::MessagePort;
 
 use fundsp::{hacker::AudioUnit32, MAX_BUFFER_SIZE};
 use jsonrpc_pubsub::{PubSubHandler, Session};
@@ -18,6 +15,7 @@ pub struct SobakaAudioWorkletProcessor(Arc<AudioProcessor>);
 
 #[wasm_bindgen]
 impl SobakaAudioWorkletProcessor {
+    #[wasm_bindgen(constructor)]
     pub fn new() -> Self {
         SobakaAudioWorkletProcessor(Arc::new(AudioProcessor::new()))
     }
@@ -59,49 +57,10 @@ impl SobakaAudioWorkletProcessor {
             }
         }
     }
-    pub fn pack(self) -> usize {
-        Box::into_raw(Box::new(self)) as usize
-    }
-    pub fn unpack(val: usize) -> Self {
-        unsafe { *Box::from_raw(val as *mut _) }
-    }
 }
 
 impl Default for SobakaAudioWorkletProcessor {
     fn default() -> Self {
         Self::new()
     }
-}
-
-// constructs audio worklet options containing the wasm audio processor.
-#[wasm_bindgen]
-pub fn sobaka_options() -> AudioWorkletNodeOptions {
-    let mut options = AudioWorkletNodeOptions::new();
-
-    options.processor_options(Some(&js_sys::Array::of3(
-        &wasm_bindgen::module(),
-        &wasm_bindgen::memory(),
-        &SobakaAudioWorkletProcessor::new().pack().into(),
-    )));
-
-    options
-}
-
-#[wasm_bindgen]
-pub async fn prepare_sobaka_audio(ctx: AudioContext) -> Result<(), JsValue> {
-    nop();
-    let mod_url = dependent_module!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/dist/src/worklet/sobaka.worklet.js"
-    ))?;
-    JsFuture::from(ctx.audio_worklet()?.add_module(&mod_url)?).await?;
-    Ok(())
-}
-
-// TextEncoder and TextDecoder are not available in Audio Worklets, but there
-// is a dirty workaround: Import polyfill.js to install stub implementations
-// of these classes in globalThis.
-#[wasm_bindgen(module = "/src/worklet/polyfill.js")]
-extern "C" {
-    fn nop();
 }

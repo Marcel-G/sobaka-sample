@@ -7,20 +7,17 @@ set -ex
 # Remove the previous build artifacts.
 rm -rf dist pkg
 
-# Create the build directory.
-mkdir -p dist/src/worklet
-touch dist/src/worklet/sobaka.worklet.js
-
 # Build type definitions for interfaces
 npm run build:types
 
-# First build with dummy worklet to generate the proper WASM TypeScript definitions
+# Rebuild the WASM binary
 npm run build:wasm
+
+# Build special bundle for worklet code
+npm run build:worklet
 
 # Build the Typescript files
 npm run build:tsc
 
-# Rebuild the WASM binary, this time it includes the real sobaka.worklet.js
-npm run build:wasm
-
-cp -r pkg dist/
+# Remove worklet folder to avoid confusion
+rm -rf dist/src/worklet

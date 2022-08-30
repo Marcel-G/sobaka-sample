@@ -8,8 +8,9 @@
   "main": "./dist/src/main",
   "types": "./dist/src/main",
   "scripts": {
+    "build:worklet": "esbuild src/worklet/sobaka.worklet.ts --bundle --outfile=dist/sobaka.worklet.js",
     "build:tsc": "tsc",
-    "build:wasm": "./build-wasm.sh",
+    "build:wasm": "wasm-pack build --target web && mkdir -p dist && cp -r pkg dist/",
     "build:types": "cargo test",
     "watch:wasm": "cargo watch -w . -i pkg -i dist -i README.md -s 'npm run build:wasm'",
     "format": "prettier --no-error-on-unmatched-pattern --write ./lib/**/*.{js,ts}",
@@ -26,6 +27,7 @@
     "@typescript-eslint/eslint-plugin": "^5.7.0",
     "@typescript-eslint/parser": "^5.7.0",
     "concurrently": "^6.2.0",
+    "esbuild": "^0.15.6",
     "eslint": "^8.4.1"
   },
   "dependencies": {

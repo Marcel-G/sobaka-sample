@@ -2,6 +2,7 @@ import type { Writable } from 'svelte/store'
 import { writable } from '@crikey/stores-immer'
 import type { SobakaContext } from 'sobaka-sample-audio-worklet'
 import { getContext, setContext } from 'svelte'
+import sobaka_worklet from 'sobaka-sample-audio-worklet/dist/sobaka.worklet.js?url'
 
 const AUDIO_CONTEXT = 'AUDIO_CONTEXT'
 
@@ -24,7 +25,7 @@ export const init_audio = () => {
 
     const { SobakaContext } = await import('sobaka-sample-audio-worklet')
 
-    sobaka = await SobakaContext.register(context)
+    sobaka = await SobakaContext.register(context, sobaka_worklet)
     sobaka.connect(context.destination)
 
     audio_context.update(s => {

@@ -9,7 +9,7 @@ use js_sys::JSON;
 use jsonrpc_core::{MetaIoHandler, Middleware};
 use jsonrpc_pubsub::PubSubMetadata;
 use wasm_bindgen::{prelude::Closure, JsCast};
-use web_sys::{console, MessageEvent, MessagePort};
+use web_sys::{MessageEvent, MessagePort};
 
 pub struct PostMessageTransport<S, M>
 where

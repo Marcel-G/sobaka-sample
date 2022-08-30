@@ -1,34 +1,43 @@
+/* eslint-disable no-undef */
 /**
- * This worklet executed in an AudioWorkletGlobalScope which means
- * many features are missing eg. setTimeout, setInterval, fetch, crypto api etc.
+ * AudioWorklet notes:
  * 
- * https://searchfox.org/mozilla-central/source/dom/webidl/AudioWorkletGlobalScope.webidl
- * 
- * @todo Sending WebAssembly.Memory & WebAssembly.Module does not work on Safari
- * https://bugs.webkit.org/show_bug.cgi?id=220038
+ * 1. This worklet executed in an AudioWorkletGlobalScope which means
+ *    many features are missing eg. setTimeout, setInterval, fetch, crypto api etc.
+ *      - https://searchfox.org/mozilla-central/source/dom/webidl/AudioWorkletGlobalScope.webidl
+ * 2. Fetching the wasm module has to take place on the main thread.
+ * 3. Compiling the wasm module should ideally be done on the main thread too.
+ *      - https://github.com/rustwasm/wasm-bindgen/tree/main/examples/wasm-audio-worklet
+ *    However, Safari does not support transferring WebAssembly.Module or WebAssembly.Memory
+ *    over to the worklet.
+ *      - https://bugs.webkit.org/show_bug.cgi?id=220038
+ *    Next best is to send the wasm source code to the worklet and compile it on initialisation.
+ * 4. Firefox does not support ES6 module syntax in the worklets. Worklet code needs to be transpiled.
+ *      - https://bugzilla.mozilla.org/show_bug.cgi?id=1572644
+ * 5. Communication is done with messages, for that the TextDecoder & TextEncoder need to be
+ *    polyfilled in the worklet
+ *      - https://github.com/anonyco/FastestSmallestTextEncoderDecoder
+ * 6. The worklet is given to `add_module()` as a URL
  */
 
-import type { IJSONRPCRequest } from '@open-rpc/client-js/build/Request';
-import type * as Bindgen from '../../pkg/sobaka_sample_audio_worklet'
+import './polyfill'
+import type { IJSONRPCRequest, IJSONRPCResponse } from '@open-rpc/client-js/build/Request';
+import init, { SobakaAudioWorkletProcessor } from '../../pkg/sobaka_sample_audio_worklet';
 
-declare const bindgen: typeof Bindgen
-
-export const is_destroy_destroy_event = (message: IJSONRPCRequest): message is IJSONRPCRequest => {
+const is_destroy_destroy_event = (message: IJSONRPCRequest): message is IJSONRPCRequest => {
   return message.method === 'destroy'
 }
+
+type WasmProgramEvent = IJSONRPCRequest & { params: [ArrayBuffer] };
+
+const is_send_wasm_program_event = (message: IJSONRPCRequest): message is WasmProgramEvent => {
+  return message.method === 'send_wasm_program'
+}
 class SobakaProcessor extends AudioWorkletProcessor {
-  private processor: Bindgen.SobakaAudioWorkletProcessor | null = null
+  private processor: SobakaAudioWorkletProcessor | null = null
   private is_destroyed = false
-  constructor(options?: AudioWorkletNodeOptions) {
+  constructor() {
     super();
-    let [module, memory, handle] = options!.processorOptions as [WebAssembly.Module, WebAssembly.Memory, number];
-
-    bindgen.initSync(module, memory);
-    this.processor = bindgen.SobakaAudioWorkletProcessor.unpack(handle);
-
-    this.processor.init_messaging(this.port)
-    // eslint-disable-next-line no-undef
-    this.processor.set_sample_rate(sampleRate)
 
     // Temporary hack for loading the wasm binary
     // See sampler.node.ts#register
@@ -37,8 +46,40 @@ class SobakaProcessor extends AudioWorkletProcessor {
       const message = event.data;
       if (is_destroy_destroy_event(message)) {
         this.destroy()
+      } else
+      if (is_send_wasm_program_event(message)) {
+        void this.init(message);
       }
     })
+  }
+
+  private async init(message: WasmProgramEvent) {
+    if (this.processor) {
+      throw new Error('Program already initialised')
+    }
+    if (this.is_destroyed) {
+      throw new Error('Audio worklet has already been destroyed')
+    }
+
+    const data = message.params[0];
+
+    const module = await WebAssembly.compile(data);
+    await init(module);
+
+    // eslint-disable-next-line no-undef
+    this.processor = new SobakaAudioWorkletProcessor();
+    this.processor.init_messaging(this.port)
+    // eslint-disable-next-line no-undef
+    this.processor.set_sample_rate(sampleRate)
+
+    // No real rpc client initialised so respond manually
+    const response: IJSONRPCResponse = {
+      jsonrpc: '2.0',
+      id: message.id,
+      result: true
+    };
+
+    this.port.postMessage(JSON.stringify(response))
   }
 
   private destroy () {
