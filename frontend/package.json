@@ -12,15 +12,14 @@
     "check:watch": "svelte-check --tsconfig ./tsconfig.json --watch",
     "lint": "prettier --check --plugin-search-dir=. . && eslint .",
     "format": "prettier --write --plugin-search-dir=. .",
-    "prebuild": "cd ../audio-worklet && npm run build",
     "postinstall": "cd ../audio-worklet && npm install",
     "postci": "cd ../audio-worklet && npm ci",
     "postlint": "cd ../audio-worklet && npm run lint",
     "prelint": "npm run format"
   },
   "devDependencies": {
-    "@sveltejs/adapter-static": "^1.0.0-next.39",
-    "@sveltejs/kit": "1.0.0-next.426",
+    "@sveltejs/adapter-static": "^1.0.0-next.41",
+    "@sveltejs/kit": "1.0.0-next.461",
     "@types/lodash": "^4.14.178",
     "@types/webmidi": "^2.0.6",
     "@typescript-eslint/eslint-plugin": "^5.27.0",
@@ -37,7 +36,7 @@
     "svelte-preprocess": "^4.10.6",
     "tslib": "^2.3.1",
     "typescript": "^4.7.4",
-    "vite": "^3.0.0"
+    "vite": "^3.1.0-beta.1"
   },
   "dependencies": {
     "@crikey/stores-base": "^0.0.13",

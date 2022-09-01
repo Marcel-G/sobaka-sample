@@ -7,9 +7,6 @@ export const load: PageLoad = async event => {
   if (id === 'new') {
     const new_id = await new_workspace()
 
-    // > There is a known bug with `redirect`: it will currently fail during client-side navigation, due to [#5952](https://github.com/sveltejs/kit/issues/5952)
-    // At least in dev mode
-    console.log(`/workspace/${new_id}`)
     throw redirect(307, `/workspace/${new_id}`)
   } else {
     // Try load the workspace from localstorage

@@ -1,6 +1,6 @@
 import type { Handle } from '@sveltejs/kit'
 import config from '../vite.config'
-import { dev } from '$app/env'
+import { dev } from '$app/environment'
 
 /**
  * https://gist.github.com/michaelwooley/3d35e552fbaeaa44801f93228c486a8a
@@ -39,7 +39,7 @@ const updateResponseHeadersInDevFactory = (): ((r: Response) => void) => {
 const updateResponseHeadersInDev = updateResponseHeadersInDevFactory()
 
 export const handle: Handle = async ({ event, resolve }) => {
-  const response = await resolve(event, { ssr: false })
+  const response = await resolve(event)
 
   updateResponseHeadersInDev(response)
 
