@@ -4,7 +4,7 @@ import { derived, writable } from '@crikey/stores-immer'
 import { store as plug_store, PlugContext } from './plugs'
 import { WorkspaceDocument } from '../worker/persistence'
 import { selectable } from '@crikey/stores-selectable'
-import { Operation } from 'fast-json-patch'
+import type { Operation } from 'fast-json-patch'
 import { pick } from 'lodash'
 import { Entity } from '../@types/entity'
 

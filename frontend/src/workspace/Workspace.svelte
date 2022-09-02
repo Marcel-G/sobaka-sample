@@ -12,7 +12,9 @@
   import { WorkspaceDocument } from '../worker/persistence'
   import { init_workspace } from './context'
   import { writable } from 'svelte/store'
+  import { page } from '$app/stores'
   import { title } from '../components/Navigation.svelte'
+  import * as api from '../server/api'
 
   export let workspace_document: WorkspaceDocument
 
@@ -22,9 +24,6 @@
   let worksapce_element: Element
 
   const space = init_workspace(workspace_document)
-
-  title.update(() => workspace_document.title)
-  $: space.update_title($title)
 
   const modules = space.list_modules()
 
@@ -57,8 +56,18 @@
     toobox_visible = false
   }
 
+  // Set UI page title on load
+  title.update(() => workspace_document.title)
+  // Update page title state when it's edited
+  $: space.update_title($title)
+
+  // Subscribe to any workspace changes
   const unsubscribe = space.subscribe_changes(change => {
-    patch_workspace(space.id, change)
+    if ($page.routeId === 'workspace/template/[slug]/edit') {
+      void api.patch(space.id, change)
+    } else {
+      patch_workspace(space.id, change)
+    }
   })
 
   onDestroy(() => {

@@ -14,6 +14,18 @@
   <p>Press new in the top right to begin!</p>
 
   {#if data.workspaces.length}
+    <h2>Templates:</h2>
+    <ol>
+      {#each data.templates as templates}
+        <li>
+          {templates.title || 'Untitled'} -
+          <a href={`/workspace/template/${templates.id}`}>Use</a>
+        </li>
+      {/each}
+    </ol>
+  {/if}
+
+  {#if data.workspaces.length}
     <h2>Recent workspaces:</h2>
     <ol>
       {#each data.workspaces as workspace}
@@ -21,7 +33,7 @@
           <a href={`/workspace/${workspace.id}`}>{workspace.title || 'Untitled'}</a>
           <span class="updated-at">
             Updated
-            <time datetime={workspace.modifiedAt.toISOString()}>
+            <time>
               {formatDistanceToNow(workspace.modifiedAt)}
             </time> ago
           </span>
@@ -46,7 +58,7 @@
   h1,
   h2,
   p {
-    margin-bottom: 1rem;
+    margin: 1rem 0;
   }
 
   li {

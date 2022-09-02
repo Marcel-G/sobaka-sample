@@ -3,12 +3,11 @@ import * as immer from 'immer'
 import { json_patches_to_immer_patches } from '../utils/patches'
 import { Link, Module } from '../workspace/state'
 import { differenceInHours } from 'date-fns'
-import { Operation } from 'fast-json-patch'
-import { debounce, pick } from 'lodash'
+import type { Operation } from 'fast-json-patch'
+import _ from 'lodash'
 import { Entity } from '../@types/entity'
 
 immer.enablePatches()
-
 export interface WorkspaceDocument {
   version: '0.1.0'
   id: string
@@ -24,23 +23,34 @@ const workspace_store = localforage.createInstance({
   driver: localforage.INDEXEDDB
 })
 
-export const new_workspace = async () => {
+export const new_workspace = async (clone?: WorkspaceDocument) => {
   const id = Math.random().toString(36).substr(2, 9)
+  let workspace: WorkspaceDocument
 
-  const workspace: WorkspaceDocument = {
-    version: '0.1.0',
-    id,
-    title: 'New Workspace',
-    modules: {
-      ids: [],
-      entities: {}
-    },
-    links: {
-      ids: [],
-      entities: {}
-    },
-    createdAt: new Date(),
-    modifiedAt: new Date()
+  if (clone) {
+    workspace = {
+      ...clone,
+      title: clone.title + ' (Clone)',
+      id,
+      createdAt: new Date(),
+      modifiedAt: new Date()
+    }
+  } else {
+    workspace = {
+      version: '0.1.0',
+      id,
+      title: 'New Workspace',
+      modules: {
+        ids: [],
+        entities: {}
+      },
+      links: {
+        ids: [],
+        entities: {}
+      },
+      createdAt: new Date(),
+      modifiedAt: new Date()
+    }
   }
 
   await save_workspace(id, workspace)
@@ -86,28 +96,26 @@ export const list_workspaces = async () => {
 
   await workspace_store.iterate((workspace: WorkspaceDocument) => {
     if (workspace) {
-      workspaces.push(pick(workspace, 'id', 'title', 'createdAt', 'modifiedAt'))
+      workspaces.push(_.pick(workspace, 'id', 'title', 'createdAt', 'modifiedAt'))
     }
   })
 
   return workspaces
 }
 
-let change_queue: immer.Patch[] = []
+let change_queue: Operation[] = []
 
 export const patch_workspace = (id: string, change: Operation[]) => {
-  const patches = json_patches_to_immer_patches(change)
-
-  change_queue.push(...patches)
+  change_queue.push(...change)
 
   void apply_patches(id)
 }
 
-const apply_patches = debounce(async (id: string) => {
+const apply_patches = _.debounce(async (id: string) => {
   const workspace = await load_workspace(id)
 
   if (workspace) {
-    let next = immer.applyPatches(workspace, change_queue)
+    let next = immer.applyPatches(workspace, json_patches_to_immer_patches(change_queue))
 
     next = immer.produce(next, draft => {
       draft.modifiedAt = new Date()

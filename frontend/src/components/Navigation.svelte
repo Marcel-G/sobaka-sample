@@ -4,7 +4,7 @@
 
 <script lang="ts">
   import { page } from '$app/stores'
-  import { writable } from '@crikey/stores-immer'
+  import { writable } from 'svelte/store'
 </script>
 
 <nav class="navigation">

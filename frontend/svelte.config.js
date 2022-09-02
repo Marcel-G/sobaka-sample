@@ -10,11 +10,8 @@ const config = {
   kit: {
     // See SPA mode docs https://github.com/sveltejs/kit/blob/master/packages/adapter-static/README.md#spa-mode
     adapter: adapter({
-      fallback: 'index.html'
-    }),
-    prerender: {
-      entries: []
-    }
+      fallback: '404.html'
+    })
   }
 }
 

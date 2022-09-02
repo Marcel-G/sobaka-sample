@@ -1,0 +1,15 @@
+{
+  "version": "0.1.0",
+  "id": "666xxx666xxx",
+  "title": "First Template",
+  "modules": {
+    "ids": [],
+    "entities": {}
+  },
+  "links": {
+    "ids": [],
+    "entities": {}
+  },
+  "createdAt": "2022-09-01T12:55:02.019Z",
+  "modifiedAt": "2022-09-01T12:55:02.019Z"
+}
