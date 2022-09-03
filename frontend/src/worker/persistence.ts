@@ -23,7 +23,7 @@ const workspace_store = localforage.createInstance({
   driver: localforage.INDEXEDDB
 })
 
-export const new_workspace = async (clone?: WorkspaceDocument) => {
+export const create = (clone?: WorkspaceDocument): WorkspaceDocument => {
   const id = Math.random().toString(36).substr(2, 9)
   let workspace: WorkspaceDocument
 
@@ -52,18 +52,21 @@ export const new_workspace = async (clone?: WorkspaceDocument) => {
       modifiedAt: new Date()
     }
   }
-
-  await save_workspace(id, workspace)
-
-  return id
+  return workspace
 }
 
 export const load_workspace = async (id: string): Promise<WorkspaceDocument | null> => {
   return workspace_store.getItem(id)
 }
 
-export const save_workspace = async (id: string, workspace: WorkspaceDocument) => {
-  await workspace_store.setItem(id, workspace)
+export const save_workspace = async (workspace: WorkspaceDocument) => {
+  await workspace_store.setItem(workspace.id, workspace)
+
+  return workspace.id
+}
+
+export const delete_workspace = async (id: string) => {
+  await workspace_store.removeItem(id)
 }
 
 export const clean_db = async () => {

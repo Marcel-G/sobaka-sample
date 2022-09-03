@@ -63,7 +63,7 @@
 
   // Subscribe to any workspace changes
   const unsubscribe = space.subscribe_changes(change => {
-    if ($page.routeId === 'workspace/template/[slug]/edit') {
+    if ($page.routeId?.includes('template') && $page.routeId?.includes('edit')) {
       void api.patch(space.id, change)
     } else {
       patch_workspace(space.id, change)

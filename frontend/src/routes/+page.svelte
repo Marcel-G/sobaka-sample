@@ -1,9 +1,23 @@
 <script lang="ts">
   import { formatDistanceToNow } from 'date-fns'
+  import { dev } from '$app/environment'
 
   import type { PageData } from './$types'
+  import { delete_workspace } from '../worker/persistence'
+  import * as api from '../server/api'
+  import { invalidateAll } from '$app/navigation'
 
   export let data: PageData
+
+  const handle_workspace_delete = async (id: string) => {
+    await delete_workspace(id)
+    await invalidateAll()
+  }
+
+  const handle_template_delete = async (id: string) => {
+    await api.destroy(id)
+    await invalidateAll()
+  }
 </script>
 
 <div class="page">
@@ -13,13 +27,17 @@
 
   <p>Press new in the top right to begin!</p>
 
-  {#if data.workspaces.length}
+  {#if data.templates.length}
     <h2>Templates:</h2>
     <ol>
-      {#each data.templates as templates}
+      {#each data.templates as templates (templates.id)}
         <li>
           {templates.title || 'Untitled'} -
           <a href={`/workspace/template/${templates.id}`}>Use</a>
+          {#if dev}
+            <a href={`/workspace/template/${templates.id}/edit`}>Edit</a>
+            <a href={''} on:click={() => handle_template_delete(templates.id)}>Delete</a>
+          {/if}
         </li>
       {/each}
     </ol>
@@ -28,7 +46,7 @@
   {#if data.workspaces.length}
     <h2>Recent workspaces:</h2>
     <ol>
-      {#each data.workspaces as workspace}
+      {#each data.workspaces as workspace (workspace.id)}
         <li>
           <a href={`/workspace/${workspace.id}`}>{workspace.title || 'Untitled'}</a>
           <span class="updated-at">
@@ -37,6 +55,7 @@
               {formatDistanceToNow(workspace.modifiedAt)}
             </time> ago
           </span>
+          <a href={''} on:click={() => handle_workspace_delete(workspace.id)}>Delete</a>
         </li>
       {/each}
     </ol>

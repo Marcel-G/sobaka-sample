@@ -14,6 +14,19 @@ export const save = async (document: WorkspaceDocument) => {
     },
     body: JSON.stringify(document)
   })
+  // @todo error / response
+
+  return document.id
+}
+
+export const destroy = async (id: string) => {
+  await fetch(`/workspace/template/${id}/edit`, {
+    method: 'DELETE',
+    headers: {
+      accept: 'application/json'
+    },
+    body: JSON.stringify({ id })
+  })
 
   // @todo error / response
 }

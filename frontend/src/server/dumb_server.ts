@@ -60,3 +60,7 @@ export const patch = async (id: string, changes: Operation[]) => {
 
   await save(id, next)
 }
+
+export const destroy = async (id: string) => {
+  await fs.rm(file_path(id))
+}

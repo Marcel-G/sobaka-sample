@@ -12,6 +12,7 @@
     "check:watch": "svelte-check --tsconfig ./tsconfig.json --watch",
     "lint": "prettier --check --plugin-search-dir=. . && eslint .",
     "format": "prettier --write --plugin-search-dir=. .",
+    "prebuild": "cd ../audio-worklet && npm run build",
     "postinstall": "cd ../audio-worklet && npm install",
     "postci": "cd ../audio-worklet && npm ci",
     "postlint": "cd ../audio-worklet && npm run lint",

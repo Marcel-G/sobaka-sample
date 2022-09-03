@@ -3,8 +3,12 @@
 </script>
 
 <script lang="ts">
+  import { dev } from '$app/environment'
+
   import { page } from '$app/stores'
   import { writable } from 'svelte/store'
+
+  // would be better if this was inside workspace context
 </script>
 
 <nav class="navigation">
@@ -17,7 +21,7 @@
       {/if}
     </li>
     <li>
-      {#if $page.routeId === 'workspace/[slug]'}
+      {#if $page.routeId?.includes('workspace')}
         <input
           on:keydown={event => {
             event.stopPropagation()
@@ -27,6 +31,11 @@
       {/if}
     </li>
     <li>
+      {#if dev && $page.routeId?.includes('workspace') && !$page.routeId?.includes('template')}
+        <a href={`${$page.url}/template`}>
+          <button>Template</button>
+        </a>
+      {/if}
       <a href="/workspace/new">
         <button>New</button>
       </a>
