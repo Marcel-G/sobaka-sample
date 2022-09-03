@@ -126,6 +126,6 @@ const apply_patches = _.debounce(async (id: string) => {
 
     console.log(`Applying ${change_queue.length} patches to ${id}`)
     change_queue = []
-    await save_workspace(id, next)
+    await save_workspace(next)
   }
 }, 1000)
