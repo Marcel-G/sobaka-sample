@@ -1,16 +1,10 @@
-<style>
-  .canvas {
-    width: 100%;
-    height: 100%;
-  }
-</style>
-
 <script lang="ts">
   import type { SobakaContext } from 'sobaka-sample-audio-worklet'
-  import { getContext, onMount } from 'svelte'
-  import { get } from 'svelte/store'
+  import { onMount } from 'svelte'
+  import { get } from '@crikey/stores-immer'
   import type { Writable } from 'svelte/store'
-  const context: Writable<SobakaContext> = getContext('sampler')
+  import { get_context as get_audio_context } from '../audio'
+  const context: Writable<SobakaContext> = get_audio_context()
 
   let canvas: HTMLCanvasElement
 
@@ -30,7 +24,7 @@
 
   let draw_fn: () => void // @todo this is wird
 
-  function init(ctx: CanvasRenderingContext2D, width: number, height: number) {
+  function init(ctx: CanvasRenderingContext2D) {
     ctx.fillStyle = get_css_var('--module-background')
     ctx.strokeStyle = get_css_var('--module-foreground')
     ctx.lineWidth = 2
@@ -45,29 +39,36 @@
     height: number
   ) {
     ctx.beginPath()
-    for (let i = 0; i < data.length; i++) {
+    const reduced = data.filter((_, i) => !(i % 32)) // Take every 32nd sample
+
+    reduced.forEach((value, i, data) => {
       let x = i * (width / data.length) // need to fix x
-      let v = data[i] / 128.0
+      let v = value / 128.0
       let y = (v * height) / 2
       if (i === 0) ctx.moveTo(x, y)
       else ctx.lineTo(x, y)
-    }
+    })
     ctx.stroke()
 
-    for (let i = 0; i < data.length; i++) {
+    reduced.forEach((value, i, data) => {
       let x = i * (width / data.length) // need to fix x
-      let v = data[i] / 128.0
+      let v = value / 128.0
       if (v >= 2.0 || v <= 0.0) {
         let fill = ctx.fillStyle
         ctx.fillStyle = get_css_var('--red')
         ctx.fillRect(x, v, 1, height)
         ctx.fillStyle = fill
       }
-    }
+    })
   }
   onMount(() => {
-    const width = canvas.width
-    const height = canvas.height
+    const width = canvas.clientWidth
+    const height = canvas.clientHeight
+
+    if (canvas.width !== width || canvas.height !== height) {
+      canvas.width = width
+      canvas.height = height
+    }
 
     const context = canvas.getContext('2d')!
     init(context, width, height)
@@ -98,3 +99,10 @@
 </script>
 
 <canvas class="canvas" bind:this={canvas} on:click={handle_click} />
+
+<style>
+  .canvas {
+    width: 100%;
+    height: 100%;
+  }
+</style>

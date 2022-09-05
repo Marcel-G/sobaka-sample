@@ -1,24 +1,49 @@
-import { SobakaContext } from 'sobaka-sample-audio-worklet'
-import samplerWorkletUrl from 'sobaka-sample-audio-worklet/dist/lib/sobaka.worklet'
-import samplerWasmUrl from 'sobaka-sample-audio-worklet/pkg/sobaka_sample_audio_worklet_bg.wasm'
+import type { Writable } from 'svelte/store'
+import { writable } from '@crikey/stores-immer'
+import type { SobakaContext } from 'sobaka-sample-audio-worklet'
+import { getContext, setContext } from 'svelte'
+import sobaka_worklet from 'sobaka-sample-audio-worklet/dist/sobaka.worklet.js?url'
 
-export async function init_sampler(): Promise<SobakaContext> {
-  const context = new AudioContext()
+const AUDIO_CONTEXT = 'AUDIO_CONTEXT'
 
-  document.addEventListener(
-    'click',
-    () => {
-      void context.resume()
-    },
-    { once: true }
-  )
+export const init_audio = () => {
+  let context: AudioContext
+  let sobaka: SobakaContext
 
-  const sampler = await SobakaContext.register(
-    samplerWasmUrl as unknown as string,
-    samplerWorkletUrl as unknown as string,
-    context
-  )
-  sampler.connect(context.destination)
+  const audio_context: Writable<SobakaContext | null> = writable(null)
+  setContext(AUDIO_CONTEXT, audio_context)
 
-  return sampler
+  // Wait for some interaction on the page before starting the audio
+  const handle_interaction = () => {
+    void context?.resume()
+  }
+
+  document.addEventListener('click', handle_interaction, { once: true })
+
+  const load = async () => {
+    context = new AudioContext()
+
+    const { SobakaContext } = await import('sobaka-sample-audio-worklet')
+
+    sobaka = await SobakaContext.register(context, sobaka_worklet)
+    sobaka.connect(context.destination)
+
+    audio_context.update(s => {
+      s = sobaka
+      return s
+    })
+  }
+
+  const cleanup = () => {
+    document.removeEventListener('click', handle_interaction)
+    void sobaka?.destroy()
+    void context?.close()
+  }
+
+  return {
+    load,
+    cleanup
+  }
 }
+
+export const get_context = () => getContext<Writable<SobakaContext>>(AUDIO_CONTEXT)

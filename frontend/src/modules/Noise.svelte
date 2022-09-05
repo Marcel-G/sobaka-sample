@@ -4,35 +4,44 @@
     highlight: 'var(--pink)',
     background: 'var(--pink-dark)'
   }
+
+  export const initialState: Record<string, never> = {}
 </script>
 
 <script lang="ts">
-  import { Noise } from 'sobaka-sample-audio-worklet'
-  import { onDestroy } from 'svelte'
+  import type { Noise } from 'sobaka-sample-audio-worklet'
+  import { onDestroy, onMount } from 'svelte'
   import Panel from './shared/Panel.svelte'
-  import { get_module_context } from './ModuleWrapper.svelte'
   import Plug from './shared/Plug.svelte'
   import { into_style } from '../components/Theme.svelte'
+  import { PlugType } from '../workspace/plugs'
+  import { get_context as get_audio_context } from '../audio'
 
-  const { context } = get_module_context()
+  let noise: Noise
+  let loading = true
 
-  const noise = new Noise(context)
+  const context = get_audio_context()
 
-  const loading = noise.node_id
+  onMount(async () => {
+    const { Noise } = await import('sobaka-sample-audio-worklet')
+    noise = new Noise($context)
+    await noise.get_address()
+    loading = false
+  })
 
   onDestroy(() => {
-    void noise.dispose()
+    void noise?.dispose()
   })
 </script>
 
-<Panel name="noise" height={4} width={4} custom_style={into_style(theme)}>
-  {#await loading}
+<Panel name="noise" height={5} width={5} custom_style={into_style(theme)}>
+  {#if loading}
     <p>Loading...</p>
-  {:then}
-    🤖
-  {/await}
+  {:else}
+    💥
+  {/if}
 
   <div slot="outputs">
-    <Plug for_node={noise} />
+    <Plug id={0} label="Noise" type={PlugType.Output} for_module={noise} />
   </div>
 </Panel>

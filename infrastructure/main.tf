@@ -3,7 +3,7 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 3.34.0"
+      version = "~> 3.64.0"
     }
   }
 
@@ -128,7 +128,7 @@ resource "aws_s3_bucket" "website_root" {
 
   website {
     index_document = "index.html"
-    error_document = "index.html"
+    error_document = "404.html"
   }
 
   tags = merge(var.tags, {
@@ -177,6 +177,8 @@ resource "aws_cloudfront_distribution" "website_cdn_root" {
     default_ttl      = "300"
     max_ttl          = "1200"
 
+    response_headers_policy_id = aws_cloudfront_response_headers_policy.cross_origin_isolation.id
+
     viewer_protocol_policy = "redirect-to-https" # Redirects any HTTP request to HTTPS
     compress               = true
 
@@ -210,6 +212,26 @@ resource "aws_cloudfront_distribution" "website_cdn_root" {
       tags["Changed"],
       viewer_certificate,
     ]
+  }
+}
+
+# Cross origion isolation for SharedArrayBuffer usage
+# https://web.dev/cross-origin-isolation-guide/
+resource "aws_cloudfront_response_headers_policy" "cross_origin_isolation" {
+  name = "cross-origin-isolation-policy"
+
+  custom_headers_config {
+    items {
+      header   = "Cross-Origin-Embedder-Policy"
+      override = true
+      value    = "require-corp"
+    }
+
+    items {
+      header   = "Cross-Origin-Opener-Policy"
+      override = true
+      value    = "same-origin"
+    }
   }
 }
 

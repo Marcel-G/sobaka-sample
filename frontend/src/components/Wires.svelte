@@ -1,3 +1,28 @@
+<script lang="ts">
+  import { get_workspace } from '../workspace/context'
+  import Wire from './Wire.svelte'
+  const space = get_workspace()
+  const link_positions = space.get_link_positions()
+  const active_link = space.get_active_link_position()
+
+  $: [active_to, active_from] = $active_link
+</script>
+
+<svg class="wires">
+  {#if active_to || active_from}
+    <Wire to={active_to} from={active_from} />
+  {/if}
+  {#each $link_positions as [from, to, link] (link.id)}
+    <Wire
+      on_click={() => {
+        space.remove_link(link.id)
+      }}
+      {from}
+      {to}
+    />
+  {/each}
+</svg>
+
 <style>
   .wires {
     pointer-events: none;
@@ -7,32 +32,3 @@
     height: 100%;
   }
 </style>
-
-<script lang="ts">
-  import { derived } from 'svelte/store'
-  import links from '../state/links'
-  import type { Link } from '../state/links'
-  import Wire from './Wire.svelte'
-  import plug from '../state/plug'
-  import type { PlugContext } from '../state/plug'
-
-  const link_positions = derived([links.store(), plug.store()], ([links, plugs]) =>
-    links
-      .map(link => [plugs[link.to], plugs[link.from], link])
-      .filter((link): link is [PlugContext, PlugContext, Required<Link>] =>
-        link.every(Boolean)
-      )
-  )
-</script>
-
-<svg class="wires">
-  {#each $link_positions as [from, to, link] (link.id)}
-    <Wire
-      on_click={() => {
-        links.remove(link.id)
-      }}
-      {from}
-      {to}
-    />
-  {/each}
-</svg>

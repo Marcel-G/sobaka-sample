@@ -1,0 +1,186 @@
+{
+  "version": "0.1.0",
+  "id": "gbvedo7uj",
+  "title": "Hi-Hat Synth",
+  "modules": {
+    "ids": [
+      "y4nln0cud",
+      "490l6rzva",
+      "z112rsmnq",
+      "kq7mbglng",
+      "zqjiovpmf",
+      "fe5p9uq53",
+      "0rcvykbbv"
+    ],
+    "entities": {
+      "y4nln0cud": {
+        "id": "y4nln0cud",
+        "type": "Clock",
+        "state": {
+          "bpm": 120
+        },
+        "position": {
+          "x": 2,
+          "y": 2
+        }
+      },
+      "490l6rzva": {
+        "id": "490l6rzva",
+        "type": "StepSequencer",
+        "state": {
+          "steps": [
+            [
+              true,
+              false,
+              false,
+              true,
+              true,
+              false,
+              true,
+              false
+            ],
+            [
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false
+            ],
+            [
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false
+            ],
+            [
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false
+            ]
+          ]
+        },
+        "position": {
+          "x": 9,
+          "y": 2
+        }
+      },
+      "z112rsmnq": {
+        "id": "z112rsmnq",
+        "type": "Noise",
+        "state": {},
+        "position": {
+          "x": 21,
+          "y": 16
+        }
+      },
+      "kq7mbglng": {
+        "id": "kq7mbglng",
+        "type": "Vca",
+        "state": {
+          "value": 0
+        },
+        "position": {
+          "x": 41,
+          "y": 10
+        }
+      },
+      "zqjiovpmf": {
+        "id": "zqjiovpmf",
+        "type": "Envelope",
+        "state": {
+          "attack": 0.00849609375,
+          "decay": 0.03498046875000001,
+          "sustain": 0,
+          "release": 0
+        },
+        "position": {
+          "x": 28,
+          "y": 2
+        }
+      },
+      "fe5p9uq53": {
+        "id": "fe5p9uq53",
+        "type": "Output",
+        "state": {},
+        "position": {
+          "x": 51,
+          "y": 9
+        }
+      },
+      "0rcvykbbv": {
+        "id": "0rcvykbbv",
+        "type": "Filter",
+        "state": {
+          "frequency": 5.5878125,
+          "q": 0.19509765624999997
+        },
+        "position": {
+          "x": 27,
+          "y": 16
+        }
+      }
+    }
+  },
+  "links": {
+    "ids": [
+      "6jwh6cprz",
+      "hdm9pa6mm",
+      "qozgh6qb4",
+      "dphuamyg8",
+      "vuzqwaxf3",
+      "hzzobu8k0",
+      "qkq19yw5k"
+    ],
+    "entities": {
+      "6jwh6cprz": {
+        "id": "6jwh6cprz",
+        "to": "y4nln0cud/out-2",
+        "from": "490l6rzva/in-0"
+      },
+      "hdm9pa6mm": {
+        "id": "hdm9pa6mm",
+        "to": "490l6rzva/out-0",
+        "from": "zqjiovpmf/in-0"
+      },
+      "qozgh6qb4": {
+        "id": "qozgh6qb4",
+        "to": "kq7mbglng/out-0",
+        "from": "fe5p9uq53/in-0"
+      },
+      "dphuamyg8": {
+        "id": "dphuamyg8",
+        "from": "fe5p9uq53/in-1",
+        "to": "kq7mbglng/out-0"
+      },
+      "vuzqwaxf3": {
+        "id": "vuzqwaxf3",
+        "to": "z112rsmnq/out-0",
+        "from": "0rcvykbbv/in-0"
+      },
+      "hzzobu8k0": {
+        "id": "hzzobu8k0",
+        "from": "kq7mbglng/in-1",
+        "to": "zqjiovpmf/out-0"
+      },
+      "qkq19yw5k": {
+        "id": "qkq19yw5k",
+        "to": "0rcvykbbv/out-1",
+        "from": "kq7mbglng/in-0"
+      }
+    }
+  },
+  "createdAt": "2022-09-03T11:13:01.199Z",
+  "modifiedAt": "2022-09-03T11:13:01.199Z"
+}

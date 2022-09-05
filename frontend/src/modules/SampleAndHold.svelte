@@ -4,40 +4,50 @@
     highlight: 'var(--cyan)',
     background: 'var(--cyan-dark)'
   }
+
+  export const initialState: Record<string, never> = {}
 </script>
 
 <script lang="ts">
-  import { SampleAndHold } from 'sobaka-sample-audio-worklet'
-  import { onDestroy } from 'svelte'
+  import type { SampleAndHold } from 'sobaka-sample-audio-worklet'
+  import { onDestroy, onMount } from 'svelte'
   import Panel from './shared/Panel.svelte'
   import Plug from './shared/Plug.svelte'
-  import { get_module_context } from './ModuleWrapper.svelte'
   import { into_style } from '../components/Theme.svelte'
+  import { PlugType } from '../workspace/plugs'
+  import { get_context as get_audio_context } from '../audio'
 
-  const { context } = get_module_context()
+  const name = 'S & H'
+  let sample_and_hold: SampleAndHold
+  let loading = true
 
-  const sample_and_hold = new SampleAndHold(context)
+  const context = get_audio_context()
 
-  const loading = sample_and_hold.node_id
+  onMount(async () => {
+    const { SampleAndHold } = await import('sobaka-sample-audio-worklet')
+    sample_and_hold = new SampleAndHold($context)
+    await sample_and_hold.get_address()
+    loading = false
+  })
 
   onDestroy(() => {
-    void sample_and_hold.dispose()
+    void sample_and_hold?.dispose()
   })
 </script>
 
-<Panel name="S & H" height={4} width={4} custom_style={into_style(theme)}>
-  {#await loading}
+<Panel {name} height={4} width={4} custom_style={into_style(theme)}>
+  {#if loading}
     <p>Loading...</p>
-  {:then}
+  {:else}
     🧿
-  {/await}
+  {/if}
 
   <div slot="inputs">
-    <Plug for_node={sample_and_hold} for_input={'Signal'} />
-    <Plug for_node={sample_and_hold} for_input={'Gate'} />
+    <Plug id={0} label="Signal" type={PlugType.Input} for_module={sample_and_hold} />
+    <Plug id={1} label="Gate" type={PlugType.Input} for_module={sample_and_hold} />
   </div>
 
   <div slot="outputs">
-    <Plug for_node={sample_and_hold} />
+    <Plug id={0} label="Output" type={PlugType.Output} for_module={sample_and_hold} />
   </div>
 </Panel>

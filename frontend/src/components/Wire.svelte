@@ -1,60 +1,53 @@
-<style>
-  .wire {
-    stroke: var(--orange);
-    fill: var(--orange);
-    pointer-events: all;
-    cursor: pointer;
-  }
-  .wire:hover {
-    stroke: var(--red);
-    fill: var(--red);
-  }
-</style>
-
 <script lang="ts">
-  import { SobakaContext } from 'sobaka-sample-audio-worklet'
-  import { getContext, onDestroy } from 'svelte'
-  import { derived, get } from 'svelte/store'
-  import type { Writable } from 'svelte/store'
-  import type { PlugContext } from '../state/plug'
+  import type { SobakaContext } from 'sobaka-sample-audio-worklet'
+  import { onDestroy } from 'svelte'
+  import { derived, get } from '@crikey/stores-immer'
+  import { writable, Writable } from 'svelte/store'
+  import { PlugContext, PlugType } from '../workspace/plugs'
+  import { get_context as get_audio_context } from '../audio'
+  import { Position } from '../@types'
+  import { mouse_position } from '../workspace/Workspace.svelte'
 
-  export let on_click: () => void
-  export let from: PlugContext
-  export let to: PlugContext
-  const context: Writable<SobakaContext> = getContext('sampler')
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  export let on_click = () => {}
+  export let from: PlugContext | null = null
+  export let to: PlugContext | null = null
 
-  interface Position {
-    x: number
-    y: number
-  }
+  const element: Writable<Element | null> = writable(null)
+  const context: Writable<SobakaContext> = get_audio_context()
 
-  const to_center_point = (node: Element): Position => {
-    if (!node) return { x: 0, y: 0 } // @todo
+  const to_center_point = ([node, element]: Array<Element | null>): Position => {
+    if (!element || !node) return { x: 0, y: 0 }
+    if (!(node instanceof Element)) throw new Error('Could not find element')
+    const parent = element.parentElement
+    if (!(parent instanceof Element)) throw new Error('Could not find parent element')
 
     const box = node.getBoundingClientRect()
-    const scrollX = document.documentElement.scrollLeft || document.body.scrollLeft
-    const scrollY = document.documentElement.scrollTop || document.body.scrollTop
-    return {
-      x: scrollX + box.x + box.width / 2,
-      y: scrollY + box.y + box.height / 2
-    }
+    const parent_rect = parent.getBoundingClientRect()
+
+    const x = box.x + box.width / 2 - parent_rect.left
+    const y = box.y + box.height / 2 - parent_rect.top
+
+    return { x, y }
   }
 
-  const from_pos = derived(from.node, to_center_point)
-  const to_pos = derived(to.node, to_center_point)
+  const from_pos = from ? derived([from.node, element], to_center_point) : mouse_position
 
-  // @todo store AbstractNode in state
-  if (to.input) {
-    const disconnect = get(context).link(from.module, to.module, to.input)
-    onDestroy(disconnect)
-  } else {
-    throw new Error(
-      `Cannot connect to output node: ${JSON.stringify({ from, to }, null, 2)}`
-    )
+  const to_pos = to ? derived([to.node, element], to_center_point) : mouse_position
+
+  if (from && to) {
+    if (to.type == PlugType.Input) {
+      const disconnect = get(context).link(from.module, from.id, to.module, to.id)
+      onDestroy(disconnect)
+    } else {
+      throw new Error(
+        `Cannot connect to output node: ${JSON.stringify({ from, to }, null, 2)}`
+      )
+    }
   }
 </script>
 
-<g class="wire" on:click={on_click}>
+<g class="wire" on:click={on_click} class:interactive={from && to} bind:this={$element}>
   <line
     stroke-width="2"
     x1={$from_pos.x}
@@ -65,3 +58,20 @@
   <circle cx={$from_pos.x} cy={$from_pos.y} r="3" />
   <circle cx={$to_pos.x} cy={$to_pos.y} r="3" />
 </g>
+
+<style>
+  .wire {
+    stroke: var(--orange);
+    fill: var(--orange);
+    pointer-events: none;
+  }
+
+  .wire.interactive {
+    cursor: pointer;
+    pointer-events: all;
+  }
+  .wire.interactive:hover {
+    stroke: var(--red);
+    fill: var(--red);
+  }
+</style>

@@ -4,52 +4,66 @@
     highlight: 'var(--cyan)',
     background: 'var(--cyan-dark)'
   }
+
+  type State = Readonly<{ min: number; max: number; value: number }>
+
+  export const initialState: State = {
+    min: 0,
+    max: 10,
+    value: 0.5
+  }
 </script>
 
 <script lang="ts">
-  import { Parameter } from 'sobaka-sample-audio-worklet'
-  import { onDestroy } from 'svelte'
+  import type { Parameter } from 'sobaka-sample-audio-worklet'
+  import { onDestroy, onMount } from 'svelte'
   import Knob from '../components/Knob.svelte'
-  import { get_module_context } from './ModuleWrapper.svelte'
   import Plug from './shared/Plug.svelte'
   import Panel from './shared/Panel.svelte'
   import { into_style } from '../components/Theme.svelte'
+  import { PlugType } from '../workspace/plugs'
+  import { SubStore } from '../utils/patches'
+  import { get_context as get_audio_context } from '../audio'
 
-  const { context, get_sub_state, update_sub_state } = get_module_context()
+  const context = get_audio_context()
 
+  export let state: SubStore<State>
   let name = 'parameter'
+  let parameter: Parameter
+  let loading = true
 
-  // Set values from the global state if they're present
-  let { value, range } = get_sub_state<Parameter['state']>(name) || {
-    value: 0,
-    range: [-10, 10]
-  }
+  onMount(async () => {
+    const { Parameter } = await import('sobaka-sample-audio-worklet')
+    parameter = new Parameter($context, {
+      min: $state.min,
+      max: $state.max,
+      default: $state.value
+    })
+    await parameter.get_address()
+    loading = false
+  })
 
-  // Create and link sobaka node
-  const parameter = new Parameter(context, { value, range })
+  const value = state.select(s => s.value)
+  const min = state.select(s => s.min)
+  const max = state.select(s => s.max)
 
   // Update the sobaka node when the state changes
-  $: void parameter.update({ value, range })
-
-  // Update the global state when state changes
-  $: update_sub_state(name, { value, range })
-
-  const loading = parameter.node_id
+  $: void parameter?.message({ SetParameter: $value })
 
   onDestroy(() => {
-    void parameter.dispose()
+    void parameter?.dispose()
   })
 </script>
 
-<Panel name="parameter" height={6} width={5} custom_style={into_style(theme)}>
+<Panel {name} height={6} width={5} custom_style={into_style(theme)}>
   {#await loading}
     <p>Loading...</p>
   {:then}
     <span>
-      <Knob bind:value bind:range />
+      <Knob bind:value={$value} range={[$min, $max]} label="value" />
     </span>
   {/await}
   <div slot="outputs">
-    <Plug name="output" for_node={parameter} />
+    <Plug id={0} label="output" type={PlugType.Output} for_module={parameter} />
   </div>
 </Panel>

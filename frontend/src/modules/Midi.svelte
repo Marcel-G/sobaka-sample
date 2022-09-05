@@ -4,47 +4,47 @@
     highlight: 'var(--cyan)',
     background: 'var(--cyan-dark)'
   }
+
+  export const initialState: Record<string, never> = {}
 </script>
 
 <script lang="ts">
   import { WebMidi, Input } from 'webmidi'
   import { onDestroy, onMount } from 'svelte'
   import Panel from './shared/Panel.svelte'
-  import { get_module_context } from './ModuleWrapper.svelte'
   import Dropdown from '../components/Dropdown.svelte'
   import { matches } from 'lodash'
-  import { HACKMidi } from 'sobaka-sample-audio-worklet'
+  import type { Midi } from 'sobaka-sample-audio-worklet'
   import Plug from './shared/Plug.svelte'
   import { into_style } from '../components/Theme.svelte'
+  import { PlugType } from '../workspace/plugs'
+  import { get_context as get_audio_context } from '../audio'
 
   let active_device_id: string
   let default_device: Input
   let inputs: Input[] = []
+  let midi: Midi
 
-  const { context } = get_module_context()
+  const context = get_audio_context()
 
-  const midi_gate = new HACKMidi(context, 'Gate')
-  const midi_note = new HACKMidi(context, 'Note')
-  const midi_clock = new HACKMidi(context, 'Clock')
+  onMount(async () => {
+    const { Midi } = await import('sobaka-sample-audio-worklet')
+    midi = new Midi($context)
+    await midi.get_address()
+  })
 
   $: {
     // Cleanup previous
     default_device?.removeListener('noteon')
     default_device?.removeListener('noteoff')
-    default_device?.removeListener('clock')
 
     // Attach new device
     default_device = inputs.find(matches({ id: active_device_id }))!
     default_device?.addListener('noteon', event => {
-      midi_gate.update({ NoteOn: { value: event.note.number } })
-      midi_note.update({ NoteOn: { value: event.note.number } })
+      midi?.message({ NoteOn: event.note.number })
     })
     default_device?.addListener('noteoff', event => {
-      midi_gate.update({ NoteOff: { value: event.note.number } })
-      midi_note.update({ NoteOff: { value: event.note.number } })
-    })
-    default_device?.addListener('clock', () => {
-      midi_clock.update('Clock')
+      midi?.message({ NoteOff: event.note.number })
     })
   }
 
@@ -61,19 +61,25 @@
     // Cleanup previous
     default_device?.removeListener('noteon')
     default_device?.removeListener('noteoff')
-    default_device?.removeListener('clock')
-    void midi_gate.dispose()
-    void midi_note.dispose()
-    void midi_clock.dispose()
+    void midi?.dispose()
   })
 </script>
 
-<Panel name="midi" height={5} width={6} custom_style={into_style(theme)}>
+<Panel name="midi" height={4} width={7} custom_style={into_style(theme)}>
   <Dropdown options={inputs.map(input => input.id)} bind:selected={active_device_id} />
 
   <div slot="outputs">
-    <Plug name="output_clock" for_node={midi_clock} />
-    <Plug name="output_gate" for_node={midi_gate} />
-    <Plug name="output_note" for_node={midi_note} />
+    <Plug id={0} label="gate_1" type={PlugType.Output} for_module={midi} />
+    <!-- @todo polyphony
+      <Plug id={1} label="gate_2" type={PlugType.Output} for_module={midi} />
+      <Plug id={2} label="gate_3" type={PlugType.Output} for_module={midi} />
+      <Plug id={3} label="gate_4" type={PlugType.Output} for_module={midi} />
+    -->
+    <Plug id={1} label="pitch_1" type={PlugType.Output} for_module={midi} />
+    <!-- @todo polyphony
+      <Plug id={5} label="pitch_2" type={PlugType.Output} for_module={midi} />
+      <Plug id={6} label="pitch_3" type={PlugType.Output} for_module={midi} />
+      <Plug id={7} label="pitch_4" type={PlugType.Output} for_module={midi} />
+    -->
   </div>
 </Panel>

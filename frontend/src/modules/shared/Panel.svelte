@@ -1,3 +1,64 @@
+<script context="module" lang="ts">
+  export const into_grid_coords = (coords: {
+    x: number
+    y: number
+  }): { x: number; y: number } => {
+    const grid = 0.5 * 16 // grid is 0.5rem;
+    const gap = 0.5 * 16 // grid is 0.5rem
+    return {
+      x: Math.round(coords.x / (grid + gap)),
+      y: Math.round(coords.y / (grid + gap))
+    }
+  }
+</script>
+
+<script lang="ts">
+  import { useDrag } from '../../actions/drag'
+  import type { OnDrag } from '../../actions/drag'
+  import { get_workspace } from '../../workspace/context'
+  import { get_module_context } from '../context'
+
+  export let custom_style = ''
+  export let name: string
+  export let height = 0
+  export let width = 0
+
+  const space = get_workspace()
+  const { id } = get_module_context()
+
+  const module = space.get_module_substore(id)
+  const position = module.select(state => state.position)
+
+  $: col = `${$position.x + 1} / span ${width}`
+  $: row = `${$position.y + 1} / span ${height}`
+
+  const onMove: OnDrag = (x_in, y_in) => {
+    let { x, y } = into_grid_coords({ x: x_in, y: y_in })
+    if (x < 0 || y < 0) {
+      return
+    }
+    space.move_module(id, x, y)
+  }
+</script>
+
+<div
+  use:useDrag={onMove}
+  class="panel"
+  style={`grid-column: ${col}; grid-row: ${row}; ${custom_style}`}
+>
+  <div class="bar">
+    <span class="name">{name}</span>
+    <button class="close" on:click={() => space.remove_module(id)}>x</button>
+  </div>
+  <slot />
+  <div class="inputs">
+    <slot class="vertical" name="inputs" />
+  </div>
+  <div class="outputs">
+    <slot class="vertical" name="outputs" />
+  </div>
+</div>
+
 <style>
   .panel {
     box-shadow: 0 10px 15px -3px rgb(0 0 0 / 10%), 0 4px 6px -2px rgb(0 0 0 / 5%);
@@ -10,6 +71,8 @@
     cursor: move;
 
     user-select: none;
+
+    touch-action: none;
 
     position: relative;
   }
@@ -91,70 +154,3 @@
     flex-direction: column;
   }
 </style>
-
-<script context="module" lang="ts">
-  export const into_grid_coords = (coords: {
-    x: number
-    y: number
-  }): { x: number; y: number } => {
-    const grid = 0.5 * 16 // grid is 0.5rem;
-    const gap = 0.5 * 16 // grid is 0.5rem
-    return {
-      x: Math.round(coords.x / (grid + gap)),
-      y: Math.round(coords.y / (grid + gap))
-    }
-  }
-</script>
-
-<script lang="ts">
-  import modules from '../../state/modules'
-  import { useDrag } from '../../actions/drag'
-  import type { OnDrag } from '../../actions/drag'
-  import { setContext } from 'svelte'
-  import { get_module_context } from '../ModuleWrapper.svelte'
-
-  export let custom_style: string = ''
-  export let name: string
-  export let height = 0
-  export let width = 0
-
-  let { position, id } = get_module_context()
-
-  const moveContext = new EventTarget()
-  setContext('move_context', moveContext)
-
-  $: col = `${position.x + 1} / span ${width}`
-  $: row = `${position.y + 1} / span ${height}`
-
-  const onMove: OnDrag = (x_in, y_in, box) => {
-    let { x, y } = into_grid_coords({ x: x_in, y: y_in })
-    if (x < 0 || y < 0) {
-      return
-    }
-    if (x !== box.x || y !== box.y) {
-      const moved = modules.move(id, x, y)
-      if (moved) {
-        moveContext.dispatchEvent(new CustomEvent('move'))
-        position = { x, y }
-      }
-    }
-  }
-</script>
-
-<div
-  use:useDrag={onMove}
-  class="panel"
-  style={`grid-column: ${col}; grid-row: ${row}; ${custom_style}`}
->
-  <div class="bar">
-    <span class="name">{name}</span>
-    <button class="close" on:click={() => modules.remove(id)}>x</button>
-  </div>
-  <slot />
-  <div class="inputs">
-    <slot class="vertical" name="inputs" />
-  </div>
-  <div class="outputs">
-    <slot class="vertical" name="outputs" />
-  </div>
-</div>
