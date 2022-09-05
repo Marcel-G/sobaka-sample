@@ -218,7 +218,7 @@ resource "aws_cloudfront_distribution" "website_cdn_root" {
 # Cross origion isolation for SharedArrayBuffer usage
 # https://web.dev/cross-origin-isolation-guide/
 resource "aws_cloudfront_response_headers_policy" "cross_origin_isolation" {
-  name = "cross-origin-isolation-policy"
+  name = "${terraform.workspace}-cross-origin-isolation-policy"
 
   custom_headers_config {
     items {

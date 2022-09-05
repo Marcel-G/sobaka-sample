@@ -40,7 +40,7 @@ jobs:
       - name: Terraform Init
         working-directory: infrastructure
         id: init
-        run: terraform init
+        run: terraform init -upgrade
 
       - name: Terraform Validate
         working-directory: infrastructure
