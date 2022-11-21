@@ -1,10 +1,10 @@
 <script lang="ts">
-  import type { SobakaContext } from 'sobaka-sample-audio-worklet'
   import { onMount } from 'svelte'
   import { get } from '@crikey/stores-immer'
   import type { Writable } from 'svelte/store'
   import { get_context as get_audio_context } from '../audio'
-  const context: Writable<SobakaContext> = get_audio_context()
+  export let module: AudioNode
+  const context: Writable<AudioContext> = get_audio_context()
 
   let canvas: HTMLCanvasElement
 
@@ -16,9 +16,11 @@
     return getComputedStyle(canvas).getPropertyValue(name)
   }
 
-  let analyserNode = new AnalyserNode(get(context).context, { fftSize })
+  const ctx = get(context);
 
-  get(context).connect(analyserNode)
+  let analyserNode = new AnalyserNode(ctx, { fftSize })
+
+  module.connect(analyserNode)
 
   let u8ar = new Uint8Array(fftSize)
 
@@ -71,7 +73,7 @@
     }
 
     const context = canvas.getContext('2d')!
-    init(context, width, height)
+    init(context)
     context.fillRect(0, 0, canvas.width, canvas.height)
 
     function draw() {

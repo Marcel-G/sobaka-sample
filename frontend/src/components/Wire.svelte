@@ -1,10 +1,8 @@
 <script lang="ts">
-  import type { SobakaContext } from 'sobaka-sample-audio-worklet'
   import { onDestroy } from 'svelte'
-  import { derived, get } from '@crikey/stores-immer'
+  import { derived } from '@crikey/stores-immer'
   import { writable, Writable } from 'svelte/store'
   import { PlugContext, PlugType } from '../workspace/plugs'
-  import { get_context as get_audio_context } from '../audio'
   import { Position } from '../@types'
   import { mouse_position } from '../workspace/Workspace.svelte'
 
@@ -14,7 +12,6 @@
   export let to: PlugContext | null = null
 
   const element: Writable<Element | null> = writable(null)
-  const context: Writable<SobakaContext> = get_audio_context()
 
   const to_center_point = ([node, element]: Array<Element | null>): Position => {
     if (!element || !node) return { x: 0, y: 0 }
@@ -36,9 +33,22 @@
   const to_pos = to ? derived([to.node, element], to_center_point) : mouse_position
 
   if (from && to) {
-    if (to.type == PlugType.Input) {
-      const disconnect = get(context).link(from.module, from.id, to.module, to.id)
-      onDestroy(disconnect)
+    if (to.type === PlugType.Param) {
+      from.module.connect(to.module, from.id)
+
+      onDestroy(() => {
+        if (from && to) {
+          from.module.disconnect(to.module, from.id)
+        }
+      })
+    } else if (to.type === PlugType.Input) {
+      from.module.connect(to.module, from.id, to.id)
+
+      onDestroy(() => {
+        if (from && to) {
+          from.module.disconnect(to.module, from.id, to.id)
+        }
+      })
     } else {
       throw new Error(
         `Cannot connect to output node: ${JSON.stringify({ from, to }, null, 2)}`

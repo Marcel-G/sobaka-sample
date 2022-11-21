@@ -1,22 +1,31 @@
 import { writable } from '@crikey/stores-immer'
 import { selectable } from '@crikey/stores-selectable'
-import type { AbstractModule, NodeType } from 'sobaka-sample-audio-worklet'
 import { get, Readable, Writable } from 'svelte/store'
 import { is_fully_linked, WorkspaceStore } from './state'
 
 // @todo export these from sobaka-sample-audio-worklet without ssr breaking
 const In = (n: number) => `in-${n}`
 const Out = (n: number) => `out-${n}`
+const Param = (n: number) => `param-${n}`
 
 export enum PlugType {
   Input,
-  Output
+  Output,
+  Param
+}
+
+const to_strong = (type: PlugType, n: number) => {
+  switch (type) {
+    case PlugType.Input: return In(n);
+    case PlugType.Output: return Out(n);
+    case PlugType.Param: return Param(n); // @todo -- module type can be AudioParam
+  }
 }
 
 export interface PlugContext {
   type: PlugType
   node: Readable<Element | null>
-  module: AbstractModule<NodeType>
+  module: AudioNode
   id: number
 }
 
@@ -30,12 +39,12 @@ const init = () => {
     plug_type: PlugType,
     plug_id: number
   ) => {
-    const id = `${module}/${plug_type == PlugType.Input ? In(plug_id) : Out(plug_id)}`
+    const id = `${module}/${to_strong(plug_type, plug_id)}`
     const active_link = space.get_active_link_substore()
 
     const plug_context = get(store)[id]
 
-    if (plug_context.type == PlugType.Input) {
+    if ([PlugType.Input, PlugType.Param].includes(plug_context.type)) {
       active_link.update(s => {
         s ??= {}
         s.from = id
@@ -60,12 +69,12 @@ const init = () => {
   // move together with plug calls?
   const register = (
     module: string,
-    for_module: AbstractModule<NodeType>,
+    for_module: AudioNode,
     node: Writable<Element | null>,
     plug_type: PlugType,
     plug_id: number
   ) => {
-    const id = `${module}/${plug_type == PlugType.Input ? In(plug_id) : Out(plug_id)}`
+    const id = `${module}/${to_strong(plug_type, plug_id)}`
 
     if (get(store)[id]) {
       throw new Error(`Plug: '${id}' already exists. Please use unique naming`)
@@ -93,7 +102,7 @@ const init = () => {
     plug_type: PlugType,
     plug_id: number
   ) => {
-    const id = `${module}/${plug_type == PlugType.Input ? In(plug_id) : Out(plug_id)}`
+    const id = `${module}/${to_strong(plug_type, plug_id)}`
 
     space.remove_link(id)
 

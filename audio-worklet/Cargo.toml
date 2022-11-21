@@ -13,29 +13,19 @@ all = ["default"]
 default = ["console_error_panic_hook"]
 
 [dependencies]
-fundsp = "0.6.3"
-petgraph = { version = "0.6", features = ["stable_graph"] }
-numeric-array = "0.5.2"
-num-traits = "0.2.15"
-rand = "0.8.5"
-serde = { version = "1.0", features = ["derive", "rc"] }
-derive_more = "0.99.0"
-jsonrpc-core = "18.0.0"
-jsonrpc-derive = "18.0.0"
-jsonrpc-pubsub = "18.0.0"
-
-async-std = { version = "1.10.0", features = ["unstable"] }
-futures = "0.3.17"
+# numeric-array = "0.5.2"
+# rand = "0.8.5"
 
 rustfft = { version = "6.0.1" }
+fundsp = "0.6.3"
 
-# Wasm Dependencies
-wasm-bindgen = { version = "0.2.82", features = ["serde-serialize"] }
+wasm-worklet = { path = "../../wasm-worklet/wasm-worklet" }
+wasm-bindgen = { version = "0.2.82" }
 wasm-bindgen-futures = { version = "0.4.32" }
-js-sys = "0.3.59"
 
-getrandom = { version = "0.2", features = ["custom"] }
-ts-rs = { version = "6.1.2", features = ["serde-compat"] }
+# @todo remove this dependency - https://gitlab.com/KonradBorowski/enum-map/-/issues/22
+enum-map = "2.4.1"
+tsify = { version = "0.4.3", features = ["js"] }
 
 # The `console_error_panic_hook` crate provides better debugging of panics by
 # logging them with `console.error`. This is great for development, but requires
@@ -50,30 +40,12 @@ console_error_panic_hook = { version = "0.1.6", optional = true }
 # Unfortunately, `wee_alloc` requires nightly Rust when targeting wasm for now.
 wee_alloc = { version = "0.4.5", optional = true }
 
-[dependencies.web-sys]
-version = "0.3.59"
-features = [
-  "console",
-  "MessagePort",
-  "AudioContext",
-  "AudioDestinationNode",
-  "AudioWorklet",
-  "AudioWorkletNode",
-  "AudioWorkletNodeOptions",
-  "Blob",
-  "BlobPropertyBag",
-  "Document",
-  "HtmlInputElement",
-  "HtmlLabelElement",
-  "Url",
-  "Window",
-]
-
 [dev-dependencies]
 wasm-bindgen-test = "0.3.13"
 anyhow = "1.0.56"
 
 [profile.release]
 # Tell `rustc` to optimize for small code size.
-opt-level = 3
+# opt-level = 3
+opt-level = "s"
 

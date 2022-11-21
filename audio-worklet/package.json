@@ -5,19 +5,17 @@
   "files": [
     "dist"
   ],
-  "main": "./dist/src/main",
-  "types": "./dist/src/main",
+  "main": "./dist/src/index",
+  "types": "./dist/src/index",
   "scripts": {
-    "build:worklet": "esbuild src/worklet/sobaka.worklet.ts --bundle --outfile=dist/sobaka.worklet.js",
     "build:tsc": "tsc",
     "build:wasm": "wasm-pack build --target web && mkdir -p dist && cp -r pkg dist/",
-    "build:types": "cargo test",
     "watch:wasm": "cargo watch -w . -i pkg -i dist -i README.md -s 'npm run build:wasm'",
     "format": "prettier --no-error-on-unmatched-pattern --write ./lib/**/*.{js,ts}",
     "prelint": "npm run format",
     "lint": "eslint './lib/**/*.{js,ts}'",
     "lint:fix": "eslint --fix './lib/**/*.{js,ts}'",
-    "build": "./build.sh",
+    "build": "npm run build:wasm && npm run build:tsc",
     "watch": "concurrently 'npm run watch:wasm' 'tsc -w'"
   },
   "author": "",
@@ -27,14 +25,10 @@
     "@typescript-eslint/eslint-plugin": "^5.7.0",
     "@typescript-eslint/parser": "^5.7.0",
     "concurrently": "^6.2.0",
-    "esbuild": "^0.15.6",
+    "prettier": "^2.7.1",
     "eslint": "^8.4.1"
   },
   "dependencies": {
-    "@open-rpc/client-js": "^1.7.1",
-    "events": "^3.3.0",
-    "fastestsmallesttextencoderdecoder": "^1.0.22",
-    "prettier": "^2.7.1",
     "typescript": "^4.3.4"
   }
 }

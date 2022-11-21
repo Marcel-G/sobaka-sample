@@ -1,5 +1,4 @@
 <script lang="ts">
-  import type { AbstractModule, NodeType } from 'sobaka-sample-audio-worklet'
   import { onDestroy } from 'svelte'
   import { writable, Writable } from 'svelte/store'
   import context, { PlugType } from '../../workspace/plugs'
@@ -12,7 +11,7 @@
   const module = space.get_module_substore(module_id)
   const position = module.select(state => state.position)
 
-  export let for_module: AbstractModule<NodeType>
+  export let for_module: AudioNode | AudioParam
   export let type: PlugType
   export let id: number
   export let label: string
@@ -21,7 +20,7 @@
 
   $: if (for_module) {
     // Register once module is defined
-    context.register(module_id, for_module, node, type, id)
+    context.register(module_id, for_module as AudioNode, node, type, id)
   }
 
   function handle_click() {
@@ -43,7 +42,7 @@
   })
 </script>
 
-<Tooltip {label} position={type === PlugType.Input ? 'left' : 'right'}>
+<Tooltip {label} position={type !== PlugType.Output ? 'left' : 'right'}>
   <div
     role="button"
     aria-label={label}

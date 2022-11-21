@@ -9,8 +9,7 @@
 </script>
 
 <script lang="ts">
-  import type { Output } from 'sobaka-sample-audio-worklet'
-  import { onDestroy, onMount } from 'svelte'
+  import { onMount } from 'svelte'
   import Panel from './shared/Panel.svelte'
   import Plug from './shared/Plug.svelte'
   import { into_style } from '../components/Theme.svelte'
@@ -18,21 +17,21 @@
   import { PlugType } from '../workspace/plugs'
   import { get_context as get_audio_context } from '../audio'
 
-  let output: Output
+  let output: AudioNode
   let loading = true
 
   const context = get_audio_context()
 
   onMount(async () => {
-    const { Output } = await import('sobaka-sample-audio-worklet')
-    output = new Output($context)
-    await output.get_address()
+    output = $context.createChannelMerger(2)
     loading = false
+
+    output.connect($context.destination);
   })
 
-  onDestroy(() => {
-    void output?.dispose()
-  })
+  // onDestroy(() => {
+  //   void output?.dispose()
+  // })
 </script>
 
 <Panel name="output" height={7} width={20} custom_style={into_style(theme)}>
@@ -40,7 +39,7 @@
     <p>Loading...</p>
   {:else}
     <div class="oscilloscope-wrapper">
-      <Oscilloscope />
+      <Oscilloscope module={output} />
     </div>
   {/if}
 

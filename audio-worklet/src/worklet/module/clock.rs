@@ -1,40 +1,86 @@
-use crate::{
-    context::ModuleContext,
-    dsp::{messaging::MessageHandler, shared::Share},
-};
 use fundsp::prelude::*;
-use serde::{Deserialize, Serialize};
-use ts_rs::TS;
+use wasm_worklet::{
+     derive_param,
+    types::{AudioModule, ParamMap},
+    wasm_worklet_macros::Module,
+};
 
-#[derive(Default, Serialize, Deserialize, TS)]
-#[ts(export)]
-pub struct ClockParams {
-    pub bpm: f32,
+derive_param! {
+    pub enum ClockParams {
+        #[param(
+            automation_rate = "a-rate",
+            min_value = 0.,
+            max_value = 600.,
+            default_value = 120.
+        )]
+        Bpm,
+    }
 }
 
-/// Incoming commands into the clock module
-#[derive(Serialize, Deserialize, TS, Clone)]
-#[ts(export)]
-pub enum ClockCommand {
-    /// Sets the BPM of the clock
-    SetBPM(f64),
+#[derive(Module)]
+pub struct Clock {
+    inner: Box<dyn AudioUnit32 + Send>,
 }
 
-pub fn clock(params: &ClockParams, context: &mut ModuleContext<ClockCommand>) -> impl AudioUnit32 {
-    let clock_square = || sine() >> map(|f| if f[0] > 0.0 { 1.0 } else { -1.0 });
+impl AudioModule for Clock {
+    type Param = ClockParams;
 
-    let divide = [1.0, 2.0, 4.0, 8.0, 16.0];
+    const INPUTS: u32 = 1;
+    const OUTPUTS: u32 = 5;
 
-    let clock_divider_node = branch::<U5, _, _, _>(|n| mul(divide[n as usize]) >> clock_square());
+    fn create() -> Self {
+        let module = {
+            let clock_square = || sine() >> map(|f| if f[0] > 0.0 { 1.0 } else { -1.0 });
 
-    let bpm = ((pass() + tag(0, params.bpm)) >> map(|f| bpm_hz(f[0]))).share();
+            let divide = [1.0, 2.0, 4.0, 8.0, 16.0];
 
-    context.set_tx(
-        bpm.clone()
-            .message_handler(|unit, command: ClockCommand| match command {
-                ClockCommand::SetBPM(bpm) => unit.set(0, bpm.clamp(0.0, 600.0)),
-            }),
-    );
+            let clock_divider_node =
+                branch::<U5, _, _, _>(|n| mul(divide[n as usize]) >> clock_square());
 
-    bpm >> clock_divider_node
+            let bpm = (pass() + tag(ClockParams::Bpm as i64, 0.0)) >> map(|f| bpm_hz(f[0]));
+
+            bpm >> clock_divider_node
+        };
+
+        Clock {
+            inner: Box::new(module),
+        }
+    }
+
+    fn process(
+        &mut self,
+        inputs: &[&[[f32; 128]]],
+        outputs: &mut [&mut [[f32; 128]]],
+        params: &ParamMap<Self::Param>,
+    ) {
+      for i in 0..128 {
+          // Write all the paramaters into the AudioUnit. Usually, these will be the same value.
+          // Could possibly distinguish between a-rate / k-rate here
+          for (param, buffer) in params.iter() {
+            self.inner.set(
+              param as i64,
+              *buffer.get(i).unwrap() as f64
+            );
+          }
+
+          let input_frame: Vec<_> = inputs
+            .iter()
+            // @todo hardcoded channel one - maybe flatten?
+            .map(|channel| channel[0][i])
+            .collect();
+
+          let mut output_frame = vec![0.0; outputs.len()]; // @todo assuming single channel
+
+
+          self.inner.tick(&input_frame, &mut output_frame);
+
+          // We move the data from the frame buffer into the planar buffer after processing.
+          for (channel, frame) in outputs.iter_mut().zip(output_frame) {
+            // @todo assuming single channel
+            channel[0][i] = frame
+          };
+      }
+    }
 }
+
+// wasm_worklet::Module!(Clock)
