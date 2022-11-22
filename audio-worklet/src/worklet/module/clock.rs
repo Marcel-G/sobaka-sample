@@ -1,11 +1,7 @@
 use fundsp::prelude::*;
-use wasm_worklet::{
-     derive_param,
-    types::{AudioModule, ParamMap},
-    wasm_worklet_macros::Module,
-};
+use wasm_worklet::types::{AudioModule, ParamMap};
 
-derive_param! {
+wasm_worklet::derive_param! {
     pub enum ClockParams {
         #[param(
             automation_rate = "a-rate",
@@ -17,9 +13,8 @@ derive_param! {
     }
 }
 
-#[derive(Module)]
 pub struct Clock {
-    inner: Box<dyn AudioUnit32 + Send>,
+    inner: Box<dyn AudioUnit32>,
 }
 
 impl AudioModule for Clock {
@@ -53,34 +48,31 @@ impl AudioModule for Clock {
         outputs: &mut [&mut [[f32; 128]]],
         params: &ParamMap<Self::Param>,
     ) {
-      for i in 0..128 {
-          // Write all the paramaters into the AudioUnit. Usually, these will be the same value.
-          // Could possibly distinguish between a-rate / k-rate here
-          for (param, buffer) in params.iter() {
-            self.inner.set(
-              param as i64,
-              *buffer.as_ref().get(i).unwrap() as f64
-            );
-          }
+        for i in 0..128 {
+            // Write all the paramaters into the AudioUnit. Usually, these will be the same value.
+            // Could possibly distinguish between a-rate / k-rate here
+            for (param, buffer) in params.iter() {
+                self.inner
+                    .set(param as i64, *buffer.as_ref().get(i).unwrap() as f64);
+            }
 
-          let input_frame: Vec<_> = inputs
-            .iter()
-            // @todo hardcoded channel one - maybe flatten?
-            .map(|channel| channel[0][i])
-            .collect();
+            let input_frame: Vec<_> = inputs
+                .iter()
+                // @todo hardcoded channel one - maybe flatten?
+                .map(|channel| channel[0][i])
+                .collect();
 
-          let mut output_frame = vec![0.0; outputs.len()]; // @todo assuming single channel
+            let mut output_frame = vec![0.0; outputs.len()]; // @todo assuming single channel
 
+            self.inner.tick(&input_frame, &mut output_frame);
 
-          self.inner.tick(&input_frame, &mut output_frame);
-
-          // We move the data from the frame buffer into the planar buffer after processing.
-          for (channel, frame) in outputs.iter_mut().zip(output_frame) {
-            // @todo assuming single channel
-            channel[0][i] = frame
-          };
-      }
+            // We move the data from the frame buffer into the planar buffer after processing.
+            for (channel, frame) in outputs.iter_mut().zip(output_frame) {
+                // @todo assuming single channel
+                channel[0][i] = frame
+            }
+        }
     }
 }
 
-// wasm_worklet::Module!(Clock)
+wasm_worklet::module!(Clock);
