@@ -59,7 +59,7 @@ impl AudioModule for Clock {
           for (param, buffer) in params.iter() {
             self.inner.set(
               param as i64,
-              *buffer.get(i).unwrap() as f64
+              *buffer.as_ref().get(i).unwrap() as f64
             );
           }
 

@@ -28,10 +28,6 @@
 
     output.connect($context.destination);
   })
-
-  // onDestroy(() => {
-  //   void output?.dispose()
-  // })
 </script>
 
 <Panel name="output" height={7} width={20} custom_style={into_style(theme)}>

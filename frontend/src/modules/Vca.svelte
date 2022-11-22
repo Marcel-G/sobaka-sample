@@ -13,7 +13,7 @@
 </script>
 
 <script lang="ts">
-  import { onDestroy, onMount } from 'svelte'
+  import { onMount } from 'svelte'
   import Panel from './shared/Panel.svelte'
   import Plug from './shared/Plug.svelte'
   import { into_style } from '../components/Theme.svelte'
@@ -25,21 +25,21 @@
   export let state: SubStore<State>
   let name = 'vca'
   let vca: GainNode
+  let gain_param: AudioParam
   let loading = true
 
   const context = get_audio_context()
 
   onMount(async () => {
     vca = new GainNode($context)
+    gain_param = vca.gain
     loading = false
   })
 
-  const value = state.select(s => s.value)
+  const gain = state.select(s => s.value)
 
-  // Update the sobaka node when the state changes
-  // $: void vca?.message({ SetLevel: $value })
-  $: if (vca && $value) {
-    vca.gain.setValueAtTime($value, 0);
+  $: if (gain_param) {
+    gain_param.setValueAtTime($gain || 0, 0);
   };
 </script>
 
@@ -48,14 +48,13 @@
     <p>Loading...</p>
   {:else}
     <span>
-      <Knob bind:value={$value} range={[-1, 1]} label="attenuverter" />
+      <Knob bind:value={$gain} range={[-1, 1]} label="attenuverter" />
     </span>
   {/if}
 
   <div slot="inputs">
     <Plug id={0} label="Signal" type={PlugType.Input} for_module={vca} />
-    <!-- @todo -- id not needed for params -->
-    <Plug id={0} label="Cv" type={PlugType.Param} for_module={vca?.gain} />
+    <Plug label="Cv" type={PlugType.Param} for_module={gain_param} />
   </div>
 
   <div slot="outputs">

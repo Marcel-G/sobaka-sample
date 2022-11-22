@@ -13,18 +13,23 @@
 
   export let for_module: AudioNode | AudioParam
   export let type: PlugType
-  export let id: number
+  export let id: number | undefined = undefined
   export let label: string
 
   const node: Writable<Element | null> = writable(null)
 
+  // @todo - make this type-safe 
+  if ([PlugType.Input, PlugType.Output].includes(type) && id === undefined) {
+    throw new Error('Input & Output plug types must have id')
+  }
+
   $: if (for_module) {
     // Register once module is defined
-    context.register(module_id, for_module as AudioNode, node, type, id)
+    context.register(module_id, for_module, node, type, id || 0)
   }
 
   function handle_click() {
-    context.make(space, module_id, type, id)
+    context.make(space, module_id, type, id || 0)
   }
 
   function on_move() {
@@ -38,7 +43,7 @@
 
   onDestroy(() => {
     cleanup()
-    context.remove(space, module_id, type, id)
+    context.remove(space, module_id, type, id || 0)
   })
 </script>
 

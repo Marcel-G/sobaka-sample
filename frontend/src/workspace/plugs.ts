@@ -25,7 +25,7 @@ const to_strong = (type: PlugType, n: number) => {
 export interface PlugContext {
   type: PlugType
   node: Readable<Element | null>
-  module: AudioNode
+  module: AudioNode | AudioParam
   id: number
 }
 
@@ -69,7 +69,7 @@ const init = () => {
   // move together with plug calls?
   const register = (
     module: string,
-    for_module: AudioNode,
+    for_module: AudioNode | AudioParam,
     node: Writable<Element | null>,
     plug_type: PlugType,
     plug_id: number

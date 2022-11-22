@@ -12,7 +12,7 @@
 
 <script lang="ts">
   import type { ClockNode } from 'sobaka-sample-audio-worklet'
-  import { onMount } from 'svelte'
+  import { onDestroy, onMount } from 'svelte'
   import Panel from './shared/Panel.svelte'
   import Plug from './shared/Plug.svelte'
   import { into_style } from '../components/Theme.svelte'
@@ -24,6 +24,7 @@
   export let state: SubStore<State>
   let name = 'clock'
   let clock: ClockNode
+  let bpm_param: AudioParam
   let loading = true
 
   const context = get_audio_context()
@@ -31,20 +32,20 @@
   onMount(async () => {
     const { ClockNode } = await import('sobaka-sample-audio-worklet')
     clock = await ClockNode.install($context)
+    bpm_param = clock.get_param('Bpm')
     loading = false
   })
 
   const bpm = state.select(s => s.bpm)
 
-  // Update the sobaka node when the state changes
-  $: if (clock) {
-    clock.get_param("Bpm").value = $bpm
+  $: if (bpm_param) {
+    bpm_param.setValueAtTime($bpm || 0, 0);
   }
 
-  // onDestroy(() => {
-  // @todo drop
-  //   void clock?.dispose()
-  // })
+  onDestroy(() => {
+    clock?.destroy()
+    clock?.free()
+  })
 </script>
 
 <Panel {name} height={7} width={5} custom_style={into_style(theme)}>
@@ -53,7 +54,7 @@
   {:else}
     <Knob bind:value={$bpm} range={[0, 240]} label="bpm">
       <div slot="inputs">
-        <Plug id={0} label="bpm_cv" type={PlugType.Input} for_module={clock?.node()} />
+        <Plug label="bpm_cv" type={PlugType.Param} for_module={bpm_param} />
       </div>
     </Knob>
   {/if}
