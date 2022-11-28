@@ -33,19 +33,28 @@
   const to_pos = to ? derived([to.node, element], to_center_point) : mouse_position
 
   if (from && to) {
-    if (to.type === PlugType.Param) {
+    if (
+      // @todo -- better type union
+      to.type === PlugType.Param &&
+      from.module instanceof AudioNode &&
+      to.module instanceof AudioParam
+    ) {
       from.module.connect(to.module, from.id)
 
       onDestroy(() => {
-        if (from && to) {
+        if (from?.module instanceof AudioNode && to?.module instanceof AudioParam) {
           from.module.disconnect(to.module, from.id)
         }
       })
-    } else if (to.type === PlugType.Input) {
+    } else if (
+      to.type === PlugType.Input &&
+      from?.module instanceof AudioNode &&
+      to?.module instanceof AudioNode
+    ) {
       from.module.connect(to.module, from.id, to.id)
 
       onDestroy(() => {
-        if (from && to) {
+        if (from?.module instanceof AudioNode && to?.module instanceof AudioNode) {
           from.module.disconnect(to.module, from.id, to.id)
         }
       })

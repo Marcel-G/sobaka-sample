@@ -598,6 +598,7 @@ dependencies = [
  "console_error_panic_hook",
  "enum-map",
  "fundsp",
+ "numeric-array",
  "rustfft",
  "tsify",
  "wasm-bindgen",

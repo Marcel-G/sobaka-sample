@@ -13,7 +13,7 @@ all = ["default"]
 default = ["console_error_panic_hook"]
 
 [dependencies]
-# numeric-array = "0.5.2"
+numeric-array = "0.5.2"
 # rand = "0.8.5"
 
 rustfft = { version = "6.0.1" }
@@ -47,5 +47,5 @@ anyhow = "1.0.56"
 [profile.release]
 # Tell `rustc` to optimize for small code size.
 # opt-level = 3
-opt-level = "s"
+# opt-level = "s"
 

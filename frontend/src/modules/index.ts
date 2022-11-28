@@ -1,7 +1,7 @@
 import Clock, { initialState as clockInitialState } from './Clock.svelte'
 // import Envelope, { initialState as envelopeInitialState } from './Envelope.svelte'
 // import Filter, { initialState as filterInitialState } from './Filter.svelte'
-// import Oscillator, { initialState as oscillatorInitialState } from './Oscillator.svelte'
+import Oscillator, { initialState as oscillatorInitialState } from './Oscillator.svelte'
 // import Parameter, { initialState as ParameterInitialState } from './Parameter.svelte'
 // import Reverb, { initialState as reverbInitialState } from './Reverb.svelte'
 // import Sequencer, { initialState as sequencerInitialState } from './Sequencer.svelte'
@@ -20,14 +20,14 @@ import Vca, { initialState as vcaInitialState } from './Vca.svelte'
 // import SampleAndHold, {
 //   initialState as sampleAndHoldInitialState
 // } from './SampleAndHold.svelte'
-import Sampler, { initialState as samplerInitialState } from './Sampler/Sampler.svelte'
+// import Sampler, { initialState as samplerInitialState } from './Sampler/Sampler.svelte'
 import { Module } from 'src/workspace/state'
 
 export const MODULES = {
   Clock,
   // Envelope,
   // Filter,
-  // Oscillator,
+  Oscillator,
   // Parameter,
   // Reverb,
   // Sequencer,
@@ -53,13 +53,13 @@ export const INITIAL_STATE = {
   Clock: clockInitialState,
   // Envelope: envelopeInitialState,
   // Filter: filterInitialState,
-  // Oscillator: oscillatorInitialState,
+  Oscillator: oscillatorInitialState,
   // Parameter: ParameterInitialState,
   // Reverb: reverbInitialState,
   // Sequencer: sequencerInitialState,
   // StepSequencer: stepSequencerInitialState,
   Output: outputInitialState,
-  // Vca: vcaInitialState,
+  Vca: vcaInitialState,
   // Noise: noiseInitialState,
   // Delay: delayInitialState,
   // Scope: scopeInitialState,

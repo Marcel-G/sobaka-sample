@@ -1,79 +1,133 @@
-use super::ModuleContext;
 use crate::dsp::{
-    join::dsp_join,
-    messaging::MessageHandler,
     oscillator::{sobaka_saw, sobaka_square, sobaka_triangle},
-    shared::Share,
     trigger::reset_trigger,
     volt_hz,
 };
 use fundsp::prelude::*;
-use serde::{Deserialize, Serialize};
-use ts_rs::TS;
+use wasm_worklet::{types::{AudioModule, ParamMap}};
 
-#[derive(Default, Serialize, Deserialize, TS)]
-#[ts(export)]
-pub struct OscillatorParams {
-    pub pitch: f32,
-    pub saw: f32,
-    pub sine: f32,
-    pub square: f32,
-    pub triangle: f32,
+wasm_worklet::derive_param! {
+    pub enum OscillatorParams {
+        #[param(
+            automation_rate = "a-rate",
+            min_value = 0.,
+            max_value = 600.,
+            default_value = 120.
+        )]
+        Pitch,
+        #[param(
+            automation_rate = "a-rate",
+            min_value = 0.,
+            max_value = 1.,
+            default_value = 0.25
+        )]
+        Saw,
+        #[param(
+            automation_rate = "a-rate",
+            min_value = 0.,
+            max_value = 1.,
+            default_value = 0.25
+        )]
+        Sine,
+        #[param(
+            automation_rate = "a-rate",
+            min_value = 0.,
+            max_value = 1.,
+            default_value = 0.25
+        )]
+        Square,
+        #[param(
+            automation_rate = "a-rate",
+            min_value = 0.,
+            max_value = 1.,
+            default_value = 0.25
+        )]
+        Triangle
+    }
 }
 
-/// Incoming commands into the oscillator module
-#[derive(Serialize, Deserialize, TS, Clone)]
-#[ts(export)]
-pub enum OscillatorCommand {
-    /// Sets the pitch of the oscillator
-    SetPitch(f32),
-    /// Sets the level of the saw wave (0-1)
-    SetSawLevel(f32),
-    /// Sets the level of the sine wave (0-1)
-    SetSineLevel(f32),
-    /// Sets the level of the square wave (0-1)
-    SetSquareLevel(f32),
-    /// Sets the level of the triangle wave (0-1)
-    SetTriangleLevel(f32),
+pub struct Oscillator {
+    inner: Box<dyn AudioUnit32>,
 }
 
-pub fn oscillator(
-    params: &OscillatorParams,
-    context: &mut ModuleContext<OscillatorCommand>,
-) -> impl AudioUnit32 {
-    let multi_osc = stack::<U4, _, _, _>(|_n| {
-        let input = split::<U2, _>()
-            >> ((pass() + tag(4, 0.0)) | pass())
-            >> (map::<_, _, U1, _>(|pitch| volt_hz(pitch[0])) | pass());
-        let attenuated_saw = sobaka_saw() * tag(0, params.saw);
-        let attenuated_sine = sine_phase(0.0) * tag(1, params.sine);
-        let attenuated_square = sobaka_square() * tag(2, params.square);
-        let attenuated_triangle = sobaka_triangle() * tag(3, params.triangle);
+impl AudioModule for Oscillator {
+    type Param = OscillatorParams;
 
-        input
-            >> ((attenuated_saw & attenuated_sine & attenuated_square & attenuated_triangle)
-                | pass())
-            // if the pitch is 0, we'll just mute the output
-            >> map(|f| if f[1] > 0.0 { f[0] } else { 0.0 })
-            >> shape(Shape::Tanh(0.8))
-    }) >> dsp_join::<U4, _>();
+    const INPUTS: u32 = 2;
+    const OUTPUTS: u32 = 1;
 
-    let out = reset_trigger(oversample(multi_osc)).share();
+    fn create() -> Self {
+        let module = {
+            let multi_osc = {
+                let input = split::<U2, _>()
+                    >> ((pass() + tag(OscillatorParams::Pitch as i64, 0.0)) | pass())
+                    >> (map::<_, _, U1, _>(|pitch| volt_hz(pitch[0])) | pass());
+                let attenuated_saw = sobaka_saw() * tag(OscillatorParams::Saw as i64, 0.0);
+                let attenuated_sine = sine_phase(0.0) * tag(OscillatorParams::Sine as i64, 0.0);
+                let attenuated_square = sobaka_square() * tag(OscillatorParams::Square as i64, 0.0);
+                let attenuated_triangle =
+                    sobaka_triangle() * tag(OscillatorParams::Triangle as i64, 0.0);
 
-    context.set_tx(
-        out.clone()
-            .message_handler(|unit, command: OscillatorCommand| match command {
-                OscillatorCommand::SetPitch(pitch) => unit.set(4, pitch.into()),
-                OscillatorCommand::SetSawLevel(level) => unit.set(0, level.clamp(0.0, 1.0).into()),
-                OscillatorCommand::SetSineLevel(level) => unit.set(1, level.clamp(0.0, 1.0).into()),
-                OscillatorCommand::SetSquareLevel(level) => {
-                    unit.set(2, level.clamp(0.0, 1.0).into())
-                }
-                OscillatorCommand::SetTriangleLevel(level) => {
-                    unit.set(3, level.clamp(0.0, 1.0).into())
-                }
-            }),
-    );
+                input
+                    >> ((attenuated_saw & attenuated_sine & attenuated_square & attenuated_triangle)
+                        | pass())
+                    // if the pitch is 0, we'll just mute the output
+                    >> map(|f| if f[1] > 0.0 { f[0] } else { 0.0 })
+                    >> shape(Shape::Tanh(0.8))
+            };
 
-    out
+            reset_trigger(oversample(multi_osc))
+        };
+
+        Oscillator {
+            inner: Box::new(module),
+        }
+    }
+
+    fn process(
+        &mut self,
+        inputs: &[&[[f32; 128]]],
+        outputs: &mut [&mut [[f32; 128]]],
+        params: &ParamMap<Self::Param>,
+    ) {
+        for i in 0..128 {
+            // Write all the paramaters into the AudioUnit. Usually, these will be the same value.
+            // Could possibly distinguish between a-rate / k-rate here
+            for (param, buffer) in params.iter() {
+                self.inner
+                    .set(param as i64, *buffer.as_ref().get(i).unwrap() as f64);
+            }
+
+            let input_frame: Vec<_> = inputs
+                .iter()
+                // @todo hardcoded channel one - maybe flatten?
+                .map(|channel| channel[0][i])
+                .collect();
+
+            let mut output_frame = vec![0.0; outputs.len()]; // @todo assuming single channel
+
+            assert!(
+                input_frame.len() == self.inner.inputs(),
+                "buffers = {}, inputs = {}",
+                input_frame.len(),
+                self.inner.inputs()
+            );
+            assert!(
+                output_frame.len() == self.inner.outputs(),
+                "buffers = {}, ouputs = {}",
+                output_frame.len(),
+                self.inner.outputs()
+            );
+
+            self.inner.tick(&input_frame, &mut output_frame);
+
+            // We move the data from the frame buffer into the planar buffer after processing.
+            for (channel, frame) in outputs.iter_mut().zip(output_frame) {
+                // @todo assuming single channel
+                channel[0][i] = frame
+            }
+        }
+    }
 }
+
+wasm_worklet::module!(Oscillator);

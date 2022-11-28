@@ -1,5 +1,5 @@
 use fundsp::prelude::*;
-use wasm_worklet::types::{AudioModule, ParamMap};
+use wasm_worklet::{types::{AudioModule, ParamMap}};
 
 wasm_worklet::derive_param! {
     pub enum ClockParams {
@@ -20,7 +20,7 @@ pub struct Clock {
 impl AudioModule for Clock {
     type Param = ClockParams;
 
-    const INPUTS: u32 = 1;
+    const INPUTS: u32 = 0;
     const OUTPUTS: u32 = 5;
 
     fn create() -> Self {
@@ -32,7 +32,7 @@ impl AudioModule for Clock {
             let clock_divider_node =
                 branch::<U5, _, _, _>(|n| mul(divide[n as usize]) >> clock_square());
 
-            let bpm = (pass() + tag(ClockParams::Bpm as i64, 0.0)) >> map(|f| bpm_hz(f[0]));
+            let bpm = tag(ClockParams::Bpm as i64, 0.0) >> map(|f| bpm_hz(f[0]));
 
             bpm >> clock_divider_node
         };
@@ -63,6 +63,19 @@ impl AudioModule for Clock {
                 .collect();
 
             let mut output_frame = vec![0.0; outputs.len()]; // @todo assuming single channel
+
+            assert!(
+                input_frame.len() == self.inner.inputs(),
+                "buffers = {}, inputs = {}",
+                input_frame.len(),
+                self.inner.inputs()
+            );
+            assert!(
+                output_frame.len() == self.inner.outputs(),
+                "buffers = {}, ouputs = {}",
+                output_frame.len(),
+                self.inner.outputs()
+            );
 
             self.inner.tick(&input_frame, &mut output_frame);
 

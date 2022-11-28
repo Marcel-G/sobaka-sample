@@ -24,6 +24,7 @@
   export let state: SubStore<State>
   let name = 'clock'
   let clock: ClockNode
+  let node: AudioNode
   let bpm_param: AudioParam
   let loading = true
 
@@ -32,15 +33,14 @@
   onMount(async () => {
     const { ClockNode } = await import('sobaka-sample-audio-worklet')
     clock = await ClockNode.install($context)
+    node = clock.node()
     bpm_param = clock.get_param('Bpm')
     loading = false
   })
 
   const bpm = state.select(s => s.bpm)
 
-  $: if (bpm_param) {
-    bpm_param.setValueAtTime($bpm || 0, 0);
-  }
+  $: bpm_param?.setValueAtTime($bpm || 0, 0);
 
   onDestroy(() => {
     clock?.destroy()
@@ -60,10 +60,10 @@
   {/if}
 
   <div slot="outputs">
-    <Plug id={0} label="1/1" type={PlugType.Output} for_module={clock?.node()} />
-    <Plug id={1} label="1/2" type={PlugType.Output} for_module={clock?.node()} />
-    <Plug id={2} label="1/4" type={PlugType.Output} for_module={clock?.node()} />
-    <Plug id={3} label="1/8" type={PlugType.Output} for_module={clock?.node()} />
-    <Plug id={4} label="1/16" type={PlugType.Output} for_module={clock?.node()} />
+    <Plug id={0} label="1/1" type={PlugType.Output} for_module={node} />
+    <Plug id={1} label="1/2" type={PlugType.Output} for_module={node} />
+    <Plug id={2} label="1/4" type={PlugType.Output} for_module={node} />
+    <Plug id={3} label="1/8" type={PlugType.Output} for_module={node} />
+    <Plug id={4} label="1/16" type={PlugType.Output} for_module={node} />
   </div>
 </Panel>

@@ -5,7 +5,7 @@ pub mod clock;
 // pub mod lfo;
 // pub mod midi;
 // pub mod noise;
-// pub mod oscillator;
+pub mod oscillator;
 // pub mod parameter;
 // pub mod quantiser;
 // pub mod reverb;
