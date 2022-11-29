@@ -1,8 +1,8 @@
-use crate::dsp::{
+use crate::{dsp::{
     oscillator::{sobaka_saw, sobaka_square, sobaka_triangle},
     trigger::reset_trigger,
     volt_hz,
-};
+}, fundsp_worklet::FundspWorklet};
 use fundsp::prelude::*;
 use wasm_worklet::{types::{AudioModule, ParamMap}};
 
@@ -47,7 +47,7 @@ wasm_worklet::derive_param! {
 }
 
 pub struct Oscillator {
-    inner: Box<dyn AudioUnit32>,
+    inner: FundspWorklet,
 }
 
 impl AudioModule for Oscillator {
@@ -80,53 +80,16 @@ impl AudioModule for Oscillator {
         };
 
         Oscillator {
-            inner: Box::new(module),
+            inner: FundspWorklet::create(module),
         }
     }
-
     fn process(
         &mut self,
         inputs: &[&[[f32; 128]]],
         outputs: &mut [&mut [[f32; 128]]],
         params: &ParamMap<Self::Param>,
     ) {
-        for i in 0..128 {
-            // Write all the paramaters into the AudioUnit. Usually, these will be the same value.
-            // Could possibly distinguish between a-rate / k-rate here
-            for (param, buffer) in params.iter() {
-                self.inner
-                    .set(param as i64, *buffer.as_ref().get(i).unwrap() as f64);
-            }
-
-            let input_frame: Vec<_> = inputs
-                .iter()
-                // @todo hardcoded channel one - maybe flatten?
-                .map(|channel| channel[0][i])
-                .collect();
-
-            let mut output_frame = vec![0.0; outputs.len()]; // @todo assuming single channel
-
-            assert!(
-                input_frame.len() == self.inner.inputs(),
-                "buffers = {}, inputs = {}",
-                input_frame.len(),
-                self.inner.inputs()
-            );
-            assert!(
-                output_frame.len() == self.inner.outputs(),
-                "buffers = {}, ouputs = {}",
-                output_frame.len(),
-                self.inner.outputs()
-            );
-
-            self.inner.tick(&input_frame, &mut output_frame);
-
-            // We move the data from the frame buffer into the planar buffer after processing.
-            for (channel, frame) in outputs.iter_mut().zip(output_frame) {
-                // @todo assuming single channel
-                channel[0][i] = frame
-            }
-        }
+        self.inner.process(inputs, outputs, params);
     }
 }
 

@@ -3,6 +3,7 @@ use wasm_bindgen::prelude::wasm_bindgen;
 
 pub mod dsp;
 pub mod module;
+mod fundsp_worklet;
 mod utils;
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
