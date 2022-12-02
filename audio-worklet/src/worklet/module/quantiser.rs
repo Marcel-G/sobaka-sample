@@ -1,40 +1,50 @@
 use crate::{
-    context::ModuleContext,
-    dsp::{messaging::MessageHandler, quantiser::dsp_quantiser, shared::Share},
+    dsp::{quantiser::{Quantiser as DSPQuantiser, dsp_quantiser}, shared::{Share, Shared}}, fundsp_worklet::FundspWorklet,
 };
-use fundsp::prelude::*;
-use serde::{Deserialize, Serialize};
-use ts_rs::TS;
+use wasm_worklet::{types::{AudioModule, ParamMap}, derive_command};
 
-#[derive(Default, Serialize, Deserialize, TS)]
-#[ts(export)]
-pub struct QuantiserParams {
-    pub notes: [bool; 12],
+derive_command! {
+    pub enum QuantiserCommand {
+        UpdateNotes([bool; 12]),
+    }
 }
 
-/// Incoming commands into the quantiser module.
-#[derive(Serialize, Deserialize, TS, Clone)]
-#[ts(export)]
-pub enum QuantiserCommand {
-    /// Updates the notes to quantise to
-    UpdateNotes([bool; 12]),
+pub struct Quantiser {
+    handle: Shared<DSPQuantiser>,
+    inner: FundspWorklet,
 }
 
-pub fn quantiser(
-    params: &QuantiserParams,
-    context: &mut ModuleContext<QuantiserCommand>,
-) -> impl AudioUnit32 {
-    let module = stack::<U4, _, _, _>(|_n| dsp_quantiser(params.notes)).share();
+impl AudioModule for Quantiser {
+    type Command = QuantiserCommand;
 
-    context.set_tx(module.clone().message_handler(
-        |unit, command: QuantiserCommand| match command {
-            QuantiserCommand::UpdateNotes(notes) => (0..4).for_each(|i| {
-                unit.node_mut(i).update_notes(notes);
-            }),
-        },
-    ));
+    fn create() -> Self {
+        let init = [false; 12];
+        let module = dsp_quantiser(init).share();
 
-    module
+        let handle = module.clone();
+
+        Quantiser {
+            handle,
+            inner: FundspWorklet::create(module),
+        }
+    }
+
+    fn on_command(&mut self, command: Self::Command) {
+        match command {
+            QuantiserCommand::UpdateNotes(notes) => {
+                self.handle.lock().update_notes(notes)
+            },
+        }
+    }
+
+    fn process(
+        &mut self,
+        inputs: &[&[[f32; 128]]],
+        outputs: &mut [&mut [[f32; 128]]],
+        params: &ParamMap<Self::Param>,
+    ) {
+        self.inner.process(inputs, outputs, params);
+    }
 }
 
-// @todo chord generator
+wasm_worklet::module!(Quantiser);

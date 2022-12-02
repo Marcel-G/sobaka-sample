@@ -16,7 +16,7 @@
     return getComputedStyle(canvas).getPropertyValue(name)
   }
 
-  const ctx = get(context);
+  const ctx = get(context)
 
   let analyserNode = new AnalyserNode(ctx, { fftSize })
 

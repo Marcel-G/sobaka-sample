@@ -1,36 +1,49 @@
 use crate::{
-    context::ModuleContext,
-    dsp::{messaging::MessageHandler, shared::Share, trigger::reset_trigger},
+    dsp::{trigger::reset_trigger}, fundsp_worklet::FundspWorklet,
 };
 use fundsp::prelude::*;
-use serde::{Deserialize, Serialize};
-use ts_rs::TS;
+use wasm_worklet::types::{AudioModule, ParamMap};
 
-#[derive(Default, Serialize, Deserialize, TS)]
-#[ts(export)]
-pub struct DelayParams {
-    pub time: f32,
+wasm_worklet::derive_param! {
+    pub enum DelayParams {
+        #[param(
+            automation_rate = "a-rate",
+            min_value = 0.,
+            max_value = 10.,
+            default_value = 1.
+        )]
+        DelayTime,
+    }
 }
 
-/// Incoming commands into the delay module
-#[derive(Serialize, Deserialize, TS, Clone)]
-#[ts(export)]
-pub enum DelayCommand {
-    /// Sets the delay time in seconds
-    SetDelay(f64),
+pub struct Delay {
+    inner: FundspWorklet,
 }
 
-pub fn delay(params: &DelayParams, context: &mut ModuleContext<DelayCommand>) -> impl AudioUnit32 {
-    let inputs = pass() | (pass() + tag(0, params.time));
-    // @todo resetting the tap delay is expensive so I should add a way to limit it
-    let unit = reset_trigger(inputs >> tap(0.0, 10.0)).share();
+impl AudioModule for Delay {
+    type Param = DelayParams;
 
-    context.set_tx(
-        unit.clone()
-            .message_handler(|unit, command: DelayCommand| match command {
-                DelayCommand::SetDelay(time) => unit.set(0, time.clamp(0.0, 10.0)),
-            }),
-    );
+    const INPUTS: u32 = 2;
 
-    unit
+    fn create() -> Self {
+        let module = {
+            let inputs = pass() | tag(DelayParams::DelayTime as i64, 0.0);
+            reset_trigger(inputs >> tap(0.0, 10.0))
+        };
+
+        Delay {
+            inner: FundspWorklet::create(module),
+        }
+    }
+
+    fn process(
+        &mut self,
+        inputs: &[&[[f32; 128]]],
+        outputs: &mut [&mut [[f32; 128]]],
+        params: &ParamMap<Self::Param>,
+    ) {
+        self.inner.process(inputs, outputs, params);
+    }
 }
+
+wasm_worklet::module!(Delay);

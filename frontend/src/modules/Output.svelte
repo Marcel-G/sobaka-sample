@@ -26,7 +26,7 @@
     output = $context.createChannelMerger(2)
     loading = false
 
-    output.connect($context.destination);
+    output.connect($context.destination)
   })
 </script>
 
@@ -40,8 +40,16 @@
   {/if}
 
   <div slot="inputs">
-    <Plug id={0} label="l" type={PlugType.Input} for_module={output} />
-    <Plug id={1} label="r" type={PlugType.Input} for_module={output} />
+    <Plug
+      id={0}
+      label="l"
+      ctx={{ type: PlugType.Input, connectIndex: 0, module: output }}
+    />
+    <Plug
+      id={1}
+      label="r"
+      ctx={{ type: PlugType.Input, connectIndex: 1, module: output }}
+    />
   </div>
 </Panel>
 

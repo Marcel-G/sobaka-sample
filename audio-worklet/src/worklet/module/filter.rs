@@ -1,49 +1,64 @@
 use crate::{
-    context::ModuleContext,
-    dsp::{messaging::MessageHandler, param::param, shared::Share, volt_hz},
+    dsp::{param::param, volt_hz}, fundsp_worklet::FundspWorklet,
 };
 use fundsp::prelude::*;
-use serde::{Deserialize, Serialize};
-use ts_rs::TS;
+use wasm_worklet::types::{AudioModule, ParamMap};
 
-#[derive(Default, Serialize, Deserialize, TS)]
-#[ts(export)]
-pub struct FilterParams {
-    pub frequency: f32,
-    pub q: f32,
+wasm_worklet::derive_param! {
+    pub enum FilterParams {
+        #[param(
+            automation_rate = "a-rate",
+            min_value = 0.,
+            max_value = 1.0,
+            default_value = 0.1
+        )]
+        Q,
+        #[param(
+            automation_rate = "a-rate",
+            min_value = 0.,
+            max_value = 8.0,
+            default_value = 0.1
+        )]
+        Frequency,
+    }
 }
 
-/// Incoming commands into the filter module
-#[derive(Serialize, Deserialize, TS, Clone)]
-#[ts(export)]
-pub enum FilterCommand {
-    /// Sets the filter cutoff frequency in Hz
-    SetFrequency(f64),
-    /// Sets the filter Q factor
-    SetQ(f64),
+pub struct Filter {
+    inner: FundspWorklet,
 }
 
-pub fn filter(
-    params: &FilterParams,
-    context: &mut ModuleContext<FilterCommand>,
-) -> impl AudioUnit32 {
-    let input = (pass()
-        | ((pass() + param(0, params.frequency)) >> map(|f| volt_hz(f[0])) >> clip_to(2e1, 2e4))
-        | (pass() + param(1, params.q)) >> clip_to(0.0, 10.0))
-    .share();
+impl AudioModule for Filter {
+    type Param = FilterParams;
 
-    context.set_tx(
+    const INPUTS: u32 = 1;
+    const OUTPUTS: u32 = 4;
+
+    fn create() -> Self {
+        let module = {
+            let input = pass()
+                | ((param(FilterParams::Frequency as i64, 0.0)) >> map(|f| volt_hz(f[0])) >> clip_to(2e1, 2e4))
+                | (param(FilterParams::Q as i64, 0.0)) >> clip_to(0.0, 10.0);
+
         input
-            .clone()
-            .message_handler(|unit, message: FilterCommand| match message {
-                FilterCommand::SetFrequency(frequency) => unit.set(0, frequency.clamp(0.0, 10.0)),
-                FilterCommand::SetQ(q) => unit.set(1, q.clamp(0.0, 10.0)),
-            }),
-    );
+            >> (lowpass::<f32, f32>()
+                ^ highpass::<f32, f32>()
+                ^ bandpass::<f32, f32>()
+                ^ moog::<f32, f32>())
+        };
 
-    input
-        >> (lowpass::<f32, f32>()
-            ^ highpass::<f32, f32>()
-            ^ bandpass::<f32, f32>()
-            ^ moog::<f32, f32>())
+        Filter {
+            inner: FundspWorklet::create(module),
+        }
+    }
+
+    fn process(
+        &mut self,
+        inputs: &[&[[f32; 128]]],
+        outputs: &mut [&mut [[f32; 128]]],
+        params: &ParamMap<Self::Param>,
+    ) {
+        self.inner.process(inputs, outputs, params);
+    }
 }
+
+wasm_worklet::module!(Filter);

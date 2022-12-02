@@ -11,8 +11,7 @@
 </script>
 
 <script lang="ts">
-  import type { ClockNode } from 'sobaka-sample-audio-worklet'
-  import { onDestroy, onMount } from 'svelte'
+  import { onMount } from 'svelte'
   import Panel from './shared/Panel.svelte'
   import Plug from './shared/Plug.svelte'
   import { into_style } from '../components/Theme.svelte'
@@ -23,29 +22,46 @@
 
   export let state: SubStore<State>
   let name = 'clock'
-  let clock: ClockNode
-  let node: AudioNode
-  let bpm_param: AudioParam
+  let clock: OscillatorNode[] = []
+  let freq_cv: AudioParam;
   let loading = true
+  const multiplier = [1.0, 2.0, 4.0, 8.0, 16.0]
 
   const context = get_audio_context()
 
   onMount(async () => {
-    const { ClockNode } = await import('sobaka-sample-audio-worklet')
-    clock = await ClockNode.install($context)
-    node = clock.node()
-    bpm_param = clock.get_param('Bpm')
+    const frequency = new ConstantSourceNode($context);
+    freq_cv = frequency.offset
+
+    // @todo -- Not sure about it, they can all get out of sync pretty easily
+    clock = [
+      new OscillatorNode($context, { type: 'square' }),
+      new OscillatorNode($context, { type: 'square' }),
+      new OscillatorNode($context, { type: 'square' }),
+      new OscillatorNode($context, { type: 'square' }),
+      new OscillatorNode($context, { type: 'square' }),
+    ]
     loading = false
+
+    let time = $context.currentTime
+
+    clock.forEach(node => {
+      frequency.connect(node.frequency, 0)
+      node.start(time)
+    })
+
+    frequency.start(time)
   })
 
   const bpm = state.select(s => s.bpm)
 
-  $: bpm_param?.setValueAtTime($bpm || 0, 0);
-
-  onDestroy(() => {
-    clock?.destroy()
-    clock?.free()
-  })
+  $: {
+    let time = $context.currentTime
+    let freq = ($bpm || 0) / 60
+    clock?.forEach((node, index) => {
+      node.frequency.setValueAtTime(freq * multiplier[index], time)
+    })
+  }
 </script>
 
 <Panel {name} height={7} width={5} custom_style={into_style(theme)}>
@@ -54,16 +70,22 @@
   {:else}
     <Knob bind:value={$bpm} range={[0, 240]} label="bpm">
       <div slot="inputs">
-        <Plug label="bpm_cv" type={PlugType.Param} for_module={bpm_param} />
+        <Plug id={0} label="bpm_cv" ctx={{ type: PlugType.Param, param: freq_cv }} />
       </div>
     </Knob>
   {/if}
 
   <div slot="outputs">
-    <Plug id={0} label="1/1" type={PlugType.Output} for_module={node} />
-    <Plug id={1} label="1/2" type={PlugType.Output} for_module={node} />
-    <Plug id={2} label="1/4" type={PlugType.Output} for_module={node} />
-    <Plug id={3} label="1/8" type={PlugType.Output} for_module={node} />
-    <Plug id={4} label="1/16" type={PlugType.Output} for_module={node} />
+    {#each clock as output, i}
+      <Plug
+        id={i}
+        label={`1/${multiplier[i]}`}
+        ctx={{
+          type: PlugType.Output,
+          module: output,
+          connectIndex: 0
+        }}
+      />
+    {/each}
   </div>
 </Panel>

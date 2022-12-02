@@ -88,15 +88,15 @@
     <Knob bind:value={$triangle} range={[0, 1]} label="triangle" />
   {/if}
   <div slot="inputs">
-    <Plug id={1} label="pitch_1 cv" type={PlugType.Input} for_module={node} />
+    <Plug id={0} label="pitch_1 cv" ctx={{ type: PlugType.Input, module: node, connectIndex: 1 }} />
     <!-- @todo polyphony
       <Plug id={2} label="pitch_2 cv" type={PlugType.Input} for_module={oscillator} />
       <Plug id={3} label="pitch_3 cv" type={PlugType.Input} for_module={oscillator} />
       <Plug id={4} label="pitch_4 cv" type={PlugType.Input} for_module={oscillator} />
     -->
-    <Plug id={0} label="reset" type={PlugType.Input} for_module={node} />
+    <Plug id={1} label="reset" ctx={{ type: PlugType.Input, module: node, connectIndex: 0 }} />
   </div>
   <div slot="outputs">
-    <Plug id={0} label="output" type={PlugType.Output} for_module={node} />
+    <Plug id={0} label="output" ctx={{ type: PlugType.Output, module: node, connectIndex: 0 }} />
   </div>
 </Panel>

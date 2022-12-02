@@ -1,4 +1,4 @@
-use utils::set_panic_hook;
+use utils::panic_hook::set_panic_hook;
 use wasm_bindgen::prelude::wasm_bindgen;
 
 pub mod dsp;

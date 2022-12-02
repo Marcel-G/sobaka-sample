@@ -38,9 +38,7 @@
 
   const gain = state.select(s => s.value)
 
-  $: if (gain_param) {
-    gain_param.setValueAtTime($gain || 0, 0);
-  };
+  $: gain_param?.setValueAtTime($gain || 0, $context.currentTime)
 </script>
 
 <Panel {name} height={6} width={5} custom_style={into_style(theme)}>
@@ -53,11 +51,11 @@
   {/if}
 
   <div slot="inputs">
-    <Plug id={0} label="Signal" type={PlugType.Input} for_module={vca} />
-    <Plug label="Cv" type={PlugType.Param} for_module={gain_param} />
+    <Plug id={0} label="Signal" ctx={{ type: PlugType.Input, module: vca, connectIndex: 0 }} />
+    <Plug id={1} label="Cv" ctx={{ type: PlugType.Param, param: gain_param }} />
   </div>
 
   <div slot="outputs">
-    <Plug id={0} label="Output" type={PlugType.Output} for_module={vca} />
+    <Plug id={0} label="Output" ctx={{ type: PlugType.Output, module: vca, connectIndex: 0 }} />
   </div>
 </Panel>

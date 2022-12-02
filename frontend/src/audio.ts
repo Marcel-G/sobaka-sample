@@ -19,7 +19,7 @@ export const init_audio = () => {
   document.addEventListener('click', handle_interaction, { once: true })
 
   const load = async () => {
-    await init();
+    await init()
     context = new AudioContext()
 
     audio_context.update(s => {

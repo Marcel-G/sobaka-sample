@@ -33,29 +33,24 @@
   const to_pos = to ? derived([to.node, element], to_center_point) : mouse_position
 
   if (from && to) {
-    if (
-      // @todo -- better type union
-      to.type === PlugType.Param &&
-      from.module instanceof AudioNode &&
-      to.module instanceof AudioParam
-    ) {
-      from.module.connect(to.module, from.id)
+    if (to.ctx.type === PlugType.Param && from.ctx.type === PlugType.Output) {
+      from.ctx.module?.connect(to.ctx.param, from.ctx.connectIndex)
 
       onDestroy(() => {
-        if (from?.module instanceof AudioNode && to?.module instanceof AudioParam) {
-          from.module.disconnect(to.module, from.id)
+        if (to?.ctx.type === PlugType.Param && from?.ctx.type === PlugType.Output) {
+          from.ctx.module?.disconnect(to.ctx.param, from.ctx.connectIndex)
         }
       })
-    } else if (
-      to.type === PlugType.Input &&
-      from?.module instanceof AudioNode &&
-      to?.module instanceof AudioNode
-    ) {
-      from.module.connect(to.module, from.id, to.id)
+    } else if (to.ctx.type === PlugType.Input && from.ctx.type === PlugType.Output) {
+      from.ctx.module?.connect(to.ctx.module, from.ctx.connectIndex, to.ctx.connectIndex)
 
       onDestroy(() => {
-        if (from?.module instanceof AudioNode && to?.module instanceof AudioNode) {
-          from.module.disconnect(to.module, from.id, to.id)
+        if (to?.ctx.type === PlugType.Input && from?.ctx.type === PlugType.Output) {
+          from.ctx.module?.disconnect(
+            to.ctx.module,
+            from.ctx.connectIndex,
+            to.ctx.connectIndex
+          )
         }
       })
     } else {
