@@ -1,5 +1,5 @@
 use fundsp::prelude::*;
-use wasm_worklet::{types::{AudioModule, ParamMap}};
+use wasm_worklet::types::{AudioModule, ParamMap};
 
 use crate::fundsp_worklet::FundspWorklet;
 

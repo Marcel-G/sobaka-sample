@@ -1,10 +1,13 @@
-use crate::{dsp::{
-    oscillator::{sobaka_saw, sobaka_square, sobaka_triangle},
-    trigger::reset_trigger,
-    volt_hz,
-}, fundsp_worklet::FundspWorklet};
+use crate::{
+    dsp::{
+        oscillator::{sobaka_saw, sobaka_square, sobaka_triangle},
+        trigger::reset_trigger,
+        volt_hz,
+    },
+    fundsp_worklet::FundspWorklet,
+};
 use fundsp::prelude::*;
-use wasm_worklet::{types::{AudioModule, ParamMap}};
+use wasm_worklet::types::{AudioModule, ParamMap};
 
 wasm_worklet::derive_param! {
     pub enum OscillatorParams {

@@ -1,7 +1,14 @@
 use crate::{
-    dsp::{quantiser::{Quantiser as DSPQuantiser, dsp_quantiser}, shared::{Share, Shared}}, fundsp_worklet::FundspWorklet,
+    dsp::{
+        quantiser::{dsp_quantiser, Quantiser as DSPQuantiser},
+        shared::{Share, Shared},
+    },
+    fundsp_worklet::FundspWorklet,
 };
-use wasm_worklet::{types::{AudioModule, ParamMap}, derive_command};
+use wasm_worklet::{
+    derive_command,
+    types::{AudioModule, ParamMap},
+};
 
 derive_command! {
     pub enum QuantiserCommand {
@@ -31,9 +38,7 @@ impl AudioModule for Quantiser {
 
     fn on_command(&mut self, command: Self::Command) {
         match command {
-            QuantiserCommand::UpdateNotes(notes) => {
-                self.handle.lock().update_notes(notes)
-            },
+            QuantiserCommand::UpdateNotes(notes) => self.handle.lock().update_notes(notes),
         }
     }
 

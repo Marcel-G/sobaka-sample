@@ -1,5 +1,6 @@
 use crate::{
-    dsp::{param::param, volt_hz}, fundsp_worklet::FundspWorklet,
+    dsp::{param::param, volt_hz},
+    fundsp_worklet::FundspWorklet,
 };
 use fundsp::prelude::*;
 use wasm_worklet::types::{AudioModule, ParamMap};
@@ -36,14 +37,16 @@ impl AudioModule for Filter {
     fn create() -> Self {
         let module = {
             let input = pass()
-                | ((param(FilterParams::Frequency as i64, 0.0)) >> map(|f| volt_hz(f[0])) >> clip_to(2e1, 2e4))
+                | ((param(FilterParams::Frequency as i64, 0.0))
+                    >> map(|f| volt_hz(f[0]))
+                    >> clip_to(2e1, 2e4))
                 | (param(FilterParams::Q as i64, 0.0)) >> clip_to(0.0, 10.0);
 
-        input
-            >> (lowpass::<f32, f32>()
-                ^ highpass::<f32, f32>()
-                ^ bandpass::<f32, f32>()
-                ^ moog::<f32, f32>())
+            input
+                >> (lowpass::<f32, f32>()
+                    ^ highpass::<f32, f32>()
+                    ^ bandpass::<f32, f32>()
+                    ^ moog::<f32, f32>())
         };
 
         Filter {

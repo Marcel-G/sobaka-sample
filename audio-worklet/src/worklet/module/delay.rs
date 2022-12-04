@@ -1,6 +1,4 @@
-use crate::{
-    dsp::{trigger::reset_trigger}, fundsp_worklet::FundspWorklet,
-};
+use crate::{dsp::trigger::reset_trigger, fundsp_worklet::FundspWorklet};
 use fundsp::prelude::*;
 use wasm_worklet::types::{AudioModule, ParamMap};
 
