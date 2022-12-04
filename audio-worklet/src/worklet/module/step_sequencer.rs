@@ -1,76 +1,93 @@
-use super::ModuleContext;
+use std::convert::TryInto;
+
 use crate::{
-    dsp::{
-        messaging::MessageHandler,
-        shared::Share,
-        stepped::{stepped, SteppedEvent},
-    },
-    utils::observer::Observable,
+    dsp::{messaging::Emitter, shared::Share, stepped::SteppedEvent, self},
+    fundsp_worklet::FundspWorklet,
 };
 use fundsp::prelude::*;
-use serde::{Deserialize, Serialize};
-use ts_rs::TS;
+use wasm_worklet::types::{AudioModule, EventCallback, ParamMap};
 
-#[derive(Default, Serialize, Deserialize, TS)]
-#[ts(export)]
-pub struct StepSequencerParams {
-    pub steps: [[bool; 8]; 4],
+wasm_worklet::derive_event! {
+    pub enum StepSequencerEvent {
+        /// StepChange is emitted whenever the step is changed
+        StepChange(u32),
+    }
 }
 
-/// Events emitted by the sequencer module
-#[derive(Serialize, Deserialize, TS, Clone)]
-#[ts(export)]
-pub enum StepSequencerEvent {
-    /// StepChange is emitted whenever the step is changed
-    StepChange(usize),
+wasm_worklet::derive_command! {
+    pub enum StepSequencerCommand {
+        /// Update the value of a given step
+        UpdateStep((u32, u32), bool),
+    }
 }
 
-/// Incoming commands into the sequencer module
-#[derive(Serialize, Deserialize, TS, Clone)]
-#[ts(export)]
-pub enum StepSequencerCommand {
-    /// Update the value of a given step
-    UpdateStep((usize, usize), bool),
+pub struct StepSequencer {
+    emitter: Box<dyn Emitter<Event = SteppedEvent>>,
+    inner: FundspWorklet,
 }
 
-pub fn step_sequencer(
-    params: &StepSequencerParams,
-    context: &mut ModuleContext<StepSequencerCommand, StepSequencerEvent>,
-) -> impl AudioUnit32 {
-    let steps = branch::<U4, _, _, _>(|x| {
-        branch::<U8, _, _, _>(|y| {
-            tag(
-                y,
-                if params.steps[x as usize][y as usize] {
-                    1.0
-                } else {
-                    0.0
-                },
-            )
+impl AudioModule for StepSequencer {
+    type Event = StepSequencerEvent;
+    type Command = StepSequencerCommand;
+
+    const INPUTS: u32 = 2;
+    const OUTPUTS: u32 = 4;
+
+    fn create() -> Self {
+        // @todo not initialised properly
+        let steps = branch::<U4, _, _, _>(|x| {
+            branch::<U8, _, _, _>(|y| {
+                tag((x * 8) + y, 0.0)
+            })
         })
-    })
-    .share();
+        .share();
 
-    context.set_tx(
-        steps
-            .clone()
-            .message_handler(|unit, command: StepSequencerCommand| match command {
-                StepSequencerCommand::UpdateStep((x, y), value) => unit
-                    .node_mut(x)
-                    .set(y as i64, if value { 1.0 } else { 0.0 }),
-            }),
-    );
+        let stepped = dsp::stepped::stepped::<U8, U4, _>(true).share();
 
-    let stepped = stepped::<U8, U4, _>(true).share();
+        let emitter = stepped.clone();
 
-    context.set_rx(stepped.clone().map(|event| match event {
-        SteppedEvent::StepChange(step) => StepSequencerEvent::StepChange(step),
-    }));
+        let module = {
+            (pass() | // Gate input
+            pass() | // Reset input
+            steps)
+            >> stepped
+        };
 
-    (pass() | // Gate input
-        pass() | // Reset input
-        steps)
-        >> stepped
+        StepSequencer {
+            emitter: Box::new(emitter),
+            inner: FundspWorklet::create(module),
+        }
+    }
+
+    fn on_command(&mut self, command: Self::Command) {
+        match command {
+            // @todo -- index 0 seems not to be working?
+            StepSequencerCommand::UpdateStep((x, y), value) => self.inner.inner.set(
+                ((x * 8) + y) as i64,
+                if value { 1.0 } else { 0.0 }
+            ),
+        }
+    }
+
+    // @todo -- this is kinda messy
+    fn add_event_listener_with_callback(&mut self, callback: EventCallback<Self>) {
+        self.emitter
+            .add_event_listener_with_callback(Box::new(move |event| {
+                let e = match event {
+                    SteppedEvent::StepChange(i) => StepSequencerEvent::StepChange(i.try_into().unwrap()),
+                };
+                (callback)(e);
+            }))
+    }
+
+    fn process(
+        &mut self,
+        inputs: &[&[[f32; 128]]],
+        outputs: &mut [&mut [[f32; 128]]],
+        params: &ParamMap<Self::Param>,
+    ) {
+        self.inner.process(inputs, outputs, params);
+    }
 }
 
-// @todo first position in the sequencer comes a bit after reset gate
+wasm_worklet::module!(StepSequencer);

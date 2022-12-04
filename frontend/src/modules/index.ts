@@ -5,9 +5,9 @@ import Oscillator, { initialState as oscillatorInitialState } from './Oscillator
 import Parameter, { initialState as ParameterInitialState } from './Parameter.svelte'
 import Reverb, { initialState as reverbInitialState } from './Reverb.svelte'
 import Sequencer, { initialState as sequencerInitialState } from './Sequencer.svelte'
-// import StepSequencer, {
-//   initialState as stepSequencerInitialState
-// } from './StepSequencer.svelte'
+import StepSequencer, {
+  initialState as stepSequencerInitialState
+} from './StepSequencer.svelte'
 import Output, { initialState as outputInitialState } from './Output.svelte'
 import Vca, { initialState as vcaInitialState } from './Vca.svelte'
 import Noise, { initialState as noiseInitialState } from './Noise.svelte'
@@ -31,7 +31,7 @@ export const MODULES = {
   Parameter,
   Reverb,
   Sequencer,
-  // StepSequencer,
+  StepSequencer,
   Output,
   Vca,
   Noise,
@@ -57,7 +57,7 @@ export const INITIAL_STATE = {
   Parameter: ParameterInitialState,
   Reverb: reverbInitialState,
   Sequencer: sequencerInitialState,
-  // StepSequencer: stepSequencerInitialState,
+  StepSequencer: stepSequencerInitialState,
   Output: outputInitialState,
   Vca: vcaInitialState,
   Noise: noiseInitialState,
