@@ -7,7 +7,7 @@ pub mod noise;
 pub mod oscillator;
 pub mod quantiser;
 pub mod reverb;
-// pub mod sample_and_hold;
+pub mod sample_and_hold;
 // pub mod sampler;
 pub mod sequencer;
 pub mod step_sequencer;

@@ -17,9 +17,9 @@ import Delay, { initialState as delayInitialState } from './Delay.svelte'
 // import Midi, { initialState as midiInitialState } from './Midi.svelte'
 import Lfo, { initialState as lfoInitialState } from './Lfo.svelte'
 import Quantiser, { initialState as quantiserInitialState } from './Quantiser.svelte'
-// import SampleAndHold, {
-//   initialState as sampleAndHoldInitialState
-// } from './SampleAndHold.svelte'
+import SampleAndHold, {
+  initialState as sampleAndHoldInitialState
+} from './SampleAndHold.svelte'
 // import Sampler, { initialState as samplerInitialState } from './Sampler/Sampler.svelte'
 import { Module } from 'src/workspace/state'
 
@@ -41,7 +41,7 @@ export const MODULES = {
   // Midi,
   Lfo,
   Quantiser,
-  // SampleAndHold,
+  SampleAndHold,
   // Sampler
 } as const
 
@@ -67,7 +67,7 @@ export const INITIAL_STATE = {
   // Midi: midiInitialState,
   Lfo: lfoInitialState,
   Quantiser: quantiserInitialState,
-  // SampleAndHold: sampleAndHoldInitialState,
+  SampleAndHold: sampleAndHoldInitialState,
   // Sampler: samplerInitialState
 } as const
 /* eslint-enable @typescript-eslint/no-unsafe-assignment */
