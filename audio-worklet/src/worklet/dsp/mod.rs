@@ -3,7 +3,7 @@ use fundsp::Float;
 pub mod envelope;
 pub mod hold;
 pub mod join;
-// pub mod messaging;
+pub mod messaging;
 // pub mod midi;
 // pub mod onset;
 pub mod oscillator;
@@ -13,7 +13,7 @@ pub mod pluck;
 pub mod quantiser;
 // pub mod scope;
 pub mod shared;
-// pub mod stepped;
+pub mod stepped;
 pub mod trigger;
 
 /// Convert 1v per octave to hz

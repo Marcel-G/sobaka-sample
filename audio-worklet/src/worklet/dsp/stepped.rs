@@ -9,9 +9,10 @@ use fundsp::{
 };
 use numeric_array::typenum::{Prod, Sum, Unsigned};
 
-use crate::utils::observer::{Observable, Observer, Producer, Subject};
-
-use super::trigger::SchmittTrigger;
+use super::{
+    messaging::{Callback, Emitter},
+    trigger::SchmittTrigger,
+};
 
 #[inline]
 pub fn stepped<M, N, T>(gate_passthrough: bool) -> An<Stepped<M, N, T>>
@@ -29,7 +30,7 @@ pub struct Stepped<M, N, T> {
     active: usize,
     trigger: SchmittTrigger,
     reset_trigger: SchmittTrigger,
-    subject: Subject<SteppedEvent>,
+    on_event: Option<Callback<SteppedEvent>>,
     gate_passthrough: bool,
     _marker: PhantomData<(M, N, T)>,
 }
@@ -43,12 +44,31 @@ where
     pub fn new(gate_passthrough: bool) -> Self {
         Self {
             active: 0,
-            subject: Subject::new(),
+            on_event: None,
             trigger: SchmittTrigger::default(),
             reset_trigger: SchmittTrigger::default(),
             gate_passthrough,
             _marker: PhantomData,
         }
+    }
+
+    fn notify(&self, event: SteppedEvent) {
+        if let Some(callback) = &self.on_event {
+            (callback)(event)
+        }
+    }
+}
+
+impl<M, N, T> Emitter for Stepped<M, N, T>
+where
+    M: Size<T> + Mul<N>,
+    N: Size<T>,
+    T: Float,
+{
+    type Event = SteppedEvent;
+
+    fn add_event_listener_with_callback(&mut self, callback: Callback<Self::Event>) {
+        self.on_event = Some(callback)
     }
 }
 
@@ -66,19 +86,6 @@ where
 #[derive(Clone)]
 pub enum SteppedEvent {
     StepChange(usize),
-}
-
-impl<M, N, T> Observable for Stepped<M, N, T>
-where
-    M: Size<T> + Mul<N>,
-    N: Size<T>,
-    T: Float,
-{
-    type Output = SteppedEvent;
-
-    fn observe(&self) -> Observer<Self::Output> {
-        self.subject.observe()
-    }
 }
 
 impl<M, N, T> AudioNode for Stepped<M, N, T>
@@ -101,7 +108,7 @@ where
             self.active += 1;
         }
 
-        self.subject.notify(SteppedEvent::StepChange(self.active));
+        self.notify(SteppedEvent::StepChange(self.active));
     }
 
     fn tick(
@@ -116,7 +123,7 @@ where
             self.active = 0;
 
             // @todo these messages could be fired at near audio rate. Probably need to throttle this somewhere.
-            self.subject.notify(SteppedEvent::StepChange(self.active));
+            self.notify(SteppedEvent::StepChange(self.active));
         }
 
         if self.trigger.tick(trigger, 0.0, 0.001) == Some(true) {
@@ -126,7 +133,7 @@ where
                 self.active += 1;
             }
 
-            self.subject.notify(SteppedEvent::StepChange(self.active));
+            self.notify(SteppedEvent::StepChange(self.active));
         }
         if self.gate_passthrough {
             // The following M are the step matrix

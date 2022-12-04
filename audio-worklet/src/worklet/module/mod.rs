@@ -9,6 +9,6 @@ pub mod quantiser;
 pub mod reverb;
 // pub mod sample_and_hold;
 // pub mod sampler;
-// pub mod sequencer;
+pub mod sequencer;
 // pub mod step_sequencer;
 // pub mod string;

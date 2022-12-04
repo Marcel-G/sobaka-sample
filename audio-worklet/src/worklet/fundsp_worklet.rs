@@ -1,16 +1,14 @@
-use enum_map::{EnumArray, Enum};
+use enum_map::{Enum, EnumArray};
 use fundsp::prelude::*;
-use std::{fmt::Debug, convert::TryInto};
-use wasm_worklet::{types::{ParamMap, Buffer}};
+use std::{convert::TryInto, fmt::Debug};
+use wasm_worklet::types::{Buffer, ParamMap};
 
 pub struct FundspWorklet {
-    inner: Au
+    pub inner: Au,
 }
 
 impl FundspWorklet {
-    pub fn create<
-        X: AudioNode<Sample = f32> + Send + 'static
-    >(module: An<X>) -> Self {
+    pub fn create<X: AudioNode<Sample = f32> + Send + 'static>(module: An<X>) -> Self {
         FundspWorklet {
             inner: Au::Unit32(Box::new(module)),
         }
@@ -26,8 +24,10 @@ impl FundspWorklet {
             // Write all the paramaters into the AudioUnit. Usually, these will be the same value.
             // Could possibly distinguish between a-rate / k-rate here
             for (param, buffer) in params.iter() {
-                self.inner
-                    .set(param.into_usize().try_into().unwrap(), *buffer.as_ref().get(i).unwrap() as f64);
+                self.inner.set(
+                    param.into_usize().try_into().unwrap(),
+                    *buffer.as_ref().get(i).unwrap() as f64,
+                );
             }
 
             let input_frame: Vec<_> = inputs
