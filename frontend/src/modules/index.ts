@@ -14,7 +14,7 @@ import Noise, { initialState as noiseInitialState } from './Noise.svelte'
 import Delay, { initialState as delayInitialState } from './Delay.svelte'
 import Scope, { initialState as scopeInitialState } from './Scope/Scope.svelte'
 // import String, { initialState as stringInitialState } from './String.svelte'
-// import Midi, { initialState as midiInitialState } from './Midi.svelte'
+import Midi, { initialState as midiInitialState } from './Midi.svelte'
 import Lfo, { initialState as lfoInitialState } from './Lfo.svelte'
 import Quantiser, { initialState as quantiserInitialState } from './Quantiser.svelte'
 import SampleAndHold, {
@@ -38,7 +38,7 @@ export const MODULES = {
   Delay,
   Scope,
   // String,
-  // Midi,
+  Midi,
   Lfo,
   Quantiser,
   SampleAndHold,
@@ -64,7 +64,7 @@ export const INITIAL_STATE = {
   Delay: delayInitialState,
   Scope: scopeInitialState,
   // String: stringInitialState,
-  // Midi: midiInitialState,
+  Midi: midiInitialState,
   Lfo: lfoInitialState,
   Quantiser: quantiserInitialState,
   SampleAndHold: sampleAndHoldInitialState,
