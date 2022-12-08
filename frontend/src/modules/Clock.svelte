@@ -23,14 +23,14 @@
   export let state: SubStore<State>
   let name = 'clock'
   let clock: OscillatorNode[] = []
-  let freq_cv: AudioParam;
+  let freq_cv: AudioParam
   let loading = true
   const multiplier = [1.0, 2.0, 4.0, 8.0, 16.0]
 
   const context = get_audio_context()
 
   onMount(async () => {
-    const frequency = new ConstantSourceNode($context);
+    const frequency = new ConstantSourceNode($context)
     freq_cv = frequency.offset
 
     // @todo -- Not sure about it, they can all get out of sync pretty easily
@@ -39,7 +39,7 @@
       new OscillatorNode($context, { type: 'square' }),
       new OscillatorNode($context, { type: 'square' }),
       new OscillatorNode($context, { type: 'square' }),
-      new OscillatorNode($context, { type: 'square' }),
+      new OscillatorNode($context, { type: 'square' })
     ]
     loading = false
 

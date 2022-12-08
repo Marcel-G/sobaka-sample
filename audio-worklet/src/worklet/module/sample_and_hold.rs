@@ -1,5 +1,5 @@
-use wasm_worklet::types::{AudioModule, ParamMap};
 use crate::dsp::hold::hold;
+use wasm_worklet::types::{AudioModule, ParamMap};
 
 use crate::fundsp_worklet::FundspWorklet;
 pub struct SampleAndHold {

@@ -45,11 +45,23 @@
   {/if}
 
   <div slot="inputs">
-    <Plug id={0} label="Signal" ctx={{ type: PlugType.Input, module: node, connectIndex: 0 }} />
-    <Plug id={1} label="Gate" ctx={{ type: PlugType.Input, module: node, connectIndex: 1 }} />
+    <Plug
+      id={0}
+      label="Signal"
+      ctx={{ type: PlugType.Input, module: node, connectIndex: 0 }}
+    />
+    <Plug
+      id={1}
+      label="Gate"
+      ctx={{ type: PlugType.Input, module: node, connectIndex: 1 }}
+    />
   </div>
 
   <div slot="outputs">
-    <Plug id={0} label="Output" ctx={{ type: PlugType.Output, module: node, connectIndex: 0 }} />
+    <Plug
+      id={0}
+      label="Output"
+      ctx={{ type: PlugType.Output, module: node, connectIndex: 0 }}
+    />
   </div>
 </Panel>

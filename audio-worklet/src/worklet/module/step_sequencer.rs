@@ -1,7 +1,7 @@
 use std::convert::TryInto;
 
 use crate::{
-    dsp::{messaging::Emitter, shared::Share, stepped::SteppedEvent, self},
+    dsp::{self, messaging::Emitter, shared::Share, stepped::SteppedEvent},
     fundsp_worklet::FundspWorklet,
 };
 use fundsp::prelude::*;
@@ -35,12 +35,8 @@ impl AudioModule for StepSequencer {
 
     fn create() -> Self {
         // @todo not initialised properly
-        let steps = branch::<U4, _, _, _>(|x| {
-            branch::<U8, _, _, _>(|y| {
-                tag((x * 8) + y, 0.0)
-            })
-        })
-        .share();
+        let steps =
+            branch::<U4, _, _, _>(|x| branch::<U8, _, _, _>(|y| tag((x * 8) + y, 0.0))).share();
 
         let stepped = dsp::stepped::stepped::<U8, U4, _>(true).share();
 
@@ -50,7 +46,7 @@ impl AudioModule for StepSequencer {
             (pass() | // Gate input
             pass() | // Reset input
             steps)
-            >> stepped
+                >> stepped
         };
 
         StepSequencer {
@@ -62,10 +58,10 @@ impl AudioModule for StepSequencer {
     fn on_command(&mut self, command: Self::Command) {
         match command {
             // @todo -- index 0 seems not to be working?
-            StepSequencerCommand::UpdateStep((x, y), value) => self.inner.inner.set(
-                ((x * 8) + y) as i64,
-                if value { 1.0 } else { 0.0 }
-            ),
+            StepSequencerCommand::UpdateStep((x, y), value) => self
+                .inner
+                .inner
+                .set(((x * 8) + y) as i64, if value { 1.0 } else { 0.0 }),
         }
     }
 
@@ -74,7 +70,9 @@ impl AudioModule for StepSequencer {
         self.emitter
             .add_event_listener_with_callback(Box::new(move |event| {
                 let e = match event {
-                    SteppedEvent::StepChange(i) => StepSequencerEvent::StepChange(i.try_into().unwrap()),
+                    SteppedEvent::StepChange(i) => {
+                        StepSequencerEvent::StepChange(i.try_into().unwrap())
+                    }
                 };
                 (callback)(e);
             }))

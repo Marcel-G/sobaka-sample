@@ -28,8 +28,7 @@
   const context = get_audio_context()
 
   onMount(async () => {
-    lfo = new OscillatorNode($context, { type: 'sine' }),
-    loading = false
+    ;(lfo = new OscillatorNode($context, { type: 'sine' })), (loading = false)
 
     lfo.start()
   })
@@ -46,16 +45,24 @@
   {:else}
     <Knob bind:value={$bpm} range={[0, 600]} label="bpm">
       <div slot="inputs">
-        <Plug id={1} label="bpm_cv" ctx={{ type: PlugType.Param, param: lfo?.frequency }} />
+        <Plug
+          id={1}
+          label="bpm_cv"
+          ctx={{ type: PlugType.Param, param: lfo?.frequency }}
+        />
       </div>
     </Knob>
   {/if}
-<!-- @todo can't do reset with OscillatorNode?
+  <!-- @todo can't do reset with OscillatorNode?
   <div slot="inputs">
     <Plug id={0} label="reset" ctx={{ type: PlugType.Input, connectIndex: 0, module: lfo }} />
   </div> -->
 
   <div slot="outputs">
-    <Plug id={0} label="signal" ctx={{ type: PlugType.Output, connectIndex: 0, module: lfo }} />
+    <Plug
+      id={0}
+      label="signal"
+      ctx={{ type: PlugType.Output, connectIndex: 0, module: lfo }}
+    />
   </div>
 </Panel>

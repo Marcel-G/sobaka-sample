@@ -1,16 +1,16 @@
-import { get, writable } from 'svelte/store';
+import { get, writable } from 'svelte/store'
 
 type Point = {
-  min: number,
-  max: number,
+  min: number
+  max: number
   count: number
-};
+}
 
-const BUFFER_SIZE = 256;
+const BUFFER_SIZE = 256
 
 const new_point = (): Point => ({ min: Infinity, max: -Infinity, count: 0 })
 
-export type Scope = ReturnType<typeof create_scope>;
+export type Scope = ReturnType<typeof create_scope>
 
 export const create_scope = (ctx: AudioContext) => {
   const fftSize = 512
@@ -21,16 +21,17 @@ export const create_scope = (ctx: AudioContext) => {
   const time_store = writable<number>(0)
   const trigger_store = writable<boolean>(false)
 
-  const audio_buffer = new Float32Array(fftSize);
-  const graph_buffer = Array.from(
-    { length: BUFFER_SIZE },
-    new_point
-  )
+  const audio_buffer = new Float32Array(fftSize)
+  const graph_buffer = Array.from({ length: BUFFER_SIZE }, new_point)
   let next_point: Point = new_point()
-  let index = 0;
-  let is_open = false;
+  let index = 0
+  let is_open = false
 
-  const trigger = (y: number, off_threshold: number, on_threshold: number): boolean | undefined => {
+  const trigger = (
+    y: number,
+    off_threshold: number,
+    on_threshold: number
+  ): boolean | undefined => {
     if (is_open) {
       if (y <= off_threshold) {
         is_open = false
@@ -43,12 +44,12 @@ export const create_scope = (ctx: AudioContext) => {
   }
 
   const process = (time: number, threshold: number, trigger_enabled: boolean) => {
-    analyserNode.getFloatTimeDomainData(audio_buffer);
+    analyserNode.getFloatTimeDomainData(audio_buffer)
 
     for (const y of audio_buffer) {
       if (index >= BUFFER_SIZE) {
         if (!trigger_enabled || trigger(y, threshold, threshold + 0.001) === true) {
-          index = 0;
+          index = 0
         }
       } else {
         const delta_time = Math.pow(2, -time) / BUFFER_SIZE
@@ -56,13 +57,13 @@ export const create_scope = (ctx: AudioContext) => {
 
         next_point.min = Math.min(y, next_point.min)
         next_point.max = Math.max(y, next_point.max)
-        next_point.count += 1;
+        next_point.count += 1
 
         if (next_point.count >= frame_count) {
           graph_buffer[index] = next_point
           next_point = new_point()
           index += 1
-        } 
+        }
       }
     }
   }
@@ -71,7 +72,11 @@ export const create_scope = (ctx: AudioContext) => {
     return getComputedStyle(get(canvas_store)).getPropertyValue(name)
   }
 
-  const draw_background = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
+  const draw_background = (
+    ctx: CanvasRenderingContext2D,
+    width: number,
+    height: number
+  ) => {
     ctx.fillStyle = get_css_var('--module-background')
     ctx.fillRect(0, 0, width, height)
 
@@ -119,19 +124,15 @@ export const create_scope = (ctx: AudioContext) => {
     ctx.stroke()
   }
 
-  let next_frame: number;
-  let next_data: NodeJS.Timeout;
+  let next_frame: number
+  let next_data: NodeJS.Timeout
 
   const data_loop = () => {
-    process(
-      get(time_store),
-      get(threshold_store),
-      get(trigger_store),
-    )
+    process(get(time_store), get(threshold_store), get(trigger_store))
   }
 
   const draw = () => {
-    const canvas = get(canvas_store);
+    const canvas = get(canvas_store)
     if (canvas) {
       const width = canvas.clientWidth
       const height = canvas.clientHeight
@@ -150,7 +151,6 @@ export const create_scope = (ctx: AudioContext) => {
   }
 
   const start = () => {
-
     /**
      * JS Intervals are not precise enough to properly sync this with the
      * Data in the AnalyserNode. This causes some jitter at times in the scope.

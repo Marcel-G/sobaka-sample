@@ -39,8 +39,8 @@
   onMount(async () => {
     const { ReverbNode } = await import('sobaka-sample-audio-worklet')
     reverb = await ReverbNode.install($context)
-    node = reverb.node();
-    wet_param = reverb.get_param('Wet');
+    node = reverb.node()
+    wet_param = reverb.get_param('Wet')
     delay_param = reverb.get_param('Delay')
 
     loading = false
@@ -70,13 +70,29 @@
   {/await}
 
   <div slot="inputs">
-    <Plug id={0} label="l" ctx={{ type: PlugType.Input, module: node, connectIndex: 0 }} />
-    <Plug id={1} label="r" ctx={{ type: PlugType.Input, module: node, connectIndex: 1 }} />
+    <Plug
+      id={0}
+      label="l"
+      ctx={{ type: PlugType.Input, module: node, connectIndex: 0 }}
+    />
+    <Plug
+      id={1}
+      label="r"
+      ctx={{ type: PlugType.Input, module: node, connectIndex: 1 }}
+    />
   </div>
 
   <div slot="outputs">
-    <Plug id={0} label="l" ctx={{ type: PlugType.Output, module: node, connectIndex: 0 }} />
-    <Plug id={1} label="r" ctx={{ type: PlugType.Output, module: node, connectIndex: 1 }} />
+    <Plug
+      id={0}
+      label="l"
+      ctx={{ type: PlugType.Output, module: node, connectIndex: 0 }}
+    />
+    <Plug
+      id={1}
+      label="r"
+      ctx={{ type: PlugType.Output, module: node, connectIndex: 1 }}
+    />
   </div>
 </Panel>
 

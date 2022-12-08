@@ -51,11 +51,19 @@
   {/if}
 
   <div slot="inputs">
-    <Plug id={0} label="Signal" ctx={{ type: PlugType.Input, module: vca, connectIndex: 0 }} />
+    <Plug
+      id={0}
+      label="Signal"
+      ctx={{ type: PlugType.Input, module: vca, connectIndex: 0 }}
+    />
     <Plug id={1} label="Cv" ctx={{ type: PlugType.Param, param: gain_param }} />
   </div>
 
   <div slot="outputs">
-    <Plug id={0} label="Output" ctx={{ type: PlugType.Output, module: vca, connectIndex: 0 }} />
+    <Plug
+      id={0}
+      label="Output"
+      ctx={{ type: PlugType.Output, module: vca, connectIndex: 0 }}
+    />
   </div>
 </Panel>

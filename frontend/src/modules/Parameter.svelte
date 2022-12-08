@@ -32,7 +32,7 @@
   let loading = true
 
   onMount(async () => {
-    parameter = new ConstantSourceNode($context);
+    parameter = new ConstantSourceNode($context)
     parameter.start()
     loading = false
   })
@@ -43,7 +43,6 @@
 
   // Update the sobaka node when the state changes
   $: parameter?.offset.setValueAtTime($value, $context.currentTime)
-
 </script>
 
 <Panel {name} height={6} width={5} custom_style={into_style(theme)}>
@@ -55,6 +54,10 @@
     </span>
   {/await}
   <div slot="outputs">
-    <Plug id={0} label="output" ctx={{ type: PlugType.Output, connectIndex: 0, module: parameter }} />
+    <Plug
+      id={0}
+      label="output"
+      ctx={{ type: PlugType.Output, connectIndex: 0, module: parameter }}
+    />
   </div>
 </Panel>

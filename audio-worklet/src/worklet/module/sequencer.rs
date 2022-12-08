@@ -65,7 +65,9 @@ impl AudioModule for Sequencer {
         self.emitter
             .add_event_listener_with_callback(Box::new(move |event| {
                 let e = match event {
-                    SteppedEvent::StepChange(i) => SequencerEvent::StepChange(i.try_into().unwrap()),
+                    SteppedEvent::StepChange(i) => {
+                        SequencerEvent::StepChange(i.try_into().unwrap())
+                    }
                 };
                 (callback)(e);
             }))

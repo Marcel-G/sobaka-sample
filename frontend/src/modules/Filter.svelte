@@ -66,7 +66,11 @@
     <div class="controls">
       <Knob bind:value={$frequency} range={[0, 8]} label="cutoff">
         <div slot="inputs">
-          <Plug id={1} label="cutoff_cv" ctx={{ type: PlugType.Param, param: frequency_param }} />
+          <Plug
+            id={1}
+            label="cutoff_cv"
+            ctx={{ type: PlugType.Param, param: frequency_param }}
+          />
         </div>
       </Knob>
       <Knob bind:value={$q} range={[0, 1]} label="q">
@@ -77,13 +81,33 @@
     </div>
   {/if}
   <div slot="inputs">
-    <Plug id={0} label="signal" ctx={{ type: PlugType.Input, module: node, connectIndex: 0 }} />
+    <Plug
+      id={0}
+      label="signal"
+      ctx={{ type: PlugType.Input, module: node, connectIndex: 0 }}
+    />
   </div>
   <div slot="outputs">
-    <Plug id={0} label="lowpass" ctx={{ type: PlugType.Output, module: node, connectIndex: 0 }} />
-    <Plug id={1} label="highpass" ctx={{ type: PlugType.Output, module: node, connectIndex: 1 }} />
-    <Plug id={2} label="bandpass" ctx={{ type: PlugType.Output, module: node, connectIndex: 2 }} />
-    <Plug id={3} label="moog" ctx={{ type: PlugType.Output, module: node, connectIndex: 3 }} />
+    <Plug
+      id={0}
+      label="lowpass"
+      ctx={{ type: PlugType.Output, module: node, connectIndex: 0 }}
+    />
+    <Plug
+      id={1}
+      label="highpass"
+      ctx={{ type: PlugType.Output, module: node, connectIndex: 1 }}
+    />
+    <Plug
+      id={2}
+      label="bandpass"
+      ctx={{ type: PlugType.Output, module: node, connectIndex: 2 }}
+    />
+    <Plug
+      id={3}
+      label="moog"
+      ctx={{ type: PlugType.Output, module: node, connectIndex: 3 }}
+    />
   </div>
 </Panel>
 

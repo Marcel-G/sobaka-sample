@@ -83,10 +83,18 @@
     </div>
   {/if}
   <div slot="inputs">
-    <Plug id={0} label="gate" ctx={{ type: PlugType.Input, module: node, connectIndex: 0 }} />
+    <Plug
+      id={0}
+      label="gate"
+      ctx={{ type: PlugType.Input, module: node, connectIndex: 0 }}
+    />
   </div>
   <div slot="outputs">
-    <Plug id={0} label="envelope" ctx={{ type: PlugType.Output, module: node, connectIndex: 0 }} />
+    <Plug
+      id={0}
+      label="envelope"
+      ctx={{ type: PlugType.Output, module: node, connectIndex: 0 }}
+    />
   </div>
 </Panel>
 

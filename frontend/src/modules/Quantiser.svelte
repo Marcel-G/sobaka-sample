@@ -57,7 +57,7 @@
   const notes = state.select(s => s.notes)
 
   // Update the sobaka node when the state changes
-  $: quantiser?.command({ UpdateNotes: $notes} as QuantiserCommand)
+  $: quantiser?.command({ UpdateNotes: $notes } as QuantiserCommand)
 
   function on_toggle(index: number) {
     return () => {
@@ -86,11 +86,19 @@
   {/if}
 
   <div slot="inputs">
-    <Plug id={0} label="Signal_1" ctx={{ type: PlugType.Input, module: node, connectIndex: 0 }} />
+    <Plug
+      id={0}
+      label="Signal_1"
+      ctx={{ type: PlugType.Input, module: node, connectIndex: 0 }}
+    />
   </div>
 
   <div slot="outputs">
-    <Plug id={0} label="Output_1" ctx={{ type: PlugType.Output, module: node, connectIndex: 0 }} />
+    <Plug
+      id={0}
+      label="Output_1"
+      ctx={{ type: PlugType.Output, module: node, connectIndex: 0 }}
+    />
   </div>
 </Panel>
 

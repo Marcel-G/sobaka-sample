@@ -25,7 +25,7 @@
   import Led from '../components/Led.svelte'
   import { SubStore } from '../utils/patches'
   import { get_context as get_audio_context } from '../audio'
-    import Output from './Output.svelte'
+  import Output from './Output.svelte'
 
   export let state: SubStore<State>
   let name = 'step_sequencer'
@@ -97,15 +97,39 @@
     </div>
   {/if}
   <div slot="inputs">
-    <Plug id={0} label="Gate" ctx={{ type: PlugType.Input, module: node, connectIndex: 0 }} />
-    <Plug id={1} label="Reset" ctx={{ type: PlugType.Input, module: node, connectIndex: 1 }} />
+    <Plug
+      id={0}
+      label="Gate"
+      ctx={{ type: PlugType.Input, module: node, connectIndex: 0 }}
+    />
+    <Plug
+      id={1}
+      label="Reset"
+      ctx={{ type: PlugType.Input, module: node, connectIndex: 1 }}
+    />
   </div>
 
   <div slot="outputs">
-    <Plug id={0} label="Output_1" ctx={{ type: PlugType.Output, module: node, connectIndex: 0 }} />
-    <Plug id={1} label="Output_2" ctx={{ type: PlugType.Output, module: node, connectIndex: 1 }} />
-    <Plug id={2} label="Output_3" ctx={{ type: PlugType.Output, module: node, connectIndex: 2 }} />
-    <Plug id={3} label="Output_4" ctx={{ type: PlugType.Output, module: node, connectIndex: 3 }} />
+    <Plug
+      id={0}
+      label="Output_1"
+      ctx={{ type: PlugType.Output, module: node, connectIndex: 0 }}
+    />
+    <Plug
+      id={1}
+      label="Output_2"
+      ctx={{ type: PlugType.Output, module: node, connectIndex: 1 }}
+    />
+    <Plug
+      id={2}
+      label="Output_3"
+      ctx={{ type: PlugType.Output, module: node, connectIndex: 2 }}
+    />
+    <Plug
+      id={3}
+      label="Output_4"
+      ctx={{ type: PlugType.Output, module: node, connectIndex: 3 }}
+    />
   </div>
 </Panel>
 

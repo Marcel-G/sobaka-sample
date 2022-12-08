@@ -24,9 +24,10 @@
     throw new Error('Input & Output plug types must have id')
   }
 
-  $: if ( // @todo -- annoying null check
-    ctx.type === PlugType.Param && ctx.param ||
-    ctx.type !== PlugType.Param && ctx.module
+  $: if (
+    // @todo -- annoying null check
+    (ctx.type === PlugType.Param && ctx.param) ||
+    (ctx.type !== PlugType.Param && ctx.module)
   ) {
     // Register once module is defined
     plug_id = context.register(module_id, { index: id, node, ctx })

@@ -42,7 +42,7 @@
     // Needs to be AnalyzerNode
     scope = create_scope($context)
 
-    scope.start();
+    scope.start()
 
     loading = false
   })
@@ -67,7 +67,6 @@
   onDestroy(() => {
     scope?.stop()
   })
-
 </script>
 
 <Panel {name} height={15} width={13} custom_style={into_style(theme)}>
@@ -88,7 +87,11 @@
     </div>
   {/if}
   <div slot="inputs">
-    <Plug id={0} label="signal" ctx={{ type: PlugType.Input, module: scope?.node, connectIndex: 0 }} />
+    <Plug
+      id={0}
+      label="signal"
+      ctx={{ type: PlugType.Input, module: scope?.node, connectIndex: 0 }}
+    />
   </div>
 </Panel>
 

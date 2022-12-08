@@ -32,9 +32,9 @@
   const midi_volt = (pitch: number): number => pitch / 12
 
   onMount(async () => {
-    note = new ConstantSourceNode($context);
-    gate = new ConstantSourceNode($context);
-  
+    note = new ConstantSourceNode($context)
+    gate = new ConstantSourceNode($context)
+
     note.start()
     gate.start()
 
@@ -77,13 +77,21 @@
   <Dropdown options={inputs.map(input => input.id)} bind:selected={active_device_id} />
 
   <div slot="outputs">
-    <Plug id={0} label="gate_1" ctx={{ type: PlugType.Output, connectIndex: 0, module: gate }} />
+    <Plug
+      id={0}
+      label="gate_1"
+      ctx={{ type: PlugType.Output, connectIndex: 0, module: gate }}
+    />
     <!-- @todo polyphony
       <Plug id={1} label="gate_2" type={PlugType.Output} for_module={midi} />
       <Plug id={2} label="gate_3" type={PlugType.Output} for_module={midi} />
       <Plug id={3} label="gate_4" type={PlugType.Output} for_module={midi} />
     -->
-    <Plug id={1} label="pitch_1" ctx={{ type: PlugType.Output, connectIndex: 0, module: note }} />
+    <Plug
+      id={1}
+      label="pitch_1"
+      ctx={{ type: PlugType.Output, connectIndex: 0, module: note }}
+    />
     <!-- @todo polyphony
       <Plug id={5} label="pitch_2" type={PlugType.Output} for_module={midi} />
       <Plug id={6} label="pitch_3" type={PlugType.Output} for_module={midi} />

@@ -56,16 +56,32 @@
     <div class="controls">
       <Knob bind:value={$time} range={[0, 10]} label="seconds">
         <div slot="inputs">
-          <Plug id={0} label="seconds_cv" ctx={{ type: PlugType.Param, param: delay_time_param }} />
+          <Plug
+            id={0}
+            label="seconds_cv"
+            ctx={{ type: PlugType.Param, param: delay_time_param }}
+          />
         </div>
       </Knob>
     </div>
   {/if}
   <div slot="inputs">
-    <Plug id={0} label="signal" ctx={{ type: PlugType.Input, module: node, connectIndex: 1 }} />
-    <Plug id={1} label="reset" ctx={{ type: PlugType.Input, module: node, connectIndex: 0 }} />
+    <Plug
+      id={0}
+      label="signal"
+      ctx={{ type: PlugType.Input, module: node, connectIndex: 1 }}
+    />
+    <Plug
+      id={1}
+      label="reset"
+      ctx={{ type: PlugType.Input, module: node, connectIndex: 0 }}
+    />
   </div>
   <div slot="outputs">
-    <Plug id={0} label="output" ctx={{ type: PlugType.Output, module: node, connectIndex: 0 }} />
+    <Plug
+      id={0}
+      label="output"
+      ctx={{ type: PlugType.Output, module: node, connectIndex: 0 }}
+    />
   </div>
 </Panel>

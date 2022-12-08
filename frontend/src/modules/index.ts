@@ -41,7 +41,7 @@ export const MODULES = {
   Midi,
   Lfo,
   Quantiser,
-  SampleAndHold,
+  SampleAndHold
   // Sampler
 } as const
 
@@ -67,7 +67,7 @@ export const INITIAL_STATE = {
   Midi: midiInitialState,
   Lfo: lfoInitialState,
   Quantiser: quantiserInitialState,
-  SampleAndHold: sampleAndHoldInitialState,
+  SampleAndHold: sampleAndHoldInitialState
   // Sampler: samplerInitialState
 } as const
 /* eslint-enable @typescript-eslint/no-unsafe-assignment */

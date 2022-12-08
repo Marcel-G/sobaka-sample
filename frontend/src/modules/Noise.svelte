@@ -44,6 +44,10 @@
   {/if}
 
   <div slot="outputs">
-    <Plug id={0} label="Noise" ctx={{ type: PlugType.Output, module: node, connectIndex: 0 }} />
+    <Plug
+      id={0}
+      label="Noise"
+      ctx={{ type: PlugType.Output, module: node, connectIndex: 0 }}
+    />
   </div>
 </Panel>
