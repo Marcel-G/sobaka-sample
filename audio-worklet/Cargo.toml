@@ -14,7 +14,7 @@ default = ["console_error_panic_hook"]
 
 [dependencies]
 numeric-array = "0.5.2"
-# rand = "0.8.5"
+rand = "0.8.5"
 
 rustfft = { version = "6.0.1" }
 fundsp = "0.6.3"
@@ -22,6 +22,8 @@ fundsp = "0.6.3"
 wasm-worklet = { path = "../../wasm-worklet/wasm-worklet" }
 wasm-bindgen = { version = "0.2.82" }
 wasm-bindgen-futures = { version = "0.4.32" }
+
+js-sys = "0.3.59"
 
 # @todo remove this dependency - https://gitlab.com/KonradBorowski/enum-map/-/issues/22
 enum-map = "2.4.1"
@@ -39,6 +41,8 @@ console_error_panic_hook = { version = "0.1.6", optional = true }
 #
 # Unfortunately, `wee_alloc` requires nightly Rust when targeting wasm for now.
 wee_alloc = { version = "0.4.5", optional = true }
+getrandom = { version = "0.2", features = ["custom"] }
+
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3.13"

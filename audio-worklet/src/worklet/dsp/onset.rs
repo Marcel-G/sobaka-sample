@@ -1,7 +1,10 @@
 use std::{f64::consts::PI, iter::repeat};
 
-use num_traits::{Float, FromPrimitive, NumCast, NumOps};
-use rustfft::{num_complex::Complex, FftPlanner};
+use rustfft::{
+    num_complex::Complex,
+    num_traits::{Float, FromPrimitive, NumCast, NumOps},
+    FftPlanner,
+};
 
 struct Filter {
     weights: Vec<Vec<f32>>,

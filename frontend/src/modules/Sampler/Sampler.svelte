@@ -18,7 +18,7 @@
 
 <script lang="ts">
   import { debounce } from 'lodash'
-  import type { Sampler } from 'sobaka-sample-audio-worklet'
+  import type { SamplerCommand, SamplerNode } from 'sobaka-sample-audio-worklet'
   import { onDestroy, onMount } from 'svelte'
   import Panel from '../shared/Panel.svelte'
   import Plug from '../shared/Plug.svelte'
@@ -27,29 +27,32 @@
   import Knob from '../../components/Knob.svelte'
   import { SubStore } from '../../utils/patches'
   import { get_context as get_audio_context } from '../../audio'
-  import type { Command } from 'sobaka-sample-audio-worklet/dist/src/main/abstractModule'
   import { load_audio, store_audio } from '../../worker/media'
   import { init_canvas } from './render'
 
   export let state: SubStore<State>
   let name = 'sampler'
-  let sampler: Sampler
+  let sampler: SamplerNode
+  let node: AudioNode
   let loading = true
 
   const context = get_audio_context()
   const canvas = init_canvas()
 
   onMount(async () => {
-    const { Sampler } = await import('sobaka-sample-audio-worklet')
-    sampler = new Sampler($context, {
-      threshold: $threshold,
-      audio_data: null
-    })
-    await sampler.get_address()
+    const { SamplerNode } = await import('sobaka-sample-audio-worklet')
+    sampler = await SamplerNode.install($context)
+
+    node = sampler.node()
     loading = false
 
-    sampler.subscribe('OnDetect', canvas.update_detections)
-    sampler.subscribe('OnTrigger', canvas.update_active)
+    sampler.subscribe((event) => {
+      if ('OnTrigger' in event) {
+        canvas.update_active(event.OnTrigger)
+      } else if ('OnDetect' in event) {
+        canvas.update_detections(event.OnDetect)
+      }
+    })
   })
 
   let mountpoint: HTMLElement
@@ -68,8 +71,8 @@
     }
   }
 
-  const debounced_message = debounce((message: Command<'Sampler'>) => {
-    sampler?.message(message)
+  const debounced_message = debounce((message: SamplerCommand) => {
+    sampler?.command(message)
   }, 250)
 
   const threshold = state.select(s => s.threshold)
@@ -85,13 +88,14 @@
       canvas.update_wave(audio_data)
 
       // Send updated data to audio worklet - @todo this may not be the most efficient format
-      sampler?.message({ UpdateData: audio_data })
+      sampler?.command({ UpdateData: audio_data })
       loading = false
     }
   })
 
   onDestroy(() => {
-    void sampler?.dispose()
+    sampler?.destroy()
+    sampler?.free()
     canvas.cleanup()
   })
 </script>
@@ -114,10 +118,10 @@
   {/if}
 
   <div slot="inputs">
-    <Plug id={0} label="Gate" type={PlugType.Input} for_module={sampler} />
+    <Plug id={0} label="Gate" ctx={{ type: PlugType.Input, module: node, connectIndex: 0 }} />
   </div>
   <div slot="outputs">
-    <Plug id={0} label="Output" type={PlugType.Output} for_module={sampler} />
+    <Plug id={0} label="Output" ctx={{ type: PlugType.Output, module: node, connectIndex: 0 }} />
   </div>
 </Panel>
 

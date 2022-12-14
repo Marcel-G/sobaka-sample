@@ -1,10 +1,12 @@
 use std::{marker::PhantomData, sync::Arc};
 
-use crate::utils::observer::{Observable, Observer, Producer, Subject};
 use fundsp::prelude::*;
 use rand::Rng;
 
-use super::onset::{onset, superflux_diff_spec, Spectrogram};
+use super::{
+    messaging::{Callback, Emitter},
+    onset::{onset, superflux_diff_spec, Spectrogram},
+};
 
 /// Play back one channel of a wave.
 pub struct Wave32Player<T: Float> {
@@ -14,7 +16,7 @@ pub struct Wave32Player<T: Float> {
     threshold: f32,
     diff_spec: Option<Vec<f32>>,
     index: usize,
-    subject: Subject<PlayerEvent>,
+    on_event: Option<Callback<PlayerEvent>>,
     loop_point: Option<usize>,
     detections: Vec<usize>,
     _marker: PhantomData<T>,
@@ -34,7 +36,7 @@ impl<T: Float> Wave32Player<T> {
             index: 0,
             threshold,
             diff_spec: None,
-            subject: Default::default(),
+            on_event: None,
             loop_point,
             detections: Default::default(),
             _marker: PhantomData::default(),
@@ -89,12 +91,18 @@ impl<T: Float> Wave32Player<T> {
             let length_seconds = self.wave.len() as f32 / self.wave.sample_rate() as f32;
 
             // Send detections as seconds
-            self.subject.notify(PlayerEvent::OnDetect(
+            self.notify(PlayerEvent::OnDetect(
                 detections
                     .iter()
                     .map(|d| d / length_seconds)
                     .collect::<Vec<_>>(),
             ));
+        }
+    }
+
+    fn notify(&self, event: PlayerEvent) {
+        if let Some(callback) = &self.on_event {
+            (callback)(event)
         }
     }
 }
@@ -105,14 +113,14 @@ pub enum PlayerEvent {
     OnTrigger(usize),
 }
 
-impl<T> Observable for Wave32Player<T>
+impl<T> Emitter for Wave32Player<T>
 where
     T: Float,
 {
-    type Output = PlayerEvent;
+    type Event = PlayerEvent;
 
-    fn observe(&self) -> Observer<Self::Output> {
-        self.subject.observe()
+    fn add_event_listener_with_callback(&mut self, callback: Callback<Self::Event>) {
+        self.on_event = Some(callback)
     }
 }
 
@@ -127,7 +135,7 @@ impl<T: Float> AudioNode for Wave32Player<T> {
             let mut rng = rand::thread_rng();
             self.sample = rng.gen_range(0..self.detections.len() - 1);
 
-            self.subject.notify(PlayerEvent::OnTrigger(self.sample))
+            self.notify(PlayerEvent::OnTrigger(self.sample))
         }
         self.index = 0;
     }
@@ -165,7 +173,7 @@ impl<T: Float> AudioNode for Wave32Player<T> {
 /// Play back a channel of a Wave32.
 /// Optional loop point is the index to jump to at the end of the wave.
 /// - Output 0: wave
-pub fn player<T: Float>(
+pub fn dsp_player<T: Float>(
     channel: usize,
     loop_point: Option<usize>,
     threshold: f32,

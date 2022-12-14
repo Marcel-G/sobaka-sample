@@ -13,14 +13,13 @@ import Vca, { initialState as vcaInitialState } from './Vca.svelte'
 import Noise, { initialState as noiseInitialState } from './Noise.svelte'
 import Delay, { initialState as delayInitialState } from './Delay.svelte'
 import Scope, { initialState as scopeInitialState } from './Scope/Scope.svelte'
-// import String, { initialState as stringInitialState } from './String.svelte'
 import Midi, { initialState as midiInitialState } from './Midi.svelte'
 import Lfo, { initialState as lfoInitialState } from './Lfo.svelte'
 import Quantiser, { initialState as quantiserInitialState } from './Quantiser.svelte'
 import SampleAndHold, {
   initialState as sampleAndHoldInitialState
 } from './SampleAndHold.svelte'
-// import Sampler, { initialState as samplerInitialState } from './Sampler/Sampler.svelte'
+import Sampler, { initialState as samplerInitialState } from './Sampler/Sampler.svelte'
 import { Module } from 'src/workspace/state'
 
 export const MODULES = {
@@ -37,12 +36,11 @@ export const MODULES = {
   Noise,
   Delay,
   Scope,
-  // String,
   Midi,
   Lfo,
   Quantiser,
-  SampleAndHold
-  // Sampler
+  SampleAndHold,
+  Sampler
 } as const
 
 export type ModuleUI = keyof typeof MODULES
@@ -63,12 +61,11 @@ export const INITIAL_STATE = {
   Noise: noiseInitialState,
   Delay: delayInitialState,
   Scope: scopeInitialState,
-  // String: stringInitialState,
   Midi: midiInitialState,
   Lfo: lfoInitialState,
   Quantiser: quantiserInitialState,
-  SampleAndHold: sampleAndHoldInitialState
-  // Sampler: samplerInitialState
+  SampleAndHold: sampleAndHoldInitialState,
+  Sampler: samplerInitialState
 } as const
 /* eslint-enable @typescript-eslint/no-unsafe-assignment */
 
