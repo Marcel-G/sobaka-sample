@@ -654,7 +654,7 @@ dependencies = [
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "wasm-bindgen-test",
- "wasm-worklet",
+ "waw",
  "wee_alloc",
 ]
 
@@ -899,8 +899,9 @@ dependencies = [
 ]
 
 [[package]]
-name = "wasm-worklet"
+name = "waw"
 version = "0.1.0"
+source = "git+https://github.com/Marcel-G/waw-rs#00b358a4b69ea1bfe014c03d9764dce5980ce289"
 dependencies = [
  "console_log",
  "enum-map",
@@ -916,13 +917,14 @@ dependencies = [
  "tsify",
  "wasm-bindgen",
  "wasm-bindgen-futures",
- "wasm-worklet-macros",
+ "waw-macros",
  "web-sys",
 ]
 
 [[package]]
-name = "wasm-worklet-macros"
+name = "waw-macros"
 version = "0.1.0"
+source = "git+https://github.com/Marcel-G/waw-rs#00b358a4b69ea1bfe014c03d9764dce5980ce289"
 dependencies = [
  "darling",
  "proc-macro2",

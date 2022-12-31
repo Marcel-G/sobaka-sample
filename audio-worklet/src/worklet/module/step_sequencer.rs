@@ -5,16 +5,20 @@ use crate::{
     fundsp_worklet::FundspWorklet,
 };
 use fundsp::prelude::*;
-use wasm_worklet::types::{AudioModule, EventCallback, ParamMap};
+use waw::{
+    buffer::{AudioBuffer, ParamBuffer},
+    types::EventCallback,
+    worklet::AudioModule,
+};
 
-wasm_worklet::derive_event! {
+waw::derive_event! {
     pub enum StepSequencerEvent {
         /// StepChange is emitted whenever the step is changed
         StepChange(u32),
     }
 }
 
-wasm_worklet::derive_command! {
+waw::derive_command! {
     pub enum StepSequencerCommand {
         /// Update the value of a given step
         UpdateStep((u32, u32), bool),
@@ -78,14 +82,9 @@ impl AudioModule for StepSequencer {
             }))
     }
 
-    fn process(
-        &mut self,
-        inputs: &[&[[f32; 128]]],
-        outputs: &mut [&mut [[f32; 128]]],
-        params: &ParamMap<Self::Param>,
-    ) {
-        self.inner.process(inputs, outputs, params);
+    fn process(&mut self, audio: &mut AudioBuffer, params: &ParamBuffer<Self::Param>) {
+        self.inner.process(audio, params);
     }
 }
 
-wasm_worklet::module!(StepSequencer);
+waw::module!(StepSequencer);

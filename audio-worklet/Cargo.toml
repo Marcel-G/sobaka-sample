@@ -19,7 +19,7 @@ rand = "0.8.5"
 rustfft = { version = "6.0.1" }
 fundsp = "0.6.3"
 
-wasm-worklet = { path = "../../wasm-worklet/wasm-worklet" }
+waw = { git = "https://github.com/Marcel-G/waw-rs" }
 wasm-bindgen = { version = "0.2.82" }
 wasm-bindgen-futures = { version = "0.4.32" }
 

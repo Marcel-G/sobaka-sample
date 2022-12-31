@@ -4,7 +4,10 @@ use crate::{
     utils::atomic_float::AtomicFloat,
 };
 use fundsp::prelude::*;
-use wasm_worklet::types::{AudioModule, ParamMap};
+use waw::{
+    buffer::{AudioBuffer, ParamBuffer},
+    worklet::AudioModule,
+};
 
 // g_{2}\left(x,l,u\right)=f_{2}\left(\frac{x-l}{u-l}\right)\left(u-l\right)+l
 fn g2(x: f32, l: f32, u: f32) -> f32 {
@@ -21,7 +24,7 @@ fn f2(x: f32) -> f32 {
     x.powf(3.0)
 }
 
-wasm_worklet::derive_param! {
+waw::derive_param! {
     pub enum EnvelopeParams {
         #[param(
             automation_rate = "a-rate",
@@ -124,14 +127,9 @@ impl AudioModule for Envelope {
         }
     }
 
-    fn process(
-        &mut self,
-        inputs: &[&[[f32; 128]]],
-        outputs: &mut [&mut [[f32; 128]]],
-        params: &ParamMap<Self::Param>,
-    ) {
-        self.inner.process(inputs, outputs, params);
+    fn process(&mut self, audio: &mut AudioBuffer, params: &ParamBuffer<Self::Param>) {
+        self.inner.process(audio, params);
     }
 }
 
-wasm_worklet::module!(Envelope);
+waw::module!(Envelope);

@@ -5,9 +5,10 @@ use crate::{
     },
     fundsp_worklet::FundspWorklet,
 };
-use wasm_worklet::{
+use waw::{
+    buffer::{AudioBuffer, ParamBuffer},
     derive_command,
-    types::{AudioModule, ParamMap},
+    worklet::AudioModule,
 };
 
 derive_command! {
@@ -42,14 +43,9 @@ impl AudioModule for Quantiser {
         }
     }
 
-    fn process(
-        &mut self,
-        inputs: &[&[[f32; 128]]],
-        outputs: &mut [&mut [[f32; 128]]],
-        params: &ParamMap<Self::Param>,
-    ) {
-        self.inner.process(inputs, outputs, params);
+    fn process(&mut self, audio: &mut AudioBuffer, params: &ParamBuffer<Self::Param>) {
+        self.inner.process(audio, params);
     }
 }
 
-wasm_worklet::module!(Quantiser);
+waw::module!(Quantiser);

@@ -1,26 +1,29 @@
 use crate::{
     dsp::{
+        messaging::Emitter,
         player::{dsp_player, PlayerEvent, Wave32Player},
         shared::{Share, Shared},
-        trigger::reset_trigger, messaging::Emitter,
+        trigger::reset_trigger,
     },
     fundsp_worklet::FundspWorklet,
 };
 use fundsp::prelude::*;
 use tsify::Tsify;
-use wasm_worklet::{
+use waw::{
+    buffer::{AudioBuffer, ParamBuffer},
     serde::{Deserialize, Serialize},
-    types::{AudioModule, EventCallback},
+    types::EventCallback,
+    worklet::AudioModule,
 };
 
 #[derive(Serialize, Deserialize, Clone, Tsify)]
-#[serde(crate = "wasm_worklet::serde")]
+#[serde(crate = "waw::serde")]
 pub struct AudioData {
     pub data: Vec<f32>,
     pub sample_rate: f32,
 }
 
-wasm_worklet::derive_event! {
+waw::derive_event! {
     pub enum SamplerEvent {
         /// Event when onsets have been detected
         OnDetect(Vec<f32>),
@@ -29,10 +32,10 @@ wasm_worklet::derive_event! {
     }
 }
 
-wasm_worklet::derive_command! {
+waw::derive_command! {
     pub enum SamplerCommand {
         /// Send new audio data
-        UpdateData(AudioData),
+        // UpdateData(js_sys::Float32Array),
         SetThreshold(f32),
     }
 }
@@ -55,18 +58,16 @@ impl AudioModule for Sampler {
 
         Sampler {
             emitter,
-            inner: FundspWorklet::create(module)
+            inner: FundspWorklet::create(module),
         }
     }
 
     fn on_command(&mut self, command: Self::Command) {
         match command {
-            SamplerCommand::UpdateData(audio) => self.emitter
-                .lock()
-                .set_data(&audio.data, audio.sample_rate),
-            SamplerCommand::SetThreshold(val) => self.emitter
-                .lock()
-                .set_threshold(val),
+            // SamplerCommand::UpdateData(audio) => self.emitter
+            //     .lock()
+            //     .set_data(&audio.data, audio.sample_rate),
+            SamplerCommand::SetThreshold(val) => self.emitter.lock().set_threshold(val),
         }
     }
 
@@ -81,14 +82,9 @@ impl AudioModule for Sampler {
             }))
     }
 
-    fn process(
-        &mut self,
-        inputs: &[&[[f32; 128]]],
-        outputs: &mut [&mut [[f32; 128]]],
-        params: &wasm_worklet::types::ParamMap<Self::Param>,
-    ) {
-        self.inner.process(inputs, outputs, params);
+    fn process(&mut self, audio: &mut AudioBuffer, params: &ParamBuffer<Self::Param>) {
+        self.inner.process(audio, params);
     }
 }
 
-wasm_worklet::module!(Sampler);
+waw::module!(Sampler);

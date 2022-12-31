@@ -1,5 +1,8 @@
 use fundsp::prelude::*;
-use wasm_worklet::types::{AudioModule, ParamMap};
+use waw::{
+    buffer::{AudioBuffer, ParamBuffer},
+    worklet::AudioModule,
+};
 
 use crate::fundsp_worklet::FundspWorklet;
 pub struct Noise {
@@ -17,14 +20,9 @@ impl AudioModule for Noise {
         }
     }
 
-    fn process(
-        &mut self,
-        inputs: &[&[[f32; 128]]],
-        outputs: &mut [&mut [[f32; 128]]],
-        params: &ParamMap<Self::Param>,
-    ) {
-        self.inner.process(inputs, outputs, params);
+    fn process(&mut self, audio: &mut AudioBuffer, params: &ParamBuffer<Self::Param>) {
+        self.inner.process(audio, params);
     }
 }
 
-wasm_worklet::module!(Noise);
+waw::module!(Noise);

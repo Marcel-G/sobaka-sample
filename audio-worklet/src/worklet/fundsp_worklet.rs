@@ -1,7 +1,7 @@
 use enum_map::{Enum, EnumArray};
 use fundsp::prelude::*;
 use std::{convert::TryInto, fmt::Debug};
-use wasm_worklet::types::{Buffer, ParamMap};
+use waw::buffer::{AudioBuffer, Param, ParamBuffer};
 
 pub struct FundspWorklet {
     pub inner: Au,
@@ -14,12 +14,13 @@ impl FundspWorklet {
         }
     }
 
-    pub fn process<P: EnumArray<Buffer> + Enum + Debug>(
+    pub fn process<P: EnumArray<Param> + Enum + Debug>(
         &mut self,
-        inputs: &[&[[f32; 128]]],
-        outputs: &mut [&mut [[f32; 128]]],
-        params: &ParamMap<P>,
+        audio: &mut AudioBuffer,
+        params: &ParamBuffer<P>,
     ) {
+        let (inputs, outputs) = audio.split();
+
         for i in 0..128 {
             // Write all the paramaters into the AudioUnit. Usually, these will be the same value.
             // Could possibly distinguish between a-rate / k-rate here
@@ -33,7 +34,7 @@ impl FundspWorklet {
             let input_frame: Vec<_> = inputs
                 .iter()
                 // @todo hardcoded channel one - maybe flatten?
-                .map(|channel| channel[0][i])
+                .map(|channel| channel.channel(0).unwrap()[i])
                 .collect();
 
             let mut output_frame = vec![0.0; outputs.len()]; // @todo assuming single channel
@@ -54,9 +55,9 @@ impl FundspWorklet {
             self.inner.tick32(&input_frame, &mut output_frame);
 
             // We move the data from the frame buffer into the planar buffer after processing.
-            for (channel, frame) in outputs.iter_mut().zip(output_frame) {
+            for (output, frame) in outputs.iter_mut().zip(output_frame) {
                 // @todo assuming single channel
-                channel[0][i] = frame
+                output.channel_mut(0).unwrap()[i] = frame
             }
         }
     }

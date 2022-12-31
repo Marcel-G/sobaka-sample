@@ -1,5 +1,7 @@
+use waw::buffer::{AudioBuffer, ParamBuffer};
+use waw::worklet::AudioModule;
+
 use crate::dsp::hold::hold;
-use wasm_worklet::types::{AudioModule, ParamMap};
 
 use crate::fundsp_worklet::FundspWorklet;
 pub struct SampleAndHold {
@@ -17,14 +19,9 @@ impl AudioModule for SampleAndHold {
         }
     }
 
-    fn process(
-        &mut self,
-        inputs: &[&[[f32; 128]]],
-        outputs: &mut [&mut [[f32; 128]]],
-        params: &ParamMap<Self::Param>,
-    ) {
-        self.inner.process(inputs, outputs, params);
+    fn process(&mut self, audio: &mut AudioBuffer, params: &ParamBuffer<Self::Param>) {
+        self.inner.process(audio, params);
     }
 }
 
-wasm_worklet::module!(SampleAndHold);
+waw::module!(SampleAndHold);

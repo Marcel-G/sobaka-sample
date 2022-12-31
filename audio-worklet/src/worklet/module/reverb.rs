@@ -1,6 +1,9 @@
 use crate::fundsp_worklet::FundspWorklet;
 use fundsp::prelude::*;
-use wasm_worklet::types::{AudioModule, ParamMap};
+use waw::{
+    buffer::{AudioBuffer, ParamBuffer},
+    worklet::AudioModule,
+};
 
 /// Raises 2 to a floating point power.
 #[inline]
@@ -16,7 +19,7 @@ pub fn fast_pow(x: f32, p: f32) -> f32 {
     pow2(p * log2(x))
 }
 
-wasm_worklet::derive_param! {
+waw::derive_param! {
     pub enum ReverbParams {
         #[param(
             automation_rate = "a-rate",
@@ -87,14 +90,9 @@ impl AudioModule for Reverb {
         }
     }
 
-    fn process(
-        &mut self,
-        inputs: &[&[[f32; 128]]],
-        outputs: &mut [&mut [[f32; 128]]],
-        params: &ParamMap<Self::Param>,
-    ) {
-        self.inner.process(inputs, outputs, params);
+    fn process(&mut self, audio: &mut AudioBuffer, params: &ParamBuffer<Self::Param>) {
+        self.inner.process(audio, params);
     }
 }
 
-wasm_worklet::module!(Reverb);
+waw::module!(Reverb);

@@ -7,9 +7,12 @@ use crate::{
     fundsp_worklet::FundspWorklet,
 };
 use fundsp::prelude::*;
-use wasm_worklet::types::{AudioModule, ParamMap};
+use waw::{
+    buffer::{AudioBuffer, ParamBuffer},
+    worklet::AudioModule,
+};
 
-wasm_worklet::derive_param! {
+waw::derive_param! {
     pub enum OscillatorParams {
         #[param(
             automation_rate = "a-rate",
@@ -86,14 +89,9 @@ impl AudioModule for Oscillator {
             inner: FundspWorklet::create(module),
         }
     }
-    fn process(
-        &mut self,
-        inputs: &[&[[f32; 128]]],
-        outputs: &mut [&mut [[f32; 128]]],
-        params: &ParamMap<Self::Param>,
-    ) {
-        self.inner.process(inputs, outputs, params);
+    fn process(&mut self, audio: &mut AudioBuffer, params: &ParamBuffer<Self::Param>) {
+        self.inner.process(audio, params);
     }
 }
 
-wasm_worklet::module!(Oscillator);
+waw::module!(Oscillator);
