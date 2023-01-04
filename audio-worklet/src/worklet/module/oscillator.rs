@@ -9,47 +9,46 @@ use crate::{
 use fundsp::prelude::*;
 use waw::{
     buffer::{AudioBuffer, ParamBuffer},
-    worklet::AudioModule,
+    worklet::{AudioModule, Emitter},
 };
 
-waw::derive_param! {
-    pub enum OscillatorParams {
-        #[param(
-            automation_rate = "a-rate",
-            min_value = 0.,
-            max_value = 600.,
-            default_value = 120.
-        )]
-        Pitch,
-        #[param(
-            automation_rate = "a-rate",
-            min_value = 0.,
-            max_value = 1.,
-            default_value = 0.25
-        )]
-        Saw,
-        #[param(
-            automation_rate = "a-rate",
-            min_value = 0.,
-            max_value = 1.,
-            default_value = 0.25
-        )]
-        Sine,
-        #[param(
-            automation_rate = "a-rate",
-            min_value = 0.,
-            max_value = 1.,
-            default_value = 0.25
-        )]
-        Square,
-        #[param(
-            automation_rate = "a-rate",
-            min_value = 0.,
-            max_value = 1.,
-            default_value = 0.25
-        )]
-        Triangle
-    }
+#[waw::derive::derive_param]
+pub enum OscillatorParams {
+    #[param(
+        automation_rate = "a-rate",
+        min_value = 0.,
+        max_value = 600.,
+        default_value = 120.
+    )]
+    Pitch,
+    #[param(
+        automation_rate = "a-rate",
+        min_value = 0.,
+        max_value = 1.,
+        default_value = 0.25
+    )]
+    Saw,
+    #[param(
+        automation_rate = "a-rate",
+        min_value = 0.,
+        max_value = 1.,
+        default_value = 0.25
+    )]
+    Sine,
+    #[param(
+        automation_rate = "a-rate",
+        min_value = 0.,
+        max_value = 1.,
+        default_value = 0.25
+    )]
+    Square,
+    #[param(
+        automation_rate = "a-rate",
+        min_value = 0.,
+        max_value = 1.,
+        default_value = 0.25
+    )]
+    Triangle,
 }
 
 pub struct Oscillator {
@@ -62,7 +61,7 @@ impl AudioModule for Oscillator {
     const INPUTS: u32 = 2;
     const OUTPUTS: u32 = 1;
 
-    fn create() -> Self {
+    fn create(emitter: Emitter<Self::Event>) -> Self {
         let module = {
             let multi_osc = {
                 let input = split::<U2, _>()
@@ -94,4 +93,4 @@ impl AudioModule for Oscillator {
     }
 }
 
-waw::module!(Oscillator);
+waw::main!(Oscillator);

@@ -11,7 +11,7 @@
 </script>
 
 <script lang="ts">
-  import type { DelayNode } from 'sobaka-sample-audio-worklet'
+  import type { Delay } from 'sobaka-sample-audio-worklet'
   import { onDestroy, onMount } from 'svelte'
   import Panel from './shared/Panel.svelte'
   import Plug from './shared/Plug.svelte'
@@ -23,7 +23,7 @@
 
   export let state: SubStore<State>
   let name = 'delay'
-  let delay: DelayNode
+  let delay: Delay
   let node: AudioNode
   let delay_time_param: AudioParam
   let loading = true
@@ -31,8 +31,8 @@
   const context = get_audio_context()
 
   onMount(async () => {
-    const { DelayNode } = await import('sobaka-sample-audio-worklet')
-    delay = await DelayNode.install($context)
+    const { Delay } = await import('sobaka-sample-audio-worklet')
+    delay = await Delay.install($context)
     node = delay.node()
     delay_time_param = delay.get_param('DelayTime')
     loading = false

@@ -18,7 +18,7 @@
 
 <script lang="ts">
   import { debounce } from 'lodash'
-  import type { SamplerCommand, SamplerNode } from 'sobaka-sample-audio-worklet'
+  import type { SamplerCommand, Sampler } from 'sobaka-sample-audio-worklet'
   import { onDestroy, onMount } from 'svelte'
   import Panel from '../shared/Panel.svelte'
   import Plug from '../shared/Plug.svelte'
@@ -32,7 +32,7 @@
 
   export let state: SubStore<State>
   let name = 'sampler'
-  let sampler: SamplerNode
+  let sampler: Sampler
   let node: AudioNode
   let loading = true
 
@@ -40,13 +40,13 @@
   const canvas = init_canvas()
 
   onMount(async () => {
-    const { SamplerNode } = await import('sobaka-sample-audio-worklet')
-    sampler = await SamplerNode.install($context)
+    const { Sampler } = await import('sobaka-sample-audio-worklet')
+    sampler = await Sampler.install($context)
 
     node = sampler.node()
     loading = false
 
-    sampler.subscribe((event) => {
+    sampler.subscribe(event => {
       if ('OnTrigger' in event) {
         canvas.update_active(event.OnTrigger)
       } else if ('OnDetect' in event) {
@@ -118,10 +118,18 @@
   {/if}
 
   <div slot="inputs">
-    <Plug id={0} label="Gate" ctx={{ type: PlugType.Input, module: node, connectIndex: 0 }} />
+    <Plug
+      id={0}
+      label="Gate"
+      ctx={{ type: PlugType.Input, module: node, connectIndex: 0 }}
+    />
   </div>
   <div slot="outputs">
-    <Plug id={0} label="Output" ctx={{ type: PlugType.Output, module: node, connectIndex: 0 }} />
+    <Plug
+      id={0}
+      label="Output"
+      ctx={{ type: PlugType.Output, module: node, connectIndex: 0 }}
+    />
   </div>
 </Panel>
 

@@ -23,7 +23,7 @@
 </script>
 
 <script lang="ts">
-  import type { OscillatorNode } from 'sobaka-sample-audio-worklet'
+  import type { Oscillator } from 'sobaka-sample-audio-worklet'
   import { onDestroy, onMount } from 'svelte'
   import Panel from './shared/Panel.svelte'
   import Plug from './shared/Plug.svelte'
@@ -35,7 +35,7 @@
 
   export let state: SubStore<State>
   let name = 'oscillator'
-  let oscillator: OscillatorNode
+  let oscillator: Oscillator
   let node: AudioNode
   let pitch_param: AudioParam
   let saw_param: AudioParam
@@ -47,8 +47,8 @@
   const context = get_audio_context()
 
   onMount(async () => {
-    const { OscillatorNode } = await import('sobaka-sample-audio-worklet')
-    oscillator = await OscillatorNode.install($context)
+    const { Oscillator } = await import('sobaka-sample-audio-worklet')
+    oscillator = await Oscillator.install($context)
     node = oscillator.node()
     pitch_param = oscillator.get_param('Pitch')
     saw_param = oscillator.get_param('Saw')

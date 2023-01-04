@@ -9,7 +9,7 @@
 </script>
 
 <script lang="ts">
-  import { SampleAndHoldNode } from 'sobaka-sample-audio-worklet'
+  import { SampleAndHold } from 'sobaka-sample-audio-worklet'
   import { onDestroy, onMount } from 'svelte'
   import Panel from './shared/Panel.svelte'
   import Plug from './shared/Plug.svelte'
@@ -18,15 +18,15 @@
   import { get_context as get_audio_context } from '../audio'
 
   const name = 'S & H'
-  let sample_and_hold: SampleAndHoldNode
+  let sample_and_hold: SampleAndHold
   let node: AudioNode
   let loading = true
 
   const context = get_audio_context()
 
   onMount(async () => {
-    const { SampleAndHoldNode } = await import('sobaka-sample-audio-worklet')
-    sample_and_hold = await SampleAndHoldNode.install($context)
+    const { SampleAndHold } = await import('sobaka-sample-audio-worklet')
+    sample_and_hold = await SampleAndHold.install($context)
     node = sample_and_hold.node()
     loading = false
   })

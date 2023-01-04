@@ -48,8 +48,8 @@
   const context = get_audio_context()
 
   onMount(async () => {
-    const { QuantiserNode } = await import('sobaka-sample-audio-worklet')
-    quantiser = await QuantiserNode.install($context)
+    const { Quantiser } = await import('sobaka-sample-audio-worklet')
+    quantiser = await Quantiser.install($context)
     node = quantiser.node()
     loading = false
   })

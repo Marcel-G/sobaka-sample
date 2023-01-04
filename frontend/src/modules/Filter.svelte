@@ -17,7 +17,7 @@
 </script>
 
 <script lang="ts">
-  import { FilterNode } from 'sobaka-sample-audio-worklet'
+  import { Filter } from 'sobaka-sample-audio-worklet'
   import { onDestroy, onMount } from 'svelte'
   import Panel from './shared/Panel.svelte'
   import Plug from './shared/Plug.svelte'
@@ -29,7 +29,7 @@
 
   export let state: SubStore<State>
   let name = 'filter'
-  let filter: FilterNode
+  let filter: Filter
   let node: AudioNode
   let frequency_param: AudioParam
   let q_param: AudioParam
@@ -38,8 +38,8 @@
   const context = get_audio_context()
 
   onMount(async () => {
-    const { FilterNode } = await import('sobaka-sample-audio-worklet')
-    filter = await FilterNode.install($context)
+    const { Filter } = await import('sobaka-sample-audio-worklet')
+    filter = await Filter.install($context)
     node = filter.node()
     frequency_param = filter.get_param('Frequency')
     q_param = filter.get_param('Q')

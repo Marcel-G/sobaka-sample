@@ -5,26 +5,25 @@ use crate::{
 use fundsp::prelude::*;
 use waw::{
     buffer::{AudioBuffer, ParamBuffer},
-    worklet::AudioModule,
+    worklet::{AudioModule, Emitter},
 };
 
-waw::derive_param! {
-    pub enum FilterParams {
-        #[param(
-            automation_rate = "a-rate",
-            min_value = 0.,
-            max_value = 1.0,
-            default_value = 0.1
-        )]
-        Q,
-        #[param(
-            automation_rate = "a-rate",
-            min_value = 0.,
-            max_value = 8.0,
-            default_value = 0.1
-        )]
-        Frequency,
-    }
+#[waw::derive::derive_param]
+pub enum FilterParams {
+    #[param(
+        automation_rate = "a-rate",
+        min_value = 0.,
+        max_value = 1.0,
+        default_value = 0.1
+    )]
+    Q,
+    #[param(
+        automation_rate = "a-rate",
+        min_value = 0.,
+        max_value = 8.0,
+        default_value = 0.1
+    )]
+    Frequency,
 }
 
 pub struct Filter {
@@ -37,7 +36,7 @@ impl AudioModule for Filter {
     const INPUTS: u32 = 1;
     const OUTPUTS: u32 = 4;
 
-    fn create() -> Self {
+    fn create(emitter: Emitter<Self::Event>) -> Self {
         let module = {
             let input = pass()
                 | ((param(FilterParams::Frequency as i64, 0.0))
@@ -62,4 +61,4 @@ impl AudioModule for Filter {
     }
 }
 
-waw::module!(Filter);
+waw::main!(Filter);

@@ -6,7 +6,7 @@ use crate::{
 use fundsp::prelude::*;
 use waw::{
     buffer::{AudioBuffer, ParamBuffer},
-    worklet::AudioModule,
+    worklet::{AudioModule, Emitter},
 };
 
 // g_{2}\left(x,l,u\right)=f_{2}\left(\frac{x-l}{u-l}\right)\left(u-l\right)+l
@@ -24,37 +24,36 @@ fn f2(x: f32) -> f32 {
     x.powf(3.0)
 }
 
-waw::derive_param! {
-    pub enum EnvelopeParams {
-        #[param(
-            automation_rate = "a-rate",
-            min_value = 0.,
-            max_value = 1.0,
-            default_value = 0.1
-        )]
-        Attack,
-        #[param(
-            automation_rate = "a-rate",
-            min_value = 0.,
-            max_value = 1.0,
-            default_value = 0.1
-        )]
-        Decay,
-        #[param(
-            automation_rate = "a-rate",
-            min_value = 0.,
-            max_value = 1.0,
-            default_value = 0.1
-        )]
-        Sustain,
-        #[param(
-            automation_rate = "a-rate",
-            min_value = 0.,
-            max_value = 1.0,
-            default_value = 0.1
-        )]
-        Release,
-    }
+#[waw::derive::derive_param]
+pub enum EnvelopeParams {
+    #[param(
+        automation_rate = "a-rate",
+        min_value = 0.,
+        max_value = 1.0,
+        default_value = 0.1
+    )]
+    Attack,
+    #[param(
+        automation_rate = "a-rate",
+        min_value = 0.,
+        max_value = 1.0,
+        default_value = 0.1
+    )]
+    Decay,
+    #[param(
+        automation_rate = "a-rate",
+        min_value = 0.,
+        max_value = 1.0,
+        default_value = 0.1
+    )]
+    Sustain,
+    #[param(
+        automation_rate = "a-rate",
+        min_value = 0.,
+        max_value = 1.0,
+        default_value = 0.1
+    )]
+    Release,
 }
 
 pub struct Envelope {
@@ -64,7 +63,7 @@ pub struct Envelope {
 impl AudioModule for Envelope {
     type Param = EnvelopeParams;
 
-    fn create() -> Self {
+    fn create(emitter: Emitter<Self::Event>) -> Self {
         let module = {
             let on_offset = AtomicFloat::new(0.0);
             let off_offset = AtomicFloat::new(0.0);
@@ -132,4 +131,4 @@ impl AudioModule for Envelope {
     }
 }
 
-waw::module!(Envelope);
+waw::main!(Envelope);

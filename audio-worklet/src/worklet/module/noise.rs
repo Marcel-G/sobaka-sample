@@ -1,7 +1,7 @@
 use fundsp::prelude::*;
 use waw::{
     buffer::{AudioBuffer, ParamBuffer},
-    worklet::AudioModule,
+    worklet::{AudioModule, Emitter},
 };
 
 use crate::fundsp_worklet::FundspWorklet;
@@ -12,7 +12,7 @@ pub struct Noise {
 impl AudioModule for Noise {
     const INPUTS: u32 = 0;
 
-    fn create() -> Self {
+    fn create(emitter: Emitter<Self::Event>) -> Self {
         let module = white();
 
         Noise {
@@ -25,4 +25,4 @@ impl AudioModule for Noise {
     }
 }
 
-waw::module!(Noise);
+waw::main!(Noise);

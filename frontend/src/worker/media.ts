@@ -8,7 +8,7 @@ const media_store = localforage.createInstance({
 const decode_sample = async (data: ArrayBuffer): Promise<AudioData> => {
   const audio_data = await new AudioContext().decodeAudioData(data)
   return {
-    data: Array.from(audio_data.getChannelData(0)),
+    data: audio_data.getChannelData(0),
     sample_rate: audio_data.sampleRate
   }
 }
@@ -37,7 +37,7 @@ export const store_audio = async (file: Blob) => {
 }
 
 export type AudioData = {
-  data: Array<number>
+  data: Float32Array
   sample_rate: number
 }
 

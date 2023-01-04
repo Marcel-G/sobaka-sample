@@ -7,14 +7,12 @@ use crate::{
 };
 use waw::{
     buffer::{AudioBuffer, ParamBuffer},
-    derive_command,
-    worklet::AudioModule,
+    worklet::{AudioModule, Emitter},
 };
 
-derive_command! {
-    pub enum QuantiserCommand {
-        UpdateNotes([bool; 12]),
-    }
+#[waw::derive::derive_command]
+pub enum QuantiserCommand {
+    UpdateNotes([bool; 12]),
 }
 
 pub struct Quantiser {
@@ -25,7 +23,7 @@ pub struct Quantiser {
 impl AudioModule for Quantiser {
     type Command = QuantiserCommand;
 
-    fn create() -> Self {
+    fn create(emitter: Emitter<Self::Event>) -> Self {
         let init = [false; 12];
         let module = dsp_quantiser(init).share();
 
@@ -48,4 +46,4 @@ impl AudioModule for Quantiser {
     }
 }
 
-waw::module!(Quantiser);
+waw::main!(Quantiser);

@@ -2,7 +2,7 @@ use crate::fundsp_worklet::FundspWorklet;
 use fundsp::prelude::*;
 use waw::{
     buffer::{AudioBuffer, ParamBuffer},
-    worklet::AudioModule,
+    worklet::{AudioModule, Emitter},
 };
 
 /// Raises 2 to a floating point power.
@@ -19,23 +19,22 @@ pub fn fast_pow(x: f32, p: f32) -> f32 {
     pow2(p * log2(x))
 }
 
-waw::derive_param! {
-    pub enum ReverbParams {
-        #[param(
-            automation_rate = "a-rate",
-            min_value = 0.,
-            max_value = 1.,
-            default_value = 0.1
-        )]
-        Wet,
-        #[param(
-            automation_rate = "a-rate",
-            min_value = 0.,
-            max_value = 10.,
-            default_value = 0.1
-        )]
-        Delay,
-    }
+#[waw::derive::derive_param]
+pub enum ReverbParams {
+    #[param(
+        automation_rate = "a-rate",
+        min_value = 0.,
+        max_value = 1.,
+        default_value = 0.1
+    )]
+    Wet,
+    #[param(
+        automation_rate = "a-rate",
+        min_value = 0.,
+        max_value = 10.,
+        default_value = 0.1
+    )]
+    Delay,
 }
 
 pub struct Reverb {
@@ -48,7 +47,7 @@ impl AudioModule for Reverb {
     const INPUTS: u32 = 2;
     const OUTPUTS: u32 = 2;
 
-    fn create() -> Self {
+    fn create(emitter: Emitter<Self::Event>) -> Self {
         let module = {
             // Optimized delay times for a 32-channel FDN from a legacy project.
             const DELAYS: [f64; 32] = [
@@ -95,4 +94,4 @@ impl AudioModule for Reverb {
     }
 }
 
-waw::module!(Reverb);
+waw::main!(Reverb);

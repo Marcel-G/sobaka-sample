@@ -1,5 +1,5 @@
 use waw::buffer::{AudioBuffer, ParamBuffer};
-use waw::worklet::AudioModule;
+use waw::worklet::{AudioModule, Emitter};
 
 use crate::dsp::hold::hold;
 
@@ -11,7 +11,7 @@ pub struct SampleAndHold {
 impl AudioModule for SampleAndHold {
     const INPUTS: u32 = 2;
 
-    fn create() -> Self {
+    fn create(emitter: Emitter<Self::Event>) -> Self {
         let module = hold();
 
         SampleAndHold {
@@ -24,4 +24,4 @@ impl AudioModule for SampleAndHold {
     }
 }
 
-waw::module!(SampleAndHold);
+waw::main!(SampleAndHold);

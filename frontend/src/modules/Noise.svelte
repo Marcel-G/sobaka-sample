@@ -9,7 +9,7 @@
 </script>
 
 <script lang="ts">
-  import type { NoiseNode } from 'sobaka-sample-audio-worklet'
+  import type { Noise } from 'sobaka-sample-audio-worklet'
   import { onDestroy, onMount } from 'svelte'
   import Panel from './shared/Panel.svelte'
   import Plug from './shared/Plug.svelte'
@@ -17,15 +17,15 @@
   import { PlugType } from '../workspace/plugs'
   import { get_context as get_audio_context } from '../audio'
 
-  let noise: NoiseNode
+  let noise: Noise
   let node: AudioNode
   let loading = true
 
   const context = get_audio_context()
 
   onMount(async () => {
-    const { NoiseNode } = await import('sobaka-sample-audio-worklet')
-    noise = await NoiseNode.install($context)
+    const { Noise } = await import('sobaka-sample-audio-worklet')
+    noise = await Noise.install($context)
     node = noise.node()
     loading = false
   })

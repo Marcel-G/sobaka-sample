@@ -1,6 +1,5 @@
 use crate::{
     dsp::{
-        messaging::Emitter,
         player::{dsp_player, PlayerEvent, Wave32Player},
         shared::{Share, Shared},
         trigger::reset_trigger,
@@ -12,8 +11,7 @@ use tsify::Tsify;
 use waw::{
     buffer::{AudioBuffer, ParamBuffer},
     serde::{Deserialize, Serialize},
-    types::EventCallback,
-    worklet::AudioModule,
+    worklet::{AudioModule, Emitter},
 };
 
 #[derive(Serialize, Deserialize, Clone, Tsify)]
@@ -23,21 +21,19 @@ pub struct AudioData {
     pub sample_rate: f32,
 }
 
-waw::derive_event! {
-    pub enum SamplerEvent {
-        /// Event when onsets have been detected
-        OnDetect(Vec<f32>),
-        /// Fired when a new segment is triggered
-        OnTrigger(usize),
-    }
+#[waw::derive::derive_event]
+pub enum SamplerEvent {
+    /// Event when onsets have been detected
+    OnDetect(Vec<f32>),
+    /// Fired when a new segment is triggered
+    OnTrigger(usize),
 }
 
-waw::derive_command! {
-    pub enum SamplerCommand {
-        /// Send new audio data
-        // UpdateData(js_sys::Float32Array),
-        SetThreshold(f32),
-    }
+#[waw::derive::derive_command]
+pub enum SamplerCommand {
+    /// Send new audio data
+    // UpdateData(js_sys::Float32Array),
+    SetThreshold(f32),
 }
 
 pub struct Sampler {
@@ -49,7 +45,7 @@ impl AudioModule for Sampler {
     type Event = SamplerEvent;
     type Command = SamplerCommand;
 
-    fn create() -> Self {
+    fn create(emitter: Emitter<Self::Event>) -> Self {
         let player = dsp_player(0, None, 0.0).share();
 
         let emitter = player.clone();
@@ -71,20 +67,12 @@ impl AudioModule for Sampler {
         }
     }
 
-    fn add_event_listener_with_callback(&mut self, callback: EventCallback<Self>) {
-        self.emitter
-            .add_event_listener_with_callback(Box::new(move |event| {
-                let e = match event {
-                    PlayerEvent::OnDetect(points) => SamplerEvent::OnDetect(points),
-                    PlayerEvent::OnTrigger(index) => SamplerEvent::OnTrigger(index),
-                };
-                (callback)(e);
-            }))
-    }
+    // fn process_events(events: &[Event])
+    // self.dispatch(event: &Event)
 
     fn process(&mut self, audio: &mut AudioBuffer, params: &ParamBuffer<Self::Param>) {
         self.inner.process(audio, params);
     }
 }
 
-waw::module!(Sampler);
+waw::main!(Sampler);

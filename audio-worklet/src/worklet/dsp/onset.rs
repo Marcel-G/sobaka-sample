@@ -186,7 +186,6 @@ pub fn onset(threshold: f32, activations: &[f32], fps: usize) -> Vec<f32> {
 }
 
 // Utility functions
-
 fn dot(a: &[f32], b: &[Vec<f32>]) -> Vec<f32> {
     b.iter()
         .map(|y| a.iter().zip(y).map(|(x, y)| x * y).sum())
