@@ -9,13 +9,13 @@ use fundsp::{
 };
 use numeric_array::typenum::{Prod, Sum, Unsigned};
 
-use super::{
-    messaging::{Callback, Emitter},
-    trigger::SchmittTrigger,
-};
+use super::trigger::SchmittTrigger;
 
 #[inline]
-pub fn stepped<M, N, T>(gate_passthrough: bool) -> An<Stepped<M, N, T>>
+pub fn stepped<M, N, T>(
+    gate_passthrough: bool,
+    callback: Option<Box<dyn Fn(SteppedEvent)>>,
+) -> An<Stepped<M, N, T>>
 where
     M: Size<T> + Mul<N>,
     N: Size<T>,
@@ -23,14 +23,14 @@ where
     <<M as Mul<N>>::Output as Add<U2>>::Output: Size<T>,
     T: Float,
 {
-    An(Stepped::new(gate_passthrough))
+    An(Stepped::new(gate_passthrough, callback))
 }
 
 pub struct Stepped<M, N, T> {
     active: usize,
     trigger: SchmittTrigger,
     reset_trigger: SchmittTrigger,
-    on_event: Option<Callback<SteppedEvent>>,
+    callback: Option<Box<dyn Fn(SteppedEvent)>>,
     gate_passthrough: bool,
     _marker: PhantomData<(M, N, T)>,
 }
@@ -41,10 +41,10 @@ where
     N: Size<T>,
     T: Float,
 {
-    pub fn new(gate_passthrough: bool) -> Self {
+    pub fn new(gate_passthrough: bool, callback: Option<Box<dyn Fn(SteppedEvent)>>) -> Self {
         Self {
             active: 0,
-            on_event: None,
+            callback,
             trigger: SchmittTrigger::default(),
             reset_trigger: SchmittTrigger::default(),
             gate_passthrough,
@@ -53,22 +53,9 @@ where
     }
 
     fn notify(&self, event: SteppedEvent) {
-        if let Some(callback) = &self.on_event {
+        if let Some(callback) = &self.callback {
             (callback)(event)
         }
-    }
-}
-
-impl<M, N, T> Emitter for Stepped<M, N, T>
-where
-    M: Size<T> + Mul<N>,
-    N: Size<T>,
-    T: Float,
-{
-    type Event = SteppedEvent;
-
-    fn add_event_listener_with_callback(&mut self, callback: Callback<Self::Event>) {
-        self.on_event = Some(callback)
     }
 }
 
@@ -79,7 +66,7 @@ where
     T: Float,
 {
     fn default() -> Self {
-        Self::new(false)
+        Self::new(false, None)
     }
 }
 

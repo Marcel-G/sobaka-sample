@@ -2,8 +2,6 @@ use std::sync::{Arc, Mutex, MutexGuard};
 
 use fundsp::{hacker::Complex64, hacker32::*};
 
-use super::messaging::{Callback, Emitter};
-
 /// AudioNodes in `fundsp` are owned by audio processing. In some cases,
 /// it is necessary to be able to mutate the state of `AudioNodes` asyncronously.
 /// By wrapping an `AudioNode` with `Shared` it can be cloned, which clones
@@ -100,14 +98,3 @@ where
 
 unsafe impl<X: AudioNode> Send for Shared<X> {}
 unsafe impl<X: AudioNode> Sync for Shared<X> {}
-
-impl<X> Emitter for Shared<X>
-where
-    X: AudioNode + Emitter,
-{
-    type Event = X::Event;
-
-    fn add_event_listener_with_callback(&mut self, callback: Callback<Self::Event>) {
-        self.lock().add_event_listener_with_callback(callback)
-    }
-}

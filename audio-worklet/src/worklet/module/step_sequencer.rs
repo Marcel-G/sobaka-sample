@@ -23,7 +23,6 @@ pub enum StepSequencerCommand {
 }
 
 pub struct StepSequencer {
-    emitter: Emitter<StepSequencerEvent>,
     inner: FundspWorklet,
 }
 
@@ -39,9 +38,12 @@ impl AudioModule for StepSequencer {
         let steps =
             branch::<U4, _, _, _>(|x| branch::<U8, _, _, _>(|y| tag((x * 8) + y, 0.0))).share();
 
-        let stepped = dsp::stepped::stepped::<U8, U4, _>(true).share();
+        let handle_message = move |event| match event {
+            SteppedEvent::StepChange(n) => emitter.send(StepSequencerEvent::StepChange(n as u32)),
+        };
 
-        // let emitter = stepped.clone();
+        let stepped =
+            dsp::stepped::stepped::<U8, U4, _>(true, Some(Box::new(handle_message))).share();
 
         let module = {
             (pass() | // Gate input
@@ -51,7 +53,6 @@ impl AudioModule for StepSequencer {
         };
 
         StepSequencer {
-            emitter,
             inner: FundspWorklet::create(module),
         }
     }
@@ -65,19 +66,6 @@ impl AudioModule for StepSequencer {
                 .set(((x * 8) + y) as i64, if value { 1.0 } else { 0.0 }),
         }
     }
-
-    // // @todo -- this is kinda messy
-    // fn add_event_listener_with_callback(&mut self, callback: EventCallback<Self>) {
-    //     self.emitter
-    //         .add_event_listener_with_callback(Box::new(move |event| {
-    //             let e = match event {
-    //                 SteppedEvent::StepChange(i) => {
-    //                     StepSequencerEvent::StepChange(i.try_into().unwrap())
-    //                 }
-    //             };
-    //             (callback)(e);
-    //         }))
-    // }
 
     fn process(&mut self, audio: &mut AudioBuffer, params: &ParamBuffer<Self::Param>) {
         self.inner.process(audio, params);

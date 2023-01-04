@@ -3,7 +3,6 @@ use fundsp::Float;
 pub mod envelope;
 pub mod hold;
 pub mod join;
-pub mod messaging;
 pub mod onset;
 pub mod oscillator;
 pub mod param;

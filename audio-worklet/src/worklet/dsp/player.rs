@@ -3,10 +3,7 @@ use std::{marker::PhantomData, sync::Arc};
 use fundsp::prelude::*;
 use rand::Rng;
 
-use super::{
-    messaging::{Callback, Emitter},
-    onset::{onset, superflux_diff_spec, Spectrogram},
-};
+use super::onset::{onset, superflux_diff_spec, Spectrogram};
 
 /// Play back one channel of a wave.
 pub struct Wave32Player<T: Float> {
@@ -16,7 +13,6 @@ pub struct Wave32Player<T: Float> {
     threshold: f32,
     diff_spec: Option<Vec<f32>>,
     index: usize,
-    on_event: Option<Callback<PlayerEvent>>,
     loop_point: Option<usize>,
     detections: Vec<usize>,
     _marker: PhantomData<T>,
@@ -36,7 +32,6 @@ impl<T: Float> Wave32Player<T> {
             index: 0,
             threshold,
             diff_spec: None,
-            on_event: None,
             loop_point,
             detections: Default::default(),
             _marker: PhantomData::default(),
@@ -101,9 +96,9 @@ impl<T: Float> Wave32Player<T> {
     }
 
     fn notify(&self, event: PlayerEvent) {
-        if let Some(callback) = &self.on_event {
-            (callback)(event)
-        }
+        // if let Some(callback) = &self.on_event {
+        //     (callback)(event)
+        // }
     }
 }
 
@@ -111,17 +106,6 @@ impl<T: Float> Wave32Player<T> {
 pub enum PlayerEvent {
     OnDetect(Vec<f32>),
     OnTrigger(usize),
-}
-
-impl<T> Emitter for Wave32Player<T>
-where
-    T: Float,
-{
-    type Event = PlayerEvent;
-
-    fn add_event_listener_with_callback(&mut self, callback: Callback<Self::Event>) {
-        self.on_event = Some(callback)
-    }
 }
 
 impl<T: Float> AudioNode for Wave32Player<T> {

@@ -1,5 +1,3 @@
-use std::convert::TryInto;
-
 use crate::{
     dsp::{self, shared::Share, stepped::SteppedEvent},
     fundsp_worklet::FundspWorklet,
@@ -7,7 +5,6 @@ use crate::{
 use fundsp::prelude::*;
 use waw::{
     buffer::{AudioBuffer, ParamBuffer},
-    types::EventCallback,
     worklet::{AudioModule, Emitter},
 };
 
@@ -24,7 +21,6 @@ pub enum SequencerCommand {
 }
 
 pub struct Sequencer {
-    emitter: Emitter<SequencerEvent>,
     inner: FundspWorklet,
 }
 
@@ -38,9 +34,12 @@ impl AudioModule for Sequencer {
         // @todo not initialised properly
         let steps = branch::<U8, _, _, _>(|i| tag(i, 0.0)).share();
 
-        let stepped = dsp::stepped::stepped::<U8, U1, _>(false).share();
+        let handle_message = move |event| match event {
+            SteppedEvent::StepChange(n) => emitter.send(SequencerEvent::StepChange(n as u32)),
+        };
 
-        // let emitter = stepped.clone();
+        let stepped =
+            dsp::stepped::stepped::<U8, U1, _>(false, Some(Box::new(handle_message))).share();
 
         let module = {
             (pass() | // Gate input
@@ -50,7 +49,6 @@ impl AudioModule for Sequencer {
         };
 
         Sequencer {
-            emitter,
             inner: FundspWorklet::create(module),
         }
     }
@@ -61,19 +59,6 @@ impl AudioModule for Sequencer {
             SequencerCommand::UpdateStep(i, value) => self.inner.inner.set(i as i64, value),
         }
     }
-
-    // // @todo -- this is kinda messy
-    // fn add_event_listener_with_callback(&mut self, callback: EventCallback<Self>) {
-    //     self.emitter
-    //         .add_event_listener_with_callback(Box::new(move |event| {
-    //             let e = match event {
-    //                 SteppedEvent::StepChange(i) => {
-    //                     SequencerEvent::StepChange(i.try_into().unwrap())
-    //                 }
-    //             };
-    //             (callback)(e);
-    //         }))
-    // }
 
     fn process(&mut self, audio: &mut AudioBuffer, params: &ParamBuffer<Self::Param>) {
         self.inner.process(audio, params);
