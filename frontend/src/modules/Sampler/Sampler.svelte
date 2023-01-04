@@ -27,7 +27,7 @@
   import Knob from '../../components/Knob.svelte'
   import { SubStore } from '../../utils/patches'
   import { get_context as get_audio_context } from '../../audio'
-  import { load_audio, store_audio } from '../../worker/media'
+  import { into_transport, load_audio, store_audio } from '../../worker/media'
   import { init_canvas } from './render'
 
   export let state: SubStore<State>
@@ -88,7 +88,7 @@
       canvas.update_wave(audio_data)
 
       // Send updated data to audio worklet - @todo this may not be the most efficient format
-      sampler?.command({ UpdateData: audio_data })
+      await sampler?.update_audio(into_transport(audio_data))
       loading = false
     }
   })

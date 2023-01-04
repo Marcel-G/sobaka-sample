@@ -42,7 +42,7 @@ impl<T: Float> Wave32Player<T> {
         self.threshold = threshold;
         self.sample = 0;
         self.index = 0;
-        self.detect_peaks();
+        // self.detect_peaks();
     }
 
     // @todo cleanup & fix naming
@@ -59,16 +59,16 @@ impl<T: Float> Wave32Player<T> {
 
         // @todo do this in a seperate task
         // and clean up this messy interface
-        let fps = 200;
-        let mut spectrogram = Spectrogram::new(sample_rate, 2048, fps, 24);
+        // let fps = 200;
+        // let mut spectrogram = Spectrogram::new(sample_rate, 2048, fps, 24);
 
-        let spec = spectrogram.process(self.wave.channel(0));
+        // let spec = spectrogram.process(self.wave.channel(0));
 
-        self.diff_spec = Some(superflux_diff_spec(spec, 1, 3));
+        // self.diff_spec = Some(superflux_diff_spec(spec, 1, 3));
 
         self.sample = 0;
 
-        self.detect_peaks();
+        // self.detect_peaks();
     }
 
     fn detect_peaks(&mut self) {

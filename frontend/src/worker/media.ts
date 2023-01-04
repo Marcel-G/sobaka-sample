@@ -1,4 +1,5 @@
 import localforage from 'localforage'
+import { AudioDataTransport } from 'sobaka-sample-audio-worklet'
 
 const media_store = localforage.createInstance({
   name: 'media_store',
@@ -57,3 +58,8 @@ export const load_audio = async (id: string): Promise<AudioData> => {
 
   return await decode_sample(result)
 }
+
+export const into_transport = (audio: AudioData): AudioDataTransport => ({
+  bytes: audio.data.buffer,
+  sample_rate: audio.sample_rate
+})
