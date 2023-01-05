@@ -17,8 +17,7 @@
 </script>
 
 <script lang="ts">
-  import { debounce } from 'lodash'
-  import type { SamplerCommand, Sampler } from 'sobaka-sample-audio-worklet'
+  import type { SamplerController } from 'sobaka-sample-audio-worklet'
   import { onDestroy, onMount } from 'svelte'
   import Panel from '../shared/Panel.svelte'
   import Plug from '../shared/Plug.svelte'
@@ -32,7 +31,7 @@
 
   export let state: SubStore<State>
   let name = 'sampler'
-  let sampler: Sampler
+  let sampler: SamplerController
   let node: AudioNode
   let loading = true
 
@@ -40,8 +39,8 @@
   const canvas = init_canvas()
 
   onMount(async () => {
-    const { Sampler } = await import('sobaka-sample-audio-worklet')
-    sampler = await Sampler.install($context)
+    const { SamplerController } = await import('sobaka-sample-audio-worklet')
+    sampler = await SamplerController.install($context)
 
     node = sampler.node()
     loading = false
@@ -71,15 +70,11 @@
     }
   }
 
-  const debounced_message = debounce((message: SamplerCommand) => {
-    sampler?.command(message)
-  }, 250)
-
   const threshold = state.select(s => s.threshold)
   const sound_id = state.select(s => s.sound_id)
 
   // Update the sobaka node when the state changes
-  $: void debounced_message({ SetThreshold: $threshold })
+  $: sampler?.set_threshold($threshold)
 
   sound_id.subscribe(async id => {
     if (id) {

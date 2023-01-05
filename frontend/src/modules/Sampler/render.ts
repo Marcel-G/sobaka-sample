@@ -45,22 +45,28 @@ const create_wave = (): Wave => {
 }
 
 interface Segment extends Renderable {
+  update_wave: (length: number) => void
   update_detections: (detections: number[]) => void
   update_active: (detections: number) => void
 }
 
 const create_segments = (): Segment => {
   let active_segment = -1
+  let data_length = 0
   let detections: number[] = []
   let needs_render = false
 
   return {
+    update_wave: length => {
+      data_length = length
+    },
     update_active: active => {
       active_segment = active
       needs_render = true
     },
     update_detections: _detections => {
-      detections = _detections
+      // Normalise detection data
+      detections = _detections.map(point => point / data_length)
       needs_render = true
     },
     should_render: () => needs_render,
@@ -149,7 +155,10 @@ export const init_canvas = () => {
   }
 
   return {
-    update_wave: wave.update_wave,
+    update_wave: (audio: AudioData) => {
+      wave.update_wave(audio)
+      segments.update_wave(audio.data.length)
+    },
     update_detections: segments.update_detections,
     update_active: segments.update_active,
     render,

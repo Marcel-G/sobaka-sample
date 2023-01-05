@@ -3,17 +3,13 @@ use std::{marker::PhantomData, sync::Arc};
 use fundsp::prelude::*;
 use rand::Rng;
 
-use super::onset::{onset, superflux_diff_spec, Spectrogram};
-
 /// Play back one channel of a wave.
 pub struct Wave32Player<T: Float> {
     wave: Arc<Wave32>,
     sample: usize,
     channel: usize,
-    threshold: f32,
-    diff_spec: Option<Vec<f32>>,
     index: usize,
-    loop_point: Option<usize>,
+    callback: Option<Box<dyn Fn(PlayerEvent)>>,
     detections: Vec<usize>,
     _marker: PhantomData<T>,
 }
@@ -22,27 +18,17 @@ impl<T: Float> Wave32Player<T> {
     pub fn new(
         wave: Arc<Wave32>,
         channel: usize,
-        loop_point: Option<usize>,
-        threshold: f32,
+        callback: Option<Box<dyn Fn(PlayerEvent)>>,
     ) -> Self {
         Self {
             wave,
             channel,
+            callback,
             sample: 0,
             index: 0,
-            threshold,
-            diff_spec: None,
-            loop_point,
             detections: Default::default(),
             _marker: PhantomData::default(),
         }
-    }
-
-    pub fn set_threshold(&mut self, threshold: f32) {
-        self.threshold = threshold;
-        self.sample = 0;
-        self.index = 0;
-        // self.detect_peaks();
     }
 
     // @todo cleanup & fix naming
@@ -56,55 +42,23 @@ impl<T: Float> Wave32Player<T> {
         }
 
         self.wave = Arc::new(wave);
-
-        // @todo do this in a seperate task
-        // and clean up this messy interface
-        // let fps = 200;
-        // let mut spectrogram = Spectrogram::new(sample_rate, 2048, fps, 24);
-
-        // let spec = spectrogram.process(self.wave.channel(0));
-
-        // self.diff_spec = Some(superflux_diff_spec(spec, 1, 3));
-
-        self.sample = 0;
-
-        // self.detect_peaks();
     }
 
-    fn detect_peaks(&mut self) {
-        // @todo this needs cleanup
-        let fps = 200;
-        if let Some(diff_spec) = &self.diff_spec {
-            let detections = onset(self.threshold, diff_spec, fps);
-
-            // Send detections as sample indexs
-            self.detections = detections
-                .iter()
-                .map(|d| (d * self.wave.sample_rate() as f32) as usize)
-                .collect::<Vec<_>>();
-
-            let length_seconds = self.wave.len() as f32 / self.wave.sample_rate() as f32;
-
-            // Send detections as seconds
-            self.notify(PlayerEvent::OnDetect(
-                detections
-                    .iter()
-                    .map(|d| d / length_seconds)
-                    .collect::<Vec<_>>(),
-            ));
-        }
+    pub fn set_detections(&mut self, detections: &[usize]) {
+        self.sample = 0;
+        self.index = 0;
+        self.detections = detections.to_vec();
     }
 
     fn notify(&self, event: PlayerEvent) {
-        // if let Some(callback) = &self.on_event {
-        //     (callback)(event)
-        // }
+        if let Some(callback) = &self.callback {
+            (callback)(event)
+        }
     }
 }
 
 #[derive(Clone)]
 pub enum PlayerEvent {
-    OnDetect(Vec<f32>),
     OnTrigger(usize),
 }
 
@@ -143,9 +97,10 @@ impl<T: Float> AudioNode for Wave32Player<T> {
             let value = wave[self.index];
             self.index += 1;
             if self.index == wave.len() {
-                if let Some(point) = self.loop_point {
-                    self.index = point;
-                }
+                // @todo go back to the start of the segment
+                // if let Some(point) = self.loop_point {
+                //     self.index = point;
+                // }
             }
             [convert(value)].into()
         } else {
@@ -159,13 +114,11 @@ impl<T: Float> AudioNode for Wave32Player<T> {
 /// - Output 0: wave
 pub fn dsp_player<T: Float>(
     channel: usize,
-    loop_point: Option<usize>,
-    threshold: f32,
+    callback: Option<Box<dyn Fn(PlayerEvent)>>,
 ) -> An<Wave32Player<T>> {
     An(Wave32Player::new(
         Arc::new(Wave32::new(1, DEFAULT_SR)),
         channel,
-        loop_point,
-        threshold,
+        callback,
     ))
 }

@@ -1,30 +1,32 @@
 use crate::{
     dsp::{
-        player::{dsp_player, Wave32Player},
+        onset::{onset, superflux_diff_spec, Spectrogram},
+        player::{dsp_player, PlayerEvent, Wave32Player},
         shared::{Share, Shared},
-        trigger::reset_trigger, onset::{Spectrogram, superflux_diff_spec},
+        trigger::reset_trigger,
     },
     fundsp_worklet::FundspWorklet,
 };
 use fundsp::prelude::*;
 use tsify::{self, Tsify};
-use wasm_bindgen::{convert::FromWasmAbi, describe::WasmDescribe};
 use waw::{
     buffer::{AudioBuffer, ParamBuffer},
     serde::{Deserialize, Serialize},
+    utils::callback::Callback,
+    web_sys::{AudioContext, AudioParam, AudioWorkletNode},
     worklet::{AudioModule, Emitter},
 };
 
-// The audio data needs to be transferred as bytes and converted as
-// its about 10x faster
+// The audio data is transferred as bytes using `Float32Array.buffer` and converted
+// back to Vec<f32> on the Rust side. This is 100x faster than Serializing / Deserializing Vec<f32> data.
 #[derive(Clone, Serialize, Deserialize, Tsify)]
 #[serde(crate = "waw::serde")]
 #[tsify(into_wasm_abi, from_wasm_abi)]
-pub struct  AudioDataTransport {
+pub struct AudioDataTransport {
     #[tsify(type = "ArrayBuffer")]
     #[serde(with = "serde_bytes")]
     bytes: Vec<u8>,
-    sample_rate: f32
+    sample_rate: f32,
 }
 
 pub struct AudioData {
@@ -38,15 +40,16 @@ impl From<AudioDataTransport> for AudioData {
 
         Self {
             data,
-            sample_rate: value.sample_rate
+            sample_rate: value.sample_rate,
         }
     }
 }
 
 #[waw::derive::derive_event]
+#[derive(Clone)]
 pub enum SamplerEvent {
-    /// Event when onsets have been detected
-    OnDetect(Vec<f32>),
+    /// Detections are sent back to update the UI (see `SamplerCommand::OnDetect`)
+    OnDetect(Vec<usize>),
     /// Fired when a new segment is triggered
     OnTrigger(usize),
 }
@@ -55,11 +58,12 @@ pub enum SamplerEvent {
 pub enum SamplerCommand {
     /// Send new audio data
     UpdateData(AudioDataTransport),
-    SetThreshold(f32),
+    /// Fired when detections have been recalculated on the main thread
+    OnDetect(Vec<usize>),
 }
 
-
 pub struct Sampler {
+    emitter: Emitter<SamplerEvent>,
     player: Shared<Wave32Player<f32>>,
     inner: FundspWorklet,
 }
@@ -69,13 +73,19 @@ impl AudioModule for Sampler {
     type Command = SamplerCommand;
 
     fn create(emitter: Emitter<Self::Event>) -> Self {
-        let player = dsp_player(0, None, 0.0).share();
+        let play_emitter = emitter.clone();
+        let handle_message = move |event| match event {
+            PlayerEvent::OnTrigger(index) => play_emitter.send(SamplerEvent::OnTrigger(index)),
+        };
+
+        let player = dsp_player(0, Some(Box::new(handle_message))).share();
 
         let shared_player = player.clone();
 
         let module = reset_trigger(player) >> declick::<f32, f32>();
 
         Sampler {
+            emitter,
             player: shared_player,
             inner: FundspWorklet::create(module),
         }
@@ -88,9 +98,13 @@ impl AudioModule for Sampler {
 
                 self.player
                     .lock()
-                    .set_data(&audio_data.data, audio_data.sample_rate)
-            },
-            SamplerCommand::SetThreshold(val) => self.player.lock().set_threshold(val),
+                    .set_data(&audio_data.data, audio_data.sample_rate);
+            }
+            SamplerCommand::OnDetect(detections) => {
+                self.player.lock().set_detections(&detections);
+                // Send detections back to the main thread. @todo - this is a bit roundabout
+                self.emitter.send(SamplerEvent::OnDetect(detections));
+            }
         }
     }
 
@@ -101,42 +115,82 @@ impl AudioModule for Sampler {
 
 waw::main!(Sampler);
 
-#[wasm_bindgen(js_class = "Sampler")]
-impl SamplerNode {
+// Wrap the `SamplerNode` in a controller. This executes onset detection on the main thread
+// when audio data is updated.
+#[wasm_bindgen]
+pub struct SamplerController {
+    node: SamplerNode,
+    audio: Option<AudioData>,
+    diff_spec: Option<Vec<f32>>,
+    threshold: f32,
+}
+
+const FPS: usize = 200;
+
+#[wasm_bindgen]
+impl SamplerController {
     pub async fn update_audio(&mut self, data: AudioDataTransport) {
-        self.command(SamplerCommand::UpdateData(data.clone()));
+        self.node.command(SamplerCommand::UpdateData(data.clone()));
 
         let audio_data: AudioData = data.into();
+        let mut spectrogram = Spectrogram::new(audio_data.sample_rate, 2048, FPS, 24);
 
-        let fps = 200;
-        let mut spectrogram = Spectrogram::new(audio_data.sample_rate, 2048, fps, 24);
+        // @todo - Find a sensible way to do processing incrementally, as to not block the main thread.
+        let spec = spectrogram.process(&audio_data.data);
 
-        let spec = spectrogram.process(&audio_data.data).await;
+        self.diff_spec = Some(superflux_diff_spec(spec, 1, 3));
 
-        let diff_spec = Some(superflux_diff_spec(spec, 1, 3));
+        self.audio = Some(audio_data);
+        self.detect_peaks();
     }
 
-    // fn detect_peaks(&mut self) {
-    //     // @todo this needs cleanup
-    //     let fps = 200;
-    //     if let Some(diff_spec) = &self.diff_spec {
-    //         let detections = onset(self.threshold, diff_spec, fps);
+    pub fn set_threshold(&mut self, threshold: f32) {
+        self.threshold = threshold;
+        self.detect_peaks();
+    }
 
-    //         // Send detections as sample indexs
-    //         self.detections = detections
-    //             .iter()
-    //             .map(|d| (d * self.wave.sample_rate() as f32) as usize)
-    //             .collect::<Vec<_>>();
+    fn detect_peaks(&mut self) {
+        if let (Some(diff_spec), Some(audio)) = (&self.diff_spec, &self.audio) {
+            let detections = onset(self.threshold, diff_spec, FPS);
 
-    //         let length_seconds = self.wave.len() as f32 / self.wave.sample_rate() as f32;
+            // Send detections as sample indexes
+            self.command(SamplerCommand::OnDetect(
+                detections
+                    .iter()
+                    .map(|d| (d * audio.sample_rate) as usize)
+                    .collect::<Vec<_>>(),
+            ))
+        }
+    }
+}
 
-    //         // Send detections as seconds
-    //         self.notify(PlayerEvent::OnDetect(
-    //             detections
-    //                 .iter()
-    //                 .map(|d| d / length_seconds)
-    //                 .collect::<Vec<_>>(),
-    //         ));
-    //     }
-    // }
+// Forward the node interface onto the controller
+// @todo - maybe this should be a trait + Derive macro?
+#[wasm_bindgen]
+impl SamplerController {
+    pub async fn install(ctx: AudioContext) -> Result<SamplerController, JsValue> {
+        let node = SamplerNode::install(ctx).await.unwrap();
+
+        Ok(SamplerController {
+            node,
+            diff_spec: None,
+            audio: None,
+            threshold: 0.5,
+        })
+    }
+    pub fn command(&self, message: <Sampler as AudioModule>::Command) {
+        self.node.command(message)
+    }
+    pub fn node(&self) -> Result<AudioWorkletNode, JsValue> {
+        self.node.node()
+    }
+    pub fn subscribe(&mut self, callback: Callback<<Sampler as AudioModule>::Event>) {
+        self.node.subscribe(callback)
+    }
+    pub fn get_param(&self, param: <Sampler as AudioModule>::Param) -> AudioParam {
+        self.node.get_param(param)
+    }
+    pub fn destroy(&mut self) {
+        self.node.destroy()
+    }
 }
