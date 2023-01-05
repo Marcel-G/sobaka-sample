@@ -10,7 +10,7 @@ pub struct Wave32Player<T: Float> {
     channel: usize,
     index: usize,
     callback: Option<Box<dyn Fn(PlayerEvent)>>,
-    detections: Vec<usize>,
+    detections: Vec<u32>,
     _marker: PhantomData<T>,
 }
 
@@ -44,7 +44,7 @@ impl<T: Float> Wave32Player<T> {
         self.wave = Arc::new(wave);
     }
 
-    pub fn set_detections(&mut self, detections: &[usize]) {
+    pub fn set_detections(&mut self, detections: &[u32]) {
         self.sample = 0;
         self.index = 0;
         self.detections = detections.to_vec();
@@ -85,8 +85,8 @@ impl<T: Float> AudioNode for Wave32Player<T> {
     ) -> Frame<Self::Sample, Self::Outputs> {
         let wave = {
             if !self.detections.is_empty() {
-                let start = self.detections[self.sample];
-                let end = self.detections[self.sample + 1];
+                let start = self.detections[self.sample] as usize;
+                let end = self.detections[self.sample + 1] as usize;
                 &self.wave.channel(self.channel)[start..end]
             } else {
                 self.wave.channel(self.channel)

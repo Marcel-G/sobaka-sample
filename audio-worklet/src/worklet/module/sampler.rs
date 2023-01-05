@@ -49,9 +49,9 @@ impl From<AudioDataTransport> for AudioData {
 #[derive(Clone)]
 pub enum SamplerEvent {
     /// Detections are sent back to update the UI (see `SamplerCommand::OnDetect`)
-    OnDetect(Vec<usize>),
+    OnDetect(Vec<u32>),
     /// Fired when a new segment is triggered
-    OnTrigger(usize),
+    OnTrigger(u32),
 }
 
 #[waw::derive::derive_command]
@@ -59,7 +59,7 @@ pub enum SamplerCommand {
     /// Send new audio data
     UpdateData(AudioDataTransport),
     /// Fired when detections have been recalculated on the main thread
-    OnDetect(Vec<usize>),
+    OnDetect(Vec<u32>),
 }
 
 pub struct Sampler {
@@ -75,7 +75,7 @@ impl AudioModule for Sampler {
     fn create(emitter: Emitter<Self::Event>) -> Self {
         let play_emitter = emitter.clone();
         let handle_message = move |event| match event {
-            PlayerEvent::OnTrigger(index) => play_emitter.send(SamplerEvent::OnTrigger(index)),
+            PlayerEvent::OnTrigger(index) => play_emitter.send(SamplerEvent::OnTrigger(index as u32)),
         };
 
         let player = dsp_player(0, Some(Box::new(handle_message))).share();
@@ -157,7 +157,7 @@ impl SamplerController {
             self.command(SamplerCommand::OnDetect(
                 detections
                     .iter()
-                    .map(|d| (d * audio.sample_rate) as usize)
+                    .map(|d| (d * audio.sample_rate) as u32)
                     .collect::<Vec<_>>(),
             ))
         }

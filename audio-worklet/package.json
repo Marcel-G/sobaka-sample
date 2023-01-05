@@ -5,8 +5,8 @@
   "files": [
     "dist"
   ],
-  "main": "./dist/src/index",
-  "types": "./dist/src/index",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "scripts": {
     "build:tsc": "tsc",
     "build:wasm": "wasm-pack build --target web && mkdir -p dist && cp -r pkg dist/",

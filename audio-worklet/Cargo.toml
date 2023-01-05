@@ -53,6 +53,5 @@ anyhow = "1.0.56"
 
 [profile.release]
 # Tell `rustc` to optimize for small code size.
-# opt-level = 3
-# opt-level = "s"
+opt-level = "s"
 
