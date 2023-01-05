@@ -806,6 +806,7 @@ dependencies = [
 [[package]]
 name = "waw"
 version = "0.1.0"
+source = "git+https://github.com/Marcel-G/waw-rs#6a9880ac326bdfc60bb920688ad7873e3a25280a"
 dependencies = [
  "enum-map",
  "futures",
@@ -825,6 +826,7 @@ dependencies = [
 [[package]]
 name = "waw-macros"
 version = "0.1.0"
+source = "git+https://github.com/Marcel-G/waw-rs#6a9880ac326bdfc60bb920688ad7873e3a25280a"
 dependencies = [
  "darling",
  "proc-macro2",
