@@ -2153,7 +2153,7 @@ dependencies = [
 [[package]]
 name = "xtask-waw"
 version = "0.1.0"
-source = "git+https://github.com/Marcel-G/waw-rs#bb8959d5f1ecca75d7f050121c465da7592d82d5"
+source = "git+https://github.com/Marcel-G/waw-rs?branch=feature/initial-state#722de067d38ffa0e3449d5eec0e073d1c2a4c09b"
 dependencies = [
  "anyhow",
  "env_logger",
