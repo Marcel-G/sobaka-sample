@@ -55,7 +55,9 @@
       state
         .select(s => s.steps[x][y])
         .subscribe(v => {
-          step_sequencer?.command({ UpdateStep: [[x, y], v] })
+          if (v !== undefined) { // state can be undefined just before removal
+            step_sequencer?.command({ UpdateStep: [[x, y], v] })
+          }
         })
     )
   )

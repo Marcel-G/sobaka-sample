@@ -35,7 +35,7 @@
 
   onMount(async () => {
     const { Sequencer } = await import('sobaka-dsp')
-    sequencer = await Sequencer.create($context)
+    sequencer = await Sequencer.create($context, $state as any)
     node = sequencer.node()
     loading = false
 
@@ -53,7 +53,9 @@
 
   const cleanup = steps.map((step, i) =>
     step.subscribe(v => {
-      if (v) sequencer?.command({ UpdateStep: [i, v] })
+      if (v !== undefined) { // state can be undefined just before removal
+        sequencer?.command({ UpdateStep: [i, v] })
+      }
     })
   )
 

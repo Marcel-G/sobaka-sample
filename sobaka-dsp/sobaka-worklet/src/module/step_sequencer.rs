@@ -1,6 +1,4 @@
-use crate::{
-    dsp::{trigger::SchmittTrigger},
-};
+use crate::dsp::trigger::SchmittTrigger;
 use waw::{
     buffer::{AudioBuffer, ParamBuffer},
     web_sys::console,
@@ -32,6 +30,22 @@ pub struct StepSequencer {
     emitter: Emitter<StepSequencerEvent>,
 }
 
+impl StepSequencer {
+    fn set_step(&mut self, channel: usize, step: usize, value: bool) {
+        let step = self
+            .steps
+            .get_mut(channel)
+            .and_then(|r| r.get_mut(step))
+            .unwrap();
+
+        *step = value;
+    }
+
+    fn get_step(&self, channel: usize, step: usize) -> bool {
+        *self.steps.get(channel).and_then(|s| s.get(step)).unwrap()
+    }
+}
+
 impl AudioModule for StepSequencer {
     type Event = StepSequencerEvent;
     type Command = StepSequencerCommand;
@@ -58,16 +72,8 @@ impl AudioModule for StepSequencer {
 
     fn on_command(&mut self, command: Self::Command) {
         match command {
-            // @todo -- index 0 seems not to be working?
             StepSequencerCommand::UpdateStep((x, y), value) => {
-                let step = self
-                    .steps
-                    .get_mut(x as usize)
-                    .and_then(|r| r.get_mut(y as usize))
-                    .unwrap();
-
-                console::log_1(&format!("{step}, {value}, {x}, {y}").into());
-                *step = value;
+                self.set_step(x as usize, y as usize, value)
             }
         }
     }
@@ -102,19 +108,16 @@ impl AudioModule for StepSequencer {
                         .send(StepSequencerEvent::StepChange(self.active as u32))
                 }
 
-                for (index, output_buffer) in output_buffers.iter_mut().enumerate() {
+                for (channel, output_buffer) in output_buffers.iter_mut().enumerate() {
                     if let Some(output) = output_buffer.as_mut().and_then(|o| o.get_mut(i)) {
-                        let is_enabled = self
-                            .steps
-                            .get(index)
-                            .and_then(|s| s.get(self.active))
-                            .unwrap();
-
-                        *output = if *is_enabled { *val } else { 0.0 }
+                        *output = if self.get_step(channel, self.active) {
+                            *val
+                        } else {
+                            0.0
+                        }
                     }
                 }
             }
-
         }
     }
 }

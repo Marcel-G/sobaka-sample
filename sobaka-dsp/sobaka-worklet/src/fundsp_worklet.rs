@@ -21,6 +21,26 @@ impl FundspWorklet {
     ) {
         let (inputs, outputs) = audio.split();
 
+        assert!(
+            inputs.len() == self.inner.inputs(),
+            "buffers = {}, inputs = {}",
+            inputs.len(),
+            self.inner.inputs()
+        );
+        assert!(
+            outputs.len() == self.inner.outputs(),
+            "buffers = {}, ouputs = {}",
+            outputs.len(),
+            self.inner.outputs()
+        );
+        let n_outputs = outputs.len();
+
+        let input_buffers = inputs.iter().map(|i| i.channel(0)).collect::<Vec<_>>(); // Assuming mono for the moment
+        let mut output_buffers = outputs
+            .iter_mut()
+            .map(|i| i.channel_mut(0))
+            .collect::<Vec<_>>(); // Assuming mono for the moment
+
         for i in 0..128 {
             // Write all the paramaters into the AudioUnit. Usually, these will be the same value.
             // Could possibly distinguish between a-rate / k-rate here
@@ -31,33 +51,20 @@ impl FundspWorklet {
                 );
             }
 
-            let input_frame: Vec<_> = inputs
+            let input_frame: Vec<_> = input_buffers
                 .iter()
-                // @todo hardcoded channel one - maybe flatten?
-                .map(|channel| channel.channel(0).unwrap()[i])
+                .map(|channel| *channel.and_then(|c| c.get(i)).unwrap_or(&0.0))
                 .collect();
 
-            let mut output_frame = vec![0.0; outputs.len()]; // @todo assuming single channel
-
-            assert!(
-                input_frame.len() == self.inner.inputs(),
-                "buffers = {}, inputs = {}",
-                input_frame.len(),
-                self.inner.inputs()
-            );
-            assert!(
-                output_frame.len() == self.inner.outputs(),
-                "buffers = {}, ouputs = {}",
-                output_frame.len(),
-                self.inner.outputs()
-            );
+            let mut output_frame = vec![0.0; n_outputs]; // @todo assuming single channel
 
             self.inner.tick32(&input_frame, &mut output_frame);
 
             // We move the data from the frame buffer into the planar buffer after processing.
-            for (output, frame) in outputs.iter_mut().zip(output_frame) {
-                // @todo assuming single channel
-                output.channel_mut(0).unwrap()[i] = frame
+            for (maybe_output, sample) in output_buffers.iter_mut().zip(output_frame) {
+                if let Some(out_sample) = maybe_output.as_mut().and_then(|o| o.get_mut(i)) {
+                    *out_sample = sample
+                }
             }
         }
     }
