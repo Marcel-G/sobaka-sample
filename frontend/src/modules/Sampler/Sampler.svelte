@@ -17,7 +17,7 @@
 </script>
 
 <script lang="ts">
-  import type { SamplerController } from 'sobaka-sample-audio-worklet'
+  import type { SamplerController } from 'sobaka-dsp'
   import { onDestroy, onMount } from 'svelte'
   import Panel from '../shared/Panel.svelte'
   import Plug from '../shared/Plug.svelte'
@@ -39,7 +39,7 @@
   const canvas = init_canvas()
 
   onMount(async () => {
-    const { SamplerController } = await import('sobaka-sample-audio-worklet')
+    const { SamplerController } = await import('sobaka-dsp')
     sampler = await SamplerController.install($context)
 
     node = sampler.node()

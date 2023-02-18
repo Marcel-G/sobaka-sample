@@ -15,7 +15,7 @@
 </script>
 
 <script lang="ts">
-  import type { Sequencer } from 'sobaka-sample-audio-worklet'
+  import type { Sequencer } from 'sobaka-dsp'
   import Panel from './shared/Panel.svelte'
   import Plug from './shared/Plug.svelte'
   import { into_style } from '../components/Theme.svelte'
@@ -34,7 +34,7 @@
   let loading = true
 
   onMount(async () => {
-    const { Sequencer } = await import('sobaka-sample-audio-worklet')
+    const { Sequencer } = await import('sobaka-dsp')
     sequencer = await Sequencer.install($context)
     node = sequencer.node()
     loading = false

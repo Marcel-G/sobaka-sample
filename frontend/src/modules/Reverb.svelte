@@ -17,7 +17,7 @@
 </script>
 
 <script lang="ts">
-  import type { Reverb } from 'sobaka-sample-audio-worklet'
+  import type { Reverb } from 'sobaka-dsp'
   import { onDestroy, onMount } from 'svelte'
   import Panel from './shared/Panel.svelte'
   import Plug from './shared/Plug.svelte'
@@ -37,7 +37,7 @@
   const context = get_audio_context()
 
   onMount(async () => {
-    const { Reverb } = await import('sobaka-sample-audio-worklet')
+    const { Reverb } = await import('sobaka-dsp')
     reverb = await Reverb.install($context)
     node = reverb.node()
     wet_param = reverb.get_param('Wet')

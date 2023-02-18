@@ -1,7 +1,8 @@
 import type { Writable } from 'svelte/store'
 import { writable } from '@crikey/stores-immer'
 import { getContext, setContext } from 'svelte'
-import init from 'sobaka-sample-audio-worklet/dist/pkg'
+import init, { init_worklet } from 'sobaka-dsp'
+import worklet_js_url from 'sobaka-dsp/pkg/sobaka-worklet.worklet.js?url&worker'
 
 const AUDIO_CONTEXT = 'AUDIO_CONTEXT'
 
@@ -21,6 +22,7 @@ export const init_audio = () => {
   const load = async () => {
     await init()
     context = new AudioContext()
+    await init_worklet(context, worklet_js_url)
 
     audio_context.update(s => {
       s = context

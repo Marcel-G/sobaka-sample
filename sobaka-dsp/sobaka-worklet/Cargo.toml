@@ -1,16 +1,11 @@
 [package]
-name = "sobaka-sample-audio-worklet"
+name = "sobaka-worklet"
 version = "0.1.0"
-authors = ["Marcel Gleeson <gleeson.marcel@gmail.com>"]
-edition = "2018"
+edition = "2021"
 
 [lib]
-crate-type = ["cdylib"]
-path = "src/worklet/lib.rs"
-
-[features]
-all = ["default"]
-default = ["console_error_panic_hook"]
+crate-type = ["cdylib", "rlib"]
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 numeric-array = "0.5.2"
@@ -54,4 +49,3 @@ anyhow = "1.0.56"
 [profile.release]
 # Tell `rustc` to optimize for small code size.
 opt-level = "s"
-

@@ -1,5 +1,5 @@
 import localforage from 'localforage'
-import { AudioDataTransport } from 'sobaka-sample-audio-worklet'
+import { AudioDataTransport } from 'sobaka-dsp'
 
 const media_store = localforage.createInstance({
   name: 'media_store',

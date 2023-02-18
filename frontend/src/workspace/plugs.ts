@@ -3,7 +3,7 @@ import { selectable } from '@crikey/stores-selectable'
 import { get, Readable } from 'svelte/store'
 import { is_fully_linked, WorkspaceStore } from './state'
 
-// @todo export these from sobaka-sample-audio-worklet without ssr breaking
+// @todo export these from sobaka-dsp without ssr breaking
 const In = (n: number) => `in-${n}`
 const Out = (n: number) => `out-${n}`
 const Param = (n: number) => `param-${n}`

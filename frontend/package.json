@@ -12,10 +12,10 @@
     "check:watch": "svelte-check --tsconfig ./tsconfig.json --watch",
     "lint": "prettier --check --plugin-search-dir=. . && eslint .",
     "format": "prettier --write --plugin-search-dir=. .",
-    "prebuild": "cd ../audio-worklet && npm run build",
-    "postinstall": "cd ../audio-worklet && npm install",
-    "postci": "cd ../audio-worklet && npm ci",
-    "postlint": "cd ../audio-worklet && npm run lint",
+    "prebuild": "cd ../sobaka-dsp && npm run build",
+    "postinstall": "cd ../sobaka-dsp && npm install",
+    "postci": "cd ../sobaka-dsp && npm ci",
+    "postlint": "cd ../sobaka-dsp && npm run lint",
     "prelint": "npm run format"
   },
   "devDependencies": {
@@ -51,7 +51,7 @@
     "localforage": "^1.10.0",
     "lodash": "^4.17.21",
     "ress": "^4.0.0",
-    "sobaka-sample-audio-worklet": "file:../audio-worklet",
+    "sobaka-dsp": "file:../sobaka-dsp",
     "webmidi": "^3.0.21"
   }
 }

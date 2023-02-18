@@ -30,7 +30,7 @@
 
 <script lang="ts">
   import type { Draft } from 'immer'
-  import type { QuantiserCommand, QuantiserNode } from 'sobaka-sample-audio-worklet'
+  import type { QuantiserCommand, QuantiserNode } from 'sobaka-dsp'
   import { onDestroy, onMount } from 'svelte'
   import Panel from './shared/Panel.svelte'
   import Plug from './shared/Plug.svelte'
@@ -48,7 +48,7 @@
   const context = get_audio_context()
 
   onMount(async () => {
-    const { Quantiser } = await import('sobaka-sample-audio-worklet')
+    const { Quantiser } = await import('sobaka-dsp')
     quantiser = await Quantiser.install($context)
     node = quantiser.node()
     loading = false

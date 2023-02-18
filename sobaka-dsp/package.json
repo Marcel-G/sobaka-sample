@@ -1,0 +1,15 @@
+{
+  "name": "sobaka-dsp",
+  "version": "1.0.0",
+  "description": "",
+  "main": "./pkg/sobaka-worklet.js",
+  "types": "./pkg/sobaka-worklet.d.ts",
+  "files": [
+    "pkg"
+  ],
+  "scripts": {
+    "build": "cargo xtask dist"
+  },
+  "author": "",
+  "license": "ISC"
+}

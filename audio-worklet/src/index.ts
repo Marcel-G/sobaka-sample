@@ -1,1 +1,0 @@
-export * from '../pkg/sobaka_sample_audio_worklet'

@@ -26,7 +26,7 @@ npm run start
 Optionally, to watch rust changes run the watch task in parallel:
 
 ```
-cd audio-worklet
+cd sobaka-dsp
 npm run watch
 ```
 

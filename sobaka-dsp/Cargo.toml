@@ -1,0 +1,6 @@
+[workspace]
+default-members = ["sobaka-worklet"]
+members = [
+    "sobaka-worklet",
+    "xtask",
+]

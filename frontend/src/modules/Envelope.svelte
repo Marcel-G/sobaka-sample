@@ -21,7 +21,7 @@
 </script>
 
 <script lang="ts">
-  import { Envelope } from 'sobaka-sample-audio-worklet'
+  import { Envelope } from 'sobaka-dsp'
   import { onDestroy, onMount } from 'svelte'
   import Panel from './shared/Panel.svelte'
   import Plug from './shared/Plug.svelte'
@@ -44,7 +44,7 @@
   const context = get_audio_context()
 
   onMount(async () => {
-    const { Envelope } = await import('sobaka-sample-audio-worklet')
+    const { Envelope } = await import('sobaka-dsp')
     envelope = await Envelope.install($context)
     node = envelope.node()
     attack_param = envelope.get_param('Attack')

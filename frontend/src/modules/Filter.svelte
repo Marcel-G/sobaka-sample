@@ -17,7 +17,7 @@
 </script>
 
 <script lang="ts">
-  import { Filter } from 'sobaka-sample-audio-worklet'
+  import { Filter } from 'sobaka-dsp'
   import { onDestroy, onMount } from 'svelte'
   import Panel from './shared/Panel.svelte'
   import Plug from './shared/Plug.svelte'
@@ -38,7 +38,7 @@
   const context = get_audio_context()
 
   onMount(async () => {
-    const { Filter } = await import('sobaka-sample-audio-worklet')
+    const { Filter } = await import('sobaka-dsp')
     filter = await Filter.install($context)
     node = filter.node()
     frequency_param = filter.get_param('Frequency')

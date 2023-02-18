@@ -15,7 +15,7 @@
 </script>
 
 <script lang="ts">
-  import type { StepSequencer } from 'sobaka-sample-audio-worklet'
+  import type { StepSequencer } from 'sobaka-dsp'
   import Panel from './shared/Panel.svelte'
   import Plug from './shared/Plug.svelte'
   import { into_style } from '../components/Theme.svelte'
@@ -36,7 +36,7 @@
   const context = get_audio_context()
 
   onMount(async () => {
-    const { StepSequencer } = await import('sobaka-sample-audio-worklet')
+    const { StepSequencer } = await import('sobaka-dsp')
     step_sequencer = await StepSequencer.install($context)
     node = step_sequencer.node()
     loading = false
