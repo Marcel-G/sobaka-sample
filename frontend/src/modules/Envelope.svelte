@@ -45,7 +45,7 @@
 
   onMount(async () => {
     const { Envelope } = await import('sobaka-dsp')
-    envelope = await Envelope.install($context)
+    envelope = await Envelope.create($context)
     node = envelope.node()
     attack_param = envelope.get_param('Attack')
     decay_param = envelope.get_param('Decay')

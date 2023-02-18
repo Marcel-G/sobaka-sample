@@ -49,7 +49,7 @@
 
   onMount(async () => {
     const { Quantiser } = await import('sobaka-dsp')
-    quantiser = await Quantiser.install($context)
+    quantiser = await Quantiser.create($context)
     node = quantiser.node()
     loading = false
   })

@@ -30,7 +30,7 @@ impl AudioModule for Sequencer {
 
     const INPUTS: u32 = 2;
 
-    fn create(emitter: Emitter<Self::Event>) -> Self {
+    fn create(_init: Option<Self::InitialState>, emitter: Emitter<Self::Event>) -> Self {
         // @todo not initialised properly
         let steps = branch::<U8, _, _, _>(|i| tag(i, 0.0)).share();
 

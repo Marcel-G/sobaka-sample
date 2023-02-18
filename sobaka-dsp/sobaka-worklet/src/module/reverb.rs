@@ -47,7 +47,7 @@ impl AudioModule for Reverb {
     const INPUTS: u32 = 2;
     const OUTPUTS: u32 = 2;
 
-    fn create(emitter: Emitter<Self::Event>) -> Self {
+    fn create(_init: Option<Self::InitialState>, _emitter: Emitter<Self::Event>) -> Self {
         let module = {
             // Optimized delay times for a 32-channel FDN from a legacy project.
             const DELAYS: [f64; 32] = [

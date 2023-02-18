@@ -63,7 +63,7 @@ pub struct Envelope {
 impl AudioModule for Envelope {
     type Param = EnvelopeParams;
 
-    fn create(emitter: Emitter<Self::Event>) -> Self {
+    fn create(_init: Option<Self::InitialState>, _emitter: Emitter<Self::Event>) -> Self {
         let module = {
             let on_offset = AtomicFloat::new(0.0);
             let off_offset = AtomicFloat::new(0.0);

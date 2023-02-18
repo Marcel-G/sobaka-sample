@@ -39,7 +39,7 @@
 
   onMount(async () => {
     const { Filter } = await import('sobaka-dsp')
-    filter = await Filter.install($context)
+    filter = await Filter.create($context)
     node = filter.node()
     frequency_param = filter.get_param('Frequency')
     q_param = filter.get_param('Q')

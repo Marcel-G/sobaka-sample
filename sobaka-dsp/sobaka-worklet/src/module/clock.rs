@@ -27,7 +27,7 @@ impl AudioModule for Clock {
     const INPUTS: u32 = 0;
     const OUTPUTS: u32 = 5;
 
-    fn create(emitter: Emitter<Self::Event>) -> Self {
+    fn create(_init: Option<Self::InitialState>, _emitter: Emitter<Self::Event>) -> Self {
         let module = {
             let clock_square = || sine() >> map(|f| if f[0] > 0.0 { 1.0 } else { -1.0 });
 

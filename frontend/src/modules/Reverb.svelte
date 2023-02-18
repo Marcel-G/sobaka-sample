@@ -38,7 +38,7 @@
 
   onMount(async () => {
     const { Reverb } = await import('sobaka-dsp')
-    reverb = await Reverb.install($context)
+    reverb = await Reverb.create($context)
     node = reverb.node()
     wet_param = reverb.get_param('Wet')
     delay_param = reverb.get_param('Delay')

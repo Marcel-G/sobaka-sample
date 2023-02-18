@@ -40,7 +40,7 @@
 
   onMount(async () => {
     const { SamplerController } = await import('sobaka-dsp')
-    sampler = await SamplerController.install($context)
+    sampler = await SamplerController.create($context)
 
     node = sampler.node()
     loading = false

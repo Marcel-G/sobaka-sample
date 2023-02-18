@@ -72,10 +72,12 @@ impl AudioModule for Sampler {
     type Event = SamplerEvent;
     type Command = SamplerCommand;
 
-    fn create(emitter: Emitter<Self::Event>) -> Self {
+    fn create(_init: Option<Self::InitialState>, emitter: Emitter<Self::Event>) -> Self {
         let play_emitter = emitter.clone();
         let handle_message = move |event| match event {
-            PlayerEvent::OnTrigger(index) => play_emitter.send(SamplerEvent::OnTrigger(index as u32)),
+            PlayerEvent::OnTrigger(index) => {
+                play_emitter.send(SamplerEvent::OnTrigger(index as u32))
+            }
         };
 
         let player = dsp_player(0, Some(Box::new(handle_message))).share();
@@ -168,8 +170,8 @@ impl SamplerController {
 // @todo - maybe this should be a trait + Derive macro?
 #[wasm_bindgen]
 impl SamplerController {
-    pub async fn install(ctx: AudioContext) -> Result<SamplerController, JsValue> {
-        let node = SamplerNode::install(ctx).await.unwrap();
+    pub async fn create(ctx: AudioContext) -> Result<SamplerController, JsValue> {
+        let node = SamplerNode::create(ctx, None).await.unwrap();
 
         Ok(SamplerController {
             node,

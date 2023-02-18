@@ -48,7 +48,7 @@
 
   onMount(async () => {
     const { Oscillator } = await import('sobaka-dsp')
-    oscillator = await Oscillator.install($context)
+    oscillator = await Oscillator.create($context)
     node = oscillator.node()
     pitch_param = oscillator.get_param('Pitch')
     saw_param = oscillator.get_param('Saw')

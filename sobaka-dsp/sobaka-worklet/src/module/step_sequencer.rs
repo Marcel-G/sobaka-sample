@@ -1,4 +1,4 @@
-use std::convert::TryInto;
+
 
 use crate::{
     dsp::{self, shared::Share, stepped::SteppedEvent},
@@ -7,7 +7,6 @@ use crate::{
 use fundsp::prelude::*;
 use waw::{
     buffer::{AudioBuffer, ParamBuffer},
-    types::EventCallback,
     worklet::{AudioModule, Emitter},
 };
 
@@ -33,7 +32,7 @@ impl AudioModule for StepSequencer {
     const INPUTS: u32 = 2;
     const OUTPUTS: u32 = 4;
 
-    fn create(emitter: Emitter<Self::Event>) -> Self {
+    fn create(_init: Option<Self::InitialState>, emitter: Emitter<Self::Event>) -> Self {
         // @todo not initialised properly
         let steps =
             branch::<U4, _, _, _>(|x| branch::<U8, _, _, _>(|y| tag((x * 8) + y, 0.0))).share();

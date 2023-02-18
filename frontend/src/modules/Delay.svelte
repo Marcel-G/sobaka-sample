@@ -32,7 +32,7 @@
 
   onMount(async () => {
     const { Delay } = await import('sobaka-dsp')
-    delay = await Delay.install($context)
+    delay = await Delay.create($context)
     node = delay.node()
     delay_time_param = delay.get_param('DelayTime')
     loading = false

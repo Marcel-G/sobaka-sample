@@ -1879,7 +1879,7 @@ dependencies = [
 [[package]]
 name = "waw"
 version = "0.1.0"
-source = "git+https://github.com/Marcel-G/waw-rs#bb8959d5f1ecca75d7f050121c465da7592d82d5"
+source = "git+https://github.com/Marcel-G/waw-rs?branch=feature/initial-state#19d71a9d8808c5308aeb6f9e4c3775595c95f6ec"
 dependencies = [
  "enum-map",
  "futures",
@@ -1897,7 +1897,7 @@ dependencies = [
 [[package]]
 name = "waw-macros"
 version = "0.1.0"
-source = "git+https://github.com/Marcel-G/waw-rs#bb8959d5f1ecca75d7f050121c465da7592d82d5"
+source = "git+https://github.com/Marcel-G/waw-rs?branch=feature/initial-state#19d71a9d8808c5308aeb6f9e4c3775595c95f6ec"
 dependencies = [
  "darling",
  "proc-macro2",

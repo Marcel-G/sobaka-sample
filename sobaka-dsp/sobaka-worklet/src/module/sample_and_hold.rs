@@ -11,7 +11,7 @@ pub struct SampleAndHold {
 impl AudioModule for SampleAndHold {
     const INPUTS: u32 = 2;
 
-    fn create(emitter: Emitter<Self::Event>) -> Self {
+    fn create(_init: Option<Self::InitialState>, _emitter: Emitter<Self::Event>) -> Self {
         let module = hold();
 
         SampleAndHold {
