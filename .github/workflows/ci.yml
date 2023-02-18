@@ -79,6 +79,7 @@ jobs:
         with:
             toolchain: nightly
             components: rust-src
+            target: wasm32-unknown-unknown
             override: true
       - uses: Swatinem/rust-cache@v2
       - uses: actions/setup-node@v2
