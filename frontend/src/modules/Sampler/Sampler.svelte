@@ -8,16 +8,22 @@
   type State = Readonly<{
     sound_id: string | null
     threshold: number
+    active_segment: number
+    view_position: number
+    playback_rate: number
   }>
 
   export const initialState: State = {
     sound_id: null,
-    threshold: 45
+    threshold: 45,
+    active_segment: 0,
+    view_position: 0,
+    playback_rate: 1.0
   }
 </script>
 
 <script lang="ts">
-  import type { SamplerController } from 'sobaka-dsp'
+  import { SharedAudio, SamplerController } from 'sobaka-dsp'
   import { onDestroy, onMount } from 'svelte'
   import Panel from '../shared/Panel.svelte'
   import Plug from '../shared/Plug.svelte'
@@ -25,37 +31,48 @@
   import { PlugType } from '../../workspace/plugs'
   import Knob from '../../components/Knob.svelte'
   import { SubStore } from '../../utils/patches'
-  import { get_context as get_audio_context } from '../../audio'
-  import { into_transport, load_audio, store_audio } from '../../worker/media'
-  import { init_canvas } from './render'
+  import { getMediaManager, get_context as get_audio_context } from '../../audio'
+  import { into_transport, list_audio, load_audio, store_audio } from '../../worker/media'
+  import AudioPreview from './AudioPreview.svelte'
+  import AudioDetail from './AudioDetail.svelte'
+  import Button from '../../components/Button.svelte'
 
   export let state: SubStore<State>
   let name = 'sampler'
   let sampler: SamplerController
   let node: AudioNode
   let loading = true
+  let rate_param: AudioParam
+  let files: {
+    name: string
+    id: string
+  }[] = []
 
   const context = get_audio_context()
-  const canvas = init_canvas()
+
+  let trigger_segment: (segment_index: number) => void
+  let audio_data: SharedAudio | null
+  let detections: number[] = []
 
   onMount(async () => {
     const { SamplerController } = await import('sobaka-dsp')
-    sampler = await SamplerController.install($context)
+    sampler = await SamplerController.create($context)
 
     node = sampler.node()
     loading = false
 
+    rate_param = sampler.get_param('Rate')
+
     sampler.subscribe(event => {
       if ('OnTrigger' in event) {
-        canvas.update_active(event.OnTrigger)
+        trigger_segment(event.OnTrigger)
       } else if ('OnDetect' in event) {
-        canvas.update_detections(event.OnDetect)
+        detections = event.OnDetect
       }
     })
-  })
 
-  let mountpoint: HTMLElement
-  $: if (mountpoint) canvas.mount(mountpoint)
+    files = await list_audio()
+  })
 
   type InputChangeEvent = Event & {
     currentTarget: EventTarget & HTMLInputElement
@@ -72,43 +89,106 @@
 
   const threshold = state.select(s => s.threshold)
   const sound_id = state.select(s => s.sound_id)
+  const view_position = state.select(s => s.view_position)
+  const playback_rate = state.select(s => s.playback_rate)
+  const active_segment = state.select(s => s.active_segment)
 
   // Update the sobaka node when the state changes
   $: sampler?.set_threshold($threshold)
 
   sound_id.subscribe(async id => {
     if (id) {
-      const audio_data = await load_audio(id)
+      const audio = await getMediaManager().load_with(id, async () =>
+        load_audio(id).then(into_transport)
+      )
 
-      canvas.update_wave(audio_data)
+      audio_data = audio.cloned()
 
-      // Send updated data to audio worklet - @todo this may not be the most efficient format
-      await sampler?.update_audio(into_transport(audio_data))
+      if (audio) {
+        // Send updated data to audio worklet - @todo this may not be the most efficient format
+        setTimeout(() => {
+          sampler?.update_audio(audio)
+        }, 1000)
+      }
       loading = false
     }
   })
 
+  const handle_view_change = (position: number) => {
+    $view_position = position
+  }
+
+  const handle_segment_click = (segment_index: number) => {
+    $active_segment = segment_index
+  }
+
+  // Update the sobaka node when the state changes
+  $: rate_param?.setValueAtTime($playback_rate, $context.currentTime)
+  $: sampler?.command({ SetSample: $active_segment })
+
   onDestroy(() => {
     sampler?.destroy()
     sampler?.free()
-    canvas.cleanup()
   })
 </script>
 
-<Panel {name} height={8} width={30} custom_style={into_style(theme)}>
+<Panel {name} height={20} width={20} custom_style={into_style(theme)}>
   {#if loading}
     <p>Loading...</p>
   {:else if $sound_id}
     <div class="sampler-controls">
-      <div class="wave" bind:this={mountpoint} />
-      <Knob bind:value={$threshold} range={[0, 100]} label="threshold" />
+      {#if audio_data}
+        <AudioPreview
+          view_position={$view_position}
+          {audio_data}
+          on_view_change={handle_view_change}
+        />
+        <AudioDetail
+          active_segment={$active_segment}
+          view_position={$view_position}
+          {audio_data}
+          segments={detections}
+          playback_rate={$playback_rate}
+          on_segment_click={handle_segment_click}
+          bind:trigger_segment
+        />
+        <div class="controls">
+          <Knob bind:value={$playback_rate} range={[0.1, 4]} label="rate">
+            <div slot="inputs">
+              <Plug
+                id={1}
+                label="rate_cv"
+                ctx={{ type: PlugType.Param, param: rate_param }}
+              />
+            </div>
+          </Knob>
+          <Knob bind:value={$threshold} range={[0.5, 100]} label="threshold" />
+          <!-- Lol need a better button -->
+          <Button
+            onClick={() => {
+              $sound_id = null
+            }}>Change</Button
+          >
+        </div>
+      {/if}
     </div>
   {:else}
-    <div class="controls">
+    <div class="file-selector">
       <label class="file-input">
         <input on:change={handle_change} type="file" accept="audio/*" />
         Add Sample
       </label>
+      <ol>
+        {#each files as file (file.id)}
+          <li
+            on:click={() => {
+              $sound_id = file.id
+            }}
+          >
+            {file.name}
+          </li>
+        {/each}
+      </ol>
     </div>
   {/if}
 
@@ -131,19 +211,47 @@
 <style>
   .controls {
     display: grid;
-    grid-template-columns: auto auto;
+    grid-auto-flow: column;
+    align-items: stretch;
     pointer-events: none;
 
+    justify-content: left;
+  }
+
+  .file-selector {
     height: 100%;
-    width: 100%;
-    justify-content: center;
-    align-items: center;
+    display: flex;
+    flex-direction: column;
+  }
+  .file-selector ol {
+    list-style-type: none;
+    overflow-y: scroll;
+  }
+
+  .file-selector li {
+    cursor: pointer;
+    padding: 0.5rem;
+    background-color: var(--current-line);
+    border-radius: 0.5rem;
+    margin: 0.25rem 0;
+
+    font-family: monospace;
+
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
+  .file-selector li:hover {
+    background-color: var(--comment);
   }
 
   .sampler-controls {
     display: flex;
+    flex-direction: column;
     width: 100%;
     height: 100%;
+    cursor: default;
   }
 
   .file-input input {
@@ -153,7 +261,8 @@
   .file-input {
     pointer-events: all;
     border: 2px solid var(--module-highlight);
-    padding: 0.25rem;
+    padding: 0.5rem;
+    margin: 0.25rem 0;
     border-radius: 0.5rem;
     font-family: monospace;
     cursor: pointer;
@@ -163,9 +272,5 @@
 
   .file-input:hover {
     border-color: var(--foreground);
-  }
-
-  .wave {
-    flex: 1 1 100%;
   }
 </style>

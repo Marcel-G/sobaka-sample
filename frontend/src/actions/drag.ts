@@ -5,7 +5,7 @@ interface ActionResult<P> {
 
 export type Action<P> = (node: Element, parameters: P) => ActionResult<P>
 
-export type OnDrag = (x: number, y: number) => void
+export type OnDrag = (x: number, y: number, element: Element) => void
 
 const is_mouse_event = (event: Event): event is MouseEvent => {
   return 'clientX' in event && 'clientY' in event
@@ -66,7 +66,7 @@ export const useDrag: Action<OnDrag> = (node, onDrag) => {
       const x = clientX - parent_rect.left - origin_x
       const y = clientY - parent_rect.top - origin_y
 
-      onDrag(x, y)
+      onDrag(x, y, node)
     }
   }
 

@@ -25,7 +25,7 @@ impl AudioModule for Delay {
 
     const INPUTS: u32 = 2;
 
-    fn create(emitter: Emitter<Self::Event>) -> Self {
+    fn create(_init: Option<Self::InitialState>, _emitter: Emitter<Self::Event>) -> Self {
         let module = {
             let inputs = pass() | tag(DelayParams::DelayTime as i64, 0.0);
             reset_trigger(inputs >> tap(0.0, 10.0))

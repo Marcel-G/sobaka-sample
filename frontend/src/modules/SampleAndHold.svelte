@@ -26,7 +26,7 @@
 
   onMount(async () => {
     const { SampleAndHold } = await import('sobaka-dsp')
-    sample_and_hold = await SampleAndHold.install($context)
+    sample_and_hold = await SampleAndHold.create($context)
     node = sample_and_hold.node()
     loading = false
   })

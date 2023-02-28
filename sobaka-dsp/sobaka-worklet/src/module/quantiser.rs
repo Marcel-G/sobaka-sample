@@ -23,7 +23,7 @@ pub struct Quantiser {
 impl AudioModule for Quantiser {
     type Command = QuantiserCommand;
 
-    fn create(emitter: Emitter<Self::Event>) -> Self {
+    fn create(_init: Option<Self::InitialState>, _emitter: Emitter<Self::Event>) -> Self {
         let init = [false; 12];
         let module = dsp_quantiser(init).share();
 

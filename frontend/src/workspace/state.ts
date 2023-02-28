@@ -80,8 +80,16 @@ export const workspace = (initialState: Workspace | WorkspaceDocument) => {
   const move_module = (module: string, x: number, y: number): boolean => {
     // @todo check if module exists
     modules.update(modules => {
-      modules.entities[module].position.x = x
-      modules.entities[module].position.y = y
+      const index = modules.ids.indexOf(module)
+      if (index !== -1) {
+        // Move the module index to the end so that it is rendered on top of all other modules
+        modules.ids.splice(index, 1)
+        modules.ids.push(module)
+
+        modules.entities[module].position.x = x
+        modules.entities[module].position.y = y
+      }
+
       return modules
     })
 
@@ -97,6 +105,26 @@ export const workspace = (initialState: Workspace | WorkspaceDocument) => {
       }
 
       return workspace
+    })
+  }
+
+  const clone_module = (module_id: string) => {
+    const id = Math.random().toString(36).substr(2, 9)
+    store.update(workspace => {
+      const module = workspace.modules.entities[module_id]
+      if (module) {
+        workspace.modules.ids.push(id)
+        workspace.modules.entities[id] = {
+          ...module,
+          id,
+          position: {
+            x: module.position.x + 1,
+            y: module.position.y + 1
+          }
+        }
+
+        return workspace
+      }
     })
   }
 
@@ -187,6 +215,7 @@ export const workspace = (initialState: Workspace | WorkspaceDocument) => {
     create_module,
     move_module,
     remove_module,
+    clone_module,
     list_modules,
     get_module_substore,
     get_module_state_substore,

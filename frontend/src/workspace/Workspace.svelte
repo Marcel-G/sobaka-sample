@@ -19,9 +19,9 @@
   export let workspace_document: WorkspaceDocument
 
   let loading = false
-  let toobox_visible = false
+  let toolbox_visible = false
   let toolbox_position: Position = { x: 0, y: 0 }
-  let worksapce_element: Element
+  let workspace_element: Element
 
   const space = init_workspace(workspace_document)
 
@@ -29,13 +29,13 @@
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handle_double_click = (_event: MouseEvent) => {
-    toobox_visible = true
+    toolbox_visible = true
     toolbox_position = $mouse_position
   }
 
   const handle_global_keydown = (event: KeyboardEvent) => {
-    if (event.code === 'Space' && !toobox_visible) {
-      toobox_visible = true
+    if (event.code === 'Space' && !toolbox_visible) {
+      toolbox_visible = true
       toolbox_position = $mouse_position
     } else if (event.code === 'Escape') {
       const active_link = space.get_active_link_substore()
@@ -45,7 +45,7 @@
 
   const handle_mouse_move = (event: MouseEvent) => {
     if (event.target instanceof HTMLElement) {
-      const rect = worksapce_element.getBoundingClientRect()
+      const rect = workspace_element.getBoundingClientRect()
       const x = event.clientX - rect.left
       const y = event.clientY - rect.top
       $mouse_position = { x, y }
@@ -53,7 +53,7 @@
   }
 
   const handle_close = () => {
-    toobox_visible = false
+    toolbox_visible = false
   }
 
   // Set UI page title on load
@@ -80,12 +80,12 @@
   class="workspace"
   on:click|self={handle_close}
   on:dblclick|self={handle_double_click}
-  bind:this={worksapce_element}
+  bind:this={workspace_element}
 >
   {#if loading}
     Loading
   {:else}
-    {#if toobox_visible}
+    {#if toolbox_visible}
       <Toolbox position={toolbox_position} onClose={handle_close} />
     {/if}
 

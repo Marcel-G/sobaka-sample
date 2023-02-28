@@ -48,7 +48,10 @@
 >
   <div class="bar">
     <span class="name">{name}</span>
-    <button class="close" on:click={() => space.remove_module(id)}>x</button>
+    <span class="actions">
+      <button class="clone" on:click={() => space.clone_module(id)}>+</button>
+      <button class="close" on:click={() => space.remove_module(id)}>x</button>
+    </span>
   </div>
   <slot />
   <div class="inputs">
@@ -75,6 +78,11 @@
     touch-action: none;
 
     position: relative;
+    z-index: 5;
+  }
+
+  .bar .actions {
+    display: flex;
   }
 
   .bar {
@@ -95,7 +103,11 @@
     pointer-events: none;
   }
 
-  .close {
+  button.close {
+    border-top-right-radius: 0.5rem;
+  }
+
+  .bar button {
     font-family: monospace;
     border: 0;
     /* border-radius: 0.25rem; */
@@ -108,7 +120,6 @@
 
     height: calc(1rem - 2px);
     width: 1.5rem;
-    border-top-right-radius: 0.5rem;
 
     /* margin-right: -2px; */
     transition: opacity 0.125s;
@@ -116,11 +127,11 @@
     pointer-events: all;
   }
 
-  .close:hover {
+  .bar button:hover {
     opacity: 0.75;
   }
 
-  .close:active {
+  .bar button:active {
     opacity: 0;
     color: var(--module-background);
   }

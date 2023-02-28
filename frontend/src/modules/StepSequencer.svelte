@@ -25,7 +25,6 @@
   import Led from '../components/Led.svelte'
   import { SubStore } from '../utils/patches'
   import { get_context as get_audio_context } from '../audio'
-  import Output from './Output.svelte'
 
   export let state: SubStore<State>
   let name = 'step_sequencer'
@@ -37,7 +36,7 @@
 
   onMount(async () => {
     const { StepSequencer } = await import('sobaka-dsp')
-    step_sequencer = await StepSequencer.install($context)
+    step_sequencer = await StepSequencer.create($context, $state as any)
     node = step_sequencer.node()
     loading = false
 
@@ -56,7 +55,10 @@
       state
         .select(s => s.steps[x][y])
         .subscribe(v => {
-          if (v) step_sequencer?.command({ UpdateStep: [[x, y], v] })
+          if (v !== undefined) {
+            // state can be undefined just before removal
+            step_sequencer?.command({ UpdateStep: [[x, y], v] })
+          }
         })
     )
   )

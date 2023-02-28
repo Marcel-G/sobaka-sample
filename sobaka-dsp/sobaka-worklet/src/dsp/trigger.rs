@@ -77,6 +77,36 @@ where
     }
 }
 
+// @todo -- indclude high / low threshold in the struct
+// pub struct SchmittTrigger {
+//     pub threshold_low: f32,
+//     pub threshold_high: f32,
+//     pub is_high: bool,
+// }
+
+// impl SchmittTrigger {
+//     pub fn new(threshold_low: f32, threshold_high: f32) -> SchmittTrigger {
+//         SchmittTrigger {
+//             threshold_low,
+//             threshold_high,
+//             is_high: false,
+//         }
+//     }
+
+//     pub fn update(&mut self, input: f32) -> bool {
+//         if self.is_high {
+//             if input <= self.threshold_low {
+//                 self.is_high = false;
+//             }
+//         } else {
+//             if input >= self.threshold_high {
+//                 self.is_high = true;
+//             }
+//         }
+//         self.is_high
+//     }
+// }
+
 pub struct SchmittTrigger {
     is_open: AtomicBool,
 }

@@ -1,4 +1,4 @@
-use std::{f64::consts::PI, iter::repeat};
+use std::{collections::HashSet, f64::consts::PI, iter::repeat};
 
 use rustfft::{
     num_complex::Complex,
@@ -150,14 +150,14 @@ pub fn superflux_diff_spec(spec: Vec<Vec<f32>>, diff_frames: usize, max_bins: us
     diff_spec.iter().map(|v| v.iter().sum()).collect()
 }
 
-pub fn onset(threshold: f32, activations: &[f32], fps: usize) -> Vec<f32> {
+pub fn onset(threshold: f32, activations: &[f32]) -> HashSet<usize> {
     // moving maximum
     let mov_max = maximum_filter(activations, 3);
 
     // moving average
     let mov_avg = uniform_filter(activations, 3);
 
-    let detections: Vec<f32> = activations
+    let mut detections: HashSet<usize> = activations
         .iter()
         // detections are activation equal to the moving maximum
         .zip(mov_max.into_iter())
@@ -173,14 +173,20 @@ pub fn onset(threshold: f32, activations: &[f32], fps: usize) -> Vec<f32> {
         })
         // convert detected onsets to a list of timestamps
         .enumerate()
-        .filter_map(|(index, activation)| {
-            if activation > 0.0 {
-                Some(index as f32 / fps as f32)
-            } else {
-                None
-            }
-        })
+        .filter_map(
+            |(index, activation)| {
+                if activation > 0.0 {
+                    Some(index)
+                } else {
+                    None
+                }
+            },
+        )
         .collect();
+
+    // Include the start and end frames
+    detections.insert(0);
+    detections.insert(activations.len() - 1);
 
     detections
 }
@@ -565,9 +571,9 @@ mod odf_tests {
 
         let diff_spec = superflux_diff_spec(spec, 1, 3);
 
-        let detections = onset(30.0, &diff_spec, fps);
+        let detections = onset(30.0, &diff_spec);
 
         assert!(!detections.is_empty());
-        assert_eq!(detections[0], 0.495);
+        assert_eq!(detections.get(&198), Some(&198));
     }
 }

@@ -1,10 +1,15 @@
+#![feature(async_closure)]
+
 use utils::panic_hook::set_panic_hook;
 use wasm_bindgen::prelude::wasm_bindgen;
 
 pub mod dsp;
 mod fundsp_worklet;
+mod media_manager;
 pub mod module;
 mod utils;
+
+mod worker;
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
 // allocator.

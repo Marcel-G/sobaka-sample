@@ -12,7 +12,7 @@ pub struct Noise {
 impl AudioModule for Noise {
     const INPUTS: u32 = 0;
 
-    fn create(emitter: Emitter<Self::Event>) -> Self {
+    fn create(_init: Option<Self::InitialState>, _emitter: Emitter<Self::Event>) -> Self {
         let module = white();
 
         Noise {

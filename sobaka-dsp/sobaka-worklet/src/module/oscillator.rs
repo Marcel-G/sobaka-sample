@@ -61,7 +61,7 @@ impl AudioModule for Oscillator {
     const INPUTS: u32 = 2;
     const OUTPUTS: u32 = 1;
 
-    fn create(emitter: Emitter<Self::Event>) -> Self {
+    fn create(_init: Option<Self::InitialState>, _emitter: Emitter<Self::Event>) -> Self {
         let module = {
             let multi_osc = {
                 let input = split::<U2, _>()

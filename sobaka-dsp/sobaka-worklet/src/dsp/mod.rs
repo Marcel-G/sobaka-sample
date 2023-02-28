@@ -6,11 +6,9 @@ pub mod join;
 pub mod onset;
 pub mod oscillator;
 pub mod param;
-pub mod player;
 pub mod pluck;
 pub mod quantiser;
 pub mod shared;
-pub mod stepped;
 pub mod trigger;
 
 /// Convert 1v per octave to hz

@@ -25,7 +25,7 @@
 
   onMount(async () => {
     const { Noise } = await import('sobaka-dsp')
-    noise = await Noise.install($context)
+    noise = await Noise.create($context)
     node = noise.node()
     loading = false
   })

@@ -1,5 +1,5 @@
 <script lang="ts">
-  export let on: boolean = false
+  export let on = false
 </script>
 
 <div class="led" class:on />

@@ -36,7 +36,7 @@ impl AudioModule for Filter {
     const INPUTS: u32 = 1;
     const OUTPUTS: u32 = 4;
 
-    fn create(emitter: Emitter<Self::Event>) -> Self {
+    fn create(_init: Option<Self::InitialState>, _emitter: Emitter<Self::Event>) -> Self {
         let module = {
             let input = pass()
                 | ((param(FilterParams::Frequency as i64, 0.0))
