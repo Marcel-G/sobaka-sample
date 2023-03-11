@@ -18,9 +18,8 @@
   import { PlugType } from '../workspace/plugs'
   import Knob from '../components/Knob.svelte'
   import { get_context as get_audio_context } from '../audio'
-  import { SubStore } from '../utils/patches'
 
-  export let state: SubStore<State>
+  export let state: State
   let name = 'clock'
   let clock: OscillatorNode[] = []
   let freq_cv: AudioParam
@@ -53,11 +52,9 @@
     frequency.start(time)
   })
 
-  const bpm = state.select(s => s.bpm)
-
   $: {
     let time = $context.currentTime
-    let freq = ($bpm || 0) / 60
+    let freq = (state.bpm || 0) / 60
     clock?.forEach((node, index) => {
       node.frequency.setValueAtTime(freq * multiplier[index], time)
     })
@@ -68,7 +65,7 @@
   {#if loading}
     <p>Loading...</p>
   {:else}
-    <Knob bind:value={$bpm} range={[0, 240]} label="bpm">
+    <Knob bind:value={state.bpm} range={[0, 240]} label="bpm">
       <div slot="inputs">
         <Plug id={0} label="bpm_cv" ctx={{ type: PlugType.Param, param: freq_cv }} />
       </div>

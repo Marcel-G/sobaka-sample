@@ -30,14 +30,13 @@
   import { into_style } from '../../components/Theme.svelte'
   import { PlugType } from '../../workspace/plugs'
   import Knob from '../../components/Knob.svelte'
-  import { SubStore } from '../../utils/patches'
   import { getMediaManager, get_context as get_audio_context } from '../../audio'
   import { into_transport, list_audio, load_audio, store_audio } from '../../worker/media'
   import AudioPreview from './AudioPreview.svelte'
   import AudioDetail from './AudioDetail.svelte'
   import Button from '../../components/Button.svelte'
 
-  export let state: SubStore<State>
+  export let state: State
   let name = 'sampler'
   let sampler: SamplerController
   let node: AudioNode

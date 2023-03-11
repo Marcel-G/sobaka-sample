@@ -1,14 +1,13 @@
+<svelte:options immutable={true} />
+
 <script lang="ts">
+  import { Module } from '../workspace/state'
   import { get_component } from '.'
-  import { get_workspace } from '../workspace/context'
   import { init_module_context } from './context'
 
-  export let module_id: string
+  export let module: Module
 
-  const space = get_workspace()
-  const module = space.get_module_substore(module_id)
-  const state = module.select(state => state.state)
-  init_module_context(module_id)
+  init_module_context(module.id)
 </script>
 
-<svelte:component this={get_component($module)} {state} />
+<svelte:component this={get_component(module)} state={module.state} />

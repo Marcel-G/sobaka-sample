@@ -19,7 +19,6 @@
 </script>
 
 <script lang="ts">
-  import { Draft } from 'immer'
   import Panel from '../shared/Panel.svelte'
   import Plug from '../shared/Plug.svelte'
   import { into_style } from '../../components/Theme.svelte'
@@ -28,10 +27,9 @@
   import Knob from '../../components/Knob.svelte'
   import Button from '../../components/Button.svelte'
   import { get_context as get_audio_context } from '../../audio'
-  import { SubStore } from '../../utils/patches'
   import { create_scope, Scope } from './render'
 
-  export let state: SubStore<State>
+  export let state: State
   let name = 'scope'
   let scope: Scope
   let loading = true
@@ -48,7 +46,7 @@
   })
 
   function handle_toggle() {
-    state.update((s: Draft<State>) => {
+    state.update(s => {
       s.trigger = !s.trigger
       return s
     })

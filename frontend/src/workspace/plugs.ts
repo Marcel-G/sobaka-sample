@@ -1,6 +1,4 @@
-import { writable } from '@crikey/stores-immer'
-import { selectable } from '@crikey/stores-selectable'
-import { get, Readable } from 'svelte/store'
+import { get, Readable, writable } from 'svelte/store'
 import { is_fully_linked, WorkspaceStore } from './state'
 
 // @todo export these from sobaka-dsp without ssr breaking
@@ -42,7 +40,7 @@ export interface PlugContext {
   ctx: ParamContext | NodeContext
 }
 
-export const store = selectable(writable<Record<string, PlugContext>>({}))
+export const store = writable<Record<string, PlugContext>>({})
 
 const init = () => {
   // @todo space arg is a bit awkward here

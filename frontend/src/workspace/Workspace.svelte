@@ -4,28 +4,23 @@
 </script>
 
 <script lang="ts">
-  import { onDestroy } from 'svelte'
   import ModuleWrapper from '../modules/ModuleWrapper.svelte'
   import Toolbox from '../components/Toolbox.svelte'
   import Wires from '../components/Wires.svelte'
-  import { patch_workspace } from '../worker/persistence'
-  import { WorkspaceDocument } from '../worker/persistence'
-  import { init_workspace } from './context'
+  import { get_workspace } from './context'
   import { writable } from 'svelte/store'
-  import { page } from '$app/stores'
-  import { title } from '../components/Navigation.svelte'
-  import * as api from '../server/api'
-
-  export let workspace_document: WorkspaceDocument
+  import Navigation from '../components/Navigation.svelte'
+  import TitleInput from '../components/TitleInput.svelte'
+  import NavigationButton from '../components/NavigationButton.svelte'
 
   let loading = false
   let toolbox_visible = false
   let toolbox_position: Position = { x: 0, y: 0 }
   let workspace_element: Element
 
-  const space = init_workspace(workspace_document)
+  const space = get_workspace()
 
-  const modules = space.list_modules()
+  const store = space.store
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handle_double_click = (_event: MouseEvent) => {
@@ -38,8 +33,8 @@
       toolbox_visible = true
       toolbox_position = $mouse_position
     } else if (event.code === 'Escape') {
-      const active_link = space.get_active_link_substore()
-      active_link.update(() => null)
+      // const active_link = space.get_active_link_substore()
+      // active_link.update(() => null)
     }
   }
 
@@ -55,26 +50,31 @@
   const handle_close = () => {
     toolbox_visible = false
   }
-
-  // Set UI page title on load
-  title.update(() => workspace_document.title)
-  // Update page title state when it's edited
-  $: space.update_title($title)
-
-  // Subscribe to any workspace changes
-  const unsubscribe = space.subscribe_changes(change => {
-    if ($page.routeId?.includes('template') && $page.routeId?.includes('edit')) {
-      void api.patch(space.id, change)
-    } else {
-      patch_workspace(space.id, change)
-    }
-  })
-
-  onDestroy(() => {
-    unsubscribe()
-  })
 </script>
 
+<Navigation>
+  <span slot="left">
+    <a href="/">
+      <NavigationButton>Back</NavigationButton>
+    </a>
+  </span>
+  <span slot="mid">
+    <TitleInput bind:value={$store.meta.title} />
+  </span>
+  <span slot="right">
+    <a
+      href="#"
+      on:click={() => {
+        space.save_to_remote()
+      }}
+    >
+      <NavigationButton>Save</NavigationButton>
+    </a>
+    <a href="/workspace/draft/new">
+      <NavigationButton>New</NavigationButton>
+    </a>
+  </span>
+</Navigation>
 <svelte:window on:keydown={handle_global_keydown} on:mousemove={handle_mouse_move} />
 <div
   class="workspace"
@@ -89,8 +89,8 @@
       <Toolbox position={toolbox_position} onClose={handle_close} />
     {/if}
 
-    {#each $modules as module_id (module_id)}
-      <ModuleWrapper {module_id} />
+    {#each $store.modules as module (module.id)}
+      <ModuleWrapper {module} />
     {/each}
     <Wires />
   {/if}

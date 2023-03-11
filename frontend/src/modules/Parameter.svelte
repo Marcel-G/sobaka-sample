@@ -21,12 +21,11 @@
   import Panel from './shared/Panel.svelte'
   import { into_style } from '../components/Theme.svelte'
   import { PlugType } from '../workspace/plugs'
-  import { SubStore } from '../utils/patches'
   import { get_context as get_audio_context } from '../audio'
 
   const context = get_audio_context()
 
-  export let state: SubStore<State>
+  export let state: State
   let name = 'parameter'
   let parameter: ConstantSourceNode
   let loading = true

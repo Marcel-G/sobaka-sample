@@ -1,26 +1,33 @@
 import { browser } from '$app/environment'
 import _ from 'lodash'
-import { clean_db, list_workspaces } from '../worker/persistence'
+import { list_local, list_remote } from '../worker/state'
 import type { PageLoad } from './$types'
 
 export const prerender = true
 
-// `event` is used here due to https://github.com/sveltejs/kit/issues/5927
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const load: PageLoad = async ({ data }) => {
-  const { templates } = data
+export const load: PageLoad = async () => {
   if (!browser) {
     return {
-      templates,
-      workspaces: []
+      shared_with_drafts: [],
+      orphan_drafts: []
     }
   }
 
-  await clean_db() // Maybe there is a better place for this
-  const workspaces = await list_workspaces()
+  const shared = await list_remote()
+  const drafts = await list_local()
+
+  const shared_with_drafts = shared.map(remote => ({
+    remote,
+    drafts: drafts.filter(draft => draft.parent === remote.id)
+  }))
+
+  // new drafts are documents without parents
+  const orphan_drafts = drafts.filter(
+    draft => !draft.parent || !shared.find(remote => draft.parent === remote.id)
+  )
 
   return {
-    templates,
-    workspaces: _.orderBy(workspaces, 'modifiedAt', 'desc')
+    shared_with_drafts,
+    orphan_drafts
   }
 }

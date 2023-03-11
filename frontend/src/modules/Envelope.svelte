@@ -5,12 +5,12 @@
     background: 'var(--yellow-dark)'
   }
 
-  type State = Readonly<{
+  type State = {
     attack: number
     decay: number
     sustain: number
     release: number
-  }>
+  }
 
   export const initialState: State = {
     attack: 0.1,
@@ -28,10 +28,9 @@
   import { into_style } from '../components/Theme.svelte'
   import { PlugType } from '../workspace/plugs'
   import Knob from '../components/Knob.svelte'
-  import { SubStore } from '../utils/patches'
   import { get_context as get_audio_context } from '../audio'
 
-  export let state: SubStore<State>
+  export let state: State
   let name = 'envelope'
   let envelope: Envelope
   let node: AudioNode
@@ -54,16 +53,11 @@
     loading = false
   })
 
-  const attack = state.select(s => s.attack)
-  const decay = state.select(s => s.decay)
-  const sustain = state.select(s => s.sustain)
-  const release = state.select(s => s.release)
-
   // Update the sobaka node when the state changes
-  $: attack_param?.setValueAtTime($attack, $context.currentTime)
-  $: decay_param?.setValueAtTime($decay, $context.currentTime)
-  $: sustain_param?.setValueAtTime($sustain, $context.currentTime)
-  $: release_param?.setValueAtTime($release, $context.currentTime)
+  $: attack_param?.setValueAtTime(state.attack, $context.currentTime)
+  $: decay_param?.setValueAtTime(state.decay, $context.currentTime)
+  $: sustain_param?.setValueAtTime(state.sustain, $context.currentTime)
+  $: release_param?.setValueAtTime(state.release, $context.currentTime)
 
   onDestroy(() => {
     envelope?.destroy()
@@ -76,10 +70,10 @@
     <p>Loading...</p>
   {:else}
     <div class="controls">
-      <Knob bind:value={$attack} range={[0, 1]} label="attack" />
-      <Knob bind:value={$decay} range={[0, 1]} label="decay" />
-      <Knob bind:value={$sustain} range={[0, 1]} label="sustain" />
-      <Knob bind:value={$release} range={[0, 1]} label="release" />
+      <Knob bind:value={state.attack} range={[0, 1]} label="attack" />
+      <Knob bind:value={state.decay} range={[0, 1]} label="decay" />
+      <Knob bind:value={state.sustain} range={[0, 1]} label="sustain" />
+      <Knob bind:value={state.release} range={[0, 1]} label="release" />
     </div>
   {/if}
   <div slot="inputs">

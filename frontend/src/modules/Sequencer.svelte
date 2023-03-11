@@ -21,13 +21,12 @@
   import { into_style } from '../components/Theme.svelte'
   import { PlugType } from '../workspace/plugs'
   import { onDestroy, onMount } from 'svelte'
-  import { SubStore } from '../utils/patches'
   import SequencerRow from './Sequencer.Row.svelte'
   import { get_context as get_audio_context } from '../audio'
 
   const context = get_audio_context()
 
-  export let state: SubStore<State>
+  export let state: State
   let name = 'sequencer'
   let sequencer: Sequencer
   let node: AudioNode

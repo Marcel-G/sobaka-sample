@@ -1,6 +1,4 @@
 <script lang="ts">
-  import { SubStore } from '../utils/patches'
-
   import Knob from '../components/Knob.svelte'
   import Led from '../components/Led.svelte'
 

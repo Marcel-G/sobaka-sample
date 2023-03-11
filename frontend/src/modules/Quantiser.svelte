@@ -29,7 +29,6 @@
 </script>
 
 <script lang="ts">
-  import type { Draft } from 'immer'
   import type { QuantiserCommand, QuantiserNode } from 'sobaka-dsp'
   import { onDestroy, onMount } from 'svelte'
   import Panel from './shared/Panel.svelte'
@@ -39,7 +38,7 @@
   import { get_context as get_audio_context } from '../audio'
   import type { SubStore } from 'src/utils/patches'
 
-  export let state: SubStore<State>
+  export let state: State
   let name = 'quantiser'
   let quantiser: QuantiserNode
   let node: AudioNode
@@ -61,7 +60,7 @@
 
   function on_toggle(index: number) {
     return () => {
-      state.update((s: Draft<State>) => {
+      state.update(s => {
         s.notes[index] = !s.notes[index]
         return s
       })

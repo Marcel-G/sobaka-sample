@@ -19,10 +19,9 @@
   import { into_style } from '../components/Theme.svelte'
   import Knob from '../components/Knob.svelte'
   import { PlugType } from '../workspace/plugs'
-  import { SubStore } from '../utils/patches'
   import { get_context as get_audio_context } from '../audio'
 
-  export let state: SubStore<State>
+  export let state: State
   let name = 'vca'
   let vca: GainNode
   let gain_param: AudioParam

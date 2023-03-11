@@ -1,14 +1,27 @@
 <script lang="ts">
-  import Navigation from '../components/Navigation.svelte'
   import CssReset from '../components/CSSReset.svelte'
   import Theme from '../components/Theme.svelte'
   import { navigating } from '$app/stores'
   import Loading from '../components/Loading.svelte'
+  import { onDestroy, onMount } from 'svelte'
+  import { init_audio } from '../audio'
+  import { browser } from '$app/environment'
+
+  const audio = init_audio()
+
+  if (browser) {
+    onMount(async () => {
+      await audio.load()
+    })
+
+    onDestroy(() => {
+      audio.cleanup()
+    })
+  }
 </script>
 
 <CssReset />
 <Theme />
-<Navigation />
 <main>
   {#if $navigating}
     <Loading />

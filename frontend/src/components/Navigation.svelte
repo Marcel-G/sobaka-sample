@@ -1,44 +1,21 @@
-<script context="module" lang="ts">
-  export const title = writable<string>('')
-</script>
-
-<script lang="ts">
-  import { dev } from '$app/environment'
-
-  import { page } from '$app/stores'
-  import { writable } from 'svelte/store'
-
-  // would be better if this was inside workspace context
+<script>
+  import NavigationButton from './NavigationButton.svelte'
 </script>
 
 <nav class="navigation">
   <ul>
     <li>
-      {#if $page.routeId !== ''}
-        <a href="/">
-          <button>Back</button>
-        </a>
-      {/if}
+      <slot name="left" />
     </li>
     <li>
-      {#if $page.routeId?.includes('workspace')}
-        <input
-          on:keydown={event => {
-            event.stopPropagation()
-          }}
-          bind:value={$title}
-        />
-      {/if}
+      <slot name="mid" />
     </li>
     <li>
-      {#if dev && $page.routeId?.includes('workspace') && !$page.routeId?.includes('template')}
-        <a href={`${$page.url}/template`}>
-          <button>Template</button>
+      <slot name="right">
+        <a href="/workspace/draft/new">
+          <NavigationButton>New</NavigationButton>
         </a>
-      {/if}
-      <a href="/workspace/new">
-        <button>New</button>
-      </a>
+      </slot>
     </li>
   </ul>
 </nav>
@@ -61,36 +38,5 @@
 
   .navigation li {
     margin: 0.5rem;
-  }
-  .navigation button {
-    background-color: var(--purple-dark);
-    color: var(--foreground);
-    padding: 0.5rem;
-    border-radius: 0.25rem;
-
-    transition: background-color 0.25s;
-
-    cursor: pointer;
-  }
-  .navigation button:hover {
-    background-color: var(--purple);
-  }
-
-  input {
-    text-align: center;
-    display: block;
-    color: var(--foreground);
-    border-radius: 0.5rem;
-    border: 2px solid transparent;
-    width: 100%;
-    padding: 0.5rem;
-  }
-
-  input:hover {
-    border-color: var(--foreground);
-  }
-
-  input:focus {
-    border-color: var(--cyan);
   }
 </style>

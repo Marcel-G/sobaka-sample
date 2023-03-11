@@ -23,10 +23,9 @@
   import { onDestroy, onMount } from 'svelte'
   import Button from '../components/Button.svelte'
   import Led from '../components/Led.svelte'
-  import { SubStore } from '../utils/patches'
   import { get_context as get_audio_context } from '../audio'
 
-  export let state: SubStore<State>
+  export let state: State
   let name = 'step_sequencer'
   let step_sequencer: StepSequencer
   let node: AudioNode

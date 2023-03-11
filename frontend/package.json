@@ -40,18 +40,17 @@
     "vite": "^3.1.0-beta.1"
   },
   "dependencies": {
-    "@crikey/stores-base": "^0.0.13",
-    "@crikey/stores-immer": "^0.0.15",
-    "@crikey/stores-selectable": "^0.0.14",
-    "@open-rpc/client-js": "^1.7.1",
+    "@syncedstore/core": "^0.4.3",
+    "@syncedstore/svelte": "^0.4.3",
     "date-fns": "^2.29.2",
     "events": "^3.3.0",
-    "fast-json-patch": "^3.1.1",
-    "immer": "^9.0.15",
     "localforage": "^1.10.0",
     "lodash": "^4.17.21",
     "ress": "^4.0.0",
     "sobaka-dsp": "file:../sobaka-dsp",
-    "webmidi": "^3.0.21"
+    "webmidi": "^3.0.21",
+    "y-indexeddb": "^9.0.9",
+    "y-webrtc": "^10.2.4",
+    "yjs": "^13.5.48"
   }
 }

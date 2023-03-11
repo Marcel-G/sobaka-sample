@@ -9,7 +9,6 @@
   const space = get_workspace()
   const { id: module_id } = get_module_context()
   const module = space.get_module_substore(module_id)
-  const position = module.select(state => state.position)
 
   export let ctx: ParamContext | NodeContext
   export let id: number
@@ -44,7 +43,7 @@
     })
   }
 
-  const cleanup = position.subscribe(on_move)
+  const cleanup = module.subscribe(on_move)
 
   onDestroy(() => {
     cleanup()

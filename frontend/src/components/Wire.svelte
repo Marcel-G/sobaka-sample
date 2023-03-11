@@ -1,7 +1,6 @@
 <script lang="ts">
   import { onDestroy } from 'svelte'
-  import { derived } from '@crikey/stores-immer'
-  import { writable, Writable } from 'svelte/store'
+  import { derived, writable, Writable } from 'svelte/store'
   import { PlugContext, PlugType } from '../workspace/plugs'
   import { Position } from '../@types'
   import { mouse_position } from '../workspace/Workspace.svelte'
