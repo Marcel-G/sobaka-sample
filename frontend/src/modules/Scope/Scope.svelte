@@ -5,11 +5,11 @@
     background: 'var(--cyan-dark)'
   }
 
-  type State = Readonly<{
+  type State = {
     threshold: number
     time: number
     trigger: boolean
-  }>
+  }
 
   export const initialState: State = {
     threshold: 0.5,
@@ -45,22 +45,16 @@
     loading = false
   })
 
-  function handle_toggle() {
-    state.update(s => {
-      s.trigger = !s.trigger
-      return s
-    })
-  }
-
   $: canvas = scope?.canvas
 
-  const threshold = state.select(s => s.threshold)
-  const time = state.select(s => s.time)
-  const trigger = state.select(s => s.trigger)
+  $: threshold = state.threshold
+  $: scope?.threshold.set(threshold)
 
-  $: scope?.threshold.set($threshold)
-  $: scope?.time.set($time)
-  $: scope?.trigger.set($trigger)
+  $: time = state.time
+  $: scope?.time.set(time)
+
+  $: trigger = state.trigger
+  $: scope?.trigger.set(trigger)
 
   onDestroy(() => {
     scope?.stop()
@@ -78,9 +72,12 @@
         </div>
       </div>
       <div class="controls">
-        <Knob bind:value={$threshold} range={[-1, 1]} label="threshold" />
-        <Knob bind:value={$time} range={[0, 12]} label="time" />
-        <Button bind:pressed={$trigger} onClick={handle_toggle} />
+        <Knob bind:value={state.threshold} range={[-1, 1]} label="threshold" />
+        <Knob bind:value={state.time} range={[0, 12]} label="time" />
+        <Button
+          pressed={state.trigger}
+          onClick={() => (state.trigger = !state.trigger)}
+        />
       </div>
     </div>
   {/if}

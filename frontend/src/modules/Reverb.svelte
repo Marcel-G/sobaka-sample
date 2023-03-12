@@ -5,10 +5,10 @@
     background: 'var(--purple-dark)'
   }
 
-  type State = Readonly<{
+  type State = {
     wet: number
     length: number
-  }>
+  }
 
   export const initialState: State = {
     wet: 0.1,
@@ -45,12 +45,12 @@
     loading = false
   })
 
-  const wet = state.select(s => s.wet)
-  const delay = state.select(s => s.length)
-
   // Update the sobaka node when the state changes
-  $: wet_param?.setValueAtTime($wet, $context.currentTime)
-  $: delay_param?.setValueAtTime($delay, $context.currentTime)
+  $: wet = state.wet
+  $: wet_param?.setValueAtTime(wet, $context.currentTime)
+
+  $: delay = state.length
+  $: delay_param?.setValueAtTime(delay, $context.currentTime)
 
   onDestroy(() => {
     reverb?.destroy()
@@ -63,8 +63,8 @@
     <p>Loading...</p>
   {:then}
     <div class="controls">
-      <Knob bind:value={$wet} range={[0, 1]} label="wet" />
-      <Knob bind:value={$delay} range={[0, 10]} label="length" />
+      <Knob bind:value={state.wet} range={[0, 1]} label="wet" />
+      <Knob bind:value={state.length} range={[0, 10]} label="length" />
     </div>
   {/await}
 

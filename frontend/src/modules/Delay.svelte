@@ -5,7 +5,7 @@
     background: 'var(--purple-dark)'
   }
 
-  type State = Readonly<{ time: number }>
+  type State = { time: number }
 
   export const initialState: State = { time: 2 }
 </script>
@@ -37,10 +37,9 @@
     loading = false
   })
 
-  const time = state.select(s => s.time)
-
   // Update the sobaka node when the state changes
-  $: delay_time_param?.setValueAtTime($time, $context.currentTime)
+  $: time = state.time
+  $: delay_time_param?.setValueAtTime(time, $context.currentTime)
 
   onDestroy(() => {
     delay?.destroy()
@@ -53,7 +52,7 @@
     <p>Loading...</p>
   {:else}
     <div class="controls">
-      <Knob bind:value={$time} range={[0, 10]} label="seconds">
+      <Knob bind:value={state.time} range={[0, 10]} label="seconds">
         <div slot="inputs">
           <Plug
             id={0}

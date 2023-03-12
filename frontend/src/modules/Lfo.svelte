@@ -5,7 +5,7 @@
     background: 'var(--pink-dark)'
   }
 
-  type State = Readonly<{ bpm: number }>
+  type State = { bpm: number }
 
   export const initialState: State = { bpm: 120 }
 </script>
@@ -27,22 +27,23 @@
   const context = get_audio_context()
 
   onMount(async () => {
-    ;(lfo = new OscillatorNode($context, { type: 'sine' })), (loading = false)
+    lfo = new OscillatorNode($context, { type: 'sine' })
+
+    loading = false
 
     lfo.start()
   })
 
-  const bpm = state.select(s => s.bpm)
-
   // Update the sobaka node when the state changes
-  $: lfo?.frequency.setValueAtTime(($bpm || 0) / 60, $context.currentTime)
+  $: bpm = state.bpm
+  $: lfo?.frequency.setValueAtTime((bpm || 0) / 60, $context.currentTime)
 </script>
 
 <Panel {name} height={6} width={5} custom_style={into_style(theme)}>
   {#if loading}
     <p>Loading...</p>
   {:else}
-    <Knob bind:value={$bpm} range={[0, 600]} label="bpm">
+    <Knob bind:value={state.bpm} range={[0, 600]} label="bpm">
       <div slot="inputs">
         <Plug
           id={1}

@@ -52,9 +52,10 @@
     frequency.start(time)
   })
 
+  $: bpm = state.bpm
   $: {
     let time = $context.currentTime
-    let freq = (state.bpm || 0) / 60
+    let freq = (bpm || 0) / 60
     clock?.forEach((node, index) => {
       node.frequency.setValueAtTime(freq * multiplier[index], time)
     })

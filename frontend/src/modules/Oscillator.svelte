@@ -5,13 +5,13 @@
     background: 'var(--pink-dark)'
   }
 
-  type State = Readonly<{
+  type State = {
     sine: number
     square: number
     saw: number
     triangle: number
     pitch: number
-  }>
+  }
 
   export const initialState: State = {
     sine: 0,
@@ -57,18 +57,21 @@
     loading = false
   })
 
-  const pitch = state.select(s => s.pitch)
-  const saw = state.select(s => s.saw)
-  const sine = state.select(s => s.sine)
-  const square = state.select(s => s.square)
-  const triangle = state.select(s => s.triangle)
-
   // Update the sobaka node when the state changes
-  $: pitch_param?.setValueAtTime($pitch, 0)
-  $: saw_param?.setValueAtTime($saw, 0)
-  $: sine_param?.setValueAtTime($sine, 0)
-  $: square_param?.setValueAtTime($square, 0)
-  $: triangle_param?.setValueAtTime($triangle, 0)
+  $: pitch = state.pitch
+  $: pitch_param?.setValueAtTime(pitch, 0)
+
+  $: saw = state.saw
+  $: saw_param?.setValueAtTime(saw, 0)
+
+  $: sine = state.sine
+  $: sine_param?.setValueAtTime(sine, 0)
+
+  $: square = state.square
+  $: square_param?.setValueAtTime(square, 0)
+
+  $: triangle = state.triangle
+  $: triangle_param?.setValueAtTime(triangle, 0)
 
   onDestroy(() => {
     oscillator?.destroy()
@@ -80,11 +83,11 @@
   {#if loading}
     <p>Loading...</p>
   {:else}
-    <Knob bind:value={$pitch} range={[0, 4]} label="pitch" />
-    <Knob bind:value={$saw} range={[0, 1]} label="saw" />
-    <Knob bind:value={$sine} range={[0, 1]} label="sine" />
-    <Knob bind:value={$square} range={[0, 1]} label="square" />
-    <Knob bind:value={$triangle} range={[0, 1]} label="triangle" />
+    <Knob bind:value={state.pitch} range={[0, 4]} label="pitch" />
+    <Knob bind:value={state.saw} range={[0, 1]} label="saw" />
+    <Knob bind:value={state.sine} range={[0, 1]} label="sine" />
+    <Knob bind:value={state.square} range={[0, 1]} label="square" />
+    <Knob bind:value={state.triangle} range={[0, 1]} label="triangle" />
   {/if}
   <div slot="inputs">
     <Plug

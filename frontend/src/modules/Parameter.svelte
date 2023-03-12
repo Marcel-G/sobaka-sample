@@ -5,7 +5,7 @@
     background: 'var(--cyan-dark)'
   }
 
-  type State = Readonly<{ min: number; max: number; value: number }>
+  type State = { min: number; max: number; value: number }
 
   export const initialState: State = {
     min: 0,
@@ -36,12 +36,9 @@
     loading = false
   })
 
-  const value = state.select(s => s.value)
-  const min = state.select(s => s.min)
-  const max = state.select(s => s.max)
-
   // Update the sobaka node when the state changes
-  $: parameter?.offset.setValueAtTime($value, $context.currentTime)
+  $: value = state.value
+  $: parameter?.offset.setValueAtTime(value, $context.currentTime)
 </script>
 
 <Panel {name} height={6} width={5} custom_style={into_style(theme)}>
@@ -49,7 +46,7 @@
     <p>Loading...</p>
   {:then}
     <span>
-      <Knob bind:value={$value} range={[$min, $max]} label="value" />
+      <Knob bind:value={state.value} range={[state.min, state.max]} label="value" />
     </span>
   {/await}
   <div slot="outputs">

@@ -15,7 +15,10 @@ const crossOriginIsolationForPreview = {
 /** @type {import('vite').UserConfig} */
 const config = {
   build: {
-    target: 'es2020'
+    target: 'esnext',
+    commonjsOptions: {
+      include: []
+    }
   },
   plugins: [sveltekit(), crossOriginIsolationForPreview],
   server: {

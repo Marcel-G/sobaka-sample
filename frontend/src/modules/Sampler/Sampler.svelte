@@ -5,13 +5,13 @@
     background: 'var(--pink-dark)'
   }
 
-  type State = Readonly<{
+  type State = {
     sound_id: string | null
     threshold: number
     active_segment: number
     view_position: number
     playback_rate: number
-  }>
+  }
 
   export const initialState: State = {
     sound_id: null,
@@ -30,11 +30,11 @@
   import { into_style } from '../../components/Theme.svelte'
   import { PlugType } from '../../workspace/plugs'
   import Knob from '../../components/Knob.svelte'
-  import { getMediaManager, get_context as get_audio_context } from '../../audio'
-  import { into_transport, list_audio, load_audio, store_audio } from '../../worker/media'
+  import { get_context as get_audio_context } from '../../audio'
   import AudioPreview from './AudioPreview.svelte'
   import AudioDetail from './AudioDetail.svelte'
   import Button from '../../components/Button.svelte'
+  import { get_media_context } from '../../worker/media'
 
   export let state: State
   let name = 'sampler'
@@ -42,12 +42,10 @@
   let node: AudioNode
   let loading = true
   let rate_param: AudioParam
-  let files: {
-    name: string
-    id: string
-  }[] = []
+  let files: string[] = []
 
   const context = get_audio_context()
+  const media = get_media_context()
 
   let trigger_segment: (segment_index: number) => void
   let audio_data: SharedAudio | null
@@ -70,7 +68,7 @@
       }
     })
 
-    files = await list_audio()
+    files = await media.list()
   })
 
   type InputChangeEvent = Event & {
@@ -81,51 +79,47 @@
     const file = event.currentTarget.files?.[0]
 
     if (file) {
-      $sound_id = await store_audio(file)
+      state.sound_id = await media.store(file)
       loading = true
     }
   }
 
-  const threshold = state.select(s => s.threshold)
-  const sound_id = state.select(s => s.sound_id)
-  const view_position = state.select(s => s.view_position)
-  const playback_rate = state.select(s => s.playback_rate)
-  const active_segment = state.select(s => s.active_segment)
+  $: sound_id = state.sound_id
+  $: if (sound_id) load_audio(sound_id)
+  async function load_audio(id: string) {
+    const audio = await media.open(id)
+    audio_data = audio.cloned()
+
+    if (audio) {
+      // Send updated data to audio worklet - @todo this may not be the most efficient format
+      setTimeout(() => {
+        sampler?.update_audio(audio)
+      }, 1000)
+    }
+    loading = false
+  }
 
   // Update the sobaka node when the state changes
-  $: sampler?.set_threshold($threshold)
-
-  sound_id.subscribe(async id => {
-    if (id) {
-      const audio = await getMediaManager().load_with(id, async () =>
-        load_audio(id).then(into_transport)
-      )
-
-      audio_data = audio.cloned()
-
-      if (audio) {
-        // Send updated data to audio worklet - @todo this may not be the most efficient format
-        setTimeout(() => {
-          sampler?.update_audio(audio)
-        }, 1000)
-      }
-      loading = false
-    }
-  })
+  $: threshold = state.threshold
+  $: sampler?.set_threshold(threshold)
 
   const handle_view_change = (position: number) => {
-    $view_position = position
+    state.view_position = position
   }
 
   const handle_segment_click = (segment_index: number) => {
-    $active_segment = segment_index
+    state.active_segment = segment_index
   }
 
   // Update the sobaka node when the state changes
-  $: rate_param?.setValueAtTime($playback_rate, $context.currentTime)
-  $: sampler?.command({ SetSample: $active_segment })
+  $: playback_rate = state.playback_rate
+  $: rate_param?.setValueAtTime(playback_rate, $context.currentTime)
+
+  $: active_segment = state.active_segment
+  $: sampler?.command({ SetSample: active_segment })
 
   onDestroy(() => {
+    // @todo -- error if sampler is destroyed before bg task
     sampler?.destroy()
     sampler?.free()
   })
@@ -134,25 +128,25 @@
 <Panel {name} height={20} width={20} custom_style={into_style(theme)}>
   {#if loading}
     <p>Loading...</p>
-  {:else if $sound_id}
+  {:else if state.sound_id}
     <div class="sampler-controls">
       {#if audio_data}
         <AudioPreview
-          view_position={$view_position}
+          view_position={state.view_position}
           {audio_data}
           on_view_change={handle_view_change}
         />
         <AudioDetail
-          active_segment={$active_segment}
-          view_position={$view_position}
+          active_segment={state.active_segment}
+          view_position={state.view_position}
           {audio_data}
           segments={detections}
-          playback_rate={$playback_rate}
+          playback_rate={state.playback_rate}
           on_segment_click={handle_segment_click}
           bind:trigger_segment
         />
         <div class="controls">
-          <Knob bind:value={$playback_rate} range={[0.1, 4]} label="rate">
+          <Knob bind:value={state.playback_rate} range={[0.1, 4]} label="rate">
             <div slot="inputs">
               <Plug
                 id={1}
@@ -161,11 +155,11 @@
               />
             </div>
           </Knob>
-          <Knob bind:value={$threshold} range={[0.5, 100]} label="threshold" />
+          <Knob bind:value={state.threshold} range={[0.5, 100]} label="threshold" />
           <!-- Lol need a better button -->
           <Button
             onClick={() => {
-              $sound_id = null
+              state.sound_id = null
             }}>Change</Button
           >
         </div>
@@ -178,13 +172,13 @@
         Add Sample
       </label>
       <ol>
-        {#each files as file (file.id)}
+        {#each files as file (file)}
           <li
             on:click={() => {
-              $sound_id = file.id
+              state.sound_id = file
             }}
           >
-            {file.name}
+            {file}
           </li>
         {/each}
       </ol>

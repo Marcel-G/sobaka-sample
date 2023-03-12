@@ -5,7 +5,7 @@
     background: 'var(--purple-dark)'
   }
 
-  type State = Readonly<{ value: number }>
+  type State = { value: number }
 
   export const initialState: State = {
     value: 0.5
@@ -35,9 +35,8 @@
     loading = false
   })
 
-  const gain = state.select(s => s.value)
-
-  $: gain_param?.setValueAtTime($gain || 0, $context.currentTime)
+  $: gain = state.value
+  $: gain_param?.setValueAtTime(gain || 0, $context.currentTime)
 </script>
 
 <Panel {name} height={6} width={5} custom_style={into_style(theme)}>
@@ -45,7 +44,7 @@
     <p>Loading...</p>
   {:else}
     <span>
-      <Knob bind:value={$gain} range={[-1, 1]} label="attenuverter" />
+      <Knob bind:value={state.value} range={[-1, 1]} label="attenuverter" />
     </span>
   {/if}
 

@@ -5,12 +5,12 @@
     background: 'var(--cyan-dark)'
   }
 
-  type State = Readonly<{
-    steps: number[]
-  }>
+  type State = {
+    steps: { value: number }[]
+  }
 
   export const initialState: State = {
-    steps: new Array(8).fill(1)
+    steps: new Array(8).fill({ value: 1 })
   }
 </script>
 
@@ -21,8 +21,10 @@
   import { into_style } from '../components/Theme.svelte'
   import { PlugType } from '../workspace/plugs'
   import { onDestroy, onMount } from 'svelte'
-  import SequencerRow from './Sequencer.Row.svelte'
   import { get_context as get_audio_context } from '../audio'
+  import Knob from '../components/Knob.svelte'
+  import Led from '../components/Led.svelte'
+  import { Tuple } from '../@types'
 
   const context = get_audio_context()
 
@@ -34,7 +36,7 @@
 
   onMount(async () => {
     const { Sequencer } = await import('sobaka-dsp')
-    sequencer = await Sequencer.create($context, $state as any)
+    sequencer = await Sequencer.create($context)
     node = sequencer.node()
     loading = false
 
@@ -48,21 +50,15 @@
 
   let active_step = 0
 
-  const steps = $state.steps.map((_, i) => state.select(s => s.steps[i]))
-
-  const cleanup = steps.map((step, i) =>
-    step.subscribe(v => {
-      if (v !== undefined) {
-        // state can be undefined just before removal
-        sequencer?.command({ UpdateStep: [i, v] })
-      }
-    })
-  )
+  $: steps = state.steps
+  // @todo -- send all steps
+  $: sequencer?.command({
+    UpdateSteps: steps.map(({ value }) => value) as Tuple<number, 8>
+  })
 
   const knob_range = [0, 8]
 
   onDestroy(() => {
-    cleanup.forEach(unsubscribe => unsubscribe())
     sequencer?.destroy()
     sequencer?.free()
   })
@@ -73,13 +69,12 @@
     <p>Loading...</p>
   {:else}
     <div class="controls">
-      {#each steps as val, i}
-        <SequencerRow
-          index={i}
-          active={i === active_step}
-          value={val}
-          range={knob_range}
-        />
+      {#each state.steps as step, i}
+        <Knob bind:value={step.value} range={knob_range} label={`step_${i + 1}`}>
+          <div slot="inputs">
+            <Led on={i === active_step} />
+          </div>
+        </Knob>
       {/each}
     </div>
   {/if}

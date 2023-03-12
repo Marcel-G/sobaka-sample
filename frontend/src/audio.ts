@@ -1,14 +1,10 @@
 import { writable, Writable } from 'svelte/store'
 import { getContext, setContext } from 'svelte'
-import init, { init_worker, init_worklet, MediaManager } from 'sobaka-dsp'
+import init, { init_worker, init_worklet } from 'sobaka-dsp'
 import worklet_js_url from 'sobaka-dsp/pkg/sobaka-worklet.worklet.js?url&worker'
 import worker_js_url from 'sobaka-dsp/pkg/sobaka-worklet.worker.js?url&worker'
 
 const AUDIO_CONTEXT = 'AUDIO_CONTEXT'
-
-let media_manager: MediaManager
-
-export const getMediaManager = () => media_manager
 
 export const init_audio = () => {
   let context: AudioContext
@@ -31,8 +27,6 @@ export const init_audio = () => {
       worker_js_url,
       import.meta.env.DEV ? { type: 'module' } : { type: 'classic' }
     )
-
-    media_manager = new MediaManager()
 
     audio_context.update(s => {
       s = context

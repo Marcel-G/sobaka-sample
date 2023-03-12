@@ -12,6 +12,7 @@
   import Navigation from '../components/Navigation.svelte'
   import TitleInput from '../components/TitleInput.svelte'
   import NavigationButton from '../components/NavigationButton.svelte'
+  import { onDestroy } from 'svelte'
 
   let loading = false
   let toolbox_visible = false
@@ -19,6 +20,10 @@
   let workspace_element: Element
 
   const space = get_workspace()
+
+  onDestroy(() => {
+    space.cleanup()
+  })
 
   const store = space.store
 

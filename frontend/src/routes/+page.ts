@@ -1,5 +1,6 @@
 import { browser } from '$app/environment'
 import _ from 'lodash'
+import { init_repo } from '../worker/ipfs'
 import { list_local, list_remote } from '../worker/state'
 import type { PageLoad } from './$types'
 
@@ -13,6 +14,8 @@ export const load: PageLoad = async () => {
     }
   }
 
+  // @todo -- reorganise this
+  await init_repo()
   const shared = await list_remote()
   const drafts = await list_local()
 

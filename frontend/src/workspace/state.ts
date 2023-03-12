@@ -1,6 +1,5 @@
 import { INITIAL_STATE, ModuleUI } from '../modules'
 import { store as plug_store, PlugContext } from './plugs'
-import * as Y from 'yjs'
 import { derived, get, Readable, writable } from 'svelte/store'
 import syncedStore, { getYjsDoc } from '@syncedstore/core'
 import { DocTypeDescription } from '@syncedstore/core/types/doc'
@@ -73,6 +72,7 @@ export const workspace = () => {
       const meta = get(store).meta
       meta.parent = remote_workspace
       meta.createdAt ??= new Date().toISOString()
+      // @todo -- update updatedAt when the document changes
       meta.updatedAt = new Date().toISOString()
 
       goto(`/workspace/draft/${new_workspace}`)
@@ -134,6 +134,7 @@ export const workspace = () => {
     return true
   }
 
+  // @todo -- this does not work
   const remove_module = (id: string) => {
     const { modules } = get(store)
     const index = modules.findIndex(module => module.id === id)
@@ -142,6 +143,7 @@ export const workspace = () => {
     }
   }
 
+  // @todo -- clone does not work properly
   const clone_module = (id: string) => {
     const new_id = Math.random().toString(36).substr(2, 9)
     const { modules } = get(store)
@@ -237,8 +239,13 @@ export const workspace = () => {
     workspace.meta.title = title
   }
 
+  const cleanup = () => {
+    doc.destroy()
+  }
+
   return {
     store,
+    cleanup,
     save_to_remote,
     load_from_remote,
     load_from_local,

@@ -11,8 +11,8 @@ pub enum StepSequencerEvent {
 }
 #[waw::derive::derive_command]
 pub enum StepSequencerCommand {
-    /// Update the value of a given step
-    UpdateStep((u32, u32), bool),
+    /// Update the step values 
+    UpdateSteps([[bool; 8]; 4]),
 }
 
 #[waw::derive::derive_initial_state]
@@ -71,8 +71,8 @@ impl AudioModule for StepSequencer {
 
     fn on_command(&mut self, command: Self::Command) {
         match command {
-            StepSequencerCommand::UpdateStep((x, y), value) => {
-                self.set_step(x as usize, y as usize, value)
+            StepSequencerCommand::UpdateSteps(steps) => {
+                self.steps = steps
             }
         }
     }

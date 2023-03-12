@@ -37,14 +37,13 @@
     "svelte-preprocess": "^4.10.6",
     "tslib": "^2.3.1",
     "typescript": "^4.7.4",
-    "vite": "^3.1.0-beta.1"
+    "vite": "^3.2.5"
   },
   "dependencies": {
     "@syncedstore/core": "^0.4.3",
     "@syncedstore/svelte": "^0.4.3",
     "date-fns": "^2.29.2",
     "events": "^3.3.0",
-    "localforage": "^1.10.0",
     "lodash": "^4.17.21",
     "ress": "^4.0.0",
     "sobaka-dsp": "file:../sobaka-dsp",
