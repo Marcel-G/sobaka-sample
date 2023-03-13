@@ -4,7 +4,7 @@ import { get_repo } from './ipfs'
 
 export const MEDIA_CONTEXT = 'MEDIA_CONTEXT'
 
-const MEDIA_PATH = '/media'
+const MEDIA_PATH = '/media/'
 
 export const init_media = () => {
   let media_manager: MediaManager
@@ -15,18 +15,28 @@ export const init_media = () => {
 
   const open = async (id: string): Promise<SharedAudio> => {
     const audio = await media_manager.load_with(id, async () => {
-      const chunks: Uint8Array[] = []
-      for await (const chunk of get_repo().cat(id)) {
-        chunks.push(chunk)
+      try {
+        const chunks: Uint8Array[] = []
+        for await (const chunk of get_repo().cat(id)) {
+          chunks.push(chunk)
+        }
+
+        const blob = new Blob(chunks)
+        const file = new File([blob], id)
+
+        const cid = await get_repo().pin.add(id)
+        await get_repo()
+          .files.cp(cid, MEDIA_PATH + cid.toString(), { parents: true })
+          .catch(() => {
+            // Ignore if it's already in the dir
+          })
+
+        return load_audio(id, file).then(into_transport)
+      } catch (error) {
+        // @todo -- media_manager `load_with` does not properly handle errors
+        console.error(error)
+        throw error
       }
-
-      const blob = new Blob(chunks)
-      const file = new File([blob], id)
-
-      await get_repo().pin.add(id)
-      await get_repo().files.cp(`/ipfs/${id}`, MEDIA_PATH, { parents: true })
-
-      return load_audio(id, file).then(into_transport)
     })
 
     return audio
@@ -37,7 +47,11 @@ export const init_media = () => {
       pin: true
     })
 
-    await get_repo().files.cp(cid, MEDIA_PATH, { parents: true })
+    await get_repo()
+      .files.cp(cid, MEDIA_PATH + cid.toString(), { parents: true })
+      .catch(() => {
+        // Ignore if it's already in the dir
+      })
 
     return cid.toString()
   }
@@ -46,6 +60,7 @@ export const init_media = () => {
     try {
       const entries: string[] = []
       for await (const entry of get_repo().files.ls(MEDIA_PATH)) {
+        console.log(entry)
         const stat = await get_repo().files.stat(entry.cid)
 
         if (stat.type === 'file') {

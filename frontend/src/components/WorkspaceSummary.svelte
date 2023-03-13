@@ -7,15 +7,15 @@
 
   const handle_delete = async () => {
     if (meta.type === 'local') {
-      await remove_local(meta.id)
+      await remove_local(meta.cid)
     } else {
-      await remove_remote(meta.id)
+      await remove_remote(meta.cid)
     }
     await invalidateAll()
   }
 
   const href =
-    meta.type === 'local' ? `/workspace/draft/${meta.id}` : `/workspace/${meta.id}`
+    meta.type === 'local' ? `/workspace/draft/${meta.cid}` : `/workspace/${meta.cid}`
 
   formatDistanceToNow
 </script>

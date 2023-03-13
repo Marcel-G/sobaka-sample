@@ -87,6 +87,9 @@
   $: sound_id = state.sound_id
   $: if (sound_id) load_audio(sound_id)
   async function load_audio(id: string) {
+    loading = true
+    audio_data = null
+    detections = []
     const audio = await media.open(id)
     audio_data = audio.cloned()
 
@@ -129,42 +132,45 @@
   {#if loading}
     <p>Loading...</p>
   {:else if state.sound_id}
-    <div class="sampler-controls">
-      {#if audio_data}
-        <AudioPreview
-          view_position={state.view_position}
-          {audio_data}
-          on_view_change={handle_view_change}
-        />
-        <AudioDetail
-          active_segment={state.active_segment}
-          view_position={state.view_position}
-          {audio_data}
-          segments={detections}
-          playback_rate={state.playback_rate}
-          on_segment_click={handle_segment_click}
-          bind:trigger_segment
-        />
-        <div class="controls">
-          <Knob bind:value={state.playback_rate} range={[0.1, 4]} label="rate">
-            <div slot="inputs">
-              <Plug
-                id={1}
-                label="rate_cv"
-                ctx={{ type: PlugType.Param, param: rate_param }}
-              />
-            </div>
-          </Knob>
-          <Knob bind:value={state.threshold} range={[0.5, 100]} label="threshold" />
-          <!-- Lol need a better button -->
-          <Button
-            onClick={() => {
-              state.sound_id = null
-            }}>Change</Button
-          >
-        </div>
-      {/if}
-    </div>
+    {#key state.sound_id}
+      <div class="sampler-controls">
+        {#if audio_data}
+          <AudioPreview
+            view_position={state.view_position}
+            {audio_data}
+            on_view_change={handle_view_change}
+          />
+          <AudioDetail
+            active_segment={state.active_segment}
+            view_position={state.view_position}
+            {audio_data}
+            segments={detections}
+            playback_rate={state.playback_rate}
+            on_segment_click={handle_segment_click}
+            bind:trigger_segment
+          />
+          <div class="controls">
+            <Knob bind:value={state.playback_rate} range={[0.1, 4]} label="rate">
+              <div slot="inputs">
+                <Plug
+                  id={1}
+                  label="rate_cv"
+                  ctx={{ type: PlugType.Param, param: rate_param }}
+                />
+              </div>
+            </Knob>
+            <Knob bind:value={state.threshold} range={[0.5, 100]} label="threshold" />
+            <!-- Lol need a better button -->
+            <Button
+              onClick={async () => {
+                state.sound_id = null
+                files = await media.list()
+              }}>Change</Button
+            >
+          </div>
+        {/if}
+      </div>
+    {/key}
   {:else}
     <div class="file-selector">
       <label class="file-input">

@@ -26,10 +26,10 @@
   const space = get_workspace()
   const { id } = get_module_context()
 
-  const module = space.get_module_substore(id)
+  const position = space.module_position(id)
 
-  $: col = `${$module.position.x + 1} / span ${width}`
-  $: row = `${$module.position.y + 1} / span ${height}`
+  $: col = `${$position.x + 1} / span ${width}`
+  $: row = `${$position.y + 1} / span ${height}`
 
   const onMove: OnDrag = (x_in, y_in) => {
     let { x, y } = into_grid_coords({ x: x_in, y: y_in })

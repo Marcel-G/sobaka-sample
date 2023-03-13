@@ -23,8 +23,9 @@ const config = {
   plugins: [sveltekit(), crossOriginIsolationForPreview],
   server: {
     headers: {
-      'Cross-Origin-Opener-Policy': 'same-origin',
-      'Cross-Origin-Embedder-Policy': 'require-corp'
+      'cross-origin-opener-policy': 'same-origin',
+      'cross-origin-embedder-policy': 'require-corp',
+      'cross-origin-resource-policy': 'cross-origin'
     },
     fs: {
       // Allow serving files from one level up to the project root

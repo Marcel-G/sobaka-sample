@@ -47,6 +47,7 @@
     "lodash": "^4.17.21",
     "ress": "^4.0.0",
     "sobaka-dsp": "file:../sobaka-dsp",
+    "svelte-boring-avatars": "^1.2.2",
     "webmidi": "^3.0.21",
     "y-indexeddb": "^9.0.9",
     "y-webrtc": "^10.2.4",

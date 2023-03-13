@@ -21,21 +21,22 @@
   ] as const
 
   type State = {
-    notes: boolean[]
+    notes: { value: boolean }[]
   }
   export const initialState: State = {
-    notes: Array(NOTE_LABELS.length).fill(false)
+    notes: Array(NOTE_LABELS.length).fill({ value: false })
   }
 </script>
 
 <script lang="ts">
-  import type { QuantiserCommand, Quantiser } from 'sobaka-dsp'
+  import type { Quantiser } from 'sobaka-dsp'
   import { onDestroy, onMount } from 'svelte'
   import Panel from './shared/Panel.svelte'
   import Plug from './shared/Plug.svelte'
   import { into_style } from '../components/Theme.svelte'
   import { PlugType } from '../workspace/plugs'
   import { get_context as get_audio_context } from '../audio'
+  import { Tuple } from '../@types'
 
   export let state: State
   let name = 'quantiser'
@@ -54,12 +55,12 @@
 
   // Update the sobaka node when the state changes
   $: notes = state.notes // @todo this may not update
-  $: quantiser?.command({ UpdateNotes: notes } as QuantiserCommand)
+  $: quantiser?.command({
+    UpdateNotes: notes.map(({ value }) => value) as Tuple<boolean, 12>
+  })
 
   function on_toggle(index: number) {
-    return () => {
-      state.notes[index] = !state.notes[index]
-    }
+    state.notes[index].value = !state.notes[index].value
   }
 
   onDestroy(() => {
@@ -74,7 +75,11 @@
   {:else}
     <ul class="board">
       {#each NOTE_LABELS as label, i}
-        <li class="key {label}" class:pressed={state.notes[i]} on:click={on_toggle(i)} />
+        <li
+          class="key {label}"
+          class:pressed={state.notes[i].value}
+          on:click={() => on_toggle(i)}
+        />
       {/each}
     </ul>
   {/if}

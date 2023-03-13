@@ -1,11 +1,12 @@
 import { create, IPFS } from 'ipfs-core'
+import { User } from './user'
 
 let ipfs: IPFS
 
-export const init_repo = async () => {
+export const init_repo = async (user: User) => {
   if (!ipfs) {
     ipfs = await create({
-      repo: 'sobaka',
+      repo: `sobaka-${user.uuid}`,
       init: { algorithm: 'Ed25519' }
     })
   }

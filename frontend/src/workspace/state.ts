@@ -6,11 +6,15 @@ import { DocTypeDescription } from '@syncedstore/core/types/doc'
 import { svelteSyncedStore } from '@syncedstore/svelte'
 import { IndexeddbPersistence } from 'y-indexeddb'
 import {
-  create_db_name,
   load_from_remote as _load_from_remote,
+  save_draft,
   save_to_remote as _save_to_remote
 } from '../worker/state'
 import { goto } from '$app/navigation'
+import { WebrtcProvider } from 'y-webrtc'
+import { Position } from '../@types'
+import { cloneDeep, throttle } from 'lodash'
+import { get_user, User } from '../worker/user'
 
 export type WorkspaceMeta = {
   title: string
@@ -43,8 +47,18 @@ export interface Link {
   to: string
 }
 
+type UserAwareness = {
+  user: User
+  mouse?: Position
+}
+
 export const is_fully_linked = (link: Partial<Link> | null): link is Link => {
   return Boolean(link?.from && link?.to)
+}
+
+type PeersEvent = {
+  added: string[]
+  removed: string[]
 }
 
 export const workspace = () => {
@@ -64,10 +78,7 @@ export const workspace = () => {
     await _load_from_remote(remote_workspace, doc)
 
     doc.once('update', async () => {
-      const new_workspace = crypto.randomUUID()
-
-      const provider = new IndexeddbPersistence(create_db_name(new_workspace), doc)
-      await provider.whenSynced
+      const new_workspace = await save_draft(doc)
 
       const meta = get(store).meta
       meta.parent = remote_workspace
@@ -80,7 +91,7 @@ export const workspace = () => {
   }
 
   const load_from_local = async (local_workspace: string) => {
-    const provider = new IndexeddbPersistence(create_db_name(local_workspace), doc)
+    const provider = new IndexeddbPersistence(local_workspace, doc)
     await provider.whenSynced
 
     const meta = get(store).meta
@@ -91,6 +102,66 @@ export const workspace = () => {
     meta.updatedAt ??= new Date().toISOString()
   }
 
+  const user_store = writable<Record<string, UserAwareness>>({})
+
+  const get_user_store = () => {
+    return user_store
+  }
+
+  const wip_connect_live = async (local_workspace: string) => {
+    const provider = new WebrtcProvider(local_workspace, doc, {
+      signaling: ['ws://localhost:4444']
+    })
+
+    const awareness = provider.awareness
+
+    const current_user = get_user()!
+
+    awareness.setLocalStateField('user', current_user)
+
+    const update_mouse_pos = ({ x, y }: Position) => {
+      awareness.setLocalStateField('mouse', { x, y })
+    }
+
+    let lastX: number
+    let lastY: number
+
+    const mousemoveHandler = throttle((event: MouseEvent) => {
+      const x = event.clientX
+      const y = event.clientY
+
+      // Check if the mouse has moved since the last update
+      if (x !== lastX || y !== lastY) {
+        update_mouse_pos({ x, y })
+      }
+    }, 250)
+
+    document.addEventListener('mousemove', mousemoveHandler)
+
+    // Remove mouse movement listener when YJS document is destroyed
+    doc.on('destroy', () => {
+      document.removeEventListener('mousemove', mousemoveHandler)
+    })
+
+    awareness.on('change', (state: PeersEvent) => {
+      // console.log('🥁', state)
+      // for (const peer of state.added) {
+      //   // const s = awareness.getStates(peer)
+      //   // console.log('🤔', s, peer)
+      //   // const p = PeerId.createFromB58String()
+      // }
+      const newState: Record<string, UserAwareness> = {}
+      awareness.getStates().forEach((_state, cid: number) => {
+        if (cid === awareness.clientID) return
+
+        const state = _state as UserAwareness
+        newState[state.user.name] = state
+      })
+
+      user_store.update(() => newState)
+    })
+  }
+
   const save_to_remote = async () => {
     const cid = await _save_to_remote(doc)
     goto(`/workspace/${cid}`)
@@ -98,7 +169,7 @@ export const workspace = () => {
 
   // Module actions
   const create_module = (type: ModuleUI, position: { x: number; y: number }): string => {
-    const id = Math.random().toString(36).substr(2, 9)
+    const id = crypto.randomUUID()
 
     const workspace = get(store)
 
@@ -117,24 +188,27 @@ export const workspace = () => {
   }
 
   const move_module = (id: string, x: number, y: number): boolean => {
-    // @todo check if module exists
     const { modules } = get(store)
     const module = modules.find(module => module.id === id)
     if (module) {
-      const index = modules.indexOf(module)
-
       module.position.x = x
       module.position.y = y
 
-      // Move the module index to the end so that it is rendered on top of all other modules
-      // modules.splice(index, 1)
-      // modules.push(module)
+      // Make the module the last in the list so that it's rendered on top.
+      const index = modules.indexOf(module)
+      if (index !== modules.length - 1) {
+        // clone the module so it can be re-inserted without "Not supported: reassigning object that already occurs in the tree."
+        // https://github.com/YousefED/SyncedStore/issues/87#issue-1487084868
+        const copy = cloneDeep(module)
+
+        modules.splice(index, 1)
+        modules.push(copy)
+      }
     }
 
     return true
   }
 
-  // @todo -- this does not work
   const remove_module = (id: string) => {
     const { modules } = get(store)
     const index = modules.findIndex(module => module.id === id)
@@ -143,49 +217,37 @@ export const workspace = () => {
     }
   }
 
-  // @todo -- clone does not work properly
   const clone_module = (id: string) => {
-    const new_id = Math.random().toString(36).substr(2, 9)
     const { modules } = get(store)
 
     const module = modules.find(module => module.id === id)
 
     if (module) {
-      const new_module = {
-        ...module,
-        id: new_id,
+      modules.push({
+        ...cloneDeep(module),
+        id: crypto.randomUUID(),
         position: {
           x: module.position.x + 1,
           y: module.position.y + 1
         }
-      }
-      modules.push(new_module)
+      })
     }
   }
 
-  // Module Selectors
-
-  const list_modules = (): Readable<string[]> => {
-    return derived(store, ({ modules }) => modules.map(({ id }) => id))
-  }
-
-  const get_module_substore = (id: string): Readable<Module> => {
+  const module_position = (id: string): Readable<Position> => {
     return derived(store, ({ modules }) => {
-      const module = modules.find(module => module.id === id)
-      if (!module) throw new Error(`Module ${id} not found`)
-
-      return module
+      const mod = modules.find(module => module.id === id)
+      if (mod) {
+        return mod.position
+      } else {
+        return { x: 0, y: 0 }
+      }
     })
   }
 
-  const get_module_state_substore = (id: string): Readable<Module['state']> => {
-    return derived(get_module_substore(id), module => module.state)
-  }
-
   // Link actions
-
   const add_link = (link: Link): string => {
-    const id = Math.random().toString(36).substr(2, 9)
+    const id = crypto.randomUUID()
     const { links } = get(store)
 
     links.push({ id, ...link })
@@ -202,17 +264,6 @@ export const workspace = () => {
   }
 
   // Link Selectors
-
-  const list_links = (): Readable<string[]> => {
-    return derived(store, ({ links }) => links.map(({ id }) => id))
-  }
-
-  const get_link_substore = (link_id: string): Readable<Required<Link> | undefined> => {
-    return derived(store, ({ links }) => {
-      return links.find(link => link.id === link_id)
-    })
-  }
-
   const get_active_link_substore = () => {
     return actie_link_store // @todo
   }
@@ -234,11 +285,6 @@ export const workspace = () => {
     )
   }
 
-  const update_title = (title: string) => {
-    const workspace = get(store)
-    workspace.meta.title = title
-  }
-
   const cleanup = () => {
     doc.destroy()
   }
@@ -246,6 +292,8 @@ export const workspace = () => {
   return {
     store,
     cleanup,
+    get_user_store,
+    wip_connect_live,
     save_to_remote,
     load_from_remote,
     load_from_local,
@@ -253,14 +301,9 @@ export const workspace = () => {
     move_module,
     remove_module,
     clone_module,
-    list_modules,
-    get_module_substore,
-    get_module_state_substore,
-    update_title,
+    module_position,
     add_link,
     remove_link,
-    list_links,
-    get_link_substore,
     get_active_link_substore,
     get_active_link_position,
     get_link_positions

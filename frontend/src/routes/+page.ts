@@ -1,5 +1,6 @@
 import { browser } from '$app/environment'
 import _ from 'lodash'
+import { init_user } from '../worker/user'
 import { init_repo } from '../worker/ipfs'
 import { list_local, list_remote } from '../worker/state'
 import type { PageLoad } from './$types'
@@ -15,18 +16,18 @@ export const load: PageLoad = async () => {
   }
 
   // @todo -- reorganise this
-  await init_repo()
+  await init_repo(init_user())
   const shared = await list_remote()
   const drafts = await list_local()
 
   const shared_with_drafts = shared.map(remote => ({
     remote,
-    drafts: drafts.filter(draft => draft.parent === remote.id)
+    drafts: drafts.filter(draft => draft.parent === remote.cid)
   }))
 
   // new drafts are documents without parents
   const orphan_drafts = drafts.filter(
-    draft => !draft.parent || !shared.find(remote => draft.parent === remote.id)
+    draft => !draft.parent || !shared.find(remote => draft.parent === remote.cid)
   )
 
   return {

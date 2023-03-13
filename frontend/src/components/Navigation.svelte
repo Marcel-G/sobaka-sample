@@ -33,10 +33,17 @@
   .navigation ul {
     display: flex;
     list-style-type: none;
-    justify-content: space-between;
   }
 
   .navigation li {
+    display: flex;
+    flex-basis: calc(100% / 3);
     margin: 0.5rem;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .navigation li:last-of-type {
+    justify-content: end;
   }
 </style>

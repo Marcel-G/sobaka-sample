@@ -1,9 +1,10 @@
 import { WorkspaceMeta } from 'src/workspace/state'
-import { IndexeddbPersistence } from 'y-indexeddb'
+import { clearDocument, IndexeddbPersistence } from 'y-indexeddb'
 import * as Y from 'yjs'
 import { get_repo } from './ipfs'
 
-const STATE_PATH = '/state'
+const SHARED_STATE_PATH = '/state/shared/'
+const DRAFT_STATE_PATH = '/state/draft/'
 
 /**
  * Checks that the string is a valid CID and that
@@ -35,10 +36,16 @@ const cat_to_doc = async (cid: string, doc: Y.Doc): Promise<void> => {
 /**
  * Downloads a remote state from IPFS and loads it into state
  */
-export const load_from_remote = async (cid: string, doc: Y.Doc): Promise<void> => {
-  await cat_to_doc(cid, doc)
+export const load_from_remote = async (id: string, doc: Y.Doc): Promise<void> => {
+  await cat_to_doc(id, doc)
 
-  await get_repo().pin.add(cid)
+  const cid = await get_repo().pin.add(id)
+
+  await get_repo()
+    .files.cp(cid, SHARED_STATE_PATH + cid.toString(), { parents: true })
+    .catch(() => {
+      // Ignore if it's already in the dir
+    })
 }
 
 /**
@@ -48,30 +55,33 @@ export const save_to_remote = async (doc: Y.Doc): Promise<string> => {
   // @todo - I could probably store just increments & somehow link the IPFS blocks together
   const snapshot_data = Y.encodeStateAsUpdate(doc)
 
-  const file = await get_repo().add(snapshot_data, {
+  const { cid } = await get_repo().add(snapshot_data, {
     pin: true
   })
 
-  await get_repo().files.cp(file.cid, STATE_PATH, { parents: true })
+  await get_repo()
+    .files.cp(cid, SHARED_STATE_PATH + cid.toString(), { parents: true })
+    .catch(() => {
+      // Ignore if it's already in the dir
+    })
 
-  return file.cid.toString()
+  return cid.toString()
 }
 
 export const list_remote = async (): Promise<WorkspaceMetaId[]> => {
   const entries: WorkspaceMetaId[] = []
   try {
-    for await (const entry of get_repo().files.ls(STATE_PATH)) {
-      const stat = await get_repo().files.stat(entry.cid)
+    for await (const { cid } of get_repo().files.ls(SHARED_STATE_PATH)) {
+      const stat = await get_repo().files.stat(cid)
 
       if (stat.type === 'file') {
-        const id = entry.cid.toString()
         const doc = new Y.Doc()
-        await cat_to_doc(entry.cid.toString(), doc)
+        await cat_to_doc(cid.toString(), doc)
         const result = doc.getMap('meta').toJSON() as WorkspaceMeta
         doc.destroy()
         entries.push({
           ...result,
-          id,
+          cid: cid.toString(),
           type: 'remote'
         })
       }
@@ -83,34 +93,99 @@ export const list_remote = async (): Promise<WorkspaceMetaId[]> => {
   }
 }
 
-export type WorkspaceMetaId = WorkspaceMeta & { id: string; type: 'remote' | 'local' }
+export type WorkspaceMetaId = WorkspaceMeta & { cid: string; type: 'remote' | 'local' }
 
 export const create_db_name = (id: string) => `sobaka-draft-${id}`
 
-export const list_local = async (): Promise<WorkspaceMetaId[]> => {
-  return []
-  // @todo -- `indexedDB.databases()` is draft spec % doesn't work in FF
-  const databases = await indexedDB.databases()
+export const save_draft = async (_doc?: Y.Doc): Promise<string> => {
+  const doc = _doc || new Y.Doc()
+  const id = create_db_name(doc.guid)
 
-  return await Promise.all(
-    databases
-      .filter(db => db.name?.match('sobaka-draft-'))
-      .map(async db => {
-        const id = db.name!.replace('sobaka-draft-', '')
-        const doc = new Y.Doc()
-        const provider = new IndexeddbPersistence(db.name!, doc)
-        await provider.whenSynced
-        const result = doc.getMap('meta').toJSON() as WorkspaceMeta
-        doc.destroy()
-        return { ...result, id, type: 'local' }
-      })
-  )
+  const provider = new IndexeddbPersistence(id, doc)
+  await provider.whenSynced
+
+  // provider.destroy()
+
+  // A draft is simply a pointer to some local DB
+  const draft = { id }
+
+  const { cid } = await get_repo().add(JSON.stringify(draft), {
+    pin: true
+  })
+
+  get_repo().name.publish
+
+  await get_repo()
+    .files.cp(cid, DRAFT_STATE_PATH + cid.toString(), { parents: true })
+    .catch(() => {
+      // Ignore if it's already in the dir
+    })
+
+  return cid.toString()
 }
 
-export const remove_local = async (id: string) => {
-  await indexedDB.deleteDatabase(create_db_name(id))
+const cat_to_draft = async (cid: string): Promise<{ id: string }> => {
+  const chunks: Uint8Array[] = []
+  for await (const chunk of get_repo().cat(cid)) {
+    chunks.push(chunk)
+  }
+  const data = Uint8Array.from(chunks.flatMap(chunk => Array.from(chunk)))
+
+  return JSON.parse(new TextDecoder().decode(data).toString()) as { id: string }
+}
+
+export const resolve_draft_id = async (cid: string): Promise<string | null> => {
+  try {
+    const { id } = await cat_to_draft(cid)
+
+    return id
+  } catch {
+    return null
+  }
+}
+
+export const list_local = async (): Promise<WorkspaceMetaId[]> => {
+  const entries: WorkspaceMetaId[] = []
+  try {
+    for await (const { cid } of get_repo().files.ls(DRAFT_STATE_PATH)) {
+      const stat = await get_repo().files.stat(cid)
+
+      if (stat.type === 'file') {
+        const file = await cat_to_draft(cid.toString())
+
+        const doc = new Y.Doc()
+        const provider = new IndexeddbPersistence(file.id, doc)
+        await provider.whenSynced
+        const result = doc.getMap('meta').toJSON() as WorkspaceMeta
+
+        doc.destroy()
+
+        // @todo -- result can be `{}` if the data is no longer in indexeddb
+        if ('title' in result) {
+          entries.push({ ...result, cid: cid.toString(), type: 'local' })
+        } else {
+          console.error('orphaned draft reference')
+        }
+      }
+    }
+
+    return entries
+  } catch (error) {
+    return []
+  }
+}
+
+export const remove_local = async (cid: string) => {
+  try {
+    const { id } = await cat_to_draft(cid)
+    clearDocument(id)
+  } finally {
+    await get_repo().pin.rm(cid)
+    await get_repo().files.rm(DRAFT_STATE_PATH + cid)
+  }
 }
 
 export const remove_remote = async (cid: string) => {
   await get_repo().pin.rm(cid)
+  await get_repo().files.rm(SHARED_STATE_PATH + cid)
 }

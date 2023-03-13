@@ -17,7 +17,7 @@
   {#if data.orphan_drafts.length}
     <h2>Draft workspaces:</h2>
     <ul>
-      {#each data.orphan_drafts as workspace (workspace.id)}
+      {#each data.orphan_drafts as workspace (workspace.cid)}
         <WorkspaceSummary meta={workspace} />
       {/each}
     </ul>
@@ -26,10 +26,10 @@
   {#if data.shared_with_drafts.length}
     <h2>Shared workspaces:</h2>
     <ul>
-      {#each data.shared_with_drafts as pair (pair.remote.id)}
+      {#each data.shared_with_drafts as pair (pair.remote.cid)}
         <WorkspaceSummary meta={pair.remote}>
           <ul>
-            {#each pair.drafts as draft (draft.id)}
+            {#each pair.drafts as draft (draft.cid)}
               <WorkspaceSummary meta={draft} />
             {/each}
           </ul>

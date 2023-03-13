@@ -13,6 +13,8 @@
   import TitleInput from '../components/TitleInput.svelte'
   import NavigationButton from '../components/NavigationButton.svelte'
   import { onDestroy } from 'svelte'
+  import MousePosition from '../components/MousePosition.svelte'
+  import UserList from '../components/UserList.svelte'
 
   let loading = false
   let toolbox_visible = false
@@ -58,15 +60,16 @@
 </script>
 
 <Navigation>
-  <span slot="left">
+  <svelte:fragment slot="left">
     <a href="/">
       <NavigationButton>Back</NavigationButton>
     </a>
-  </span>
-  <span slot="mid">
+  </svelte:fragment>
+  <svelte:fragment slot="mid">
     <TitleInput bind:value={$store.meta.title} />
-  </span>
-  <span slot="right">
+  </svelte:fragment>
+  <svelte:fragment slot="right">
+    <UserList />
     <a
       href="#"
       on:click={() => {
@@ -78,7 +81,7 @@
     <a href="/workspace/draft/new">
       <NavigationButton>New</NavigationButton>
     </a>
-  </span>
+  </svelte:fragment>
 </Navigation>
 <svelte:window on:keydown={handle_global_keydown} on:mousemove={handle_mouse_move} />
 <div
@@ -97,6 +100,7 @@
     {#each $store.modules as module (module.id)}
       <ModuleWrapper {module} />
     {/each}
+    <MousePosition />
     <Wires />
   {/if}
 </div>
