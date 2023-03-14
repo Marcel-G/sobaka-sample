@@ -25,6 +25,8 @@
   import Led from '../components/Led.svelte'
   import { get_context as get_audio_context } from '../audio'
   import { Tuple } from '../@types'
+  import Layout from '../components/Layout.svelte'
+  import RingSpinner from '../components/RingSpinner.svelte'
 
   export let state: State
   let name = 'step_sequencer'
@@ -71,7 +73,9 @@
 
 <Panel {name} height={11} width={17} custom_style={into_style(theme)}>
   {#if loading}
-    <p>Loading...</p>
+    <Layout type="center">
+      <RingSpinner />
+    </Layout>
   {:else}
     <div class="controls">
       {#each steps as step, x}

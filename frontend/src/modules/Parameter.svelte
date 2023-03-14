@@ -22,6 +22,8 @@
   import { into_style } from '../components/Theme.svelte'
   import { PlugType } from '../workspace/plugs'
   import { get_context as get_audio_context } from '../audio'
+  import Layout from '../components/Layout.svelte'
+  import RingSpinner from '../components/RingSpinner.svelte'
 
   const context = get_audio_context()
 
@@ -42,13 +44,15 @@
 </script>
 
 <Panel {name} height={6} width={5} custom_style={into_style(theme)}>
-  {#await loading}
-    <p>Loading...</p>
-  {:then}
+  {#if loading}
+    <Layout type="center">
+      <RingSpinner />
+    </Layout>
+  {:else}
     <span>
       <Knob bind:value={state.value} range={[state.min, state.max]} label="value" />
     </span>
-  {/await}
+  {/if}
   <div slot="outputs">
     <Plug
       id={0}

@@ -60,7 +60,6 @@ export const init_media = () => {
     try {
       const entries: string[] = []
       for await (const entry of get_repo().files.ls(MEDIA_PATH)) {
-        console.log(entry)
         const stat = await get_repo().files.stat(entry.cid)
 
         if (stat.type === 'file') {

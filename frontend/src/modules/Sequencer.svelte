@@ -25,6 +25,8 @@
   import Knob from '../components/Knob.svelte'
   import Led from '../components/Led.svelte'
   import { Tuple } from '../@types'
+  import Layout from '../components/Layout.svelte'
+  import RingSpinner from '../components/RingSpinner.svelte'
 
   const context = get_audio_context()
 
@@ -66,7 +68,9 @@
 
 <Panel {name} height={15} width={8} custom_style={into_style(theme)}>
   {#if loading}
-    <p>Loading...</p>
+    <Layout type="center">
+      <RingSpinner />
+    </Layout>
   {:else}
     <div class="controls">
       {#each state.steps as step, i}

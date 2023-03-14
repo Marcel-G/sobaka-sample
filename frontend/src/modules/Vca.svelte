@@ -20,6 +20,8 @@
   import Knob from '../components/Knob.svelte'
   import { PlugType } from '../workspace/plugs'
   import { get_context as get_audio_context } from '../audio'
+  import Layout from '../components/Layout.svelte'
+  import RingSpinner from '../components/RingSpinner.svelte'
 
   export let state: State
   let name = 'vca'
@@ -41,7 +43,9 @@
 
 <Panel {name} height={6} width={5} custom_style={into_style(theme)}>
   {#if loading}
-    <p>Loading...</p>
+    <Layout type="center">
+      <RingSpinner />
+    </Layout>
   {:else}
     <span>
       <Knob bind:value={state.value} range={[-1, 1]} label="attenuverter" />

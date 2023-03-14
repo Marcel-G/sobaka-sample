@@ -31,6 +31,8 @@
   import { PlugType } from '../workspace/plugs'
   import Knob from '../components/Knob.svelte'
   import { get_context as get_audio_context } from '../audio'
+  import Layout from '../components/Layout.svelte'
+  import RingSpinner from '../components/RingSpinner.svelte'
 
   export let state: State
   let name = 'oscillator'
@@ -81,7 +83,9 @@
 
 <Panel {name} height={18} width={5} custom_style={into_style(theme)}>
   {#if loading}
-    <p>Loading...</p>
+    <Layout type="center">
+      <RingSpinner />
+    </Layout>
   {:else}
     <Knob bind:value={state.pitch} range={[0, 4]} label="pitch" />
     <Knob bind:value={state.saw} range={[0, 1]} label="saw" />

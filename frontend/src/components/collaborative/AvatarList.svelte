@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { get_workspace } from '../workspace/context'
+  import { get_workspace } from '../../workspace/context'
   import Avatar from 'svelte-boring-avatars'
 
   const space = get_workspace()

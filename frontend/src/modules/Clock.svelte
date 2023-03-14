@@ -18,6 +18,8 @@
   import { PlugType } from '../workspace/plugs'
   import Knob from '../components/Knob.svelte'
   import { get_context as get_audio_context } from '../audio'
+  import Layout from '../components/Layout.svelte'
+  import RingSpinner from '../components/RingSpinner.svelte'
 
   export let state: State
   let name = 'clock'
@@ -64,7 +66,9 @@
 
 <Panel {name} height={7} width={5} custom_style={into_style(theme)}>
   {#if loading}
-    <p>Loading...</p>
+    <Layout type="center">
+      <RingSpinner />
+    </Layout>
   {:else}
     <Knob bind:value={state.bpm} range={[0, 240]} label="bpm">
       <div slot="inputs">

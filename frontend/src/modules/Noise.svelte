@@ -16,6 +16,8 @@
   import { into_style } from '../components/Theme.svelte'
   import { PlugType } from '../workspace/plugs'
   import { get_context as get_audio_context } from '../audio'
+  import Layout from '../components/Layout.svelte'
+  import RingSpinner from '../components/RingSpinner.svelte'
 
   let noise: Noise
   let node: AudioNode
@@ -38,9 +40,11 @@
 
 <Panel name="noise" height={5} width={5} custom_style={into_style(theme)}>
   {#if loading}
-    <p>Loading...</p>
+    <Layout type="center">
+      <RingSpinner />
+    </Layout>
   {:else}
-    💥
+    <Layout type="center">💥</Layout>
   {/if}
 
   <div slot="outputs">

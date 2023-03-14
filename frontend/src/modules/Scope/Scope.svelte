@@ -28,6 +28,8 @@
   import Button from '../../components/Button.svelte'
   import { get_context as get_audio_context } from '../../audio'
   import { create_scope, Scope } from './render'
+  import Layout from '../../components/Layout.svelte'
+  import RingSpinner from '../../components/RingSpinner.svelte'
 
   export let state: State
   let name = 'scope'
@@ -63,7 +65,9 @@
 
 <Panel {name} height={15} width={13} custom_style={into_style(theme)}>
   {#if loading}
-    <p>Loading...</p>
+    <Layout type="center">
+      <RingSpinner />
+    </Layout>
   {:else}
     <div>
       <div class="screen">

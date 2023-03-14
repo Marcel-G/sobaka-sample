@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { get_workspace } from '../workspace/context'
+  import { get_workspace } from '../../workspace/context'
   const space = get_workspace()
 
   const users = space.get_user_store()

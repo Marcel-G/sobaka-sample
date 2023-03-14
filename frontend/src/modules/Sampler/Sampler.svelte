@@ -35,6 +35,8 @@
   import AudioDetail from './AudioDetail.svelte'
   import Button from '../../components/Button.svelte'
   import { get_media_context } from '../../worker/media'
+  import Layout from '../../components/Layout.svelte'
+  import RingSpinner from '../../components/RingSpinner.svelte'
 
   export let state: State
   let name = 'sampler'
@@ -75,19 +77,28 @@
     currentTarget: EventTarget & HTMLInputElement
   }
 
-  async function handle_change(event: InputChangeEvent) {
+  const handle_new_change = async (event: InputChangeEvent) => {
     const file = event.currentTarget.files?.[0]
 
     if (file) {
+      loading = true;
       state.sound_id = await media.store(file)
-      loading = true
+      loading = false;
+      state.active_segment = 0
+      state.view_position = 0
     }
+  }
+
+  const handle_file_select = (file: string) => {
+    state.sound_id = file
+
+    state.active_segment = 0
+    state.view_position = 0
   }
 
   $: sound_id = state.sound_id
   $: if (sound_id) load_audio(sound_id)
   async function load_audio(id: string) {
-    loading = true
     audio_data = null
     detections = []
     const audio = await media.open(id)
@@ -99,7 +110,6 @@
         sampler?.update_audio(audio)
       }, 1000)
     }
-    loading = false
   }
 
   // Update the sobaka node when the state changes
@@ -130,60 +140,56 @@
 
 <Panel {name} height={20} width={20} custom_style={into_style(theme)}>
   {#if loading}
-    <p>Loading...</p>
+    <Layout type="center">
+      <RingSpinner />
+    </Layout>
   {:else if state.sound_id}
     {#key state.sound_id}
       <div class="sampler-controls">
-        {#if audio_data}
-          <AudioPreview
-            view_position={state.view_position}
-            {audio_data}
-            on_view_change={handle_view_change}
-          />
-          <AudioDetail
-            active_segment={state.active_segment}
-            view_position={state.view_position}
-            {audio_data}
-            segments={detections}
-            playback_rate={state.playback_rate}
-            on_segment_click={handle_segment_click}
-            bind:trigger_segment
-          />
-          <div class="controls">
-            <Knob bind:value={state.playback_rate} range={[0.1, 4]} label="rate">
-              <div slot="inputs">
-                <Plug
-                  id={1}
-                  label="rate_cv"
-                  ctx={{ type: PlugType.Param, param: rate_param }}
-                />
-              </div>
-            </Knob>
-            <Knob bind:value={state.threshold} range={[0.5, 100]} label="threshold" />
-            <!-- Lol need a better button -->
-            <Button
-              onClick={async () => {
-                state.sound_id = null
-                files = await media.list()
-              }}>Change</Button
-            >
-          </div>
-        {/if}
+        <AudioPreview
+          view_position={state.view_position}
+          {audio_data}
+          on_view_change={handle_view_change}
+        />
+        <AudioDetail
+          active_segment={state.active_segment}
+          view_position={state.view_position}
+          {audio_data}
+          segments={detections}
+          playback_rate={state.playback_rate}
+          on_segment_click={handle_segment_click}
+          bind:trigger_segment
+        />
+        <div class="controls">
+          <Knob bind:value={state.playback_rate} range={[0.1, 4]} label="rate">
+            <div slot="inputs">
+              <Plug
+                id={1}
+                label="rate_cv"
+                ctx={{ type: PlugType.Param, param: rate_param }}
+              />
+            </div>
+          </Knob>
+          <Knob bind:value={state.threshold} range={[0.5, 100]} label="threshold" />
+          <!-- Lol need a better button -->
+          <Button
+            onClick={async () => {
+              state.sound_id = null
+              files = await media.list()
+            }}>Change</Button
+          >
+        </div>
       </div>
     {/key}
   {:else}
     <div class="file-selector">
       <label class="file-input">
-        <input on:change={handle_change} type="file" accept="audio/*" />
+        <input on:change={handle_new_change} type="file" accept="audio/*" />
         Add Sample
       </label>
       <ol>
         {#each files as file (file)}
-          <li
-            on:click={() => {
-              state.sound_id = file
-            }}
-          >
+          <li on:click={() => handle_file_select(file)}>
             {file}
           </li>
         {/each}

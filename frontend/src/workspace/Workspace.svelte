@@ -4,17 +4,19 @@
 </script>
 
 <script lang="ts">
+  import { onDestroy } from 'svelte'
+  import { writable } from 'svelte/store'
+  import { get_workspace } from './context'
+
   import ModuleWrapper from '../modules/ModuleWrapper.svelte'
   import Toolbox from '../components/Toolbox.svelte'
   import Wires from '../components/Wires.svelte'
-  import { get_workspace } from './context'
-  import { writable } from 'svelte/store'
   import Navigation from '../components/Navigation.svelte'
   import TitleInput from '../components/TitleInput.svelte'
   import NavigationButton from '../components/NavigationButton.svelte'
-  import { onDestroy } from 'svelte'
-  import MousePosition from '../components/MousePosition.svelte'
-  import UserList from '../components/UserList.svelte'
+
+  import PointerPositions from '../components/collaborative/PointerPositions.svelte'
+  import AvatarList from '../components/collaborative/AvatarList.svelte'
 
   let loading = false
   let toolbox_visible = false
@@ -40,8 +42,8 @@
       toolbox_visible = true
       toolbox_position = $mouse_position
     } else if (event.code === 'Escape') {
-      // const active_link = space.get_active_link_substore()
-      // active_link.update(() => null)
+      const active_link = space.get_active_link_substore()
+      active_link.update(() => null)
     }
   }
 
@@ -69,7 +71,7 @@
     <TitleInput bind:value={$store.meta.title} />
   </svelte:fragment>
   <svelte:fragment slot="right">
-    <UserList />
+    <AvatarList />
     <a
       href="#"
       on:click={() => {
@@ -83,6 +85,7 @@
     </a>
   </svelte:fragment>
 </Navigation>
+
 <svelte:window on:keydown={handle_global_keydown} on:mousemove={handle_mouse_move} />
 <div
   class="workspace"
@@ -100,7 +103,7 @@
     {#each $store.modules as module (module.id)}
       <ModuleWrapper {module} />
     {/each}
-    <MousePosition />
+    <PointerPositions />
     <Wires />
   {/if}
 </div>

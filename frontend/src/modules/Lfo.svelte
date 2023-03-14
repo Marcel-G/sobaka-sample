@@ -18,11 +18,13 @@
   import { PlugType } from '../workspace/plugs'
   import Knob from '../components/Knob.svelte'
   import { get_context as get_audio_context } from '../audio'
+  import Layout from '../components/Layout.svelte'
+  import RingSpinner from '../components/RingSpinner.svelte'
 
   export let state: State
   let name = 'lfo'
   let lfo: OscillatorNode
-  let loading = false
+  let loading = true
 
   const context = get_audio_context()
 
@@ -41,7 +43,9 @@
 
 <Panel {name} height={6} width={5} custom_style={into_style(theme)}>
   {#if loading}
-    <p>Loading...</p>
+    <Layout type="center">
+      <RingSpinner />
+    </Layout>
   {:else}
     <Knob bind:value={state.bpm} range={[0, 600]} label="bpm">
       <div slot="inputs">

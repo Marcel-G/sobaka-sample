@@ -25,6 +25,8 @@
   import { PlugType } from '../workspace/plugs'
   import Knob from '../components/Knob.svelte'
   import { get_context as get_audio_context } from '../audio'
+  import Layout from '../components/Layout.svelte'
+  import RingSpinner from '../components/RingSpinner.svelte'
 
   export let state: State
   let name = 'reverb'
@@ -59,14 +61,16 @@
 </script>
 
 <Panel {name} height={6} width={8} custom_style={into_style(theme)}>
-  {#await loading}
-    <p>Loading...</p>
-  {:then}
+  {#if loading}
+    <Layout type="center">
+      <RingSpinner />
+    </Layout>
+  {:else}
     <div class="controls">
       <Knob bind:value={state.wet} range={[0, 1]} label="wet" />
       <Knob bind:value={state.length} range={[0, 10]} label="length" />
     </div>
-  {/await}
+  {/if}
 
   <div slot="inputs">
     <Plug

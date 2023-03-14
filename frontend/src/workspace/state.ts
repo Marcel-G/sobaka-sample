@@ -72,7 +72,7 @@ export const workspace = () => {
   const store = svelteSyncedStore(workpaceDoc)
 
   // @todo -- sync per user active links
-  const actie_link_store = writable<Partial<Link>>({})
+  const actie_link_store = writable<Partial<Link> | null>(null)
 
   const load_from_remote = async (remote_workspace: string) => {
     await _load_from_remote(remote_workspace, doc)
