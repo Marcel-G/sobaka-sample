@@ -1,4 +1,5 @@
 import { ApiGatewayManagementApi } from '@aws-sdk/client-apigatewaymanagementapi';
+import { marshall } from '@aws-sdk/util-dynamodb';
 import { APIGatewayProxyWebsocketHandlerV2 } from 'aws-lambda'
 import { getDb } from './db';
 import { YWebRTCMessage } from './interface';
@@ -7,55 +8,51 @@ const getTableName = () => process.env.TOPIC_TABLE_NAME
 const getAWSRegion = () => process.env.AWS_REGION
 
 
-async function subscribe(topic: string, connectionId: string) {
+async function subscribe(topic: string, connection_id: string) {
   try {
     return await getDb()
-      .updateItem({
+      .putItem({
         TableName: getTableName(),
-        Key: { name: { S: topic } },
-        UpdateExpression: 'ADD receivers :r',
-        ExpressionAttributeValues: {
-          ':r': { SS: [connectionId] },
-        },
+        Item: marshall({ topic, receiver: connection_id }),
       });
   } catch (err) {
-    console.log(err)
-    console.log(`Cannot update topic ${topic}: ${(err as Error).message}`);
+    throw new Error(`Cannot update topic ${topic}: ${(err as Error).message}`);
   }
 }
 
-async function unsubscribe(topic: string, connectionId: string) {
+async function unsubscribe(topic: string, connection_id: string) {
   try {
     return await getDb()
-      .updateItem({
+      .deleteItem({
         TableName: getTableName(),
-        Key: { name: { S: topic } },
-        UpdateExpression: 'DELETE receivers :r',
-        ExpressionAttributeValues: {
-          ':r': { SS: [connectionId] },
-        },
+        Key: marshall({ topic, receiver: connection_id }),
       });
   } catch (err) {
-    console.log(`Cannot update topic ${topic}: ${(err as Error).message}`);
+    throw new Error(`Cannot update topic ${topic}: ${(err as Error).message}`);
   }
 }
 
 async function getReceivers(topic: string) {
   try {
-    const { Item: item } = await getDb()
-      .getItem({
+    const { Items: items } = await getDb()
+      .query({
         TableName: getTableName(),
-        Key: { name: { S: topic } },
+        IndexName: "topic-index",
+        KeyConditionExpression: "topic = :topic",
+        ExpressionAttributeValues: marshall({
+          ':topic': topic
+        })
       });
-    return item?.receivers ? item.receivers.SS : [];
+
+    if (!items) return []
+    return items.map((item) => item.receiver.S!)
   } catch (err) {
-    console.log(`Cannot get topic ${topic}: ${(err as Error).message}`);
-    return [];
+    throw new Error(`Cannot get topic ${topic}: ${(err as Error).message}`);
   }
 }
 
 async function handleYWebRtcMessage(
-  connectionId: string,
+  connection_id: string,
   message: YWebRTCMessage,
   send: (receiver: string, message: any) => Promise<void>,
 ) {
@@ -65,12 +62,12 @@ async function handleYWebRtcMessage(
     switch (message.type) {
       case 'subscribe':
         (message.topics || []).forEach(topic => {
-          promises.push(subscribe(topic, connectionId));
+          promises.push(subscribe(topic, connection_id));
         });
         break;
       case 'unsubscribe':
         (message.topics || []).forEach(topic => {
-          promises.push(unsubscribe(topic, connectionId));
+          promises.push(unsubscribe(topic, connection_id));
         });
         break;
       case 'publish':
@@ -82,7 +79,7 @@ async function handleYWebRtcMessage(
         }
         break;
       case 'ping':
-        promises.push(send(connectionId, { type: 'pong' }));
+        promises.push(send(connection_id, { type: 'pong' }));
         break;
     }
   }
@@ -90,50 +87,28 @@ async function handleYWebRtcMessage(
   await Promise.all(promises);
 }
 
-function handleConnect(connectionId: string) {
+function handleConnect(connection_id: string) {
   // Nothing to do
-  console.log(`Connected: ${connectionId}`);
+  console.log(`Connected: ${connection_id}`);
 }
 
-async function handleDisconnect(connectionId: string) {
-  console.log(`Disconnected: ${connectionId}`);
+async function handleDisconnect(connection_id: string) {
+  console.log(`Disconnected: ${connection_id}`);
 
-  const items = await getDb().query({
-    TableName: getTableName(),
-    KeyConditionExpression: 'contains(receivers, :connectionId)',
-    ExpressionAttributeValues: {
-      ':connectionId': { S: connectionId }
-    }
-  });
+  const { Items: items } = await getDb()
+    .query({
+      TableName: getTableName(),
+      IndexName: "receiver-index",
+      KeyConditionExpression: "receiver = :receiver",
+      ExpressionAttributeValues: marshall({
+        ':receiver': connection_id
+      })
+    });
 
-  if (items.Items?.length) {
-    await Promise.all(items.Items.map((item) => unsubscribe(item.name.S!, connectionId)));
+
+  if (items) {
+    await Promise.all(items.map((item) => unsubscribe(item.topic.S!, connection_id)));
   }
-
-  // @todo -- clients not removed
-//   2023-03-19T17:19:29.677Z	7c58f1fe-6119-4160-8656-19492ebfa1d9	INFO	Error CCeEzcI6IAMCIdw= ValidationException: Invalid operator used in KeyConditionExpression: contains
-//   at throwDefaultError (/var/task/node_modules/@aws-sdk/smithy-client/dist-cjs/default-error-handler.js:8:22)
-//   at deserializeAws_json1_0QueryCommandError (/var/task/node_modules/@aws-sdk/client-dynamodb/dist-cjs/protocols/Aws_json1_0.js:2140:51)
-//   at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
-//   at async /var/task/node_modules/@aws-sdk/middleware-serde/dist-cjs/deserializerMiddleware.js:7:24
-//   at async /var/task/node_modules/@aws-sdk/middleware-signing/dist-cjs/middleware.js:14:20
-//   at async /var/task/node_modules/@aws-sdk/middleware-retry/dist-cjs/retryMiddleware.js:27:46
-//   at async /var/task/node_modules/@aws-sdk/middleware-logger/dist-cjs/loggerMiddleware.js:7:26
-//   at async handleDisconnect (file:///var/task/dist/index.js:89:19)
-//   at async Runtime.handler (file:///var/task/dist/index.js:136:17) {
-// '$fault': 'client',
-// '$metadata': {
-//   httpStatusCode: 400,
-//   requestId: 'PSK2LHG7CA6V9UAHMKPK0O1J67VV4KQNSO5AEMVJF66Q9ASUAAJG',
-//   extendedRequestId: undefined,
-//   cfId: undefined,
-//   attempts: 2,
-//   totalRetryDelay: 1
-// },
-// __type: 'com.amazon.coral.validate#ValidationException'
-// }
-
-
 }
 
 export const handler: APIGatewayProxyWebsocketHandlerV2 = async (
@@ -150,20 +125,20 @@ export const handler: APIGatewayProxyWebsocketHandlerV2 = async (
     endpoint: `https://${event.requestContext.apiId}.execute-api.${getAWSRegion()}.amazonaws.com/${event.requestContext.stage}`,
   });
 
-  const send = async (connectionId: string, message: any) => {
+  const send = async (connection_id: string, message: any) => {
     try {
       await apigwManagementApi
         .postToConnection({
-          ConnectionId: connectionId,
+          ConnectionId: connection_id,
           Data: JSON.stringify(message) as any,
         });
     } catch (err) {
       if ((err as any).statusCode === 410) {
-        console.log(`Found stale connection, deleting ${connectionId}`);
-        await handleDisconnect(connectionId);
+        console.log(`Found stale connection, deleting ${connection_id}`);
+        await handleDisconnect(connection_id);
       } else {
         // Log, but otherwise ignore: There's not much we can do, really.
-        console.log(`Error when sending to ${connectionId}: ${(err as Error).message}`);
+        throw new Error(`Error when sending to ${connection_id}: ${(err as Error).message}`);
       }
     }
   };

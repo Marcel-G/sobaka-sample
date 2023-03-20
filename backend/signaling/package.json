@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "description": "",
   "main": "dist/index.js",
-  "type": "module",
   "scripts": {
+    "prebuild": "npm run test",
     "build": "tsc",
     "test": "vitest run",
     "test:watch": "vitest watch"
@@ -14,9 +14,10 @@
   "dependencies": {
     "@aws-sdk/client-apigatewaymanagementapi": "^3.294.0",
     "@aws-sdk/client-dynamodb": "^3.294.0",
-    "typescript": "^5.0.2"
+    "@aws-sdk/util-dynamodb": "^3.294.0"
   },
   "devDependencies": {
+    "typescript": "^5.0.2",
     "@types/aws-lambda": "^8.10.114",
     "vitest": "^0.29.3",
     "vitest-environment-dynalite": "^1.0.1"

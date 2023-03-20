@@ -8,17 +8,35 @@ module "db" {
 
   name = local.topic_table_name
 
-  hash_key   = "name"
+  hash_key   = "topic"
+  range_key  = "receiver"
 
   attributes = [
     {
-      name = "name"
+      name = "topic"
       type = "S"
     },
-    # {
-    #   name = "receivers"
-    #   type = "SS"
-    # }
+    {
+      name = "receiver"
+      type = "S"
+    }
+  ]
+
+   global_secondary_indexes = [
+    {
+      name               = "topic-index"
+      hash_key           = "topic"
+      projection_type    = "ALL"
+      read_capacity = 1
+      write_capacity = 1
+    },
+    {
+      name               = "receiver-index"
+      hash_key           = "receiver"
+      projection_type    = "ALL"
+      read_capacity = 1
+      write_capacity = 1
+    }
   ]
 
   billing_mode = "PROVISIONED"

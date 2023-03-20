@@ -4,10 +4,11 @@ import { test, expect, vi, describe, beforeEach, afterEach } from "vitest";
 import { useDynalite } from "vitest-environment-dynalite";
 import { handler } from '../src/index';
 import crypto from 'crypto';
-import { createConnectEvent, createDisconnectEvent, createLambdaContext, createPingMessageEvent, createPublishMessageEvent, createSubscribeMessageEvent, createUnsubscribeMessageEvent } from "./event_mocks";
+import { createConnectEvent, createDisconnectEvent, createLambdaContext, createPingMessageEvent, createPublishMessageEvent, createSubscribeMessageEvent, createUnsubscribeMessageEvent } from "./eventMocks";
 import { DynamoDB } from "@aws-sdk/client-dynamodb";
 import { getDb } from "../src/db";
 import { ApiGatewayManagementApi } from "@aws-sdk/client-apigatewaymanagementapi";
+import { marshall } from "@aws-sdk/util-dynamodb";
 
 useDynalite();
 
@@ -79,17 +80,10 @@ describe("Signaling lambda", () => {
       const { Item: item } = await getDb()
         .getItem({
           TableName: mockTable,
-          Key: { name: { S: topicId } },
+          Key: marshall({ topic: topicId, receiver: connectionId }),
         });
 
-      expect(item).toEqual({
-        name: {
-          S: topicId
-        },
-        receivers: {
-          SS: [connectionId]
-        }
-      })
+      expect(item).toEqual(marshall({ topic: topicId, receiver: connectionId }))
     });
   })
 
@@ -118,17 +112,10 @@ describe("Signaling lambda", () => {
       const { Item: item } = await getDb()
         .getItem({
           TableName: mockTable,
-          Key: { name: { S: topicId } },
+          Key: marshall({ topic: topicId, receiver: connectionId }),
         });
 
-      expect(item).toEqual({
-        name: {
-          S: topicId
-        },
-        receivers: {
-          SS: expect.not.arrayContaining([connectionId])
-        }
-      })
+      expect(item).toBeUndefined()
     });
   })
 
@@ -209,7 +196,7 @@ describe("Signaling lambda", () => {
     });
   })
 
-  describe.skip("A client disconnects", () => {
+  describe("A client disconnects", () => {
     test("should resolve with status 200", async () => {
       const connectionId = 'test-connection-1';
 
@@ -233,17 +220,10 @@ describe("Signaling lambda", () => {
       const { Item: item } = await getDb()
         .getItem({
           TableName: mockTable,
-          Key: { name: { S: topicId } },
+          Key: marshall({ topic: topicId, receiver: connectionId }),
         });
 
-      expect(item).toEqual({
-        name: {
-          S: topicId
-        },
-        receivers: {
-          SS: expect.not.arrayContaining([connectionId])
-        }
-      })
+      expect(item).toBeUndefined()
     });
   })
 })
