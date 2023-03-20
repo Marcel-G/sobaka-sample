@@ -3,9 +3,9 @@ output "global_acm_certificate_arn" {
   value       = module.acm.acm_certificate_arn
 }
 
-output "global_deploy_policy" {
-  description = "Global deploy policy for Github Actions"
-  value       = data.aws_iam_policy_document.assume_deploy_role.json
+output "global_deploy_role_arn" {
+  description = "Global deploy role for Github Actions"
+  value       = module.iam_role.this.arn
 }
 
 output "global_zone_id" {

@@ -9,12 +9,7 @@ variable "subdomain" {
   type        = string
 }
 
-variable "repo_org" {
-  description = "Github organisation name"
-  type        = string
-}
-
-variable "repo_name" {
+variable "github_repo" {
   description = "Github repo name"
   type        = string
 }

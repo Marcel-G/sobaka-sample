@@ -1,9 +1,9 @@
 module "cdn" {
   source = "terraform-aws-modules/cloudfront/aws"
 
-  aliases = [var.domain_name]
+  aliases = ["${var.subdomain}.${var.domain_name}"]
 
-  comment             = "My awesome CloudFront"
+  comment             = "Frontend web-asset CDN (${var.name})"
   enabled             = true
   http_version        = "http2and3"
   is_ipv6_enabled     = true
@@ -52,10 +52,15 @@ module "cdn" {
     ssl_support_method  = "sni-only"
   }
 
+  default_root_object = "index.html"
   custom_error_response = [{
     error_code         = 404
     response_code      = 404
-    response_page_path = "404.html"
+    response_page_path = "/404.html"
+  }, {
+    error_code         = 403
+    response_code      = 403
+    response_page_path = "/404.html"
   }]
 }
 

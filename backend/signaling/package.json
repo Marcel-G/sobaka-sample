@@ -4,6 +4,7 @@
   "description": "",
   "main": "dist/index.js",
   "scripts": {
+    "pack": "npm-pack-zip",
     "prebuild": "npm run test",
     "build": "tsc",
     "test": "vitest run",
@@ -17,9 +18,11 @@
     "@aws-sdk/util-dynamodb": "^3.294.0"
   },
   "devDependencies": {
-    "typescript": "^5.0.2",
     "@types/aws-lambda": "^8.10.114",
+    "npm-pack-zip": "^1.3.0",
+    "typescript": "^5.0.2",
     "vitest": "^0.29.3",
     "vitest-environment-dynalite": "^1.0.1"
-  }
+  },
+  "bundleDependencies": []
 }

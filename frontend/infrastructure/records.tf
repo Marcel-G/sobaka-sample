@@ -2,11 +2,11 @@ module "records" {
   source  = "terraform-aws-modules/route53/aws//modules/records"
   version = "~> 2.0"
 
-  zone_id = var.zone_id
+  zone_name = var.domain_name
 
   records = [
     {
-      name = var.domain_name
+      name = var.subdomain
       type = "A"
       alias = {
         name    = module.cdn.cloudfront_distribution_domain_name

@@ -7,6 +7,54 @@ on:
     branches: [master, next]
 
 jobs:
+  build-frontend:
+    name: "🧦 Build Frontend"
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install latest nightly
+        uses: actions-rs/toolchain@v1
+        with:
+            toolchain: nightly
+            components: rust-src
+            target: wasm32-unknown-unknown
+            override: true
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: 16.14
+          cache: 'npm'
+          cache-dependency-path: '**/package-lock.json'
+      - run: npm ci 
+        working-directory: frontend
+      - run: npm run build
+        working-directory: frontend
+      - uses: actions/upload-artifact@v2
+        with:
+          name: frontend-build-output
+          path: frontend/build
+
+  build-signaling:
+    name: "⛳️ Build Signaling"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: 16.14
+          cache: 'npm'
+          cache-dependency-path: '**/package-lock.json'
+      - run: npm ci 
+        working-directory: backend/signaling
+      - run: npm run build
+        working-directory: backend/signaling
+      - run: npm run pack
+        working-directory: backend/signaling
+      - uses: actions/upload-artifact@v2
+        with:
+          name: signaling-build-output
+          path: backend/signaling/signaling.zip
+
   terraform:
     name: "👟 Terraform"
     runs-on: ubuntu-latest
@@ -19,7 +67,10 @@ jobs:
     outputs:
       deploy_bucket: ${{ steps.collect-outputs.outputs.deploy_bucket }}
       deploy_role: ${{ steps.collect-outputs.outputs.deploy_role }}
-      website_cdn_root_id: ${{ steps.collect-outputs.outputs.website_cdn_root_id }}
+      cdn_distribution_id: ${{ steps.collect-outputs.outputs.cdn_distribution_id }}
+    needs:
+      - build-frontend
+      - build-backend
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -31,6 +82,11 @@ jobs:
           terraform_wrapper: false
           # terraform_version: 0.13.0:
           cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+
+      - uses: actions/download-artifact@v2
+        with:
+          name: signaling-build-output
+          path: backend/signaling/signaling.zip
 
       - name: Terraform Format
         working-directory: infrastructure
@@ -65,40 +121,15 @@ jobs:
         id: collect-outputs
         working-directory: infrastructure
         run: |
-          echo "::set-output name=deploy_bucket::$(terraform output -raw website_root_s3_bucket)"
-          echo "::set-output name=deploy_role::$(terraform output -raw role-to-assume)"
-          echo "::set-output name=website_cdn_root_id::$(terraform output -raw website_cdn_root_id)"
-
-  build:
-    name: "🧦 Build"
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: Install latest nightly
-        uses: actions-rs/toolchain@v1
-        with:
-            toolchain: nightly
-            components: rust-src
-            target: wasm32-unknown-unknown
-            override: true
-      - uses: Swatinem/rust-cache@v2
-      - uses: actions/setup-node@v2
-        with:
-          node-version: 16.14
-          cache: 'npm'
-          cache-dependency-path: '**/package-lock.json'
-      - run: npm ci 
-        working-directory: frontend
-      - run: npm run build
-        working-directory: frontend
-      - uses: actions/upload-artifact@v2
-        with:
-          name: build-output
-          path: frontend/build 
+          echo "::set-output name=deploy_bucket::$(terraform output -raw deploy_bucket)"
+          echo "::set-output name=deploy_role::$(terraform output -raw deploy_role)"
+          echo "::set-output name=cdn_distribution_id::$(terraform output -raw cdn_distribution_id)"
   deploy:
     name: "🏃‍♂️ Deploy"
     runs-on: ubuntu-latest
     if: github.event_name == 'push'
+    needs:
+      - terraform
     permissions:
       id-token: write
       contents: read
@@ -106,7 +137,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v2
         with:
-          name: build-output
+          name: frontend-build-output
           path: frontend/build
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
@@ -128,11 +159,9 @@ jobs:
       - name: "Invalidate CloudFront Cache"
         run: |
           aws cloudfront create-invalidation \
-            --distribution-id ${{ needs.terraform.outputs.website_cdn_root_id }} \
+            --distribution-id ${{ needs.terraform.outputs.cdn_distribution_id }} \
             --paths "/index.html"
-    needs:
-      - build
-      - terraform
+
 
 concurrency: 
   group: ${{ github.ref }}

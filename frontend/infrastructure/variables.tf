@@ -3,6 +3,11 @@ variable "name" {
   type        = string
 }
 
+variable "subdomain" {
+  description = "Subdomain to use"
+  type        = string
+}
+
 variable "domain_name" {
   description = "Root domain name to use"
   type        = string
@@ -13,12 +18,8 @@ variable "global_acm_certificate_arn" {
   type        = string
 }
 
-variable "global_deploy_role" {
-  description = "Deployment role json"
+variable "global_deploy_role_arn" {
+  description = "Deployment role ARN"
   type        = string
 }
 
-variable "zone_id" {
-  description = "Global zone ID"
-  type        = string
-}

@@ -14,3 +14,7 @@ module "acm" {
       Name = "${var.global_domain_zone}"
     }
 }
+
+data "aws_route53_zone" "main" {
+  name         = var.global_domain_zone
+}
