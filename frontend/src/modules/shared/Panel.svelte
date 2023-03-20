@@ -26,8 +26,7 @@
   const space = get_workspace()
   const { id } = get_module_context()
 
-  const module = space.get_module_substore(id)
-  const position = module.select(state => state.position)
+  const position = space.module_position(id)
 
   $: col = `${$position.x + 1} / span ${width}`
   $: row = `${$position.y + 1} / span ${height}`

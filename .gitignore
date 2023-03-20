@@ -1,6 +1,8 @@
 node_modules
 dist
 pkg
+.localstack
+builds
 
 # Local .terraform directories
 **/.terraform*

@@ -1,24 +1,22 @@
 import { browser } from '$app/environment'
-import { error, redirect } from '@sveltejs/kit'
-import { create, load_workspace, save_workspace } from '../../../worker/persistence'
+import { error } from '@sveltejs/kit'
+import { init_user } from '../../../worker/user'
+import { init_repo } from '../../../worker/ipfs'
+import { validate_cid } from '../../../worker/state'
 import type { PageLoad } from './$types'
 
 export const load: PageLoad = async event => {
   if (!browser) throw new Error('Load cannot be run outside of the browser')
 
-  const id = event.params.slug
-  if (id === 'new') {
-    const new_id = await save_workspace(create())
+  await init_repo(init_user())
 
-    throw redirect(307, `/workspace/${new_id}`)
-  } else {
-    // Try load the workspace from localstorage
-    const workspace = await load_workspace(id)
-    if (!workspace) {
-      throw error(404, 'Workspace does not exist')
-    }
-    return {
-      workspace
-    }
+  const id = event.params.slug
+
+  if (!(await validate_cid(id))) {
+    throw error(404, 'Workspace does not exist')
+  }
+
+  return {
+    workspace: { id }
   }
 }

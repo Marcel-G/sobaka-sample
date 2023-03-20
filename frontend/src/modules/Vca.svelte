@@ -5,7 +5,7 @@
     background: 'var(--purple-dark)'
   }
 
-  type State = Readonly<{ value: number }>
+  type State = { value: number }
 
   export const initialState: State = {
     value: 0.5
@@ -19,10 +19,11 @@
   import { into_style } from '../components/Theme.svelte'
   import Knob from '../components/Knob.svelte'
   import { PlugType } from '../workspace/plugs'
-  import { SubStore } from '../utils/patches'
   import { get_context as get_audio_context } from '../audio'
+  import Layout from '../components/Layout.svelte'
+  import RingSpinner from '../components/RingSpinner.svelte'
 
-  export let state: SubStore<State>
+  export let state: State
   let name = 'vca'
   let vca: GainNode
   let gain_param: AudioParam
@@ -36,17 +37,18 @@
     loading = false
   })
 
-  const gain = state.select(s => s.value)
-
-  $: gain_param?.setValueAtTime($gain || 0, $context.currentTime)
+  $: gain = state.value
+  $: gain_param?.setValueAtTime(gain || 0, $context.currentTime)
 </script>
 
 <Panel {name} height={6} width={5} custom_style={into_style(theme)}>
   {#if loading}
-    <p>Loading...</p>
+    <Layout type="center">
+      <RingSpinner />
+    </Layout>
   {:else}
     <span>
-      <Knob bind:value={$gain} range={[-1, 1]} label="attenuverter" />
+      <Knob bind:value={state.value} range={[-1, 1]} label="attenuverter" />
     </span>
   {/if}
 

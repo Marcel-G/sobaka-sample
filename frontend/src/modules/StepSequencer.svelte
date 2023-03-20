@@ -5,12 +5,12 @@
     background: 'var(--cyan-dark)'
   }
 
-  type State = Readonly<{
-    steps: Array<Array<boolean>>
-  }>
+  type State = {
+    steps: Array<Array<{ value: boolean }>>
+  }
 
   export const initialState: State = {
-    steps: new Array(4).fill(undefined).map(() => new Array(8).fill(false))
+    steps: new Array(4).fill(undefined).map(() => new Array(8).fill({ value: false }))
   }
 </script>
 
@@ -23,10 +23,12 @@
   import { onDestroy, onMount } from 'svelte'
   import Button from '../components/Button.svelte'
   import Led from '../components/Led.svelte'
-  import { SubStore } from '../utils/patches'
   import { get_context as get_audio_context } from '../audio'
+  import { Tuple } from '../@types'
+  import Layout from '../components/Layout.svelte'
+  import RingSpinner from '../components/RingSpinner.svelte'
 
-  export let state: SubStore<State>
+  export let state: State
   let name = 'step_sequencer'
   let step_sequencer: StepSequencer
   let node: AudioNode
@@ -36,7 +38,7 @@
 
   onMount(async () => {
     const { StepSequencer } = await import('sobaka-dsp')
-    step_sequencer = await StepSequencer.create($context, $state as any)
+    step_sequencer = await StepSequencer.create($context)
     node = step_sequencer.node()
     loading = false
 
@@ -50,30 +52,20 @@
 
   let active_step = 0
 
-  const cleanup = $state.steps.flatMap((step_x, x) =>
-    step_x.map((_, y) =>
-      state
-        .select(s => s.steps[x][y])
-        .subscribe(v => {
-          if (v !== undefined) {
-            // state can be undefined just before removal
-            step_sequencer?.command({ UpdateStep: [[x, y], v] })
-          }
-        })
-    )
-  )
+  // @todo --
+  $: steps = state.steps
+  $: step_sequencer?.command({
+    UpdateSteps: steps.map(step => step.map(({ value }) => value)) as Tuple<
+      Tuple<boolean, 8>,
+      4
+    >
+  })
 
   const update_step = (x: number, y: number, value: boolean) => {
-    state.update(s => {
-      s.steps[x][y] = value
-      return s
-    })
+    state.steps[x][y].value = value
   }
 
-  const steps = state.select(s => s.steps)
-
   onDestroy(() => {
-    cleanup.forEach(unsubscribe => unsubscribe())
     step_sequencer?.destroy()
     step_sequencer?.free()
   })
@@ -81,13 +73,15 @@
 
 <Panel {name} height={11} width={17} custom_style={into_style(theme)}>
   {#if loading}
-    <p>Loading...</p>
+    <Layout type="center">
+      <RingSpinner />
+    </Layout>
   {:else}
     <div class="controls">
-      {#each $steps as step, x}
+      {#each steps as step, x}
         <div class="branch">
           {#each step as s, y}
-            <Button pressed={s} onClick={() => update_step(x, y, !s)} />
+            <Button pressed={s.value} onClick={() => update_step(x, y, !s.value)} />
           {/each}
         </div>
       {/each}

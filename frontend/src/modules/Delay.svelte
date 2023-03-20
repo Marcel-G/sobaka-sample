@@ -5,7 +5,7 @@
     background: 'var(--purple-dark)'
   }
 
-  type State = Readonly<{ time: number }>
+  type State = { time: number }
 
   export const initialState: State = { time: 2 }
 </script>
@@ -18,10 +18,11 @@
   import { into_style } from '../components/Theme.svelte'
   import Knob from '../components/Knob.svelte'
   import { PlugType } from '../workspace/plugs'
-  import { SubStore } from '../utils/patches'
   import { get_context as get_audio_context } from '../audio'
+  import Layout from '../components/Layout.svelte'
+  import RingSpinner from '../components/RingSpinner.svelte'
 
-  export let state: SubStore<State>
+  export let state: State
   let name = 'delay'
   let delay: Delay
   let node: AudioNode
@@ -38,10 +39,9 @@
     loading = false
   })
 
-  const time = state.select(s => s.time)
-
   // Update the sobaka node when the state changes
-  $: delay_time_param?.setValueAtTime($time, $context.currentTime)
+  $: time = state.time
+  $: delay_time_param?.setValueAtTime(time, $context.currentTime)
 
   onDestroy(() => {
     delay?.destroy()
@@ -51,10 +51,12 @@
 
 <Panel {name} height={6} width={5} custom_style={into_style(theme)}>
   {#if loading}
-    <p>Loading...</p>
+    <Layout type="center">
+      <RingSpinner />
+    </Layout>
   {:else}
     <div class="controls">
-      <Knob bind:value={$time} range={[0, 10]} label="seconds">
+      <Knob bind:value={state.time} range={[0, 10]} label="seconds">
         <div slot="inputs">
           <Plug
             id={0}

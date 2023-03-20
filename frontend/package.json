@@ -19,8 +19,8 @@
     "prelint": "npm run format"
   },
   "devDependencies": {
-    "@sveltejs/adapter-static": "^1.0.0-next.41",
-    "@sveltejs/kit": "1.0.0-next.461",
+    "@sveltejs/adapter-static": "^1.0.6",
+    "@sveltejs/kit": "^1.7.2",
     "@types/lodash": "^4.14.178",
     "@types/webmidi": "^2.0.6",
     "@typescript-eslint/eslint-plugin": "^5.27.0",
@@ -36,22 +36,20 @@
     "svelte-check": "^2.7.1",
     "svelte-preprocess": "^4.10.6",
     "tslib": "^2.3.1",
-    "typescript": "^4.7.4",
-    "vite": "^3.1.0-beta.1"
+    "typescript": "^4.7.4"
   },
   "dependencies": {
-    "@crikey/stores-base": "^0.0.13",
-    "@crikey/stores-immer": "^0.0.15",
-    "@crikey/stores-selectable": "^0.0.14",
-    "@open-rpc/client-js": "^1.7.1",
+    "@syncedstore/core": "^0.4.3",
+    "@syncedstore/svelte": "^0.4.3",
     "date-fns": "^2.29.2",
-    "events": "^3.3.0",
-    "fast-json-patch": "^3.1.1",
-    "immer": "^9.0.15",
-    "localforage": "^1.10.0",
+    "ipfs-core": "^0.18.0",
     "lodash": "^4.17.21",
     "ress": "^4.0.0",
     "sobaka-dsp": "file:../sobaka-dsp",
-    "webmidi": "^3.0.21"
+    "svelte-boring-avatars": "^1.2.2",
+    "webmidi": "^3.0.21",
+    "y-indexeddb": "^9.0.9",
+    "y-webrtc": "^10.2.4",
+    "yjs": "^13.5.48"
   }
 }

@@ -1,11 +1,85 @@
-import localforage from 'localforage'
-import _ from 'lodash'
-import { AudioDataTransport } from 'sobaka-dsp'
+import { AudioDataTransport, MediaManager, SharedAudio } from 'sobaka-dsp'
+import { getContext } from 'svelte'
+import { get_repo } from './ipfs'
 
-const media_store = localforage.createInstance({
-  name: 'media_store',
-  driver: localforage.INDEXEDDB
-})
+export const MEDIA_CONTEXT = 'MEDIA_CONTEXT'
+
+const MEDIA_PATH = '/media/'
+
+export const init_media = () => {
+  let media_manager: MediaManager
+
+  const load = async () => {
+    media_manager = new MediaManager()
+  }
+
+  const open = async (id: string): Promise<SharedAudio> => {
+    const audio = await media_manager.load_with(id, async () => {
+      try {
+        const chunks: Uint8Array[] = []
+        for await (const chunk of get_repo().cat(id)) {
+          chunks.push(chunk)
+        }
+
+        const blob = new Blob(chunks)
+        const file = new File([blob], id)
+
+        const cid = await get_repo().pin.add(id)
+        await get_repo()
+          .files.cp(cid, MEDIA_PATH + cid.toString(), { parents: true })
+          .catch(() => {
+            // Ignore if it's already in the dir
+          })
+
+        return load_audio(id, file).then(into_transport)
+      } catch (error) {
+        // @todo -- media_manager `load_with` does not properly handle errors
+        console.error(error)
+        throw error
+      }
+    })
+
+    return audio
+  }
+
+  const store = async (file: File) => {
+    const { cid } = await get_repo().add(file, {
+      pin: true
+    })
+
+    await get_repo()
+      .files.cp(cid, MEDIA_PATH + cid.toString(), { parents: true })
+      .catch(() => {
+        // Ignore if it's already in the dir
+      })
+
+    return cid.toString()
+  }
+
+  const list = async () => {
+    try {
+      const entries: string[] = []
+      for await (const entry of get_repo().files.ls(MEDIA_PATH)) {
+        const stat = await get_repo().files.stat(entry.cid)
+
+        if (stat.type === 'file') {
+          entries.push(entry.cid.toString())
+        }
+      }
+
+      return entries
+    } catch (error) {
+      return []
+    }
+  }
+
+  return {
+    load,
+    list,
+    open,
+    store
+  }
+}
 
 const decode_sample = async (id: string, data: ArrayBuffer): Promise<AudioData> => {
   const audio_data = await new AudioContext().decodeAudioData(data)
@@ -14,21 +88,6 @@ const decode_sample = async (id: string, data: ArrayBuffer): Promise<AudioData> 
     data: audio_data.getChannelData(0),
     sample_rate: audio_data.sampleRate
   }
-}
-
-export const list_audio = async () => {
-  const files: { name: string; id: string }[] = []
-
-  await media_store.iterate((file: File, id: string) => {
-    if (file) {
-      files.push({
-        name: file.name,
-        id
-      })
-    }
-  })
-
-  return files
 }
 
 const read_file_async = async (file: File): Promise<string | ArrayBuffer | null> => {
@@ -45,25 +104,15 @@ const read_file_async = async (file: File): Promise<string | ArrayBuffer | null>
   })
 }
 
-// Public interface
-
-export const store_audio = async (file: Blob) => {
-  const id = Math.random().toString(36).substr(2, 9)
-  await media_store.setItem(id, file)
-
-  return id
-}
-
 export type AudioData = {
   id: string
   data: Float32Array
   sample_rate: number
 }
 
-export const load_audio = async (id: string): Promise<AudioData> => {
-  const file = await media_store.getItem<Blob>(id)
+const load_audio = async (id: string, file: Blob): Promise<AudioData> => {
   if (!file) {
-    throw new Error(`Could not locate media file with id ${id} locally.`)
+    throw new Error(`Could not locate media file locally.`)
   }
   if (!(file instanceof File)) {
     throw new Error(`Stored blob is not a file.`)
@@ -77,8 +126,11 @@ export const load_audio = async (id: string): Promise<AudioData> => {
   return await decode_sample(id, result)
 }
 
-export const into_transport = (audio: AudioData): AudioDataTransport => ({
+const into_transport = (audio: AudioData): AudioDataTransport => ({
   id: audio.id,
   bytes: audio.data.buffer,
   sample_rate: audio.sample_rate
 })
+
+export const get_media_context = () =>
+  getContext<ReturnType<typeof init_media>>(MEDIA_CONTEXT)

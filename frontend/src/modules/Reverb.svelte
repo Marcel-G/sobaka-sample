@@ -5,10 +5,10 @@
     background: 'var(--purple-dark)'
   }
 
-  type State = Readonly<{
+  type State = {
     wet: number
     length: number
-  }>
+  }
 
   export const initialState: State = {
     wet: 0.1,
@@ -24,10 +24,11 @@
   import { into_style } from '../components/Theme.svelte'
   import { PlugType } from '../workspace/plugs'
   import Knob from '../components/Knob.svelte'
-  import { SubStore } from '../utils/patches'
   import { get_context as get_audio_context } from '../audio'
+  import Layout from '../components/Layout.svelte'
+  import RingSpinner from '../components/RingSpinner.svelte'
 
-  export let state: SubStore<State>
+  export let state: State
   let name = 'reverb'
   let reverb: Reverb
   let node: AudioNode
@@ -46,12 +47,12 @@
     loading = false
   })
 
-  const wet = state.select(s => s.wet)
-  const delay = state.select(s => s.length)
-
   // Update the sobaka node when the state changes
-  $: wet_param?.setValueAtTime($wet, $context.currentTime)
-  $: delay_param?.setValueAtTime($delay, $context.currentTime)
+  $: wet = state.wet
+  $: wet_param?.setValueAtTime(wet, $context.currentTime)
+
+  $: delay = state.length
+  $: delay_param?.setValueAtTime(delay, $context.currentTime)
 
   onDestroy(() => {
     reverb?.destroy()
@@ -60,14 +61,16 @@
 </script>
 
 <Panel {name} height={6} width={8} custom_style={into_style(theme)}>
-  {#await loading}
-    <p>Loading...</p>
-  {:then}
+  {#if loading}
+    <Layout type="center">
+      <RingSpinner />
+    </Layout>
+  {:else}
     <div class="controls">
-      <Knob bind:value={$wet} range={[0, 1]} label="wet" />
-      <Knob bind:value={$delay} range={[0, 10]} label="length" />
+      <Knob bind:value={state.wet} range={[0, 1]} label="wet" />
+      <Knob bind:value={state.length} range={[0, 10]} label="length" />
     </div>
-  {/await}
+  {/if}
 
   <div slot="inputs">
     <Plug

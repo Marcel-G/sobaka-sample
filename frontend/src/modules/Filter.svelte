@@ -5,10 +5,10 @@
     background: 'var(--purple-dark)'
   }
 
-  type State = Readonly<{
+  type State = {
     frequency: number
     q: number
-  }>
+  }
 
   export const initialState: State = {
     frequency: 0.1,
@@ -24,10 +24,11 @@
   import { into_style } from '../components/Theme.svelte'
   import { PlugType } from '../workspace/plugs'
   import Knob from '../components/Knob.svelte'
-  import { SubStore } from '../utils/patches'
   import { get_context as get_audio_context } from '../audio'
+  import Layout from '../components/Layout.svelte'
+  import RingSpinner from '../components/RingSpinner.svelte'
 
-  export let state: SubStore<State>
+  export let state: State
   let name = 'filter'
   let filter: Filter
   let node: AudioNode
@@ -46,12 +47,11 @@
     loading = false
   })
 
-  const frequency = state.select(s => s.frequency)
-  const q = state.select(s => s.q)
-
   // Update the sobaka node when the state changes
-  $: frequency_param?.setValueAtTime($frequency, $context.currentTime)
-  $: q_param?.setValueAtTime($q, $context.currentTime)
+  $: frequency = state.frequency
+  $: frequency_param?.setValueAtTime(frequency, $context.currentTime)
+  $: q = state.q
+  $: q_param?.setValueAtTime(q, $context.currentTime)
 
   onDestroy(() => {
     filter?.destroy()
@@ -61,10 +61,12 @@
 
 <Panel {name} height={6} width={8} custom_style={into_style(theme)}>
   {#if loading}
-    <p>Loading...</p>
+    <Layout type="center">
+      <RingSpinner />
+    </Layout>
   {:else}
     <div class="controls">
-      <Knob bind:value={$frequency} range={[0, 8]} label="cutoff">
+      <Knob bind:value={state.frequency} range={[0, 8]} label="cutoff">
         <div slot="inputs">
           <Plug
             id={1}
@@ -73,7 +75,7 @@
           />
         </div>
       </Knob>
-      <Knob bind:value={$q} range={[0, 1]} label="q">
+      <Knob bind:value={state.q} range={[0, 1]} label="q">
         <div slot="inputs">
           <Plug id={2} label="q_cv" ctx={{ type: PlugType.Param, param: q_param }} />
         </div>

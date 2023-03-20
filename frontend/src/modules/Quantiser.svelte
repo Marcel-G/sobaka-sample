@@ -20,28 +20,29 @@
     'B'
   ] as const
 
-  type State = Readonly<{
-    notes: boolean[]
-  }>
+  type State = {
+    notes: { value: boolean }[]
+  }
   export const initialState: State = {
-    notes: Array(NOTE_LABELS.length).fill(false)
+    notes: Array(NOTE_LABELS.length).fill({ value: false })
   }
 </script>
 
 <script lang="ts">
-  import type { Draft } from 'immer'
-  import type { QuantiserCommand, QuantiserNode } from 'sobaka-dsp'
+  import type { Quantiser } from 'sobaka-dsp'
   import { onDestroy, onMount } from 'svelte'
   import Panel from './shared/Panel.svelte'
   import Plug from './shared/Plug.svelte'
   import { into_style } from '../components/Theme.svelte'
   import { PlugType } from '../workspace/plugs'
   import { get_context as get_audio_context } from '../audio'
-  import type { SubStore } from 'src/utils/patches'
+  import { Tuple } from '../@types'
+  import Layout from '../components/Layout.svelte'
+  import RingSpinner from '../components/RingSpinner.svelte'
 
-  export let state: SubStore<State>
+  export let state: State
   let name = 'quantiser'
-  let quantiser: QuantiserNode
+  let quantiser: Quantiser
   let node: AudioNode
   let loading = true
 
@@ -54,18 +55,14 @@
     loading = false
   })
 
-  const notes = state.select(s => s.notes)
-
   // Update the sobaka node when the state changes
-  $: quantiser?.command({ UpdateNotes: $notes } as QuantiserCommand)
+  $: notes = state.notes // @todo this may not update
+  $: quantiser?.command({
+    UpdateNotes: notes.map(({ value }) => value) as Tuple<boolean, 12>
+  })
 
   function on_toggle(index: number) {
-    return () => {
-      state.update((s: Draft<State>) => {
-        s.notes[index] = !s.notes[index]
-        return s
-      })
-    }
+    state.notes[index].value = !state.notes[index].value
   }
 
   onDestroy(() => {
@@ -76,11 +73,17 @@
 
 <Panel {name} height={8} width={15} custom_style={into_style(theme)}>
   {#if loading}
-    <p>Loading...</p>
+    <Layout type="center">
+      <RingSpinner />
+    </Layout>
   {:else}
     <ul class="board">
       {#each NOTE_LABELS as label, i}
-        <li class="key {label}" class:pressed={$notes[i]} on:click={on_toggle(i)} />
+        <li
+          class="key {label}"
+          class:pressed={state.notes[i].value}
+          on:click={() => on_toggle(i)}
+        />
       {/each}
     </ul>
   {/if}

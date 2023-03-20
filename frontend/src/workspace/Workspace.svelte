@@ -5,27 +5,31 @@
 
 <script lang="ts">
   import { onDestroy } from 'svelte'
+  import { writable } from 'svelte/store'
+  import { get_workspace } from './context'
+
   import ModuleWrapper from '../modules/ModuleWrapper.svelte'
   import Toolbox from '../components/Toolbox.svelte'
   import Wires from '../components/Wires.svelte'
-  import { patch_workspace } from '../worker/persistence'
-  import { WorkspaceDocument } from '../worker/persistence'
-  import { init_workspace } from './context'
-  import { writable } from 'svelte/store'
-  import { page } from '$app/stores'
-  import { title } from '../components/Navigation.svelte'
-  import * as api from '../server/api'
+  import Navigation from '../components/Navigation.svelte'
+  import TitleInput from '../components/TitleInput.svelte'
+  import NavigationButton from '../components/NavigationButton.svelte'
 
-  export let workspace_document: WorkspaceDocument
+  import PointerPositions from '../components/collaborative/PointerPositions.svelte'
+  import AvatarList from '../components/collaborative/AvatarList.svelte'
 
   let loading = false
   let toolbox_visible = false
   let toolbox_position: Position = { x: 0, y: 0 }
   let workspace_element: Element
 
-  const space = init_workspace(workspace_document)
+  const space = get_workspace()
 
-  const modules = space.list_modules()
+  onDestroy(() => {
+    space.cleanup()
+  })
+
+  const store = space.store
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handle_double_click = (_event: MouseEvent) => {
@@ -55,25 +59,32 @@
   const handle_close = () => {
     toolbox_visible = false
   }
-
-  // Set UI page title on load
-  title.update(() => workspace_document.title)
-  // Update page title state when it's edited
-  $: space.update_title($title)
-
-  // Subscribe to any workspace changes
-  const unsubscribe = space.subscribe_changes(change => {
-    if ($page.routeId?.includes('template') && $page.routeId?.includes('edit')) {
-      void api.patch(space.id, change)
-    } else {
-      patch_workspace(space.id, change)
-    }
-  })
-
-  onDestroy(() => {
-    unsubscribe()
-  })
 </script>
+
+<Navigation>
+  <svelte:fragment slot="left">
+    <a href="/">
+      <NavigationButton>Back</NavigationButton>
+    </a>
+  </svelte:fragment>
+  <svelte:fragment slot="mid">
+    <TitleInput bind:value={$store.meta.title} />
+  </svelte:fragment>
+  <svelte:fragment slot="right">
+    <AvatarList />
+    <a
+      href="#"
+      on:click={() => {
+        space.save_to_remote()
+      }}
+    >
+      <NavigationButton>Save</NavigationButton>
+    </a>
+    <a href="/workspace/draft/new">
+      <NavigationButton>New</NavigationButton>
+    </a>
+  </svelte:fragment>
+</Navigation>
 
 <svelte:window on:keydown={handle_global_keydown} on:mousemove={handle_mouse_move} />
 <div
@@ -89,9 +100,10 @@
       <Toolbox position={toolbox_position} onClose={handle_close} />
     {/if}
 
-    {#each $modules as module_id (module_id)}
-      <ModuleWrapper {module_id} />
+    {#each $store.modules as module (module.id)}
+      <ModuleWrapper {module} />
     {/each}
+    <PointerPositions />
     <Wires />
   {/if}
 </div>

@@ -8,8 +8,7 @@
 
   const space = get_workspace()
   const { id: module_id } = get_module_context()
-  const module = space.get_module_substore(module_id)
-  const position = module.select(state => state.position)
+  const position = space.module_position(module_id)
 
   export let ctx: ParamContext | NodeContext
   export let id: number

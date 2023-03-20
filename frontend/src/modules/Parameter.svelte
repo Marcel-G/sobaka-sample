@@ -5,7 +5,7 @@
     background: 'var(--cyan-dark)'
   }
 
-  type State = Readonly<{ min: number; max: number; value: number }>
+  type State = { min: number; max: number; value: number }
 
   export const initialState: State = {
     min: 0,
@@ -21,12 +21,13 @@
   import Panel from './shared/Panel.svelte'
   import { into_style } from '../components/Theme.svelte'
   import { PlugType } from '../workspace/plugs'
-  import { SubStore } from '../utils/patches'
   import { get_context as get_audio_context } from '../audio'
+  import Layout from '../components/Layout.svelte'
+  import RingSpinner from '../components/RingSpinner.svelte'
 
   const context = get_audio_context()
 
-  export let state: SubStore<State>
+  export let state: State
   let name = 'parameter'
   let parameter: ConstantSourceNode
   let loading = true
@@ -37,22 +38,21 @@
     loading = false
   })
 
-  const value = state.select(s => s.value)
-  const min = state.select(s => s.min)
-  const max = state.select(s => s.max)
-
   // Update the sobaka node when the state changes
-  $: parameter?.offset.setValueAtTime($value, $context.currentTime)
+  $: value = state.value
+  $: parameter?.offset.setValueAtTime(value, $context.currentTime)
 </script>
 
 <Panel {name} height={6} width={5} custom_style={into_style(theme)}>
-  {#await loading}
-    <p>Loading...</p>
-  {:then}
+  {#if loading}
+    <Layout type="center">
+      <RingSpinner />
+    </Layout>
+  {:else}
     <span>
-      <Knob bind:value={$value} range={[$min, $max]} label="value" />
+      <Knob bind:value={state.value} range={[state.min, state.max]} label="value" />
     </span>
-  {/await}
+  {/if}
   <div slot="outputs">
     <Plug
       id={0}
