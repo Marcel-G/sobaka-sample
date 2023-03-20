@@ -110,7 +110,7 @@ export const workspace = () => {
 
   const wip_connect_live = async (local_workspace: string) => {
     const provider = new WebrtcProvider(local_workspace, doc, {
-      signaling: ['ws://localhost:4444']
+      signaling: ['wss://signaling.test.marcelgleeson.com']
     })
 
     const awareness = provider.awareness
