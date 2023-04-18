@@ -1,5 +1,7 @@
 import Clock, { initialState as clockInitialState } from './Clock.svelte'
-import Envelope, { initialState as envelopeInitialState } from './Envelope.svelte'
+import Envelope, {
+  initialState as envelopeInitialState
+} from './Envelope/Envelope.svelte'
 import Filter, { initialState as filterInitialState } from './Filter.svelte'
 import Oscillator, { initialState as oscillatorInitialState } from './Oscillator.svelte'
 import Parameter, { initialState as ParameterInitialState } from './Parameter.svelte'
@@ -20,7 +22,7 @@ import SampleAndHold, {
   initialState as sampleAndHoldInitialState
 } from './SampleAndHold.svelte'
 import Sampler, { initialState as samplerInitialState } from './Sampler/Sampler.svelte'
-import { Module } from 'src/workspace/state'
+import { Module } from '../workspace/state'
 
 export const MODULES = {
   Clock,

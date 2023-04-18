@@ -29,10 +29,11 @@
   import Plug from './shared/Plug.svelte'
   import { into_style } from '../components/Theme.svelte'
   import { PlugType } from '../workspace/plugs'
-  import Knob from '../components/Knob.svelte'
+  import Knob, { scalar } from '../components/Knob/Knob.svelte'
   import { get_context as get_audio_context } from '../audio'
   import Layout from '../components/Layout.svelte'
   import RingSpinner from '../components/RingSpinner.svelte'
+  import { Range, RangeType } from '../components/Knob/range'
 
   export let state: State
   let name = 'oscillator'
@@ -75,23 +76,33 @@
   $: triangle = state.triangle
   $: triangle_param?.setValueAtTime(triangle, 0)
 
+  const pitch_range: Range = {
+    type: RangeType.Continuous,
+    start: 0,
+    end: 4
+  }
+
   onDestroy(() => {
     oscillator?.destroy()
     oscillator?.free()
   })
 </script>
 
-<Panel {name} height={18} width={5} custom_style={into_style(theme)}>
+<Panel {name} height={13} width={8} custom_style={into_style(theme)}>
   {#if loading}
     <Layout type="center">
       <RingSpinner />
     </Layout>
   {:else}
-    <Knob bind:value={state.pitch} range={[0, 4]} label="pitch" />
-    <Knob bind:value={state.saw} range={[0, 1]} label="saw" />
-    <Knob bind:value={state.sine} range={[0, 1]} label="sine" />
-    <Knob bind:value={state.square} range={[0, 1]} label="square" />
-    <Knob bind:value={state.triangle} range={[0, 1]} label="triangle" />
+    <div class="controls">
+      <div class="span">
+        <Knob bind:value={state.pitch} range={pitch_range} label="pitch" />
+      </div>
+      <Knob bind:value={state.saw} range={scalar} label="saw" />
+      <Knob bind:value={state.sine} range={scalar} label="sine" />
+      <Knob bind:value={state.square} range={scalar} label="square" />
+      <Knob bind:value={state.triangle} range={scalar} label="triangle" />
+    </div>
   {/if}
   <div slot="inputs">
     <Plug
@@ -118,3 +129,14 @@
     />
   </div>
 </Panel>
+
+<style>
+  .controls {
+    display: grid;
+    grid-template-columns: auto auto;
+  }
+
+  .controls .span {
+    grid-column: 1 / span 2;
+  }
+</style>

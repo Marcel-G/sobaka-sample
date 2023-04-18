@@ -23,10 +23,11 @@
   import Plug from './shared/Plug.svelte'
   import { into_style } from '../components/Theme.svelte'
   import { PlugType } from '../workspace/plugs'
-  import Knob from '../components/Knob.svelte'
+  import Knob, { scalar } from '../components/Knob/Knob.svelte'
   import { get_context as get_audio_context } from '../audio'
   import Layout from '../components/Layout.svelte'
   import RingSpinner from '../components/RingSpinner.svelte'
+  import { Range, RangeType } from '../components/Knob/range'
 
   export let state: State
   let name = 'filter'
@@ -53,21 +54,32 @@
   $: q = state.q
   $: q_param?.setValueAtTime(q, $context.currentTime)
 
+  const freq_range: Range = {
+    type: RangeType.Continuous,
+    start: 0,
+    end: 8
+  }
+
   onDestroy(() => {
     filter?.destroy()
     filter?.free()
   })
 </script>
 
-<Panel {name} height={6} width={8} custom_style={into_style(theme)}>
+<Panel {name} height={8} width={8} custom_style={into_style(theme)}>
   {#if loading}
     <Layout type="center">
       <RingSpinner />
     </Layout>
   {:else}
     <div class="controls">
-      <Knob bind:value={state.frequency} range={[0, 8]} label="cutoff">
-        <div slot="inputs">
+      <Knob
+        bind:value={state.frequency}
+        range={freq_range}
+        label="cutoff"
+        orientation="ns"
+      >
+        <div slot="knob-inputs">
           <Plug
             id={1}
             label="cutoff_cv"
@@ -75,8 +87,8 @@
           />
         </div>
       </Knob>
-      <Knob bind:value={state.q} range={[0, 1]} label="q">
-        <div slot="inputs">
+      <Knob bind:value={state.q} range={scalar} label="q" orientation="ns">
+        <div slot="knob-inputs">
           <Plug id={2} label="q_cv" ctx={{ type: PlugType.Param, param: q_param }} />
         </div>
       </Knob>

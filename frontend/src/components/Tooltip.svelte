@@ -30,7 +30,7 @@
     border-radius: 0.5rem;
     padding: 0.5rem;
     position: absolute;
-    z-index: 1;
+    z-index: 1000;
     top: 50%;
   }
 

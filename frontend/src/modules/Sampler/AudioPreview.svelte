@@ -1,7 +1,7 @@
 <script lang="ts">
   import { clamp } from 'lodash'
   import RingSpinner from '../../components/RingSpinner.svelte'
-  import useDrag, { OnDrag } from '../../actions/drag'
+  import useDrag, { OnDrag, relative_to_element } from '../../actions/drag'
   import { AudioData } from '../../worker/media'
   import AudioWaveCanvas from './AudioWaveCanvas.svelte'
   import { WINDOW_SIZE } from './constants'
@@ -14,14 +14,16 @@
 
   export let on_view_change: (position: number) => void | undefined
 
-  const handle_viewport_move: OnDrag = (x_in, _, element) => {
-    const parentElement = element.parentElement
-    if (!parentElement) return
-    const max_range = parentElement.clientWidth - element.clientWidth
+  const handle_drag: OnDrag = (event, origin, element) => {
+    const parent = element.parentElement
+    if (parent instanceof Element) {
+      const { x } = relative_to_element(event, origin, parent)
+      const max_range = parent.clientWidth - element.clientWidth
 
-    const position = clamp(x_in / max_range, 0, 1)
+      const position = clamp(x / max_range, 0, 1)
 
-    on_view_change?.(position)
+      on_view_change?.(position)
+    }
   }
 
   const calculate_width = (audio: AudioData) => {
@@ -38,7 +40,7 @@
     <div
       class="view-indicator"
       style={`left: ${left_inset * 100}%; width: ${indicator_width * 100}%`}
-      use:useDrag={handle_viewport_move}
+      use:useDrag={{ onDrag: handle_drag }}
     />
 
     <AudioWaveCanvas {audio_data} />

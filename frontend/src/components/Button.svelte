@@ -11,6 +11,8 @@
     margin: 0.125rem;
     flex: 1 1 auto;
 
+    min-height: 1.5rem;
+
     /* position: relative; */
     display: block;
 

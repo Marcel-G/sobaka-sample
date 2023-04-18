@@ -16,7 +16,7 @@
 
 <script lang="ts">
   import { onMount } from 'svelte'
-  import Knob from '../components/Knob.svelte'
+  import Knob from '../components/Knob/Knob.svelte'
   import Plug from './shared/Plug.svelte'
   import Panel from './shared/Panel.svelte'
   import { into_style } from '../components/Theme.svelte'
@@ -24,6 +24,8 @@
   import { get_context as get_audio_context } from '../audio'
   import Layout from '../components/Layout.svelte'
   import RingSpinner from '../components/RingSpinner.svelte'
+  import { Range, RangeType } from '../components/Knob/range'
+  import { min } from 'lodash'
 
   const context = get_audio_context()
 
@@ -38,6 +40,12 @@
     loading = false
   })
 
+  const param_range: Range = {
+    type: RangeType.Continuous,
+    start: state.min,
+    end: state.max
+  }
+
   // Update the sobaka node when the state changes
   $: value = state.value
   $: parameter?.offset.setValueAtTime(value, $context.currentTime)
@@ -50,7 +58,7 @@
     </Layout>
   {:else}
     <span>
-      <Knob bind:value={state.value} range={[state.min, state.max]} label="value" />
+      <Knob bind:value={state.value} range={param_range} label="value" />
     </span>
   {/if}
   <div slot="outputs">

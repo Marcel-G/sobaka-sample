@@ -17,7 +17,7 @@
   import Panel from './shared/Panel.svelte'
   import Plug from './shared/Plug.svelte'
   import { into_style } from '../components/Theme.svelte'
-  import Knob from '../components/Knob.svelte'
+  import Knob, { attenuverter } from '../components/Knob/Knob.svelte'
   import { PlugType } from '../workspace/plugs'
   import { get_context as get_audio_context } from '../audio'
   import Layout from '../components/Layout.svelte'
@@ -48,7 +48,7 @@
     </Layout>
   {:else}
     <span>
-      <Knob bind:value={state.value} range={[-1, 1]} label="attenuverter" />
+      <Knob bind:value={state.value} range={attenuverter} label="attenuverter" />
     </span>
   {/if}
 

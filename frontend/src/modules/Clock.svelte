@@ -16,7 +16,7 @@
   import Plug from './shared/Plug.svelte'
   import { into_style } from '../components/Theme.svelte'
   import { PlugType } from '../workspace/plugs'
-  import Knob from '../components/Knob.svelte'
+  import Knob, { bpm } from '../components/Knob/Knob.svelte'
   import { get_context as get_audio_context } from '../audio'
   import Layout from '../components/Layout.svelte'
   import RingSpinner from '../components/RingSpinner.svelte'
@@ -54,28 +54,27 @@
     frequency.start(time)
   })
 
-  $: bpm = state.bpm
   $: {
     let time = $context.currentTime
-    let freq = (bpm || 0) / 60
+    let freq = (state.bpm || 0) / 60
     clock?.forEach((node, index) => {
       node.frequency.setValueAtTime(freq * multiplier[index], time)
     })
   }
 </script>
 
-<Panel {name} height={7} width={5} custom_style={into_style(theme)}>
-  {#if loading}
-    <Layout type="center">
+<Panel {name} height={8} width={5} custom_style={into_style(theme)}>
+  <Layout type="center">
+    {#if loading}
       <RingSpinner />
-    </Layout>
-  {:else}
-    <Knob bind:value={state.bpm} range={[0, 240]} label="bpm">
-      <div slot="inputs">
-        <Plug id={0} label="bpm_cv" ctx={{ type: PlugType.Param, param: freq_cv }} />
-      </div>
-    </Knob>
-  {/if}
+    {:else}
+      <Knob bind:value={state.bpm} range={bpm} label="bpm" orientation="ns">
+        <div slot="knob-inputs">
+          <Plug id={0} label="bpm_cv" ctx={{ type: PlugType.Param, param: freq_cv }} />
+        </div>
+      </Knob>
+    {/if}
+  </Layout>
 
   <div slot="outputs">
     {#each clock as output, i}

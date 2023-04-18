@@ -22,11 +22,12 @@
   import { PlugType } from '../workspace/plugs'
   import { onDestroy, onMount } from 'svelte'
   import { get_context as get_audio_context } from '../audio'
-  import Knob from '../components/Knob.svelte'
+  import Knob from '../components/Knob/Knob.svelte'
   import Led from '../components/Led.svelte'
   import { Tuple } from '../@types'
   import Layout from '../components/Layout.svelte'
   import RingSpinner from '../components/RingSpinner.svelte'
+  import { Range, RangeType } from '../components/Knob/range'
 
   const context = get_audio_context()
 
@@ -58,7 +59,11 @@
     UpdateSteps: steps.map(({ value }) => value) as Tuple<number, 8>
   })
 
-  const knob_range = [0, 8]
+  const knob_range: Range = {
+    type: RangeType.Continuous,
+    start: 0,
+    end: 8
+  }
 
   onDestroy(() => {
     sequencer?.destroy()
@@ -66,7 +71,7 @@
   })
 </script>
 
-<Panel {name} height={15} width={8} custom_style={into_style(theme)}>
+<Panel {name} height={8} width={26} custom_style={into_style(theme)}>
   {#if loading}
     <Layout type="center">
       <RingSpinner />
@@ -74,8 +79,13 @@
   {:else}
     <div class="controls">
       {#each state.steps as step, i}
-        <Knob bind:value={step.value} range={knob_range} label={`step_${i + 1}`}>
-          <div slot="inputs">
+        <Knob
+          bind:value={step.value}
+          range={knob_range}
+          label={`step_${i + 1}`}
+          orientation="ns"
+        >
+          <div slot="knob-inputs">
             <Led on={i === active_step} />
           </div>
         </Knob>
@@ -107,7 +117,7 @@
 <style>
   .controls {
     display: grid;
-    grid-template-columns: auto auto;
+    grid-template-columns: auto auto auto auto auto auto auto auto;
     pointer-events: none;
   }
 </style>

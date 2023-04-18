@@ -1,5 +1,5 @@
 <script context="module" lang="ts">
-  import { ModuleTheme } from '../components/Theme.svelte'
+  import { ModuleTheme } from '../../components/Theme.svelte'
   export const theme: Partial<ModuleTheme> = {
     highlight: 'var(--yellow)',
     background: 'var(--yellow-dark)'
@@ -23,14 +23,16 @@
 <script lang="ts">
   import { Envelope } from 'sobaka-dsp'
   import { onDestroy, onMount } from 'svelte'
-  import Panel from './shared/Panel.svelte'
-  import Plug from './shared/Plug.svelte'
-  import { into_style } from '../components/Theme.svelte'
-  import { PlugType } from '../workspace/plugs'
-  import Knob from '../components/Knob.svelte'
-  import { get_context as get_audio_context } from '../audio'
-  import Layout from '../components/Layout.svelte'
-  import RingSpinner from '../components/RingSpinner.svelte'
+  import Panel from '../shared/Panel.svelte'
+  import Plug from '../shared/Plug.svelte'
+  import { into_style } from '../../components/Theme.svelte'
+  import { PlugType } from '../../workspace/plugs'
+  import { scalar } from '../../components/Knob/Knob.svelte'
+  import { get_context as get_audio_context } from '../../audio'
+  import Layout from '../../components/Layout.svelte'
+  import RingSpinner from '../../components/RingSpinner.svelte'
+  import Graph from './Graph.svelte'
+  import Input from '../../components/Knob/Input.svelte'
 
   export let state: State
   let name = 'envelope'
@@ -67,17 +69,33 @@
   })
 </script>
 
-<Panel {name} height={9} width={8} custom_style={into_style(theme)}>
+<Panel {name} height={10} width={16} custom_style={into_style(theme)}>
   {#if loading}
     <Layout type="center">
       <RingSpinner />
     </Layout>
   {:else}
     <div class="controls">
-      <Knob bind:value={state.attack} range={[0, 1]} label="attack" />
-      <Knob bind:value={state.decay} range={[0, 1]} label="decay" />
-      <Knob bind:value={state.sustain} range={[0, 1]} label="sustain" />
-      <Knob bind:value={state.release} range={[0, 1]} label="release" />
+      <Graph
+        bind:attack={state.attack}
+        bind:decay={state.decay}
+        bind:sustain={state.sustain}
+        bind:release={state.release}
+      />
+    </div>
+    <div class="values">
+      <div class="input">
+        <Input bind:value={state.attack} range={scalar} />
+      </div>
+      <div class="input">
+        <Input bind:value={state.decay} range={scalar} />
+      </div>
+      <div class="input">
+        <Input bind:value={state.sustain} range={scalar} />
+      </div>
+      <div class="input">
+        <Input bind:value={state.release} range={scalar} />
+      </div>
     </div>
   {/if}
   <div slot="inputs">
@@ -100,6 +118,17 @@
   .controls {
     display: grid;
     grid-template-columns: auto auto;
-    pointer-events: none;
+    overflow: hidden;
+  }
+
+  .values {
+    display: flex;
+    flex-direction: row;
+  }
+
+  .input {
+    display: inline-flex;
+    font-size: 0.75rem;
+    font-family: monospace;
   }
 </style>

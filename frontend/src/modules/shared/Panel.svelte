@@ -13,7 +13,7 @@
 </script>
 
 <script lang="ts">
-  import { useDrag } from '../../actions/drag'
+  import { relative_to_element, useDrag } from '../../actions/drag'
   import type { OnDrag } from '../../actions/drag'
   import { get_workspace } from '../../workspace/context'
   import { get_module_context } from '../context'
@@ -31,17 +31,22 @@
   $: col = `${$position.x + 1} / span ${width}`
   $: row = `${$position.y + 1} / span ${height}`
 
-  const onMove: OnDrag = (x_in, y_in) => {
-    let { x, y } = into_grid_coords({ x: x_in, y: y_in })
-    if (x < 0 || y < 0) {
-      return
+  const handle_drag: OnDrag = (event, origin, element) => {
+    const parent = element.parentElement
+    if (parent instanceof Element) {
+      const { x: x_in, y: y_in } = relative_to_element(event, origin, parent)
+
+      let { x, y } = into_grid_coords({ x: x_in, y: y_in })
+      if (x < 0 || y < 0) {
+        return
+      }
+      space.move_module(id, x, y)
     }
-    space.move_module(id, x, y)
   }
 </script>
 
 <div
-  use:useDrag={onMove}
+  use:useDrag={{ onDrag: handle_drag }}
   class="panel"
   style={`grid-column: ${col}; grid-row: ${row}; ${custom_style}`}
 >

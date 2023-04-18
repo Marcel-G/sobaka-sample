@@ -24,12 +24,13 @@
   import { into_style } from '../../components/Theme.svelte'
   import { PlugType } from '../../workspace/plugs'
   import { onDestroy, onMount } from 'svelte'
-  import Knob from '../../components/Knob.svelte'
+  import Knob from '../../components/Knob/Knob.svelte'
   import Button from '../../components/Button.svelte'
   import { get_context as get_audio_context } from '../../audio'
   import { create_scope, Scope } from './render'
   import Layout from '../../components/Layout.svelte'
   import RingSpinner from '../../components/RingSpinner.svelte'
+  import { Range, RangeType } from '../../components/Knob/range'
 
   export let state: State
   let name = 'scope'
@@ -58,6 +59,18 @@
   $: trigger = state.trigger
   $: scope?.trigger.set(trigger)
 
+  const threshold_range: Range = {
+    type: RangeType.Continuous,
+    start: -1,
+    end: 1
+  }
+
+  const time_range: Range = {
+    type: RangeType.Continuous,
+    start: 0,
+    end: 12
+  }
+
   onDestroy(() => {
     scope?.stop()
   })
@@ -76,8 +89,8 @@
         </div>
       </div>
       <div class="controls">
-        <Knob bind:value={state.threshold} range={[-1, 1]} label="threshold" />
-        <Knob bind:value={state.time} range={[0, 12]} label="time" />
+        <Knob bind:value={state.threshold} range={threshold_range} label="threshold" />
+        <Knob bind:value={state.time} range={time_range} label="time" />
         <Button
           pressed={state.trigger}
           onClick={() => (state.trigger = !state.trigger)}
@@ -101,9 +114,9 @@
     margin: 0 -0.5rem;
   }
   .controls {
-    display: flex;
-    flex-direction: row;
-    padding: 0.5rem;
+    display: grid;
+    grid-template-columns: min-content min-content min-content;
+    padding-top: 0.5rem;
   }
   .oscilloscope-wrapper {
     position: absolute;

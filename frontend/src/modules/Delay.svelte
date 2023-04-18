@@ -16,11 +16,12 @@
   import Panel from './shared/Panel.svelte'
   import Plug from './shared/Plug.svelte'
   import { into_style } from '../components/Theme.svelte'
-  import Knob from '../components/Knob.svelte'
+  import Knob from '../components/Knob/Knob.svelte'
   import { PlugType } from '../workspace/plugs'
   import { get_context as get_audio_context } from '../audio'
   import Layout from '../components/Layout.svelte'
   import RingSpinner from '../components/RingSpinner.svelte'
+  import { Range, RangeType } from '../components/Knob/range'
 
   export let state: State
   let name = 'delay'
@@ -43,21 +44,27 @@
   $: time = state.time
   $: delay_time_param?.setValueAtTime(time, $context.currentTime)
 
+  const delay_range: Range = {
+    type: RangeType.Continuous,
+    start: 0,
+    end: 10
+  }
+
   onDestroy(() => {
     delay?.destroy()
     delay?.free()
   })
 </script>
 
-<Panel {name} height={6} width={5} custom_style={into_style(theme)}>
+<Panel {name} height={6} width={7} custom_style={into_style(theme)}>
   {#if loading}
     <Layout type="center">
       <RingSpinner />
     </Layout>
   {:else}
     <div class="controls">
-      <Knob bind:value={state.time} range={[0, 10]} label="seconds">
-        <div slot="inputs">
+      <Knob bind:value={state.time} range={delay_range} label="seconds">
+        <div slot="knob-inputs">
           <Plug
             id={0}
             label="seconds_cv"

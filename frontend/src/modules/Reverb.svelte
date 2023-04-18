@@ -23,10 +23,11 @@
   import Plug from './shared/Plug.svelte'
   import { into_style } from '../components/Theme.svelte'
   import { PlugType } from '../workspace/plugs'
-  import Knob from '../components/Knob.svelte'
+  import Knob, { scalar } from '../components/Knob/Knob.svelte'
   import { get_context as get_audio_context } from '../audio'
   import Layout from '../components/Layout.svelte'
   import RingSpinner from '../components/RingSpinner.svelte'
+  import { Range, RangeType } from '../components/Knob/range'
 
   export let state: State
   let name = 'reverb'
@@ -54,6 +55,12 @@
   $: delay = state.length
   $: delay_param?.setValueAtTime(delay, $context.currentTime)
 
+  const delay_length_range: Range = {
+    type: RangeType.Continuous,
+    start: 0,
+    end: 10
+  }
+
   onDestroy(() => {
     reverb?.destroy()
     reverb?.free()
@@ -67,8 +74,8 @@
     </Layout>
   {:else}
     <div class="controls">
-      <Knob bind:value={state.wet} range={[0, 1]} label="wet" />
-      <Knob bind:value={state.length} range={[0, 10]} label="length" />
+      <Knob bind:value={state.wet} range={scalar} label="wet" />
+      <Knob bind:value={state.length} range={delay_length_range} label="length" />
     </div>
   {/if}
 

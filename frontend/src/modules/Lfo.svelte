@@ -16,7 +16,7 @@
   import Plug from './shared/Plug.svelte'
   import { into_style } from '../components/Theme.svelte'
   import { PlugType } from '../workspace/plugs'
-  import Knob from '../components/Knob.svelte'
+  import Knob, { lfo_range } from '../components/Knob/Knob.svelte'
   import { get_context as get_audio_context } from '../audio'
   import Layout from '../components/Layout.svelte'
   import RingSpinner from '../components/RingSpinner.svelte'
@@ -37,8 +37,7 @@
   })
 
   // Update the sobaka node when the state changes
-  $: bpm = state.bpm
-  $: lfo?.frequency.setValueAtTime((bpm || 0) / 60, $context.currentTime)
+  $: lfo?.frequency.setValueAtTime((state.bpm || 0) / 60, $context.currentTime)
 </script>
 
 <Panel {name} height={6} width={5} custom_style={into_style(theme)}>
@@ -47,14 +46,14 @@
       <RingSpinner />
     </Layout>
   {:else}
-    <Knob bind:value={state.bpm} range={[0, 600]} label="bpm">
-      <div slot="inputs">
+    <Knob bind:value={state.bpm} range={lfo_range} label="bpm">
+      <!-- <div slot="inputs">
         <Plug
           id={1}
           label="bpm_cv"
           ctx={{ type: PlugType.Param, param: lfo?.frequency }}
         />
-      </div>
+      </div> -->
     </Knob>
   {/if}
   <!-- @todo can't do reset with OscillatorNode?

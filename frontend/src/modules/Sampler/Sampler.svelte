@@ -29,7 +29,7 @@
   import Plug from '../shared/Plug.svelte'
   import { into_style } from '../../components/Theme.svelte'
   import { PlugType } from '../../workspace/plugs'
-  import Knob from '../../components/Knob.svelte'
+  import Knob from '../../components/Knob/Knob.svelte'
   import { get_context as get_audio_context } from '../../audio'
   import AudioPreview from './AudioPreview.svelte'
   import AudioDetail from './AudioDetail.svelte'
@@ -37,6 +37,7 @@
   import { get_media_context } from '../../worker/media'
   import Layout from '../../components/Layout.svelte'
   import RingSpinner from '../../components/RingSpinner.svelte'
+  import { Range, RangeType } from '../../components/Knob/range'
 
   export let state: State
   let name = 'sampler'
@@ -81,9 +82,9 @@
     const file = event.currentTarget.files?.[0]
 
     if (file) {
-      loading = true;
+      loading = true
       state.sound_id = await media.store(file)
-      loading = false;
+      loading = false
       state.active_segment = 0
       state.view_position = 0
     }
@@ -131,6 +132,18 @@
   $: active_segment = state.active_segment
   $: sampler?.command({ SetSample: active_segment })
 
+  const playback_rate_range: Range = {
+    type: RangeType.Continuous,
+    start: 0.1,
+    end: 4
+  }
+
+  const threshold_range: Range = {
+    type: RangeType.Continuous,
+    start: 0.5,
+    end: 100
+  }
+
   onDestroy(() => {
     // @todo -- error if sampler is destroyed before bg task
     sampler?.destroy()
@@ -161,8 +174,8 @@
           bind:trigger_segment
         />
         <div class="controls">
-          <Knob bind:value={state.playback_rate} range={[0.1, 4]} label="rate">
-            <div slot="inputs">
+          <Knob bind:value={state.playback_rate} range={playback_rate_range} label="rate">
+            <div slot="knob-inputs">
               <Plug
                 id={1}
                 label="rate_cv"
@@ -170,7 +183,7 @@
               />
             </div>
           </Knob>
-          <Knob bind:value={state.threshold} range={[0.5, 100]} label="threshold" />
+          <Knob bind:value={state.threshold} range={threshold_range} label="threshold" />
           <!-- Lol need a better button -->
           <Button
             onClick={async () => {
