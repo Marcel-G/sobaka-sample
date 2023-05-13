@@ -1,10 +1,8 @@
 use crate::{
-    dsp::{
-        quantiser::{dsp_quantiser, Quantiser as DSPQuantiser},
-        shared::{Share, Shared},
-    },
+    dsp::quantiser::{dsp_quantiser},
     fundsp_worklet::FundspWorklet,
 };
+use fundsp::setting::{listen, Sender};
 use waw::{
     buffer::{AudioBuffer, ParamBuffer},
     worklet::{AudioModule, Emitter},
@@ -16,8 +14,8 @@ pub enum QuantiserCommand {
 }
 
 pub struct Quantiser {
-    handle: Shared<DSPQuantiser>,
     inner: FundspWorklet,
+    sender: Sender<[bool; 12]>,
 }
 
 impl AudioModule for Quantiser {
@@ -25,19 +23,17 @@ impl AudioModule for Quantiser {
 
     fn create(_init: Option<Self::InitialState>, _emitter: Emitter<Self::Event>) -> Self {
         let init = [false; 12];
-        let module = dsp_quantiser(init).share();
-
-        let handle = module.clone();
+        let (sender, module) = listen(dsp_quantiser(init));
 
         Quantiser {
-            handle,
-            inner: FundspWorklet::create(module),
+            sender,
+            inner: FundspWorklet::create(module, Default::default()),
         }
     }
 
     fn on_command(&mut self, command: Self::Command) {
         match command {
-            QuantiserCommand::UpdateNotes(notes) => self.handle.lock().update_notes(notes),
+            QuantiserCommand::UpdateNotes(notes) => self.sender.try_send(notes).unwrap(),
         }
     }
 

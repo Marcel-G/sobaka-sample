@@ -1,35 +1,5 @@
 <script context="module" lang="ts">
   import { Range, RangeType } from './range/range'
-  export const scalar: Range = {
-    type: RangeType.Continuous,
-    start: 0,
-    end: 1
-    // step: 0.1,
-    // valueToString: v => String(Math.round(v))
-  }
-
-  export const bpm: Range = {
-    type: RangeType.Continuous,
-    start: 0,
-    end: 320,
-    step: 1
-    // valueToString: v => String(Math.round(v))
-  }
-
-  export const lfo_range: Range = {
-    type: RangeType.Continuous,
-    start: 0,
-    end: 600,
-    step: 1
-    // valueToString: v => String(Math.round(v))
-  }
-
-  export const attenuverter: Range = {
-    type: RangeType.Continuous,
-    start: -1,
-    end: 1
-    // valueToString: v => String(Math.round(v))
-  }
 </script>
 
 <script lang="ts">
@@ -45,6 +15,7 @@
   export let label: string
   export let orientation: 'ns' | 'ew' = 'ew'
 
+  let focus_input: () => void
   const baseAngle = 135
 
   $: normalised_value = toNormalised(range, value)
@@ -64,12 +35,17 @@
   const handle_wheel: OnWheel = (event, position) => {
     value = fromNormalised(range, start_value + position.y)
   }
+
+  const handle_double_click = () => {
+    focus_input()
+  }
 </script>
 
 <div
   class="knob"
   class:ns={orientation === 'ns'}
   class:ew={orientation === 'ew'}
+  on:dblclick={handle_double_click}
   use:useDrag={{ onDrag: handle_drag, onDragStart: capture_start_value }}
   use:useWheel={{ onWheel: handle_wheel, onWheelStart: capture_start_value }}
 >
@@ -99,7 +75,7 @@
     </Tooltip>
   </div>
   <div class="input">
-    <Input bind:value {range} />
+    <Input bind:value bind:focus={focus_input} {range} />
   </div>
 </div>
 

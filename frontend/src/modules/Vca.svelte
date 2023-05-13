@@ -17,11 +17,12 @@
   import Panel from './shared/Panel.svelte'
   import Plug from './shared/Plug.svelte'
   import { into_style } from '../components/Theme.svelte'
-  import Knob, { attenuverter } from '../components/Knob/Knob.svelte'
+  import Knob from '../components/Knob/Knob.svelte'
   import { PlugType } from '../workspace/plugs'
   import { get_context as get_audio_context } from '../audio'
   import Layout from '../components/Layout.svelte'
   import RingSpinner from '../components/RingSpinner.svelte'
+  import { createScaleRange } from '../components/Knob/range/rangeCreators'
 
   export let state: State
   let name = 'vca'
@@ -30,6 +31,8 @@
   let loading = true
 
   const context = get_audio_context()
+
+  const attenuverter = createScaleRange(-1, 1)
 
   onMount(async () => {
     vca = new GainNode($context)

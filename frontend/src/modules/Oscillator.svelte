@@ -29,11 +29,14 @@
   import Plug from './shared/Plug.svelte'
   import { into_style } from '../components/Theme.svelte'
   import { PlugType } from '../workspace/plugs'
-  import Knob, { scalar } from '../components/Knob/Knob.svelte'
+  import Knob from '../components/Knob/Knob.svelte'
   import { get_context as get_audio_context } from '../audio'
   import Layout from '../components/Layout.svelte'
   import RingSpinner from '../components/RingSpinner.svelte'
-  import { Range, RangeType } from '../components/Knob/range'
+  import {
+    createScaleRange,
+    createVoltPerOctaveRange
+  } from '../components/Knob/range/rangeCreators'
 
   export let state: State
   let name = 'oscillator'
@@ -76,11 +79,8 @@
   $: triangle = state.triangle
   $: triangle_param?.setValueAtTime(triangle, 0)
 
-  const pitch_range: Range = {
-    type: RangeType.Continuous,
-    start: 0,
-    end: 4
-  }
+  const freq_range = createVoltPerOctaveRange()
+  const scalar = createScaleRange()
 
   onDestroy(() => {
     oscillator?.destroy()
@@ -96,7 +96,7 @@
   {:else}
     <div class="controls">
       <div class="span">
-        <Knob bind:value={state.pitch} range={pitch_range} label="pitch" />
+        <Knob bind:value={state.pitch} range={freq_range} label="pitch" />
       </div>
       <Knob bind:value={state.saw} range={scalar} label="saw" />
       <Knob bind:value={state.sine} range={scalar} label="sine" />

@@ -1,10 +1,9 @@
+use crate::fundsp_worklet::FundspWorklet;
 use fundsp::prelude::*;
 use waw::{
     buffer::{AudioBuffer, ParamBuffer},
     worklet::{AudioModule, Emitter},
 };
-
-use crate::fundsp_worklet::FundspWorklet;
 
 #[waw::derive::derive_param]
 pub enum ClockParams {
@@ -18,7 +17,7 @@ pub enum ClockParams {
 }
 
 pub struct Clock {
-    inner: FundspWorklet,
+    inner: FundspWorklet<ClockParams>,
 }
 
 impl AudioModule for Clock {
@@ -28,6 +27,8 @@ impl AudioModule for Clock {
     const OUTPUTS: u32 = 5;
 
     fn create(_init: Option<Self::InitialState>, _emitter: Emitter<Self::Event>) -> Self {
+        let param_storage = FundspWorklet::create_param_storage();
+
         let module = {
             let clock_square = || sine() >> map(|f| if f[0] > 0.0 { 1.0 } else { -1.0 });
 
@@ -36,13 +37,13 @@ impl AudioModule for Clock {
             let clock_divider_node =
                 branch::<U5, _, _, _>(|n| mul(divide[n as usize]) >> clock_square());
 
-            let bpm = tag(ClockParams::Bpm as i64, 0.0) >> map(|f| bpm_hz(f[0]));
+            let bpm = var(&param_storage[ClockParams::Bpm]) >> map(|f| bpm_hz(f[0]));
 
             bpm >> clock_divider_node
         };
 
         Clock {
-            inner: FundspWorklet::create(module),
+            inner: FundspWorklet::create(module, param_storage),
         }
     }
 

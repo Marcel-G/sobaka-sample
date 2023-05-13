@@ -38,7 +38,7 @@ pub enum ReverbParams {
 }
 
 pub struct Reverb {
-    inner: FundspWorklet,
+    inner: FundspWorklet<ReverbParams>,
 }
 
 impl AudioModule for Reverb {
@@ -48,6 +48,8 @@ impl AudioModule for Reverb {
     const OUTPUTS: u32 = 2;
 
     fn create(_init: Option<Self::InitialState>, _emitter: Emitter<Self::Event>) -> Self {
+        let param_storage = FundspWorklet::create_param_storage();
+
         let module = {
             // Optimized delay times for a 32-channel FDN from a legacy project.
             const DELAYS: [f64; 32] = [
@@ -58,7 +60,7 @@ impl AudioModule for Reverb {
             ];
 
             let line = stack::<U32, f32, _, _>(|i| {
-                let a = tag(ReverbParams::Delay as i64, 0.0)
+                let a = var(&param_storage[ReverbParams::Delay])
                     >> map(|t: &Frame<f32, U1>| {
                         f32::from_f32(fast_pow(db_amp(-60.0), 0.03 / t[0].to_f32()))
                     });
@@ -72,9 +74,9 @@ impl AudioModule for Reverb {
             let reverb = fdn::<U32, f32, _>(line);
 
             let wet_mix =
-                (pass() | pass()) * (tag(ReverbParams::Wet as i64, 0.0) >> (pass() ^ pass()));
+                (pass() | pass()) * (var(&param_storage[ReverbParams::Wet]) >> (pass() ^ pass()));
             let dry_mix = (pass() | pass())
-                * (tag(ReverbParams::Wet as i64, 0.0)
+                * (var(&param_storage[ReverbParams::Wet])
                     >> map(|f| f32::one() - f[0])
                     >> (pass() ^ pass()));
 
@@ -85,7 +87,7 @@ impl AudioModule for Reverb {
         };
 
         Reverb {
-            inner: FundspWorklet::create(module),
+            inner: FundspWorklet::create(module, param_storage),
         }
     }
 

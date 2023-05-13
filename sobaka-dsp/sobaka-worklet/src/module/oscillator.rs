@@ -52,7 +52,7 @@ pub enum OscillatorParams {
 }
 
 pub struct Oscillator {
-    inner: FundspWorklet,
+    inner: FundspWorklet<OscillatorParams>,
 }
 
 impl AudioModule for Oscillator {
@@ -62,16 +62,20 @@ impl AudioModule for Oscillator {
     const OUTPUTS: u32 = 1;
 
     fn create(_init: Option<Self::InitialState>, _emitter: Emitter<Self::Event>) -> Self {
+        let param_storage = FundspWorklet::create_param_storage();
+
         let module = {
             let multi_osc = {
                 let input = split::<U2, _>()
-                    >> ((pass() + tag(OscillatorParams::Pitch as i64, 0.0)) | pass())
+                    >> ((pass() + var(&param_storage[OscillatorParams::Pitch])) | pass())
                     >> (map::<_, _, U1, _>(|pitch| volt_hz(pitch[0])) | pass());
-                let attenuated_saw = sobaka_saw() * tag(OscillatorParams::Saw as i64, 0.0);
-                let attenuated_sine = sine_phase(0.0) * tag(OscillatorParams::Sine as i64, 0.0);
-                let attenuated_square = sobaka_square() * tag(OscillatorParams::Square as i64, 0.0);
+                let attenuated_saw = sobaka_saw() * var(&param_storage[OscillatorParams::Saw]);
+                // let attenuated_sine = sine_phase(0.0) * var(&param_storage[OscillatorParams::Sine]);
+                let attenuated_sine = sobaka_saw() * var(&param_storage[OscillatorParams::Sine]);
+                let attenuated_square =
+                    sobaka_square() * var(&param_storage[OscillatorParams::Square]);
                 let attenuated_triangle =
-                    sobaka_triangle() * tag(OscillatorParams::Triangle as i64, 0.0);
+                    sobaka_triangle() * var(&param_storage[OscillatorParams::Triangle]);
 
                 input
                     >> ((attenuated_saw & attenuated_sine & attenuated_square & attenuated_triangle)
@@ -85,7 +89,7 @@ impl AudioModule for Oscillator {
         };
 
         Oscillator {
-            inner: FundspWorklet::create(module),
+            inner: FundspWorklet::create(module, param_storage),
         }
     }
     fn process(&mut self, audio: &mut AudioBuffer, params: &ParamBuffer<Self::Param>) {

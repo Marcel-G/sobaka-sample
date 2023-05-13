@@ -72,7 +72,7 @@ export function fromString(range: Range, value: number, unit: string): number {
       unit = unit.toLowerCase()
       return (
         range.choices.find(c => {
-          let label = c.label.toLowerCase()
+          const label = c.label.toLowerCase()
           let idx = -1
           for (let i = 0; i < unit.length; i++) {
             const newIdx = label.indexOf(unit[i])

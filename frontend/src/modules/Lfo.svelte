@@ -16,10 +16,11 @@
   import Plug from './shared/Plug.svelte'
   import { into_style } from '../components/Theme.svelte'
   import { PlugType } from '../workspace/plugs'
-  import Knob, { lfo_range } from '../components/Knob/Knob.svelte'
+  import Knob from '../components/Knob/Knob.svelte'
   import { get_context as get_audio_context } from '../audio'
   import Layout from '../components/Layout.svelte'
   import RingSpinner from '../components/RingSpinner.svelte'
+  import { createBpmRange } from '../components/Knob/range/rangeCreators'
 
   export let state: State
   let name = 'lfo'
@@ -27,6 +28,9 @@
   let loading = true
 
   const context = get_audio_context()
+
+  // @todo -- make this work with volt per octave
+  const lfo_range = createBpmRange(0, 600)
 
   onMount(async () => {
     lfo = new OscillatorNode($context, { type: 'sine' })

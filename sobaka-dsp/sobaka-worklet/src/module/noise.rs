@@ -16,7 +16,7 @@ impl AudioModule for Noise {
         let module = white();
 
         Noise {
-            inner: FundspWorklet::create(module),
+            inner: FundspWorklet::create(module, Default::default()),
         }
     }
 

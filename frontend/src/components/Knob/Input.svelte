@@ -4,7 +4,12 @@
 
   export let value = 0.0
   export let range: Range
+  export const focus = () => {
+    input_ref?.focus()
+    input_ref?.select()
+  }
 
+  let input_ref: HTMLInputElement
   let isMouseDown = false
 
   const handleMouseDown = (event: MouseEvent) => {
@@ -51,6 +56,7 @@
 </script>
 
 <input
+  bind:this={input_ref}
   type="text"
   on:mousedown={handleMouseDown}
   on:mouseup={handleMouseUp}

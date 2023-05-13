@@ -2,7 +2,7 @@ use super::trigger::SchmittTrigger;
 use fundsp::prelude::*;
 use fundsp::{hacker::AudioNode, Float};
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct Hold<T: Float> {
     sample: T,
     trigger: SchmittTrigger,
@@ -22,6 +22,8 @@ impl<T: Float> AudioNode for Hold<T> {
     type Inputs = U2;
 
     type Outputs = U1;
+
+    type Setting = ();
 
     fn tick(
         &mut self,

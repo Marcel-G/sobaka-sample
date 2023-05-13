@@ -2,13 +2,9 @@ use fundsp::Float;
 
 pub mod envelope;
 pub mod hold;
-pub mod join;
 pub mod onset;
 pub mod oscillator;
-pub mod param;
-pub mod pluck;
 pub mod quantiser;
-pub mod shared;
 pub mod trigger;
 
 /// Convert 1v per octave to hz

@@ -23,11 +23,14 @@
   import Plug from './shared/Plug.svelte'
   import { into_style } from '../components/Theme.svelte'
   import { PlugType } from '../workspace/plugs'
-  import Knob, { scalar } from '../components/Knob/Knob.svelte'
+  import Knob from '../components/Knob/Knob.svelte'
   import { get_context as get_audio_context } from '../audio'
   import Layout from '../components/Layout.svelte'
   import RingSpinner from '../components/RingSpinner.svelte'
-  import { Range, RangeType } from '../components/Knob/range'
+  import {
+    createScaleRange,
+    createVoltPerOctaveRange
+  } from '../components/Knob/range/rangeCreators'
 
   export let state: State
   let name = 'filter'
@@ -54,11 +57,8 @@
   $: q = state.q
   $: q_param?.setValueAtTime(q, $context.currentTime)
 
-  const freq_range: Range = {
-    type: RangeType.Continuous,
-    start: 0,
-    end: 8
-  }
+  const freq_range = createVoltPerOctaveRange()
+  const scalar = createScaleRange()
 
   onDestroy(() => {
     filter?.destroy()

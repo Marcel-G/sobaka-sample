@@ -1,70 +1,103 @@
 <script lang="ts">
-  import { scalar } from '../../components/Knob/Knob.svelte'
-  import GraphRegion from './GraphRegion.svelte'
+  import { flatten } from 'lodash'
+  import { onMount, onDestroy } from 'svelte'
 
-  const height = 100
-  const width = 250
+  export let attack: number
+  export let decay: number
+  export let sustain: number
+  export let release: number
 
-  export let attack = 0.3
-  export let decay = 0.1
-  export let sustain = 0.5
-  export let release = 0.5
+  let anim_a_ref: SVGAnimateMotionElement
+  let anim_d_ref: SVGAnimateMotionElement
+  let anim_r_ref: SVGAnimateMotionElement
 
-  $: p0 = [0, height]
-  $: p1 = [attack * width, 0]
-  $: p2 = [p1[0] + decay * width, height - sustain * height]
-  $: p3 = [p2[0] + 50, height - sustain * height]
-  $: p4 = [p3[0] + release * width, height]
+  let t = 0
 
-  const create_curve = (a: number[], b: number[]) =>
-    `M${a[0]},${a[1]} C${a[0]},${a[1] + (b[1] - a[1]) / 2} ${b[0] - (b[0] - a[0]) / 2},${
-      b[1]
-    } ${b[0]},${b[1]}`
+  export const trigger_on = () => {
+    t = anim_a_ref?.getCurrentTime() || 0
+    anim_a_ref?.beginElement()
+  }
+
+  export const trigger_off = () => {
+    anim_a_ref?.endElement()
+    anim_r_ref?.beginElement()
+  }
+
+  const trigger_decay = () => {
+    if (anim_a_ref?.getCurrentTime() - t > attack) {
+      anim_d_ref?.beginElement()
+    }
+  }
+
+  onMount(() => {
+    anim_a_ref?.addEventListener('endEvent', trigger_decay)
+  })
+
+  onDestroy(() => {
+    anim_a_ref?.removeEventListener('endEvent', trigger_decay)
+  })
+
+  $: p0 = [0, 1]
+  $: p1 = [attack, 0]
+  $: p2 = [p1[0] + decay, 1 - sustain]
+  $: p3 = [p2[0] + release, 1]
+
+  // scale
+  $: s = ([x, y]: number[]) => [
+    ((3 - 0.1) * x) / p3[0] + 0.05,
+    ((1 - 0.1) * y) / p3[1] + 0.05
+  ]
+
+  $: full_path = flatten<string | number>([
+    'M',
+    s(p0),
+    'L',
+    s(p1),
+    'L',
+    s(p2),
+    'L',
+    s(p3)
+  ]).join(' ')
+  $: attack_path = flatten<string | number>(['M', s(p0), 'L', s(p1)]).join(' ')
+  $: decay_path = flatten<string | number>(['M', s(p1), 'L', s(p2)]).join(' ')
+  $: release_path = flatten<string | number>(['M', s(p2), 'L', s(p3)]).join(' ')
 </script>
 
-<svg viewBox={`0 0 ${width} ${height}`}>
-  <path
-    d={create_curve(p0, p1)}
-    fill="transparent"
-    stroke-width="6"
-    stroke-linecap="round"
-    stroke="var(--module-highlight)"
-  />
-  <path
-    d={create_curve(p1, p2)}
-    fill="transparent"
-    stroke-width="6"
-    stroke-linecap="round"
-    stroke="var(--module-highlight)"
-  />
-  <line
-    x1={p2[0]}
-    y1={p2[1]}
-    x2={p3[0]}
-    y2={p3[1]}
-    stroke-width="6"
-    stroke-linecap="round"
-    stroke="var(--module-highlight)"
-  />
-  <path
-    d={create_curve(p3, p4)}
-    fill="transparent"
-    stroke-width="6"
-    stroke-linecap="round"
-    stroke="var(--module-highlight)"
-  />
-
-  <GraphRegion p0={[0, 0]} p1={[p1[0], height]} bind:value={attack} range={scalar} />
-  <GraphRegion p0={[p1[0], 0]} p1={[p2[0], height]} bind:value={decay} range={scalar} />
-  <GraphRegion p0={[p2[0], 0]} p1={[p3[0], height]} bind:value={sustain} range={scalar} />
-  <GraphRegion p0={[p3[0], 0]} p1={[p4[0], height]} bind:value={release} range={scalar} />
-</svg>
+<div class="graph">
+  <svg viewBox={`0 0 3 1`} width="100%" height="100%">
+    <path
+      d={full_path}
+      fill="none"
+      stroke-width="0.03"
+      stroke-linecap="round"
+      stroke="var(--module-highlight)"
+    />
+    <circle r="0.05" fill="var(--module-highlight)">
+      <animateMotion
+        bind:this={anim_a_ref}
+        begin="indefinite"
+        dur={`${attack}s`}
+        path={attack_path}
+      />
+      <animateMotion
+        bind:this={anim_d_ref}
+        dur={`${decay}s`}
+        fill="freeze"
+        path={decay_path}
+      />
+      <animateMotion
+        bind:this={anim_r_ref}
+        begin="indefinite"
+        dur={`${release}s`}
+        fill="freeze"
+        path={release_path}
+      />
+    </circle>
+  </svg>
+</div>
 
 <style>
-  svg {
-    overflow: visible;
-    padding: 0.5rem;
-    width: 100%;
-    height: 100%;
+  .graph {
+    flex: 1 1 100%;
   }
 </style>

@@ -1,24 +1,37 @@
-use enum_map::{Enum, EnumArray};
+use enum_map::{Enum, EnumArray, EnumMap};
 use fundsp::prelude::*;
-use std::{convert::TryInto, fmt::Debug};
-use waw::buffer::{AudioBuffer, Param, ParamBuffer};
+use std::fmt::Debug;
+use waw::{
+    buffer::{AudioBuffer, Param, ParamBuffer},
+    types::Never,
+};
 
-pub struct FundspWorklet {
-    pub inner: Au,
+pub struct FundspWorklet<P = Never>
+where
+    P: EnumArray<Shared<f32>>,
+{
+    pub inner: Box<dyn AudioUnit32>,
+    param_storage: EnumMap<P, Shared<f32>>,
 }
 
-impl FundspWorklet {
-    pub fn create<X: AudioNode<Sample = f32> + Send + 'static>(module: An<X>) -> Self {
+impl<P> FundspWorklet<P>
+where
+    P: EnumArray<Shared<f32>> + EnumArray<Param> + Enum + Debug,
+{
+    pub fn create_param_storage() -> EnumMap<P, Shared<f32>> {
+        EnumMap::default()
+    }
+    pub fn create<X: AudioNode<Sample = f32> + Send + Sync + 'static>(
+        module: An<X>,
+        param_storage: EnumMap<P, Shared<f32>>,
+    ) -> Self {
         FundspWorklet {
-            inner: Au::Unit32(Box::new(module)),
+            inner: Box::new(module),
+            param_storage,
         }
     }
 
-    pub fn process<P: EnumArray<Param> + Enum + Debug>(
-        &mut self,
-        audio: &mut AudioBuffer,
-        params: &ParamBuffer<P>,
-    ) {
+    pub fn process(&mut self, audio: &mut AudioBuffer, params: &ParamBuffer<P>) {
         let (inputs, outputs) = audio.split();
 
         assert!(
@@ -45,10 +58,7 @@ impl FundspWorklet {
             // Write all the paramaters into the AudioUnit. Usually, these will be the same value.
             // Could possibly distinguish between a-rate / k-rate here
             for (param, buffer) in params.iter() {
-                self.inner.set(
-                    param.into_usize().try_into().unwrap(),
-                    *buffer.as_ref().get(i).unwrap() as f64,
-                );
+                self.param_storage[param].set_value(*buffer.as_ref().get(i).unwrap());
             }
 
             let input_frame: Vec<_> = input_buffers
@@ -58,7 +68,7 @@ impl FundspWorklet {
 
             let mut output_frame = vec![0.0; n_outputs]; // @todo assuming single channel
 
-            self.inner.tick32(&input_frame, &mut output_frame);
+            self.inner.tick(&input_frame, &mut output_frame);
 
             // We move the data from the frame buffer into the planar buffer after processing.
             for (maybe_output, sample) in output_buffers.iter_mut().zip(output_frame) {

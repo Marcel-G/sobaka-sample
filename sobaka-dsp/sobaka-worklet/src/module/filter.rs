@@ -1,7 +1,4 @@
-use crate::{
-    dsp::{param::param, volt_hz},
-    fundsp_worklet::FundspWorklet,
-};
+use crate::{dsp::volt_hz, fundsp_worklet::FundspWorklet};
 use fundsp::prelude::*;
 use waw::{
     buffer::{AudioBuffer, ParamBuffer},
@@ -27,7 +24,7 @@ pub enum FilterParams {
 }
 
 pub struct Filter {
-    inner: FundspWorklet,
+    inner: FundspWorklet<FilterParams>,
 }
 
 impl AudioModule for Filter {
@@ -37,12 +34,14 @@ impl AudioModule for Filter {
     const OUTPUTS: u32 = 4;
 
     fn create(_init: Option<Self::InitialState>, _emitter: Emitter<Self::Event>) -> Self {
+        let param_storage = FundspWorklet::create_param_storage();
+
         let module = {
             let input = pass()
-                | ((param(FilterParams::Frequency as i64, 0.0))
+                | ((var(&param_storage[FilterParams::Frequency]))
                     >> map(|f| volt_hz(f[0]))
                     >> clip_to(2e1, 2e4))
-                | (param(FilterParams::Q as i64, 0.0)) >> clip_to(0.0, 10.0);
+                | (var(&param_storage[FilterParams::Q])) >> clip_to(0.0, 10.0);
 
             input
                 >> (lowpass::<f32, f32>()
@@ -52,7 +51,7 @@ impl AudioModule for Filter {
         };
 
         Filter {
-            inner: FundspWorklet::create(module),
+            inner: FundspWorklet::create(module, param_storage),
         }
     }
 

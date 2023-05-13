@@ -27,12 +27,15 @@
   import Plug from '../shared/Plug.svelte'
   import { into_style } from '../../components/Theme.svelte'
   import { PlugType } from '../../workspace/plugs'
-  import { scalar } from '../../components/Knob/Knob.svelte'
   import { get_context as get_audio_context } from '../../audio'
   import Layout from '../../components/Layout.svelte'
   import RingSpinner from '../../components/RingSpinner.svelte'
   import Graph from './Graph.svelte'
   import Input from '../../components/Knob/Input.svelte'
+  import {
+    createScaleRange,
+    createTimeRange
+  } from '../../components/Knob/range/rangeCreators'
 
   export let state: State
   let name = 'envelope'
@@ -44,7 +47,13 @@
   let release_param: AudioParam
   let loading = true
 
+  let trigger_on: () => void
+  let trigger_off: () => void
+
   const context = get_audio_context()
+
+  const duration = createTimeRange()
+  const scalar = createScaleRange()
 
   onMount(async () => {
     const { Envelope } = await import('sobaka-dsp')
@@ -55,6 +64,15 @@
     sustain_param = envelope.get_param('Sustain')
     release_param = envelope.get_param('Release')
     loading = false
+
+    // Subscribe to step change
+    envelope.subscribe(event => {
+      if (event === 'NoteOn') {
+        trigger_on()
+      } else {
+        trigger_off()
+      }
+    })
   })
 
   // Update the sobaka node when the state changes
@@ -77,24 +95,26 @@
   {:else}
     <div class="controls">
       <Graph
-        bind:attack={state.attack}
-        bind:decay={state.decay}
-        bind:sustain={state.sustain}
-        bind:release={state.release}
+        bind:trigger_on
+        bind:trigger_off
+        attack={state.attack}
+        decay={state.decay}
+        sustain={state.sustain}
+        release={state.release}
       />
-    </div>
-    <div class="values">
-      <div class="input">
-        <Input bind:value={state.attack} range={scalar} />
-      </div>
-      <div class="input">
-        <Input bind:value={state.decay} range={scalar} />
-      </div>
-      <div class="input">
-        <Input bind:value={state.sustain} range={scalar} />
-      </div>
-      <div class="input">
-        <Input bind:value={state.release} range={scalar} />
+      <div class="values">
+        <div class="input">
+          <Input bind:value={state.attack} range={duration} />
+        </div>
+        <div class="input">
+          <Input bind:value={state.decay} range={duration} />
+        </div>
+        <div class="input">
+          <Input bind:value={state.sustain} range={scalar} />
+        </div>
+        <div class="input">
+          <Input bind:value={state.release} range={duration} />
+        </div>
       </div>
     </div>
   {/if}
@@ -116,9 +136,10 @@
 
 <style>
   .controls {
-    display: grid;
-    grid-template-columns: auto auto;
+    display: flex;
+    flex-direction: column;
     overflow: hidden;
+    height: 100%;
   }
 
   .values {

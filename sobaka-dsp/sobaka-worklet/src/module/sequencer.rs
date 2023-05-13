@@ -31,12 +31,6 @@ pub struct Sequencer {
 }
 
 impl Sequencer {
-    fn set_step(&mut self, step: usize, value: f32) {
-        let step = self.steps.get_mut(step).unwrap();
-
-        *step = value;
-    }
-
     fn get_step(&self, step: usize) -> f32 {
         *self.steps.get(step).unwrap()
     }
@@ -67,9 +61,7 @@ impl AudioModule for Sequencer {
 
     fn on_command(&mut self, command: Self::Command) {
         match command {
-            SequencerCommand::UpdateSteps(steps) => {
-                self.steps = steps
-            }
+            SequencerCommand::UpdateSteps(steps) => self.steps = steps,
         }
     }
 

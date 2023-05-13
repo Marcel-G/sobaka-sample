@@ -16,51 +16,34 @@
   import Plug from './shared/Plug.svelte'
   import { into_style } from '../components/Theme.svelte'
   import { PlugType } from '../workspace/plugs'
-  import Knob, { bpm } from '../components/Knob/Knob.svelte'
+  import Knob from '../components/Knob/Knob.svelte'
   import { get_context as get_audio_context } from '../audio'
   import Layout from '../components/Layout.svelte'
   import RingSpinner from '../components/RingSpinner.svelte'
+  import { createBpmRange } from '../components/Knob/range/rangeCreators'
+  import { Clock } from 'sobaka-dsp'
 
   export let state: State
+  let clock: Clock
   let name = 'clock'
-  let clock: OscillatorNode[] = []
-  let freq_cv: AudioParam
+  let bpm_param: AudioParam
+  let node: AudioNode
   let loading = true
-  const multiplier = [1.0, 2.0, 4.0, 8.0, 16.0]
 
   const context = get_audio_context()
 
+  // @todo -- make this work with volt per octave
+  const bpm = createBpmRange()
+
   onMount(async () => {
-    const frequency = new ConstantSourceNode($context)
-    freq_cv = frequency.offset
+    clock = await Clock.create($context)
+    node = clock.node()
+    bpm_param = clock.get_param('Bpm')
 
-    // @todo -- Not sure about it, they can all get out of sync pretty easily
-    clock = [
-      new OscillatorNode($context, { type: 'square' }),
-      new OscillatorNode($context, { type: 'square' }),
-      new OscillatorNode($context, { type: 'square' }),
-      new OscillatorNode($context, { type: 'square' }),
-      new OscillatorNode($context, { type: 'square' })
-    ]
     loading = false
-
-    let time = $context.currentTime
-
-    clock.forEach(node => {
-      frequency.connect(node.frequency, 0)
-      node.start(time)
-    })
-
-    frequency.start(time)
   })
 
-  $: {
-    let time = $context.currentTime
-    let freq = (state.bpm || 0) / 60
-    clock?.forEach((node, index) => {
-      node.frequency.setValueAtTime(freq * multiplier[index], time)
-    })
-  }
+  $: bpm_param?.setValueAtTime(state.bpm, $context.currentTime)
 </script>
 
 <Panel {name} height={8} width={5} custom_style={into_style(theme)}>
@@ -70,23 +53,37 @@
     {:else}
       <Knob bind:value={state.bpm} range={bpm} label="bpm" orientation="ns">
         <div slot="knob-inputs">
-          <Plug id={0} label="bpm_cv" ctx={{ type: PlugType.Param, param: freq_cv }} />
+          <Plug id={0} label="bpm_cv" ctx={{ type: PlugType.Param, param: bpm_param }} />
         </div>
       </Knob>
     {/if}
   </Layout>
 
   <div slot="outputs">
-    {#each clock as output, i}
-      <Plug
-        id={i}
-        label={`1/${multiplier[i]}`}
-        ctx={{
-          type: PlugType.Output,
-          module: output,
-          connectIndex: 0
-        }}
-      />
-    {/each}
+    <Plug
+      id={0}
+      label="1/1"
+      ctx={{ type: PlugType.Output, module: node, connectIndex: 0 }}
+    />
+    <Plug
+      id={1}
+      label="1/2"
+      ctx={{ type: PlugType.Output, module: node, connectIndex: 1 }}
+    />
+    <Plug
+      id={2}
+      label="1/4"
+      ctx={{ type: PlugType.Output, module: node, connectIndex: 2 }}
+    />
+    <Plug
+      id={3}
+      label="1/8"
+      ctx={{ type: PlugType.Output, module: node, connectIndex: 3 }}
+    />
+    <Plug
+      id={4}
+      label="1/16"
+      ctx={{ type: PlugType.Output, module: node, connectIndex: 4 }}
+    />
   </div>
 </Panel>

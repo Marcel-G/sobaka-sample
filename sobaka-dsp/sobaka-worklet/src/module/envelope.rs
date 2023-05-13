@@ -1,28 +1,11 @@
 use crate::{
-    dsp::{envelope::dsp_envelope, trigger::SchmittTrigger},
+    dsp::{envelope::sobaka_adsr, trigger::trigger_listener},
     fundsp_worklet::FundspWorklet,
-    utils::atomic_float::AtomicFloat,
 };
-use fundsp::prelude::*;
 use waw::{
     buffer::{AudioBuffer, ParamBuffer},
     worklet::{AudioModule, Emitter},
 };
-
-// g_{2}\left(x,l,u\right)=f_{2}\left(\frac{x-l}{u-l}\right)\left(u-l\right)+l
-fn g2(x: f32, l: f32, u: f32) -> f32 {
-    f2((x - l) / (u - l)) * (u - l) + l
-}
-
-// f_{1}\left(x\right)=x^{\frac{1}{3}}
-fn f1(x: f32) -> f32 {
-    x.powf(1.0 / 3.0)
-}
-
-// f_{2}\left(x\right)=x^{3}
-fn f2(x: f32) -> f32 {
-    x.powf(3.0)
-}
 
 #[waw::derive::derive_param]
 pub enum EnvelopeParams {
@@ -56,73 +39,36 @@ pub enum EnvelopeParams {
     Release,
 }
 
+#[waw::derive::derive_event]
+#[derive(Clone)]
+pub enum EnvelopeEvent {
+    NoteOn,
+    NoteOff,
+}
+
 pub struct Envelope {
-    inner: FundspWorklet,
+    inner: FundspWorklet<EnvelopeParams>,
 }
 
 impl AudioModule for Envelope {
     type Param = EnvelopeParams;
+    type Event = EnvelopeEvent;
 
-    fn create(_init: Option<Self::InitialState>, _emitter: Emitter<Self::Event>) -> Self {
-        let module = {
-            let on_offset = AtomicFloat::new(0.0);
-            let off_offset = AtomicFloat::new(0.0);
-            let trigger = SchmittTrigger::new();
+    fn create(_init: Option<Self::InitialState>, emitter: Emitter<Self::Event>) -> Self {
+        let param_storage = FundspWorklet::create_param_storage();
 
-            let env = dsp_envelope(move |time: f32, inputs: Frame<f32, U5>| {
-                let gate = inputs[0];
-                let attack = inputs[1];
-                let decay = inputs[2];
-                let sustain = inputs[3].clamp(0.0 + f32::EPSILON, 1.0 - f32::EPSILON);
-                let release = inputs[4];
-
-                if let Some(is_open) = trigger.tick(gate, 0.0, 0.001) {
-                    if is_open {
-                        on_offset.set(time as f64);
-                    } else {
-                        off_offset.set(time as f64);
-                    }
-                }
-
-                let position = time - on_offset.get() as f32;
-                if trigger.is_open() {
-                    // https://www.desmos.com/calculator/nduy9l2pez
-                    if position < attack {
-                        f1(1.0 / attack * position)
-                    } else if position < decay + attack {
-                        g2(
-                            ((sustain - 1.0) / decay) * (position - attack) + 1.0,
-                            sustain,
-                            1.0,
-                        )
-                    } else {
-                        sustain
-                    }
-                } else {
-                    let sustain_time = off_offset.get() as f32 - on_offset.get() as f32;
-                    if position < sustain_time + release {
-                        g2(
-                            (-sustain / release) * (position - sustain_time) + sustain,
-                            0.0,
-                            sustain,
-                        )
-                    } else {
-                        0.0
-                    }
-                }
-            });
-
-            let params = pass() | // Gate input
-                tag(EnvelopeParams::Attack as i64, 0.) |
-                tag(EnvelopeParams::Sustain as i64, 0.) |
-                tag(EnvelopeParams::Attack as i64, 0.) |
-                tag(EnvelopeParams::Release as i64, 0.);
-
-            params >> env >> declick::<f32, f32>()
-        };
+        let module = trigger_listener(move |is_high| match is_high {
+            true => emitter.send(EnvelopeEvent::NoteOn),
+            false => emitter.send(EnvelopeEvent::NoteOff),
+        }) >> sobaka_adsr(
+            param_storage[EnvelopeParams::Attack].clone(),
+            param_storage[EnvelopeParams::Decay].clone(),
+            param_storage[EnvelopeParams::Sustain].clone(),
+            param_storage[EnvelopeParams::Release].clone(),
+        );
 
         Envelope {
-            inner: FundspWorklet::create(module),
+            inner: FundspWorklet::create(module, param_storage),
         }
     }
 

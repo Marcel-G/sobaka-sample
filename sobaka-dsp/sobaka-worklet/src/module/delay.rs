@@ -17,7 +17,7 @@ pub enum DelayParams {
 }
 
 pub struct Delay {
-    inner: FundspWorklet,
+    inner: FundspWorklet<DelayParams>,
 }
 
 impl AudioModule for Delay {
@@ -26,13 +26,15 @@ impl AudioModule for Delay {
     const INPUTS: u32 = 2;
 
     fn create(_init: Option<Self::InitialState>, _emitter: Emitter<Self::Event>) -> Self {
+        let param_storage = FundspWorklet::create_param_storage();
+
         let module = {
-            let inputs = pass() | tag(DelayParams::DelayTime as i64, 0.0);
+            let inputs = pass() | var(&param_storage[DelayParams::DelayTime]);
             reset_trigger(inputs >> tap(0.0, 10.0))
         };
 
         Delay {
-            inner: FundspWorklet::create(module),
+            inner: FundspWorklet::create(module, param_storage),
         }
     }
 

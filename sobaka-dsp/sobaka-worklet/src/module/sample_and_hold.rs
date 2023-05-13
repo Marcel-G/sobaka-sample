@@ -15,7 +15,7 @@ impl AudioModule for SampleAndHold {
         let module = hold();
 
         SampleAndHold {
-            inner: FundspWorklet::create(module),
+            inner: FundspWorklet::create(module, Default::default()),
         }
     }
 

@@ -1,15 +1,17 @@
 use std::{
+    marker::PhantomData,
     ops::Add,
     sync::atomic::{AtomicBool, Ordering},
 };
 
 use fundsp::{
-    hacker::{An, AudioNode, Frame, SignalFrame, Size, Tag, U1},
-    math::AttoRand,
+    hacker::{An, AudioNode, Frame, SignalFrame, Size, U1},
+    prelude::AttoHash,
     Float, GenericSequence,
 };
 use numeric_array::typenum::Sum;
 
+#[derive(Clone)]
 pub struct Trigger<X>
 where
     X: AudioNode<Sample = f32>,
@@ -40,6 +42,7 @@ where
     type Sample = X::Sample;
     type Inputs = Sum<X::Inputs, U1>;
     type Outputs = X::Outputs;
+    type Setting = X::Setting;
 
     fn tick(
         &mut self,
@@ -54,8 +57,8 @@ where
         self.x.tick(&Frame::generate(|i| input[i + 1])) // @todo input.offset()?
     }
 
-    fn set(&mut self, parameter: Tag, value: f64) {
-        self.x.set(parameter, value);
+    fn set(&mut self, setting: Self::Setting) {
+        self.x.set(setting)
     }
 
     fn reset(&mut self, sample_rate: Option<f64>) {
@@ -64,51 +67,71 @@ where
         self.trigger.reset();
     }
 
-    fn route(&self, input: &SignalFrame, frequency: f64) -> SignalFrame {
+    fn route(&mut self, input: &SignalFrame, frequency: f64) -> SignalFrame {
         self.x.route(input, frequency)
     }
 
-    fn ping(&mut self, probe: bool, hash: AttoRand) -> AttoRand {
+    fn ping(&mut self, probe: bool, hash: AttoHash) -> AttoHash {
         self.x.ping(probe, hash.hash(Self::ID))
-    }
-
-    fn get(&self, parameter: Tag) -> Option<f64> {
-        self.x.get(parameter)
     }
 }
 
-// @todo -- indclude high / low threshold in the struct
-// pub struct SchmittTrigger {
-//     pub threshold_low: f32,
-//     pub threshold_high: f32,
-//     pub is_high: bool,
-// }
+#[derive(Clone)]
+pub struct TriggerListener<F, T: Float> {
+    trigger: SchmittTrigger,
+    f: F,
+    _phantom: PhantomData<T>,
+}
 
-// impl SchmittTrigger {
-//     pub fn new(threshold_low: f32, threshold_high: f32) -> SchmittTrigger {
-//         SchmittTrigger {
-//             threshold_low,
-//             threshold_high,
-//             is_high: false,
-//         }
-//     }
+impl<F, T: Float> TriggerListener<F, T>
+where
+    F: Fn(bool) + Clone,
+{
+    pub fn new(f: F) -> Self {
+        Self {
+            f,
+            trigger: SchmittTrigger::default(),
+            _phantom: PhantomData::default(),
+        }
+    }
+}
 
-//     pub fn update(&mut self, input: f32) -> bool {
-//         if self.is_high {
-//             if input <= self.threshold_low {
-//                 self.is_high = false;
-//             }
-//         } else {
-//             if input >= self.threshold_high {
-//                 self.is_high = true;
-//             }
-//         }
-//         self.is_high
-//     }
-// }
+impl<F, T: Float> AudioNode for TriggerListener<F, T>
+where
+    F: Fn(bool) + Clone,
+{
+    const ID: u64 = 99;
+    type Sample = T;
+    type Inputs = U1;
+    type Outputs = U1;
+    type Setting = ();
+
+    #[inline]
+    fn tick(
+        &mut self,
+        input: &Frame<Self::Sample, Self::Inputs>,
+    ) -> Frame<Self::Sample, Self::Outputs> {
+        let gate = input[0];
+
+        if let Some(is_high) = self.trigger.tick(gate, 0.0, 0.001) {
+            (self.f)(is_high);
+        }
+
+        *input
+    }
+    fn route(&mut self, input: &SignalFrame, _frequency: f64) -> SignalFrame {
+        input.clone()
+    }
+}
 
 pub struct SchmittTrigger {
     is_open: AtomicBool,
+}
+
+impl Clone for SchmittTrigger {
+    fn clone(&self) -> Self {
+        SchmittTrigger::new()
+    }
 }
 
 impl SchmittTrigger {
@@ -155,4 +178,12 @@ where
     <<X as AudioNode>::Inputs as Add<U1>>::Output: Size<f32>,
 {
     An(Trigger::new(unit))
+}
+
+#[inline]
+pub fn trigger_listener<F, T: Float>(f: F) -> An<TriggerListener<F, T>>
+where
+    F: Fn(bool) + Clone + Send + Sync,
+{
+    An(TriggerListener::new(f))
 }

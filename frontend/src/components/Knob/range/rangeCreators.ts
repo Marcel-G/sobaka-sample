@@ -112,3 +112,62 @@ export const createToggleRange = (offLabel = 'Off', onLabel = 'On'): ChoiceRange
     { value: 1, label: onLabel }
   ]
 })
+
+/**
+ * Creates a range that displays time in ms.
+ *
+ * @param offLabel The label for when the value is 0.
+ * @param onLabel The label for when the value is 1.
+ */
+export const createTimeRange = (start = 0, end = 1): ContinuousRange => ({
+  type: RangeType.Continuous,
+  start,
+  end,
+  stringToValue: (value, unit) => {
+    if (unit === 's') {
+      return value
+    } else if (unit === 'ms') {
+      return value / 1000
+    }
+    return value / 1000
+  },
+  valueToString: (value: number) => {
+    const strValue = (value * 1000).toFixed(0)
+    return strValue + 'ms'
+  }
+})
+
+export const createScaleRange = (start = 0, end = 1): ContinuousRange => ({
+  type: RangeType.Continuous,
+  start,
+  end,
+  step: 0.01
+})
+
+export const createVoltPerOctaveRange = (start = 0, end = 8): ContinuousRange => ({
+  type: RangeType.Continuous,
+  start,
+  end,
+  stringToValue: (value: number, unit: string) => {
+    if (unit.toLowerCase() === 'hz') {
+      return Math.log2(value / 16.35)
+    } else if (unit.toLowerCase() === 'khz') {
+      return Math.log2(value / 16384)
+    }
+
+    return value
+  }
+})
+
+export const createBpmRange = (start = 0, end = 320): ContinuousRange => ({
+  type: RangeType.Continuous,
+  start,
+  end,
+  step: 1,
+  stringToValue: (value: number, unit: string) => {
+    if (unit.toLowerCase() === 'hz') {
+      return 60 / value
+    }
+    return value
+  }
+})

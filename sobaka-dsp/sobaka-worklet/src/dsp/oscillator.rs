@@ -3,7 +3,7 @@ use fundsp::prelude::*;
 /// PhaseOscillator oscillator.
 /// - Input 0: frequency in Hz.
 /// - Output 0: oscillator wave.
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct PhaseOscillator<T: Real, F>
 where
     F: Fn(T) -> T,
@@ -17,7 +17,7 @@ where
 
 impl<T: Real, F> PhaseOscillator<T, F>
 where
-    F: Fn(T) -> T,
+    F: Fn(T) -> T + Clone,
 {
     /// Create oscillator.
     pub fn new(generator: F, sample_rate: f64) -> Self {
@@ -47,12 +47,13 @@ where
 
 impl<T: Real, F> AudioNode for PhaseOscillator<T, F>
 where
-    F: Fn(T) -> T,
+    F: Fn(T) -> T + Clone,
 {
     const ID: u64 = 21;
     type Sample = T;
     type Inputs = U1;
     type Outputs = U1;
+    type Setting = ();
 
     fn reset(&mut self, sample_rate: Option<f64>) {
         self.phase = match self.initial_phase {
@@ -93,7 +94,7 @@ where
         self.reset(None);
     }
 
-    fn route(&self, _input: &SignalFrame, _frequency: f64) -> SignalFrame {
+    fn route(&mut self, _input: &SignalFrame, _frequency: f64) -> SignalFrame {
         let mut output = new_signal_frame(self.outputs());
         output[0] = Signal::Latency(0.0);
         output

@@ -11,7 +11,7 @@ pub enum StepSequencerEvent {
 }
 #[waw::derive::derive_command]
 pub enum StepSequencerCommand {
-    /// Update the step values 
+    /// Update the step values
     UpdateSteps([[bool; 8]; 4]),
 }
 
@@ -30,16 +30,6 @@ pub struct StepSequencer {
 }
 
 impl StepSequencer {
-    fn set_step(&mut self, channel: usize, step: usize, value: bool) {
-        let step = self
-            .steps
-            .get_mut(channel)
-            .and_then(|r| r.get_mut(step))
-            .unwrap();
-
-        *step = value;
-    }
-
     fn get_step(&self, channel: usize, step: usize) -> bool {
         *self.steps.get(channel).and_then(|s| s.get(step)).unwrap()
     }
@@ -71,9 +61,7 @@ impl AudioModule for StepSequencer {
 
     fn on_command(&mut self, command: Self::Command) {
         match command {
-            StepSequencerCommand::UpdateSteps(steps) => {
-                self.steps = steps
-            }
+            StepSequencerCommand::UpdateSteps(steps) => self.steps = steps,
         }
     }
 
