@@ -20,6 +20,10 @@ pub struct Clock {
     inner: FundspWorklet<ClockParams>,
 }
 
+pub fn sine_with_phase<T: Real>(phase: T) -> An<Sine<T>> {
+    An(Sine::with_phase(DEFAULT_SR, Some(phase)))
+}
+
 impl AudioModule for Clock {
     type Param = ClockParams;
 
@@ -30,7 +34,10 @@ impl AudioModule for Clock {
         let param_storage = FundspWorklet::create_param_storage();
 
         let module = {
-            let clock_square = || sine() >> map(|f| if f[0] > 0.0 { 1.0 } else { -1.0 });
+            // Using the same initial phase so oscillators are in sync.
+            // otherwise fundsp applies pseudo-random phase to each oscillator.
+            let clock_square =
+                || sine_with_phase(0.0) >> map(|f| if f[0] > 0.0 { 1.0 } else { -1.0 });
 
             let divide = [1.0, 2.0, 4.0, 8.0, 16.0];
 

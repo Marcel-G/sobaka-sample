@@ -36,6 +36,7 @@
     createScaleRange,
     createTimeRange
   } from '../../components/Knob/range/rangeCreators'
+  import Tooltip from '../../components/Tooltip.svelte'
 
   export let state: State
   let name = 'envelope'
@@ -104,16 +105,24 @@
       />
       <div class="values">
         <div class="input">
-          <Input bind:value={state.attack} range={duration} />
+          <Tooltip label="attack" position="left">
+            <Input bind:value={state.attack} range={duration} />
+          </Tooltip>
         </div>
         <div class="input">
-          <Input bind:value={state.decay} range={duration} />
+          <Tooltip label="decay">
+            <Input bind:value={state.decay} range={duration} />
+          </Tooltip>
         </div>
         <div class="input">
-          <Input bind:value={state.sustain} range={scalar} />
+          <Tooltip label="sustain">
+            <Input bind:value={state.sustain} range={scalar} />
+          </Tooltip>
         </div>
         <div class="input">
-          <Input bind:value={state.release} range={duration} />
+          <Tooltip label="release">
+            <Input bind:value={state.release} range={duration} />
+          </Tooltip>
         </div>
       </div>
     </div>
@@ -138,7 +147,6 @@
   .controls {
     display: flex;
     flex-direction: column;
-    overflow: hidden;
     height: 100%;
   }
 

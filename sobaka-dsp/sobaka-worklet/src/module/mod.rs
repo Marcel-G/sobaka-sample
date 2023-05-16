@@ -8,5 +8,6 @@ pub mod quantiser;
 pub mod reverb;
 pub mod sample_and_hold;
 pub mod sampler;
+pub mod scope;
 pub mod sequencer;
 pub mod step_sequencer;

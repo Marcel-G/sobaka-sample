@@ -9,6 +9,7 @@ export interface ModuleContext {
 export const get_module_context = () => getContext<ModuleContext>(MODULE_CONTEXT)
 
 export const init_module_context = (module_id: string) => {
+  // @todo -- put all module scoped method here
   const module_context: ModuleContext = {
     id: module_id
   }

@@ -85,7 +85,7 @@ impl AudioModule for Oscillator {
                     >> shape(Shape::Tanh(0.8))
             };
 
-            reset_trigger(oversample(multi_osc))
+            reset_trigger(multi_osc)
         };
 
         Oscillator {

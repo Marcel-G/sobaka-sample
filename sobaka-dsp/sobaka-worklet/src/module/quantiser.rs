@@ -1,7 +1,4 @@
-use crate::{
-    dsp::quantiser::{dsp_quantiser},
-    fundsp_worklet::FundspWorklet,
-};
+use crate::{dsp::quantiser::dsp_quantiser, fundsp_worklet::FundspWorklet};
 use fundsp::setting::{listen, Sender};
 use waw::{
     buffer::{AudioBuffer, ParamBuffer},

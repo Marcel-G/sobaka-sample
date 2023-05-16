@@ -25,7 +25,10 @@
 
   $: list = (Object.keys(MODULES) as ModuleUI[]).filter(dumb_fuzzy(search))
   $: selected_index = clamp(selected_index, 0, list.length - 1)
-  $: selection_refs[selected_index]?.scrollIntoView({ block: 'center' })
+  $: selection_refs[selected_index]?.scrollIntoView({
+    block: 'nearest',
+    inline: 'nearest'
+  })
 
   function handle_create(type: ModuleUI) {
     space.create_module(type, into_grid_coords(position))

@@ -24,55 +24,57 @@
   import { into_style } from '../../components/Theme.svelte'
   import { PlugType } from '../../workspace/plugs'
   import { onDestroy, onMount } from 'svelte'
-  import Knob from '../../components/Knob/Knob.svelte'
-  import Button from '../../components/Button.svelte'
   import { get_context as get_audio_context } from '../../audio'
-  import { create_scope, Scope } from './render'
   import Layout from '../../components/Layout.svelte'
   import RingSpinner from '../../components/RingSpinner.svelte'
-  import { Range, RangeType } from '../../components/Knob/range'
+  import { PointBufferData, ScopeController } from 'sobaka-dsp'
+  import {
+    createScaleRange,
+    createTimeRange
+  } from '../../components/Knob/range/rangeCreators'
+  import ScopeChannel from './ScopeChannel.svelte'
+  import Tooltip from '../../components/Tooltip.svelte'
+  import Input from '../../components/Knob/Input.svelte'
 
   export let state: State
   let name = 'scope'
-  let scope: Scope
+  let scope: ScopeController
+  let node: AudioNode
   let loading = true
+
+  let frame: PointBufferData = []
+  let next_frame: number
 
   const context = get_audio_context()
 
-  onMount(async () => {
-    // Needs to be AnalyzerNode
-    scope = create_scope($context)
+  const update_frame = () => {
+    frame = scope.frame() || frame
+    next_frame = requestAnimationFrame(update_frame)
+  }
 
-    scope.start()
+  onMount(async () => {
+    const { ScopeController } = await import('sobaka-dsp')
+    scope = await ScopeController.create($context)
+    node = scope.node()
+
+    requestAnimationFrame(update_frame)
 
     loading = false
   })
 
-  $: canvas = scope?.canvas
-
   $: threshold = state.threshold
-  $: scope?.threshold.set(threshold)
+  $: scope?.command({ SetThreshold: threshold })
 
   $: time = state.time
-  $: scope?.time.set(time)
+  $: scope?.command({ SetScale: time })
 
-  $: trigger = state.trigger
-  $: scope?.trigger.set(trigger)
-
-  const threshold_range: Range = {
-    type: RangeType.Continuous,
-    start: -1,
-    end: 1
-  }
-
-  const time_range: Range = {
-    type: RangeType.Continuous,
-    start: 0,
-    end: 12
-  }
+  const threshold_range = createScaleRange(-1, 1)
+  const time_range = createTimeRange(0, 0.5)
 
   onDestroy(() => {
-    scope?.stop()
+    cancelAnimationFrame(next_frame)
+    scope?.destroy()
+    scope?.free()
   })
 </script>
 
@@ -82,27 +84,48 @@
       <RingSpinner />
     </Layout>
   {:else}
-    <div>
+    <div class="scope-controls">
       <div class="screen">
-        <div class="oscilloscope-wrapper">
-          <canvas class="canvas" bind:this={$canvas} />
-        </div>
+        {#each frame as channel, i (i)}
+          {#if channel.length > 0}
+            <ScopeChannel data={channel} />
+          {/if}
+        {/each}
       </div>
       <div class="controls">
-        <Knob bind:value={state.threshold} range={threshold_range} label="threshold" />
-        <Knob bind:value={state.time} range={time_range} label="time" />
-        <Button
-          pressed={state.trigger}
-          onClick={() => (state.trigger = !state.trigger)}
-        />
+        <div class="input">
+          <Tooltip label="threshold" position="left">
+            <Input bind:value={state.threshold} range={threshold_range} />
+          </Tooltip>
+        </div>
+        <div class="input">
+          <Tooltip label="time">
+            <Input bind:value={state.time} range={time_range} />
+          </Tooltip>
+        </div>
       </div>
     </div>
   {/if}
   <div slot="inputs">
     <Plug
       id={0}
-      label="signal"
-      ctx={{ type: PlugType.Input, module: scope?.node, connectIndex: 0 }}
+      label="signal_1"
+      ctx={{ type: PlugType.Input, module: node, connectIndex: 0 }}
+    />
+    <Plug
+      id={1}
+      label="signal_2"
+      ctx={{ type: PlugType.Input, module: node, connectIndex: 1 }}
+    />
+    <Plug
+      id={2}
+      label="signal_3"
+      ctx={{ type: PlugType.Input, module: node, connectIndex: 2 }}
+    />
+    <Plug
+      id={3}
+      label="signal_4"
+      ctx={{ type: PlugType.Input, module: node, connectIndex: 3 }}
     />
   </div>
 </Panel>
@@ -110,21 +133,24 @@
 <style>
   .screen {
     position: relative;
-    padding-bottom: 75%;
-    margin: 0 -0.5rem;
+    overflow: hidden;
+    background-color: var(--module-knob-background);
+    box-shadow: inset 0 0 0.25rem var(--background);
+    border-radius: 5px;
+    flex: 1 1 auto;
+
+    display: flex;
+    flex-direction: column;
+  }
+
+  .scope-controls {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
   }
   .controls {
-    display: grid;
-    grid-template-columns: min-content min-content min-content;
+    display: flex;
+    flex-direction: row;
     padding-top: 0.5rem;
-  }
-  .oscilloscope-wrapper {
-    position: absolute;
-    inset: 0;
-    overflow: hidden;
-  }
-  .canvas {
-    width: 100%;
-    height: 100%;
   }
 </style>

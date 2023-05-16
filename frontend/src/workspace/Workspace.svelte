@@ -32,7 +32,8 @@
   const store = space.store
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const handle_double_click = (_event: MouseEvent) => {
+  const handle_double_click = (event: MouseEvent) => {
+    $mouse_position = { x: event.offsetX, y: event.offsetY }
     toolbox_visible = true
     toolbox_position = $mouse_position
   }
@@ -48,12 +49,10 @@
   }
 
   const handle_mouse_move = (event: MouseEvent) => {
-    if (event.target instanceof HTMLElement) {
-      const rect = workspace_element.getBoundingClientRect()
-      const x = event.clientX - rect.left
-      const y = event.clientY - rect.top
-      $mouse_position = { x, y }
-    }
+    const rect = workspace_element.getBoundingClientRect()
+    const x = event.clientX - rect.left
+    const y = event.clientY - rect.top
+    $mouse_position = { x, y }
   }
 
   const handle_close = () => {
@@ -86,7 +85,11 @@
   </svelte:fragment>
 </Navigation>
 
-<svelte:window on:keydown={handle_global_keydown} on:mousemove={handle_mouse_move} />
+<svelte:window
+  on:keydown={handle_global_keydown}
+  on:wheel={handle_mouse_move}
+  on:mousemove={handle_mouse_move}
+/>
 <div
   class="workspace"
   on:click|self={handle_close}

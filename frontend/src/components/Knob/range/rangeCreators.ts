@@ -144,6 +144,7 @@ export const createScaleRange = (start = 0, end = 1): ContinuousRange => ({
   step: 0.01
 })
 
+// @todo -- accept frequency as A4, A#4, etc. & combine with `createFrequencyRange`
 export const createVoltPerOctaveRange = (start = 0, end = 8): ContinuousRange => ({
   type: RangeType.Continuous,
   start,
