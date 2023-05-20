@@ -62,8 +62,7 @@ where
     }
 
     fn reset(&mut self, sample_rate: Option<f64>) {
-        let inner_sr = sample_rate.map(|sr| sr * 2.0);
-        self.x.reset(inner_sr);
+        self.x.reset(sample_rate);
         self.trigger.reset();
     }
 
