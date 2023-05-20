@@ -39,12 +39,12 @@
     createScaleRange,
     createVoltPerOctaveRange
   } from '../../components/Knob/range/rangeCreators'
-    import { ChoiceRange, RangeType } from '../../components/Knob/range'
-    import Switch from '../../components/Knob/Switch.svelte'
-    import Sine from './Sine.svelte'
-    import Saw from './Saw.svelte'
-    import Square from './Square.svelte'
-    import Triangle from './Triangle.svelte'
+  import { ChoiceRange, RangeType } from '../../components/Knob/range'
+  import Switch from '../../components/Knob/Switch.svelte'
+  import Sine from './Sine.svelte'
+  import Saw from './Saw.svelte'
+  import Square from './Square.svelte'
+  import Triangle from './Triangle.svelte'
 
   export let state: State
   let name = 'oscillator'
@@ -66,7 +66,6 @@
   // Update the sobaka node when the state changes
   $: pitch = state.pitch
   $: pitch_param?.setValueAtTime(pitch, 0)
-
 
   const freq_range = createVoltPerOctaveRange()
 
@@ -108,7 +107,11 @@
       </Switch>
       <Knob bind:value={state.pitch} range={freq_range} label="pitch" orientation="ns">
         <div slot="knob-inputs">
-          <Plug id={0} label="pitch cv" ctx={{ type: PlugType.Param, param: pitch_param }} />
+          <Plug
+            id={0}
+            label="pitch cv"
+            ctx={{ type: PlugType.Param, param: pitch_param }}
+          />
         </div>
       </Knob>
     </div>

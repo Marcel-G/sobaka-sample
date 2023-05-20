@@ -3,7 +3,9 @@ import Envelope, {
   initialState as envelopeInitialState
 } from './Envelope/Envelope.svelte'
 import Filter, { initialState as filterInitialState } from './Filter.svelte'
-import Oscillator, { initialState as oscillatorInitialState } from './Oscillator/Oscillator.svelte'
+import Oscillator, {
+  initialState as oscillatorInitialState
+} from './Oscillator/Oscillator.svelte'
 import Parameter, { initialState as ParameterInitialState } from './Parameter.svelte'
 import Reverb, { initialState as reverbInitialState } from './Reverb.svelte'
 import Sequencer, { initialState as sequencerInitialState } from './Sequencer.svelte'

@@ -13,7 +13,7 @@
   export let range: ChoiceRange
   export let label: string
 
-  const baseAngle = 135 
+  const baseAngle = 135
 
   $: normalised_value = toNormalised(range, value)
 
@@ -71,7 +71,7 @@
     cursor: pointer;
     position: relative;
   }
-  
+
   .dial {
     position: relative;
     grid-row: 1;
