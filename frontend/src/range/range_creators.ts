@@ -129,7 +129,6 @@ export const create_bipolar_scale_range = (start = -1, end = 1): ContinuousRange
   step: 0.01
 })
 
-// @todo -- allow notes in volt per octave ranges
 const note_to_voltage = (note: string): number => {
   const octave = parseInt(note.slice(-1), 10)
   const noteName = note.slice(0, -1)
@@ -146,7 +145,7 @@ const note_to_voltage = (note: string): number => {
     'A',
     'Bb',
     'B'
-  ].indexOf(noteName)
+  ].indexOf(noteName.toUpperCase())
   return octave + noteIndex / 12
 }
 
@@ -154,11 +153,14 @@ export const create_volt_per_octave_range = (start = 0, end = 8): ContinuousRang
   type: RangeType.Continuous,
   start,
   end,
+  stringMatcher: value => Boolean(value.match(/^[A-g]#?[0-9]+/g)),
   stringToValue: (value: number, unit: string) => {
-    if (unit.toLowerCase() === 'hz') {
+    if (unit.match(/^[A-g]#?[0-9]+/g)) {
+      return note_to_voltage(unit)
+    } else if (unit === 'hz') {
       return Math.log2(value / 16.35)
-    } else if (unit.toLowerCase() === 'khz') {
-      return Math.log2(value / 16384)
+    } else if (unit === 'khz') {
+      return Math.log2((value * 1000) / 16.35)
     }
 
     return value
@@ -171,7 +173,7 @@ export const create_bpm_range = (start = 0, end = 320): ContinuousRange => ({
   end,
   step: 1,
   stringToValue: (value: number, unit: string) => {
-    if (unit.toLowerCase() === 'hz') {
+    if (unit === 'hz') {
       return 60 / value
     }
     return value

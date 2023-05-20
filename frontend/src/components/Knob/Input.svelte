@@ -34,6 +34,9 @@
       if (range.type === RangeType.Choice) {
         number = '0'
         unit = element.value
+      } else if (range.stringMatcher?.(element.value)) {
+        number = '0'
+        unit = element.value
       } else {
         const match = element.value.match(/^-?[0-9]+(\.[0-9]+)?/g)
         if (!match) {
