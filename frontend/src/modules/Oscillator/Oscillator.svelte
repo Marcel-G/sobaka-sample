@@ -6,26 +6,18 @@
   }
 
   type State = {
-    sine: number
-    square: number
-    saw: number
-    triangle: number
     pitch: number
-    mode: 0 | 1 | 2 | 3
+    shape: number
   }
 
   export const initialState: State = {
-    sine: 0,
-    square: 0,
-    saw: 0,
-    triangle: 0,
     pitch: 0,
-    mode: 0
+    shape: 0
   }
 </script>
 
 <script lang="ts">
-  import type { Oscillator } from 'sobaka-dsp'
+  import type { Oscillator, OscillatorShape } from 'sobaka-dsp'
   import { onDestroy, onMount } from 'svelte'
   import Panel from '../shared/Panel.svelte'
   import Plug from '../shared/Plug.svelte'
@@ -35,10 +27,7 @@
   import { get_context as get_audio_context } from '../../audio'
   import Layout from '../../components/Layout.svelte'
   import RingSpinner from '../../components/RingSpinner.svelte'
-  import {
-    createScaleRange,
-    createVoltPerOctaveRange
-  } from '../../components/Knob/range/rangeCreators'
+  import { createVoltPerOctaveRange } from '../../components/Knob/range/rangeCreators'
   import { ChoiceRange, RangeType } from '../../components/Knob/range'
   import Switch from '../../components/Knob/Switch.svelte'
   import Sine from './Sine.svelte'
@@ -55,6 +44,8 @@
 
   const context = get_audio_context()
 
+  const shapes: OscillatorShape[] = ['Sine', 'Square', 'Triangle', 'Saw']
+
   onMount(async () => {
     const { Oscillator } = await import('sobaka-dsp')
     oscillator = await Oscillator.create($context)
@@ -67,16 +58,13 @@
   $: pitch = state.pitch
   $: pitch_param?.setValueAtTime(pitch, 0)
 
+  $: oscillator?.command({ SetShape: shapes[state.shape] })
+
   const freq_range = createVoltPerOctaveRange()
 
-  const mode: ChoiceRange = {
+  const shape_range: ChoiceRange = {
     type: RangeType.Choice,
-    choices: [
-      { label: 'square', value: 0 },
-      { label: 'sine', value: 1 },
-      { label: 'saw', value: 2 },
-      { label: 'triangle', value: 3 }
-    ]
+    choices: shapes.map((shape, i) => ({ label: shape, value: i }))
   }
 
   onDestroy(() => {
@@ -92,15 +80,15 @@
     </Layout>
   {:else}
     <div class="controls">
-      <Switch bind:value={state.mode} range={mode} label="shape">
+      <Switch bind:value={state.shape} range={shape_range} label="shape">
         <div class="wave" slot="value">
-          {#if state.mode === 0}
+          {#if shapes[state.shape] === 'Square'}
             <Square />
-          {:else if state.mode === 1}
+          {:else if shapes[state.shape] === 'Sine'}
             <Sine />
-          {:else if state.mode === 2}
+          {:else if shapes[state.shape] === 'Saw'}
             <Saw />
-          {:else if state.mode === 3}
+          {:else if shapes[state.shape] === 'Triangle'}
             <Triangle />
           {/if}
         </div>
