@@ -11,6 +11,7 @@
     saw: number
     triangle: number
     pitch: number
+    mode: 0 | 1 | 2 | 3
   }
 
   export const initialState: State = {
@@ -18,7 +19,8 @@
     square: 0,
     saw: 0,
     triangle: 0,
-    pitch: 0
+    pitch: 0,
+    mode: 0
   }
 </script>
 
@@ -49,10 +51,6 @@
   let oscillator: Oscillator
   let node: AudioNode
   let pitch_param: AudioParam
-  let saw_param: AudioParam
-  let sine_param: AudioParam
-  let square_param: AudioParam
-  let triangle_param: AudioParam
   let loading = true
 
   const context = get_audio_context()
@@ -62,10 +60,6 @@
     oscillator = await Oscillator.create($context)
     node = oscillator.node()
     pitch_param = oscillator.get_param('Pitch')
-    saw_param = oscillator.get_param('Saw')
-    sine_param = oscillator.get_param('Sine')
-    square_param = oscillator.get_param('Square')
-    triangle_param = oscillator.get_param('Triangle')
     loading = false
   })
 
@@ -73,27 +67,16 @@
   $: pitch = state.pitch
   $: pitch_param?.setValueAtTime(pitch, 0)
 
-  $: saw = state.saw
-  $: saw_param?.setValueAtTime(saw, 0)
-
-  $: sine = state.sine
-  $: sine_param?.setValueAtTime(sine, 0)
-
-  $: square = state.square
-  $: square_param?.setValueAtTime(square, 0)
-
-  $: triangle = state.triangle
-  $: triangle_param?.setValueAtTime(triangle, 0)
 
   const freq_range = createVoltPerOctaveRange()
-  const scalar = createScaleRange()
+
   const mode: ChoiceRange = {
     type: RangeType.Choice,
     choices: [
-      { label: 'square', value: 0, data: { component: Square } },
-      { label: 'sine', value: 1, data: { component: Sine  } },
-      { label: 'saw', value: 2, data: { component: Saw } },
-      { label: 'triangle', value: 3, data: { component: Triangle } }
+      { label: 'square', value: 0 },
+      { label: 'sine', value: 1 },
+      { label: 'saw', value: 2 },
+      { label: 'triangle', value: 3 }
     ]
   }
 
@@ -103,32 +86,34 @@
   })
 </script>
 
-<Panel {name} height={13} width={8} custom_style={into_style(theme)}>
+<Panel {name} height={8} width={8} custom_style={into_style(theme)}>
   {#if loading}
     <Layout type="center">
       <RingSpinner />
     </Layout>
   {:else}
     <div class="controls">
-      <Switch range={mode} label="pitch"/>
-      <Knob bind:value={state.pitch} range={freq_range} label="pitch" />
-      <!-- <Knob bind:value={state.saw} range={scalar} label="saw" />
-      <Knob bind:value={state.sine} range={scalar} label="sine" />
-      <Knob bind:value={state.square} range={scalar} label="square" />
-      <Knob bind:value={state.triangle} range={scalar} label="triangle" /> -->
+      <Switch bind:value={state.mode} range={mode} label="shape">
+        <div class="wave" slot="value">
+          {#if state.mode === 0}
+            <Square />
+          {:else if state.mode === 1}
+            <Sine />
+          {:else if state.mode === 2}
+            <Saw />
+          {:else if state.mode === 3}
+            <Triangle />
+          {/if}
+        </div>
+      </Switch>
+      <Knob bind:value={state.pitch} range={freq_range} label="pitch" orientation="ns">
+        <div slot="knob-inputs">
+          <Plug id={0} label="pitch cv" ctx={{ type: PlugType.Param, param: pitch_param }} />
+        </div>
+      </Knob>
     </div>
   {/if}
   <div slot="inputs">
-    <Plug
-      id={0}
-      label="pitch_1 cv"
-      ctx={{ type: PlugType.Input, module: node, connectIndex: 1 }}
-    />
-    <!-- @todo polyphony
-      <Plug id={2} label="pitch_2 cv" type={PlugType.Input} for_module={oscillator} />
-      <Plug id={3} label="pitch_3 cv" type={PlugType.Input} for_module={oscillator} />
-      <Plug id={4} label="pitch_4 cv" type={PlugType.Input} for_module={oscillator} />
-    -->
     <Plug
       id={1}
       label="reset"
@@ -147,10 +132,15 @@
 <style>
   .controls {
     display: grid;
-    grid-template-columns: auto;
+    grid-template-columns: auto auto;
   }
 
-  .controls .span {
-    grid-column: 1 / span 2;
+  .wave {
+    height: 0.75rem;
+    display: flex;
+    justify-content: center;
+    fill: var(--module-foreground);
+    stroke: var(--module-foreground);
+    margin-bottom: 0.25rem;
   }
 </style>
