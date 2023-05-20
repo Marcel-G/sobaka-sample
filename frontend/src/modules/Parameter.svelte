@@ -24,7 +24,7 @@
   import { get_context as get_audio_context } from '../audio'
   import Layout from '../components/Layout.svelte'
   import RingSpinner from '../components/RingSpinner.svelte'
-  import { createScaleRange } from '../components/Knob/range/rangeCreators'
+  import { create_scale_range } from '../range/range_creators'
 
   const context = get_audio_context()
 
@@ -39,7 +39,7 @@
     loading = false
   })
 
-  $: param_range = createScaleRange(state.min, state.max)
+  $: param_range = create_scale_range(state.min, state.max)
 
   // Update the sobaka node when the state changes
   $: value = state.value

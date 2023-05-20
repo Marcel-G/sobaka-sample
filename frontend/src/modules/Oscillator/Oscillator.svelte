@@ -27,9 +27,9 @@
   import { get_context as get_audio_context } from '../../audio'
   import Layout from '../../components/Layout.svelte'
   import RingSpinner from '../../components/RingSpinner.svelte'
-  import { createVoltPerOctaveRange } from '../../components/Knob/range/rangeCreators'
-  import { ChoiceRange, RangeType } from '../../components/Knob/range'
-  import Switch from '../../components/Knob/Switch.svelte'
+  import { create_volt_per_octave_range } from '../../range/range_creators'
+  import { ChoiceRange, RangeType } from '../../range/range'
+  import Switch from '../../components/Switch.svelte'
   import Sine from './Sine.svelte'
   import Saw from './Saw.svelte'
   import Square from './Square.svelte'
@@ -60,7 +60,7 @@
 
   $: oscillator?.command({ SetShape: shapes[state.shape] })
 
-  const freq_range = createVoltPerOctaveRange()
+  const freq_range = create_volt_per_octave_range()
 
   const shape_range: ChoiceRange = {
     type: RangeType.Choice,

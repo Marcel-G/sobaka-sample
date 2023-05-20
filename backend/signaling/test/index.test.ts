@@ -4,7 +4,7 @@ import { test, expect, vi, describe, beforeEach, afterEach } from "vitest";
 import { useDynalite } from "vitest-environment-dynalite";
 import { handler } from '../src/index';
 import crypto from 'crypto';
-import { createConnectEvent, createDisconnectEvent, createLambdaContext, createPingMessageEvent, createPublishMessageEvent, createSubscribeMessageEvent, createUnsubscribeMessageEvent } from "./eventMocks";
+import { createConnectEvent, createDisconnectEvent, createLambdaContext, createPingMessageEvent, createPublishMessageEvent, createSubscribeMessageEvent, createUnsubscribeMessageEvent } from "./event_mocks";
 import { DynamoDB } from "@aws-sdk/client-dynamodb";
 import { getDb } from "../src/db";
 import { ApiGatewayManagementApi } from "@aws-sdk/client-apigatewaymanagementapi";

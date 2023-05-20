@@ -32,10 +32,7 @@
   import RingSpinner from '../../components/RingSpinner.svelte'
   import Graph from './Graph.svelte'
   import Input from '../../components/Knob/Input.svelte'
-  import {
-    createScaleRange,
-    createTimeRange
-  } from '../../components/Knob/range/rangeCreators'
+  import { create_scale_range, create_time_range } from '../../range/range_creators'
   import Tooltip from '../../components/Tooltip.svelte'
 
   export let state: State
@@ -53,8 +50,8 @@
 
   const context = get_audio_context()
 
-  const duration = createTimeRange()
-  const scalar = createScaleRange()
+  const duration = create_time_range()
+  const scalar = create_scale_range()
 
   onMount(async () => {
     const { Envelope } = await import('sobaka-dsp')

@@ -27,7 +27,7 @@
   import { Tuple } from '../@types'
   import Layout from '../components/Layout.svelte'
   import RingSpinner from '../components/RingSpinner.svelte'
-  import { Range, RangeType } from '../components/Knob/range'
+  import { Range, RangeType } from '../range/range'
 
   const context = get_audio_context()
 

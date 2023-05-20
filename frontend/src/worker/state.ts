@@ -1,7 +1,7 @@
-import { WorkspaceMeta } from 'src/workspace/state'
 import { clearDocument, IndexeddbPersistence } from 'y-indexeddb'
 import * as Y from 'yjs'
 import { get_repo } from './ipfs'
+import type { WorkspaceMeta } from '../workspace/state'
 
 const SHARED_STATE_PATH = '/state/shared/'
 const DRAFT_STATE_PATH = '/state/draft/'

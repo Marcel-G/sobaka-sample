@@ -21,7 +21,7 @@
   import { get_context as get_audio_context } from '../audio'
   import Layout from '../components/Layout.svelte'
   import RingSpinner from '../components/RingSpinner.svelte'
-  import { createTimeRange } from '../components/Knob/range/rangeCreators'
+  import { create_time_range } from '../range/range_creators'
 
   export let state: State
   let name = 'delay'
@@ -44,7 +44,7 @@
   $: time = state.time
   $: delay_time_param?.setValueAtTime(time, $context.currentTime)
 
-  const delay_range = createTimeRange(0, 10)
+  const delay_range = create_time_range(0, 10)
 
   onDestroy(() => {
     delay?.destroy()

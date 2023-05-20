@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { RangeType, Range } from './range'
-  import { fromString, limit, toString } from './range/rangeFunctions'
+  import { RangeType, Range } from '../../range/range'
+  import { from_string, limit, to_string } from '../../range/range_functions'
 
   export let value = 0.0
   export let range: Range
@@ -42,7 +42,7 @@
         number = match[0]
         unit = element.value.replace(number, '')
       }
-      value = limit(range, fromString(range, parseFloat(number), unit))
+      value = limit(range, from_string(range, parseFloat(number), unit))
       element.select()
     }
   }
@@ -50,7 +50,7 @@
   const handleBlur = (event: FocusEvent) => {
     const element = event.target as HTMLInputElement
     // @todo -- doesn't seem idiomatic
-    element.value = toString(range, value)
+    element.value = to_string(range, value)
     isMouseDown = false
   }
 </script>
@@ -62,7 +62,7 @@
   on:mouseup={handleMouseUp}
   on:keydown={handleKeyDown}
   on:blur={handleBlur}
-  value={toString(range, value)}
+  value={to_string(range, value)}
 />
 
 <style>

@@ -22,7 +22,7 @@
   import { get_context as get_audio_context } from '../audio'
   import Layout from '../components/Layout.svelte'
   import RingSpinner from '../components/RingSpinner.svelte'
-  import { createScaleRange } from '../components/Knob/range/rangeCreators'
+  import { create_bipolar_scale_range } from '../range/range_creators'
 
   export let state: State
   let name = 'vca'
@@ -32,7 +32,7 @@
 
   const context = get_audio_context()
 
-  const attenuverter = createScaleRange(-1, 1)
+  const attenuverter = create_bipolar_scale_range()
 
   onMount(async () => {
     vca = new GainNode($context)

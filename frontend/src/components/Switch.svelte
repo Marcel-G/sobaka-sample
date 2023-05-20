@@ -1,13 +1,13 @@
 <script context="module" lang="ts">
-  import { ChoiceRange } from './range/range'
+  import { ChoiceRange } from '../range/range'
 </script>
 
 <script lang="ts">
-  import Arc from './Arc.svelte'
-  import { fromNormalised, toNormalised } from './range/rangeFunctions'
-  import useDrag, { OnDrag, relative_to_element } from '../../actions/drag'
-  import useWheel, { OnWheel } from '../../actions/wheel'
-  import Tooltip from '../Tooltip.svelte'
+  import Arc from './Knob/Arc.svelte'
+  import { from_normalised, to_normalised } from '../range/range_functions'
+  import useDrag, { OnDrag, relative_to_element } from '../actions/drag'
+  import useWheel, { OnWheel } from '../actions/wheel'
+  import Tooltip from './Tooltip.svelte'
 
   export let value = 0.0
   export let range: ChoiceRange
@@ -15,7 +15,7 @@
 
   const baseAngle = 135
 
-  $: normalised_value = toNormalised(range, value)
+  $: normalised_value = to_normalised(range, value)
 
   let start_value = normalised_value
   const capture_start_value = () => {
@@ -25,11 +25,11 @@
   const handle_drag: OnDrag = (event, origin, element) => {
     const { y } = relative_to_element(event, origin, element)
     const delta = (-1 * y) / 250
-    value = fromNormalised(range, start_value + delta)
+    value = from_normalised(range, start_value + delta)
   }
 
   const handle_wheel: OnWheel = (event, position) => {
-    value = fromNormalised(range, start_value + position.y)
+    value = from_normalised(range, start_value + position.y)
   }
 </script>
 

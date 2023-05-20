@@ -20,7 +20,7 @@
   import { get_context as get_audio_context } from '../audio'
   import Layout from '../components/Layout.svelte'
   import RingSpinner from '../components/RingSpinner.svelte'
-  import { createBpmRange } from '../components/Knob/range/rangeCreators'
+  import { create_bpm_range } from '../range/range_creators'
   import { Clock } from 'sobaka-dsp'
 
   export let state: State
@@ -33,7 +33,7 @@
   const context = get_audio_context()
 
   // @todo -- make this work with volt per octave
-  const bpm = createBpmRange()
+  const bpm = create_bpm_range()
 
   onMount(async () => {
     clock = await Clock.create($context)
