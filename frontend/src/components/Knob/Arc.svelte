@@ -84,5 +84,6 @@
   d={describeArc(x, y, radius, startAngle, endAngle)}
   fill="none"
   {stroke}
+  stroke-linecap="round"
   stroke-width={strokeWidth}
 />

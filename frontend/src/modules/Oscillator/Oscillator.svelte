@@ -1,5 +1,5 @@
 <script context="module" lang="ts">
-  import { ModuleTheme } from '../components/Theme.svelte'
+  import { ModuleTheme } from '../../components/Theme.svelte'
   export const theme: Partial<ModuleTheme> = {
     highlight: 'var(--pink)',
     background: 'var(--pink-dark)'
@@ -25,18 +25,24 @@
 <script lang="ts">
   import type { Oscillator } from 'sobaka-dsp'
   import { onDestroy, onMount } from 'svelte'
-  import Panel from './shared/Panel.svelte'
-  import Plug from './shared/Plug.svelte'
-  import { into_style } from '../components/Theme.svelte'
-  import { PlugType } from '../workspace/plugs'
-  import Knob from '../components/Knob/Knob.svelte'
-  import { get_context as get_audio_context } from '../audio'
-  import Layout from '../components/Layout.svelte'
-  import RingSpinner from '../components/RingSpinner.svelte'
+  import Panel from '../shared/Panel.svelte'
+  import Plug from '../shared/Plug.svelte'
+  import { into_style } from '../../components/Theme.svelte'
+  import { PlugType } from '../../workspace/plugs'
+  import Knob from '../../components/Knob/Knob.svelte'
+  import { get_context as get_audio_context } from '../../audio'
+  import Layout from '../../components/Layout.svelte'
+  import RingSpinner from '../../components/RingSpinner.svelte'
   import {
     createScaleRange,
     createVoltPerOctaveRange
-  } from '../components/Knob/range/rangeCreators'
+  } from '../../components/Knob/range/rangeCreators'
+    import { ChoiceRange, RangeType } from '../../components/Knob/range'
+    import Switch from '../../components/Knob/Switch.svelte'
+    import Sine from './Sine.svelte'
+    import Saw from './Saw.svelte'
+    import Square from './Square.svelte'
+    import Triangle from './Triangle.svelte'
 
   export let state: State
   let name = 'oscillator'
@@ -81,6 +87,15 @@
 
   const freq_range = createVoltPerOctaveRange()
   const scalar = createScaleRange()
+  const mode: ChoiceRange = {
+    type: RangeType.Choice,
+    choices: [
+      { label: 'square', value: 0, data: { component: Square } },
+      { label: 'sine', value: 1, data: { component: Sine  } },
+      { label: 'saw', value: 2, data: { component: Saw } },
+      { label: 'triangle', value: 3, data: { component: Triangle } }
+    ]
+  }
 
   onDestroy(() => {
     oscillator?.destroy()
@@ -95,13 +110,12 @@
     </Layout>
   {:else}
     <div class="controls">
-      <div class="span">
-        <Knob bind:value={state.pitch} range={freq_range} label="pitch" />
-      </div>
-      <Knob bind:value={state.saw} range={scalar} label="saw" />
+      <Switch range={mode} label="pitch"/>
+      <Knob bind:value={state.pitch} range={freq_range} label="pitch" />
+      <!-- <Knob bind:value={state.saw} range={scalar} label="saw" />
       <Knob bind:value={state.sine} range={scalar} label="sine" />
       <Knob bind:value={state.square} range={scalar} label="square" />
-      <Knob bind:value={state.triangle} range={scalar} label="triangle" />
+      <Knob bind:value={state.triangle} range={scalar} label="triangle" /> -->
     </div>
   {/if}
   <div slot="inputs">
@@ -133,7 +147,7 @@
 <style>
   .controls {
     display: grid;
-    grid-template-columns: auto auto;
+    grid-template-columns: auto;
   }
 
   .controls .span {
