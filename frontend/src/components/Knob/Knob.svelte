@@ -5,7 +5,7 @@
 <script lang="ts">
   import Arc from './Arc.svelte'
   import { from_normalised, to_normalised } from '../../range/range_functions'
-  import Input from './Input.svelte'
+  import Input from '../Input.svelte'
   import useDrag, { OnDrag, relative_to_element } from '../../actions/drag'
   import useWheel, { OnWheel } from '../../actions/wheel'
   import Tooltip from '../Tooltip.svelte'

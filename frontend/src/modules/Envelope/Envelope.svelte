@@ -31,7 +31,7 @@
   import Layout from '../../components/Layout.svelte'
   import RingSpinner from '../../components/RingSpinner.svelte'
   import Graph from './Graph.svelte'
-  import Input from '../../components/Knob/Input.svelte'
+  import Input from '../../components/Input.svelte'
   import { create_scale_range, create_time_range } from '../../range/range_creators'
   import Tooltip from '../../components/Tooltip.svelte'
 

@@ -31,7 +31,7 @@
   import { create_scale_range, create_time_range } from '../../range/range_creators'
   import ScopeChannel from './ScopeChannel.svelte'
   import Tooltip from '../../components/Tooltip.svelte'
-  import Input from '../../components/Knob/Input.svelte'
+  import Input from '../../components/Input.svelte'
 
   export let state: State
   let name = 'scope'
