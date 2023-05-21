@@ -17,9 +17,7 @@ import Vca, { initialState as vcaInitialState } from './Vca.svelte'
 import Noise, { initialState as noiseInitialState } from './Noise.svelte'
 import Delay, { initialState as delayInitialState } from './Delay.svelte'
 import Scope, { initialState as scopeInitialState } from './Scope/Scope.svelte'
-import SpecScope, {
-  initialState as specScopeInitialState
-} from './SpecScope.svelte'
+import SpecScope, { initialState as specScopeInitialState } from './SpecScope.svelte'
 import Midi, { initialState as midiInitialState } from './Midi.svelte'
 import Lfo, { initialState as lfoInitialState } from './Lfo.svelte'
 import Quantiser, { initialState as quantiserInitialState } from './Quantiser.svelte'

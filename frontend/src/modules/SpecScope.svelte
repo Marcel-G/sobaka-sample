@@ -19,7 +19,6 @@
   import { get_context as get_audio_context } from '../audio'
   import Layout from '../components/Layout.svelte'
   import RingSpinner from '../components/RingSpinner.svelte'
-  import { clamp } from 'lodash'
 
   export let state: State
   let name = 'spec_scope'
@@ -38,67 +37,85 @@
     return getComputedStyle(canvas).getPropertyValue(name)
   }
 
-  /**
-   * Converts frequency to canvas value.
-   * @param f
-   */
-  const frequencyToCanvas = (f: number): number => {
-    return f <= 0 ? -1 : (Math.log10(f) - 1.301) / 3
-  }
-
   const draw_wave = (
     ctx: CanvasRenderingContext2D,
     frequencyData: Float32Array,
     width: number,
     height: number
   ) => {
+    // Graph view parameters
+    const minFreq = 20 // Minimum frequency to display (in Hz)
+    const maxFreq = 5000 // Maximum frequency to display (in Hz)
+    const minDB = -120 // Minimum dB to display
+    const maxDB = 0 // Maximum dB to display
+
+    // Logarithmic frequency scale conversion
+    const frequencyToIndex = (frequency: number) => {
+      const nyquist = $context.sampleRate / 2
+      const index = Math.round((frequency / nyquist) * frequencyData.length)
+      return index
+    }
+
+    // Logarithmic frequency scale conversion
+    const frequencyToX = (frequency: number) => {
+      const logMinFreq = Math.log10(minFreq)
+      const logMaxFreq = Math.log10(maxFreq)
+      const logFrequency = Math.log10(frequency)
+      const x = ((logFrequency - logMinFreq) / (logMaxFreq - logMinFreq)) * width
+      return x
+    }
+
+    // Db scale conversion
+    const amplitudeToY = (amplitude: number) => {
+      const percentage = (amplitude - minDB) / (maxDB - minDB)
+      const y = height - percentage * height
+      return y
+    }
+
+    // Find the tallest peak and its fundamental frequency
+    let maxAmplitude = -Infinity
+    let maxAmplitudeIndex = -1
+
     ctx.beginPath()
     ctx.moveTo(0, height)
 
-    const w = width
-    const h = height
-    const iscale = 1 / (frequencyData.length - 1)
+    for (let i = frequencyToIndex(minFreq); i < frequencyToIndex(maxFreq); i++) {
+      const frequency = i * ($context.sampleRate / node.fftSize)
 
-    const minDb = -100 // Minimum decibels
-    const maxDb = 0 // Maximum decibels
+      const amplitude = frequencyData[i]
 
-    const sr2 = $context.sampleRate / 2
-    const dx = -sr2 / (frequencyData.length * 2)
-    const yscale = 1 / (maxDb - minDb)
-    const y0 = minDb
-
-    let prevX = w * frequencyToCanvas(0 * sr2 + dx)
-    let prevY = h
-
-    ctx.beginPath()
-    ctx.moveTo(prevX, prevY)
-    for (let i = 0; i < frequencyData.length; i++) {
-      if (
-        frequencyData[i] === frequencyData[i - 1] &&
-        frequencyData[i] === frequencyData[i + 1]
-      ) {
-        continue
+      if (amplitude > maxAmplitude) {
+        maxAmplitude = amplitude
+        maxAmplitudeIndex = i
       }
-      const db = clamp(frequencyData[i], minDb, maxDb)
 
-      const x = w * frequencyToCanvas(i * iscale * sr2 + dx)
-      const y = h * (1 - yscale * (db - y0))
-      ctx.lineTo(x, prevY)
+      const x = frequencyToX(frequency)
+      const y = amplitudeToY(amplitude)
+
       ctx.lineTo(x, y)
-      prevX = x
-      prevY = y
     }
 
-    const x = w * frequencyToCanvas(frequencyData.length * iscale * sr2 + dx)
-    ctx.lineTo(x, prevY)
-    ctx.lineTo(x, h)
-    ctx.lineTo(0, h)
-
-    ctx.strokeStyle = get_css_var('--foreground')
+    ctx.lineTo(width, height)
+    ctx.closePath()
     ctx.fillStyle = get_css_var('--foreground')
-    ctx.lineWidth = 1
-    ctx.stroke()
     ctx.fill()
+
+    // Draw line at the tallest peak (fundamental frequency)
+    const fundamentalFreq = maxAmplitudeIndex * ($context.sampleRate / node.fftSize)
+    const fundamentalX = frequencyToX(fundamentalFreq)
+    if (fundamentalFreq >= minFreq && fundamentalFreq <= maxFreq) {
+      ctx.strokeStyle = get_css_var('--module-highlight')
+      ctx.lineWidth = 2
+      ctx.beginPath()
+      ctx.moveTo(fundamentalX, 0)
+      ctx.lineTo(fundamentalX, height)
+      ctx.stroke()
+
+      // Render fundamental frequency in the bottom left corner
+      ctx.fillStyle = get_css_var('--foreground')
+      ctx.font = '12px monospace'
+      ctx.fillText(`${fundamentalFreq.toFixed(2)}Hz`, 10, 15)
+    }
   }
 
   const draw = (data: Float32Array) => {
