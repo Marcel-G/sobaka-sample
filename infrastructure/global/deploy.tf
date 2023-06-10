@@ -1,3 +1,13 @@
+
+terraform {
+  required_providers {
+    github = {
+      source  = "integrations/github"
+      version = ">= 5.0"
+    }
+  }
+}
+
 module "iam_role" {
   source  = "babbel/iam-role-for-github-repository/aws"
   version = "~> 1.0"
