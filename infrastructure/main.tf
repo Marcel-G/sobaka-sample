@@ -49,6 +49,12 @@ module "signaling" {
   global_acm_certificate_arn = module.global.global_acm_certificate_arn
 }
 
+module "libp2p_bootstrap" {
+  source = "../backend/libp2p-bootstrap/infrastructure"
+  name                       = "${terraform.workspace}-libp2p"
+  global_deploy_role         = module.global.global_deploy_role.arn
+}
+
 module "frontend" {
   source = "../frontend/infrastructure"
 
