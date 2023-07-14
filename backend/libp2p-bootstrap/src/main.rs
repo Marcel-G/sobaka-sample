@@ -2,34 +2,30 @@ use anyhow::{Context, Result};
 use clap::Parser;
 use futures::future::{select, Either};
 use futures::StreamExt;
+use libp2p::{StreamProtocol, Transport};
+use libp2p::kad::KademliaBucketInserts;
 use libp2p::{
     core::muxing::StreamMuxerBox,
-    gossipsub, identify, identity,
+    identify, identity,
     kad::record::store::MemoryStore,
     kad::{Kademlia, KademliaConfig},
     multiaddr::{Multiaddr, Protocol},
     relay,
-    swarm::{
-        keep_alive, AddressRecord, AddressScore, NetworkBehaviour, Swarm, SwarmBuilder, SwarmEvent,
-    },
-    PeerId, Transport,
+    swarm::{keep_alive, NetworkBehaviour, Swarm, SwarmBuilder, SwarmEvent},
+    PeerId,
 };
 use libp2p_quic as quic;
 use libp2p_webrtc as webrtc;
 use libp2p_webrtc::tokio::Certificate;
-use log::{debug, error, info, warn};
+use log::{debug, info, warn};
 use std::net::{IpAddr, Ipv4Addr};
 use std::path::Path;
-use std::{
-    borrow::Cow,
-    collections::hash_map::DefaultHasher,
-    hash::{Hash, Hasher},
-    time::{Duration, Instant},
-};
+use std::time::Duration;
 use tokio::fs;
 
+const KADEMLIA_PROTOCOL_NAME: StreamProtocol =
+    StreamProtocol::new("/universal-connectivity/lan/kad/1.0.0");
 const TICK_INTERVAL: Duration = Duration::from_secs(15);
-const KADEMLIA_PROTOCOL_NAME: &[u8] = b"/universal-connectivity/lan/kad/1.0.0";
 const PORT_WEBRTC: u16 = 9090;
 const PORT_QUIC: u16 = 9091;
 const LOCAL_KEY_PATH: &str = "./local_key";
@@ -84,7 +80,8 @@ async fn main() -> Result<()> {
                 let opt_address_webrtc = Multiaddr::from(ip)
                     .with(Protocol::Udp(PORT_WEBRTC))
                     .with(Protocol::WebRTCDirect);
-                swarm.add_external_address(opt_address_webrtc, AddressScore::Infinite);
+
+                swarm.add_external_address(opt_address_webrtc);
             }
             Err(_) => {
                 debug!(
@@ -103,128 +100,107 @@ async fn main() -> Result<()> {
 
     let mut tick = futures_timer::Delay::new(TICK_INTERVAL);
 
-    let now = Instant::now();
     loop {
         match select(swarm.next(), &mut tick).await {
-            Either::Left((event, _)) => match event.unwrap() {
-                SwarmEvent::NewListenAddr { address, .. } => {
-                    let p2p_address = address.with(Protocol::P2p((*swarm.local_peer_id()).into()));
-                    info!("Listen p2p address: {p2p_address:?}");
-                }
-                SwarmEvent::ConnectionEstablished { peer_id, .. } => {
-                    info!("Connected to {peer_id}");
-                }
-                SwarmEvent::OutgoingConnectionError { peer_id, error } => {
-                    warn!("Failed to dial {peer_id:?}: {error}");
-                }
-                SwarmEvent::ConnectionClosed { peer_id, cause, .. } => {
-                    warn!("Connection to {peer_id} closed: {cause:?}");
-                    swarm.behaviour_mut().kademlia.remove_peer(&peer_id);
-                    info!("Removed {peer_id} from the routing table (if it was in there).");
-                }
-                SwarmEvent::Behaviour(BehaviourEvent::Relay(e)) => {
-                    debug!("{:?}", e);
-                }
-                SwarmEvent::Behaviour(BehaviourEvent::Gossipsub(
-                    libp2p::gossipsub::Event::Message {
-                        message_id: _,
-                        propagation_source: _,
-                        message,
-                    },
-                )) => {
-                    info!(
-                        "Received message from {:?}: {}",
-                        message.source,
-                        String::from_utf8(message.data).unwrap()
-                    );
-                }
-                SwarmEvent::Behaviour(BehaviourEvent::Gossipsub(
-                    libp2p::gossipsub::Event::Subscribed { peer_id, topic },
-                )) => {
-                    debug!("{peer_id} subscribed to {topic}");
-                }
-                SwarmEvent::Behaviour(BehaviourEvent::Identify(e)) => {
-                    info!("BehaviourEvent::Identify {:?}", e);
+            Either::Left((event, _)) => {
+                match event.unwrap() {
+                    SwarmEvent::NewListenAddr { address, .. } => {
+                        let p2p_address = address.with(Protocol::P2p(*swarm.local_peer_id()));
+                        info!("Listen p2p address: {p2p_address:?}");
+                    }
+                    SwarmEvent::ConnectionEstablished { peer_id, .. } => {
+                        info!("Connected to {peer_id}");
+                    }
+                    SwarmEvent::OutgoingConnectionError { peer_id, error, .. } => {
+                        warn!("Failed to dial {peer_id:?}: {error}");
+                    }
+                    SwarmEvent::ConnectionClosed { peer_id, cause, .. } => {
+                        warn!("Connection to {peer_id} closed: {cause:?}");
 
-                    if let identify::Event::Error { peer_id, error } = e {
-                        match error {
-                            libp2p::swarm::ConnectionHandlerUpgrErr::Timeout => {
-                                // When a browser tab closes, we don't get a swarm event
-                                // maybe there's a way to get this with TransportEvent
-                                // but for now remove the peer from routing table if there's an Identify timeout
-                                swarm.behaviour_mut().kademlia.remove_peer(&peer_id);
-                                info!("Removed {peer_id} from the routing table (if it was in there).");
-                            }
-                            _ => {
-                                debug!("{error}");
-                            }
+                        if !swarm.is_connected(&peer_id) {
+                            swarm.behaviour_mut().kademlia.remove_peer(&peer_id);
+                            info!("Removed {peer_id} from the routing table (if it was in there).");
+                        } else {
+                            info!("but we're still connected baby!");
                         }
-                    } else if let identify::Event::Received {
-                        peer_id,
-                        info:
-                            identify::Info {
-                                listen_addrs,
-                                protocols,
-                                observed_addr,
-                                ..
-                            },
-                    } = e
-                    {
-                        debug!("identify::Event::Received observed_addr: {}", observed_addr);
+                    }
+                    SwarmEvent::Behaviour(BehaviourEvent::Relay(e)) => {
+                        debug!("{:?}", e);
+                    }
+                    SwarmEvent::Behaviour(BehaviourEvent::Identify(e)) => {
+                        info!("BehaviourEvent::Identify {:?}", e);
 
-                        swarm.add_external_address(observed_addr, AddressScore::Infinite);
-
-                        if protocols
-                            .iter()
-                            .any(|p| p.as_bytes() == KADEMLIA_PROTOCOL_NAME)
+                        if let identify::Event::Error { peer_id, error } = e {
+                            match error {
+                                libp2p::swarm::StreamUpgradeError::Timeout => {
+                                    // @todo -- could I remove a specific address in this case?
+                                    // When a browser tab closes, we don't get a swarm event
+                                    // maybe there's a way to get this with TransportEvent
+                                    // but for now remove the peer from routing table if there's an Identify timeout
+                                    // swarm.behaviour_mut().kademlia.remove_address(&peer_id);
+                                    // info!("Removed {peer_id} from the routing table (if it was in there).");
+                                }
+                                _ => {
+                                    debug!("{error}");
+                                }
+                            }
+                        } else if let identify::Event::Received {
+                            peer_id,
+                            info:
+                                identify::Info {
+                                    listen_addrs,
+                                    protocols,
+                                    observed_addr,
+                                    ..
+                                },
+                        } = e
                         {
-                            for addr in listen_addrs {
-                                debug!("identify::Event::Received listen addr: {}", addr);
-                                // TODO (fixme): the below doesn't work because the address is still missing /webrtc/p2p even after https://github.com/libp2p/js-libp2p-webrtc/pull/121
-                                // swarm.behaviour_mut().kademlia.add_address(&peer_id, addr);
+                            debug!("identify::Event::Received observed_addr: {}", observed_addr);
 
-                                let webrtc_address = addr
-                                    .with(Protocol::WebRTC)
-                                    .with(Protocol::P2p(peer_id.into()));
+                            swarm.add_external_address(observed_addr);
 
-                                swarm
-                                    .behaviour_mut()
-                                    .kademlia
-                                    .add_address(&peer_id, webrtc_address.clone());
-                                info!("Added {webrtc_address} to the routing table.");
+                            if protocols.iter().any(|p| p == &KADEMLIA_PROTOCOL_NAME) {
+                                for addr in listen_addrs {
+                                    debug!("identify::Event::Received listen addr: {}", addr);
+                                    // TODO (fixme): the below doesn't work because the address is still missing /webrtc/p2p even after https://github.com/libp2p/js-libp2p-webrtc/pull/121
+                                    // swarm.behaviour_mut().kademlia.add_address(&peer_id, addr);
+
+                                    let p2p = Multiaddr::from(Protocol::P2pCircuit);
+                                    if addr.ends_with(&p2p.with(Protocol::WebRTC)) {
+                                        let webrtc_address = addr.with(Protocol::P2p(peer_id));
+
+                                        swarm
+                                            .behaviour_mut()
+                                            .kademlia
+                                            .add_address(&peer_id, webrtc_address.clone());
+                                        info!("Added {webrtc_address} to the routing table.");
+                                    }
+                                }
                             }
                         }
                     }
+                    SwarmEvent::Behaviour(BehaviourEvent::Kademlia(e)) => {
+                        debug!("Kademlia event: {:?}", e);
+                    }
+                    event => {
+                        debug!("Other type of event: {:?}", event);
+                    }
                 }
-                SwarmEvent::Behaviour(BehaviourEvent::Kademlia(e)) => {
-                    debug!("Kademlia event: {:?}", e);
-                }
-                event => {
-                    debug!("Other type of event: {:?}", event);
-                }
-            },
+            }
             Either::Right(_) => {
                 tick = futures_timer::Delay::new(TICK_INTERVAL);
 
                 debug!(
                     "external addrs: {:?}",
-                    swarm.external_addresses().collect::<Vec<&AddressRecord>>()
+                    swarm.external_addresses().collect::<Vec<_>>()
                 );
+
+                swarm.connected_peers().for_each(|peer_id| {
+                    debug!("connected peer: {:?}", peer_id);
+                });
 
                 if let Err(e) = swarm.behaviour_mut().kademlia.bootstrap() {
                     debug!("Failed to run Kademlia bootstrap: {e:?}");
-                }
-
-                let message = format!(
-                    "Hello world! Sent from the rust-peer at: {:4}s",
-                    now.elapsed().as_secs_f64()
-                );
-
-                if let Err(err) = swarm.behaviour_mut().gossipsub.publish(
-                    gossipsub::IdentTopic::new("universal-connectivity"),
-                    message.as_bytes(),
-                ) {
-                    error!("Failed to publish periodic message: {err}")
                 }
             }
         }
@@ -233,10 +209,9 @@ async fn main() -> Result<()> {
 
 #[derive(NetworkBehaviour)]
 struct Behaviour {
-    gossipsub: gossipsub::Behaviour,
     identify: identify::Behaviour,
     kademlia: Kademlia<MemoryStore>,
-    keep_alive: keep_alive::Behaviour,
+    // keep_alive: keep_alive::Behaviour,
     relay: relay::Behaviour,
 }
 
@@ -246,36 +221,6 @@ fn create_swarm(
 ) -> Result<Swarm<Behaviour>> {
     let local_peer_id = PeerId::from(local_key.public());
     debug!("Local peer id: {local_peer_id}");
-
-    // To content-address message, we can take the hash of message and use it as an ID.
-    let message_id_fn = |message: &gossipsub::Message| {
-        let mut s = DefaultHasher::new();
-        message.data.hash(&mut s);
-        gossipsub::MessageId::from(s.finish().to_string())
-    };
-
-    // Set a custom gossipsub configuration
-    let gossipsub_config = gossipsub::ConfigBuilder::default()
-        .validation_mode(gossipsub::ValidationMode::Permissive) // This sets the kind of message validation. The default is Strict (enforce message signing)
-        .message_id_fn(message_id_fn) // content-address messages. No two messages of the same content will be propagated.
-        .mesh_outbound_min(1)
-        .mesh_n_low(1)
-        .flood_publish(true)
-        .build()
-        .expect("Valid config");
-
-    // build a gossipsub network behaviour
-    let mut gossipsub = gossipsub::Behaviour::new(
-        gossipsub::MessageAuthenticity::Signed(local_key.clone()),
-        gossipsub_config,
-    )
-    .expect("Correct configuration");
-
-    // Create a Gossipsub topic
-    let topic = gossipsub::IdentTopic::new("universal-connectivity");
-
-    // subscribes to our topic
-    gossipsub.subscribe(&topic)?;
 
     let transport = {
         let webrtc = webrtc::tokio::Transport::new(local_key.clone(), certificate);
@@ -296,21 +241,23 @@ fn create_swarm(
     };
 
     let identify_config = identify::Behaviour::new(
-        identify::Config::new("/ipfs/0.1.0".into(), local_key.public())
+        identify::Config::new("/ipfs/id/1.0.0".to_string(), local_key.public())
             .with_interval(Duration::from_secs(60)), // do this so we can get timeouts for dropped WebRTC connections
     );
 
     // Create a Kademlia behaviour.
-    let mut cfg = KademliaConfig::default();
-    cfg.set_protocol_names(vec![Cow::Owned(KADEMLIA_PROTOCOL_NAME.to_vec())]);
     let store = MemoryStore::new(local_peer_id);
-    let kad_behaviour = Kademlia::with_config(local_peer_id, store, cfg);
+    let mut kad_config = KademliaConfig::default();
+    
+    kad_config.set_kbucket_inserts(KademliaBucketInserts::OnConnected);
+    kad_config.set_protocol_names(vec![KADEMLIA_PROTOCOL_NAME]);
+
+    let kad_behaviour = Kademlia::with_config(local_peer_id, store, kad_config);
 
     let behaviour = Behaviour {
-        gossipsub,
         identify: identify_config,
         kademlia: kad_behaviour,
-        keep_alive: keep_alive::Behaviour::default(),
+        // keep_alive: keep_alive::Behaviour::default(),
         relay: relay::Behaviour::new(
             local_peer_id,
             relay::Config {

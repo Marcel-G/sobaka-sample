@@ -1,6 +1,7 @@
 import { AudioDataTransport, MediaManager, SharedAudio } from 'sobaka-dsp'
 import { getContext } from 'svelte'
 import { get_repo } from './ipfs'
+import { CID } from 'multiformats/cid';
 
 export const MEDIA_CONTEXT = 'MEDIA_CONTEXT'
 
@@ -17,19 +18,12 @@ export const init_media = () => {
     const audio = await media_manager.load_with(id, async () => {
       try {
         const chunks: Uint8Array[] = []
-        for await (const chunk of get_repo().cat(id)) {
+        for await (const chunk of get_repo().fs.cat(CID.parse(id))) {
           chunks.push(chunk)
         }
 
         const blob = new Blob(chunks)
         const file = new File([blob], id)
-
-        const cid = await get_repo().pin.add(id)
-        await get_repo()
-          .files.cp(cid, MEDIA_PATH + cid.toString(), { parents: true })
-          .catch(() => {
-            // Ignore if it's already in the dir
-          })
 
         return load_audio(id, file).then(into_transport)
       } catch (error) {
@@ -43,15 +37,10 @@ export const init_media = () => {
   }
 
   const store = async (file: File) => {
-    const { cid } = await get_repo().add(file, {
-      pin: true
+    const cid = await get_repo().fs.addFile({
+      path: file.name,
+      content: new Uint8Array(await file.arrayBuffer())
     })
-
-    await get_repo()
-      .files.cp(cid, MEDIA_PATH + cid.toString(), { parents: true })
-      .catch(() => {
-        // Ignore if it's already in the dir
-      })
 
     return cid.toString()
   }
@@ -59,13 +48,6 @@ export const init_media = () => {
   const list = async () => {
     try {
       const entries: string[] = []
-      for await (const entry of get_repo().files.ls(MEDIA_PATH)) {
-        const stat = await get_repo().files.stat(entry.cid)
-
-        if (stat.type === 'file') {
-          entries.push(entry.cid.toString())
-        }
-      }
 
       return entries
     } catch (error) {

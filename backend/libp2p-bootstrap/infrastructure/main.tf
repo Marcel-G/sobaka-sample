@@ -118,8 +118,7 @@ module "vpc" {
   public_subnets          = ["10.0.142.0/24"]
 
 
-  enable_nat_gateway = true
-  single_nat_gateway = false
+  enable_nat_gateway = false
 }
 
 output "ecr_repository_url" {

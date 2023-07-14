@@ -17,8 +17,9 @@
 
   import PointerPositions from '../components/collaborative/PointerPositions.svelte'
   import AvatarList from '../components/collaborative/AvatarList.svelte'
+    import Loading from '../components/Loading.svelte'
+    import NetworkDebug from '../components/NetworkDebug.svelte'
 
-  let loading = false
   let toolbox_visible = false
   let toolbox_position: Position = { x: 0, y: 0 }
   let workspace_element: Element
@@ -90,15 +91,17 @@
   on:wheel={handle_mouse_move}
   on:mousemove={handle_mouse_move}
 />
+<!-- svelte-ignore a11y-click-events-have-key-events -->
 <div
   class="workspace"
   on:click|self={handle_close}
   on:dblclick|self={handle_double_click}
   bind:this={workspace_element}
 >
-  {#if loading}
-    Loading
-  {:else}
+  <NetworkDebug />
+  {#await space.load()}
+    <Loading />
+  {:then}
     {#if toolbox_visible}
       <Toolbox position={toolbox_position} onClose={handle_close} />
     {/if}
@@ -108,7 +111,7 @@
     {/each}
     <PointerPositions />
     <Wires />
-  {/if}
+  {/await}
 </div>
 
 <style>

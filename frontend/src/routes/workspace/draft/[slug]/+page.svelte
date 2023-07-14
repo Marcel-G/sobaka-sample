@@ -6,11 +6,9 @@
 
   export let data: PageData
 
-  const space = init_workspace()
+  $: console.log(data);
 
-  if (data.workspace.id) {
-    space.load_from_local(data.workspace.id)
-  }
+  $: init_workspace(data.workspace)
 </script>
 
 {#key data.workspace.id}

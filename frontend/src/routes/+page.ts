@@ -2,7 +2,7 @@ import { browser } from '$app/environment'
 import _ from 'lodash'
 import { init_user } from '../worker/user'
 import { init_repo } from '../worker/ipfs'
-import { list_local, list_remote } from '../worker/state'
+// import { list_local, list_remote } from '../worker/state'
 import type { PageLoad } from './$types'
 
 export const prerender = true
@@ -17,8 +17,10 @@ export const load: PageLoad = async () => {
 
   // @todo -- reorganise this
   await init_repo(init_user())
-  const shared = await list_remote()
-  const drafts = await list_local()
+  // const shared = await list_remote()
+  // const drafts = await list_local()
+  const shared = []
+  const drafts = []
 
   const shared_with_drafts = shared.map(remote => ({
     remote,

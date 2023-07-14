@@ -9,8 +9,8 @@
   const space = init_workspace()
 
   if (data.workspace.id) {
-    space.load_from_local(data.workspace.id)
-    space.wip_connect_live(data.workspace.id)
+    // space.load_from_local(data.workspace.id)
+    // space.wip_connect_live(data.workspace.id)
   }
 </script>
 

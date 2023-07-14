@@ -22,14 +22,18 @@ const config = {
   build: {
     target: 'esnext'
   },
-  define: {
-    global: 'globalThis'
-  },
   plugins: [crossOriginIsolation, sveltekit()],
+
+  optimizeDeps: {
+    include: ['@libp2p/webrtc', 'multihashes']
+  },
   server: {
     fs: {
       // Allow serving files from one level up to the project root
-      allow: ['../sobaka-dsp']
+      allow: [
+        '../sobaka-dsp',
+        '../../../random/js-libp2p-webrtc'
+      ]
     }
   }
 }
