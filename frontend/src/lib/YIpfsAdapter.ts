@@ -71,14 +71,17 @@ export const resolve_workspace = async (helia: Helia, id: string): Promise<Sobak
 
   const workspace_id = peerIdFromString(id)
   const metadata_id = await name.resolve(workspace_id, {
-    onProgress: (event) => console.log(event)
+    onProgress: (event) => console.log('resolve_workspace:name', event)
   })
-  return j.get<SobakaMetadata>(metadata_id)
+  console.log('resolve_workspace:name', metadata_id.toString());
+  return j.get<SobakaMetadata>(metadata_id, {
+    onProgress: (event) => console.log('resolve_workspace:metadata', event) 
+  })
 }
 
 export const create_workspace = async (helia: Helia): Promise<string> => {
   const j = dagJson(helia)
-  const name = ipns(helia, [dht(helia)])
+  const name = ipns(helia, [dht(helia), pubsub(helia)])
 
   const workspace_key = await helia.libp2p.keychain.createKey(crypto.randomUUID(), 'RSA')
   const workspace_id = await helia.libp2p.keychain.exportPeerId(workspace_key.name)
@@ -96,7 +99,7 @@ export const create_workspace = async (helia: Helia): Promise<string> => {
 
   await name.publish(workspace_id, metadata_id, {
     onProgress: (progress) => console.log(progress),
-    // offline: true
+    offline: true
   })
 
   return workspace_id.toString()
@@ -104,7 +107,7 @@ export const create_workspace = async (helia: Helia): Promise<string> => {
 
 export const createSobakaDocAdapter = (helia: Helia, doc: Y.Doc, workspace_init: SobakaMetadata) => {
   const j = dagJson(helia)
-  const name = ipns(helia, [dht(helia)])
+  const name = ipns(helia, [dht(helia), pubsub(helia)])
   const metadata = cloneDeep(workspace_init)
 
   const load = async () => {
@@ -135,7 +138,7 @@ export const createSobakaDocAdapter = (helia: Helia, doc: Y.Doc, workspace_init:
 
     await name.publish(workspace_id, metadata_id, {
       onProgress: (progress) => console.log('Publishing', progress),
-      // offline: true
+      offline: true
     })
   }, 200)
 

@@ -37,4 +37,5 @@ multiaddr = { git = "https://github.com/Marcel-G/rust-multiaddr", branch = "webr
 libp2p = { path = "../../../../random/rust-libp2p/libp2p" }
 libp2p-quic = { path = "../../../../random/rust-libp2p/transports/quic" }
 libp2p-webrtc = { path = "../../../../random/rust-libp2p/transports/webrtc" }
+webrtc = { git = "https://github.com/Marcel-G/webrtc", branch = "issue-468/fix-dc-close-2" }
 # libp2p = { git = "https://github.com/Marcel-G/rust-libp2p", branch = "deps/update-multiaddr" }

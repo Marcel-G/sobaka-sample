@@ -12,6 +12,7 @@ import { bootstrap } from "@libp2p/bootstrap"
 import { type Multiaddr } from "@multiformats/multiaddr"
 import { ipnsSelector } from 'ipns/selector'
 import { ipnsValidator } from 'ipns/validator'
+import all from "it-all"
 
 export const createLibp2p = async (datastore: Datastore) => {
   const node = await create({
@@ -38,6 +39,9 @@ export const createLibp2p = async (datastore: Datastore) => {
         discoverRelays: 1,
       }),
     ],
+    // connectionManager: {
+    //   dialTimeout: 60000
+    // },
     connectionEncryption: [noise()],
     streamMuxers: [mplex()],
     connectionGater: {
@@ -52,6 +56,7 @@ export const createLibp2p = async (datastore: Datastore) => {
     },
     peerDiscovery: [
       bootstrap({
+        timeout: 0,
         list: [
           // @todo -- setup dnsaddr
           '/ip4/192.168.178.86/udp/9090/webrtc-direct/certhash/uEiCqVO5UKxxQSixgKG0aVGtAzVoY06vUj1uAqsTFIOm9kw/p2p/12D3KooWNmyGUNnt1xaybMR2C2pXLwnYxy3EnfWN4TkPamxdi5Jy',
@@ -77,6 +82,10 @@ export const createLibp2p = async (datastore: Datastore) => {
     }
   })
 
+  node.addEventListener("peer:disconnect", (event) => {
+    console.log('peer:disconnect', event)
+  })
+
   node.addEventListener("peer:discovery", (event) => {
     const { detail } = event
     console.log('peer:discovery', detail.id.toString(), detail)
@@ -88,7 +97,7 @@ export const createLibp2p = async (datastore: Datastore) => {
 
       console.log('connection:open:', conns)
   })
-  node.addEventListener("connection:close", (event) => {
+  node.addEventListener("connection:close", async (event) => {
     const conns = node.getConnections()
       .map(conn => conn.remoteAddr.toString())
 

@@ -225,7 +225,7 @@ fn create_swarm(
     let transport = {
         let webrtc = webrtc::tokio::Transport::new(local_key.clone(), certificate);
 
-        let quic = quic::tokio::Transport::new(quic::Config::new(&local_key));
+        // let quic = quic::tokio::Transport::new(quic::Config::new(&local_key));
 
         webrtc
             .or_transport(quic)
@@ -251,6 +251,7 @@ fn create_swarm(
     
     kad_config.set_kbucket_inserts(KademliaBucketInserts::OnConnected);
     kad_config.set_protocol_names(vec![KADEMLIA_PROTOCOL_NAME]);
+    kad_config.set_record_ttl(Some(Duration::from_secs(60 * 3)));
 
     let kad_behaviour = Kademlia::with_config(local_peer_id, store, kad_config);
 
