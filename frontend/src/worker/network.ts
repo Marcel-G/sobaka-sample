@@ -12,7 +12,6 @@ import { bootstrap } from "@libp2p/bootstrap"
 import { type Multiaddr } from "@multiformats/multiaddr"
 import { ipnsSelector } from 'ipns/selector'
 import { ipnsValidator } from 'ipns/validator'
-import all from "it-all"
 
 export const createLibp2p = async (datastore: Datastore) => {
   const node = await create({
@@ -52,7 +51,7 @@ export const createLibp2p = async (datastore: Datastore) => {
         // here we are explicitly connecting to a local node so do not deny dialing
         // any discovered address
         return false
-      }
+      },
     },
     peerDiscovery: [
       bootstrap({
@@ -67,7 +66,11 @@ export const createLibp2p = async (datastore: Datastore) => {
     services: {
       identify: identifyService(),
       autoNAT: autoNATService(),
-      pubsub: gossipsub(),
+      // https://github.com/ChainSafe/js-libp2p-gossipsub/issues/448
+      pubsub: gossipsub({
+        emitSelf: true,
+        allowPublishToZeroPeers: true,
+      }),
       dht: kadDHT({
         // allowQueryWithZeroPeers: true,
         // kBucketSize: 1,

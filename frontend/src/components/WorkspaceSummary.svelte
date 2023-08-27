@@ -1,9 +1,9 @@
 <script lang="ts">
   import { formatDistanceToNow } from 'date-fns'
   import { invalidateAll } from '$app/navigation'
-  // import { remove_local, remove_remote, WorkspaceMetaId } from '../worker/state'
+  import { SobakaWorkspace } from '../models/Workspace'
 
-  export let meta: WorkspaceMetaId
+  export let workspace: SobakaWorkspace
 
   const handle_delete = async () => {
     // if (meta.type === 'local') {
@@ -14,21 +14,15 @@
     await invalidateAll()
   }
 
-  const href =
-    meta.type === 'local' ? `/workspace/draft/${meta.cid}` : `/workspace/${meta.cid}`
-
-  formatDistanceToNow
+  const href = `/workspace/draft/${workspace.metadata.id}`;
 </script>
 
 <li>
-  <a {href}>{meta.title || 'Untitled'}</a>
-  {#if meta.type === 'local'}
-    (Draft)
-  {/if}
+  <a {href}>{workspace.metadata.name || 'Untitled'}</a>
   <span class="updated-at">
     Updated
     <time>
-      {formatDistanceToNow(new Date(meta.updatedAt))}
+      {formatDistanceToNow(new Date(workspace.metadata.updated))}
     </time> ago
   </span>
   <a href={''} on:click={handle_delete}>Delete</a>

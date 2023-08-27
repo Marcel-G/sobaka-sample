@@ -1,15 +1,21 @@
 import { browser } from '$app/environment'
-import { redirect } from '@sveltejs/kit'
-import { get_helia, init_repo } from '../../../../worker/ipfs'
-import { init_user } from '../../../../worker/user'
+import { error, redirect } from '@sveltejs/kit'
 import type { PageLoad } from './$types'
-import { create_workspace } from '../../../../lib/YIpfsAdapter'
+import { get_storage } from '../../../../worker/storage'
+import { type SobakaWorkspace } from '../../../../models/Workspace'
 
 export const load: PageLoad = async () => {
   if (!browser) throw new Error('Load cannot be run outside of the browser')
 
-  await init_repo(init_user())
+  let workspace: SobakaWorkspace
+  try {
+    const storage = await get_storage()
+    workspace = await storage.init_workspace()
+    console.log(workspace)
+  } catch (e) {
+    console.error(e)
+    throw error(404, 'Failed to create workspace does not exist')
+  }
 
-  const id = await create_workspace(get_helia())
-  throw redirect(307, `/workspace/draft/${id}`)
+  throw redirect(307, `/workspace/draft/${workspace.metadata.id}`)
 }

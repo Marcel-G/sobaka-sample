@@ -3,10 +3,10 @@
   import { writable, Writable } from 'svelte/store'
   import context, { NodeContext, ParamContext, PlugType } from '../../workspace/plugs'
   import Tooltip from '../../components/Tooltip.svelte'
-  import { get_workspace } from '../../workspace/context'
+  import { get_workspace_context } from '../../workspace/context'
   import { get_module_context } from '../context'
 
-  const space = get_workspace()
+  const space = get_workspace_context()
   const { id: module_id } = get_module_context()
   const position = space.module_position(module_id)
 

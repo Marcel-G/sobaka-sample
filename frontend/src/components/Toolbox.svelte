@@ -1,13 +1,13 @@
 <script lang="ts">
   import { clamp } from 'lodash'
-  import { get_workspace } from '../workspace/context'
+  import { get_workspace_context } from '../workspace/context'
   import { MODULES, ModuleUI } from '../modules'
   import { into_grid_coords } from '../modules/shared/Panel.svelte'
 
   export let position = { x: 0, y: 0 }
   export let onClose: () => void
 
-  const space = get_workspace()
+  const space = get_workspace_context()
 
   let search = ''
   let selected_index = 0

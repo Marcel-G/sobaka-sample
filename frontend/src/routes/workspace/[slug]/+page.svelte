@@ -2,17 +2,15 @@
   import type { PageData } from './$types'
 
   import Workspace from '../../../workspace/Workspace.svelte'
-  import { init_workspace } from '../../../workspace/context'
+  import Loading from '../../../components/Loading.svelte'
 
   export let data: PageData
 
-  const space = init_workspace()
-
-  if (data.workspace.id) {
-    space.load_from_remote(data.workspace.id)
-  }
+  $: store = data.workspace.init_store()
 </script>
 
-{#key data.workspace.id}
-  <Workspace />
-{/key}
+{#await store}
+  <Loading />
+{:then space} 
+  <Workspace {space} />
+{/await}

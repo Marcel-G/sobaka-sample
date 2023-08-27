@@ -7,8 +7,7 @@
   import { init_audio } from '../audio'
   import { browser } from '$app/environment'
   import { init_media, MEDIA_CONTEXT } from '../worker/media'
-  import { init_repo } from '../worker/ipfs'
-  import { init_user } from '../worker/user'
+  import NetworkDebug from '../components/NetworkDebug.svelte'
 
   let loading = true
   const audio = init_audio()
@@ -17,8 +16,6 @@
 
   if (browser) {
     onMount(async () => {
-      // @todo -- make initialisation better
-      await init_repo(init_user())
       await audio.load()
       await media.load()
       loading = false
@@ -32,6 +29,7 @@
 
 <CssReset />
 <Theme />
+<NetworkDebug />
 <main>
   {#if $navigating || loading}
     <Loading />

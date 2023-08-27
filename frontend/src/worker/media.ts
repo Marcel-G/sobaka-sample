@@ -1,6 +1,5 @@
 import { AudioDataTransport, MediaManager, SharedAudio } from 'sobaka-dsp'
 import { getContext } from 'svelte'
-import { get_repo } from './ipfs'
 import { CID } from 'multiformats/cid';
 
 export const MEDIA_CONTEXT = 'MEDIA_CONTEXT'
@@ -15,34 +14,11 @@ export const init_media = () => {
   }
 
   const open = async (id: string): Promise<SharedAudio> => {
-    const audio = await media_manager.load_with(id, async () => {
-      try {
-        const chunks: Uint8Array[] = []
-        for await (const chunk of get_repo().fs.cat(CID.parse(id))) {
-          chunks.push(chunk)
-        }
-
-        const blob = new Blob(chunks)
-        const file = new File([blob], id)
-
-        return load_audio(id, file).then(into_transport)
-      } catch (error) {
-        // @todo -- media_manager `load_with` does not properly handle errors
-        console.error(error)
-        throw error
-      }
-    })
-
-    return audio
+    throw new Error('Not implemented')
   }
 
   const store = async (file: File) => {
-    const cid = await get_repo().fs.addFile({
-      path: file.name,
-      content: new Uint8Array(await file.arrayBuffer())
-    })
-
-    return cid.toString()
+    throw new Error('Not implemented')
   }
 
   const list = async () => {

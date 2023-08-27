@@ -1,5 +1,9 @@
 import { get, Readable, writable } from 'svelte/store'
-import { is_fully_linked, WorkspaceStore } from './state'
+import { Link, SobakaWorkspaceStore } from '../models/WorkspaceStore'
+
+export const is_fully_linked = (link: Partial<Link> | null): link is Link => {
+  return Boolean(link?.from && link?.to)
+}
 
 // @todo export these from sobaka-dsp without ssr breaking
 const In = (n: number) => `in-${n}`
@@ -44,7 +48,7 @@ export const store = writable<Record<string, PlugContext>>({})
 
 const init = () => {
   // @todo space arg is a bit awkward here
-  const make = (space: WorkspaceStore, id: string) => {
+  const make = (space: SobakaWorkspaceStore, id: string) => {
     const active_link = space.get_active_link_substore()
 
     const plug_context = get(store)[id]
@@ -88,7 +92,7 @@ const init = () => {
     return id
   }
 
-  const remove = (space: WorkspaceStore, id: string) => {
+  const remove = (space: SobakaWorkspaceStore, id: string) => {
     space.remove_link(id)
 
     // @todo cleanup links when removing link?

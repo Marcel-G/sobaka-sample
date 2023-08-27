@@ -15,7 +15,7 @@
 <script lang="ts">
   import { relative_to_element, useDrag } from '../../actions/drag'
   import type { OnDrag } from '../../actions/drag'
-  import { get_workspace } from '../../workspace/context'
+  import { get_workspace_context } from '../../workspace/context'
   import { get_module_context } from '../context'
 
   export let custom_style = ''
@@ -23,7 +23,7 @@
   export let height = 0
   export let width = 0
 
-  const space = get_workspace()
+  const space = get_workspace_context()
   const { id } = get_module_context()
 
   const position = space.module_position(id)

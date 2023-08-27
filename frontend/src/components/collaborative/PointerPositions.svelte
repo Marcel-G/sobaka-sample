@@ -1,11 +1,12 @@
 <script lang="ts">
-  import { get_workspace } from '../../workspace/context'
-  const space = get_workspace()
+  import { get_workspace_context } from '../../workspace/context'
+  const space = get_workspace_context()
 
-  const users = space.get_user_store()
+  // const users = space.get_user_store()
 </script>
 
-<div class="mouse-position">
+<div>Todo mouse position</div>
+<!-- <div class="mouse-position">
   {#each Object.values($users) as awareness (awareness.user.name)}
     {#if awareness.mouse}
       <div
@@ -16,7 +17,7 @@
       </div>
     {/if}
   {/each}
-</div>
+</div> -->
 
 <style>
   .mouse-position {

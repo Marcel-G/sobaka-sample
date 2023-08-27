@@ -4,6 +4,8 @@
   import WorkspaceSummary from '../components/WorkspaceSummary.svelte'
 
   export let data: PageData
+
+  const workspaces = data.collection?.list();
 </script>
 
 <Navigation />
@@ -14,7 +16,25 @@
 
   <p>Press new in the top right to begin!</p>
 
-  {#if data.orphan_drafts.length}
+  {#if workspaces}
+  {#await workspaces}
+    <p>Loading...</p>
+  {:then workspaces}
+    {#if workspaces.length}
+      <h2>Workspaces:</h2>
+      <ul>
+        {#each workspaces as workspace (workspace.metadata.id)}
+          <WorkspaceSummary workspace={workspace} />
+        {/each}
+      </ul>
+    {:else}
+      <p>No workspaces yet.</p>
+    {/if}
+  {:catch error}
+    <p>{error.message}</p>
+  {/await}
+  {/if}
+  <!-- {#if data.orphan_drafts.length}
     <h2>Draft workspaces:</h2>
     <ul>
       {#each data.orphan_drafts as workspace (workspace.cid)}
@@ -36,7 +56,7 @@
         </WorkspaceSummary>
       {/each}
     </ul>
-  {/if}
+  {/if} -->
 </div>
 
 <style>

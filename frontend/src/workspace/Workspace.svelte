@@ -4,9 +4,8 @@
 </script>
 
 <script lang="ts">
-  import { onDestroy } from 'svelte'
   import { writable } from 'svelte/store'
-  import { get_workspace } from './context'
+  import { init_workspace_context } from './context'
 
   import ModuleWrapper from '../modules/ModuleWrapper.svelte'
   import Toolbox from '../components/Toolbox.svelte'
@@ -17,18 +16,19 @@
 
   import PointerPositions from '../components/collaborative/PointerPositions.svelte'
   import AvatarList from '../components/collaborative/AvatarList.svelte'
-    import Loading from '../components/Loading.svelte'
-    import NetworkDebug from '../components/NetworkDebug.svelte'
+  import { SobakaWorkspaceStore } from '../models/WorkspaceStore'
+
+  export let space: SobakaWorkspaceStore
 
   let toolbox_visible = false
   let toolbox_position: Position = { x: 0, y: 0 }
   let workspace_element: Element
 
-  const space = get_workspace()
+  init_workspace_context(space)
 
-  onDestroy(() => {
-    space.cleanup()
-  })
+  // onDestroy(() => {
+  //   space.cleanup()
+  // })
 
   const store = space.store
 
@@ -68,7 +68,7 @@
     </a>
   </svelte:fragment>
   <svelte:fragment slot="mid">
-    <TitleInput bind:value={$store.meta.title} />
+    <TitleInput bind:value={$store.metadata.title} />
   </svelte:fragment>
   <svelte:fragment slot="right">
     <AvatarList />
@@ -98,20 +98,15 @@
   on:dblclick|self={handle_double_click}
   bind:this={workspace_element}
 >
-  <NetworkDebug />
-  {#await space.load()}
-    <Loading />
-  {:then}
-    {#if toolbox_visible}
-      <Toolbox position={toolbox_position} onClose={handle_close} />
-    {/if}
+  {#if toolbox_visible}
+    <Toolbox position={toolbox_position} onClose={handle_close} />
+  {/if}
 
-    {#each $store.modules as module (module.id)}
-      <ModuleWrapper {module} />
-    {/each}
-    <PointerPositions />
-    <Wires />
-  {/await}
+  {#each $store.modules as module (module.id)}
+    <ModuleWrapper {module} />
+  {/each}
+  <PointerPositions />
+  <Wires />
 </div>
 
 <style>

@@ -62,16 +62,16 @@ async fn main() -> Result<()> {
         .with(Protocol::Udp(PORT_WEBRTC))
         .with(Protocol::WebRTCDirect);
 
-    let address_quic = Multiaddr::from(Ipv4Addr::UNSPECIFIED)
-        .with(Protocol::Udp(PORT_QUIC))
-        .with(Protocol::QuicV1);
+    // let address_quic = Multiaddr::from(Ipv4Addr::UNSPECIFIED)
+    //     .with(Protocol::Udp(PORT_QUIC))
+    //     .with(Protocol::QuicV1);
 
     swarm
         .listen_on(address_webrtc.clone())
         .expect("listen on webrtc");
-    swarm
-        .listen_on(address_quic.clone())
-        .expect("listen on quic");
+    // swarm
+    //     .listen_on(address_quic.clone())
+    //     .expect("listen on quic");
 
     if let Some(listen_address) = opt.listen_address {
         // match on whether the listen address string is an IP address or not (do nothing if not)
@@ -228,15 +228,16 @@ fn create_swarm(
         // let quic = quic::tokio::Transport::new(quic::Config::new(&local_key));
 
         webrtc
-            .or_transport(quic)
-            .map(|fut, _| match fut {
-                futures::future::Either::Right((local_peer_id, conn)) => {
-                    (local_peer_id, StreamMuxerBox::new(conn))
-                }
-                futures::future::Either::Left((local_peer_id, conn)) => {
-                    (local_peer_id, StreamMuxerBox::new(conn))
-                }
-            })
+            // .or_transport(quic)
+            // .map(|fut, _| match fut {
+            //     futures::future::Either::Right((local_peer_id, conn)) => {
+            //         (local_peer_id, StreamMuxerBox::new(conn))
+            //     }
+            //     futures::future::Either::Left((local_peer_id, conn)) => {
+            //         (local_peer_id, StreamMuxerBox::new(conn))
+            //     }
+            // })
+            .map(|(peer_id, conn), _| (peer_id, StreamMuxerBox::new(conn)))
             .boxed()
     };
 

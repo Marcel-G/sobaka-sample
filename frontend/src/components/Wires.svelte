@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { get_workspace } from '../workspace/context'
+  import { get_workspace_context } from '../workspace/context'
   import Wire from './Wire.svelte'
-  const space = get_workspace()
+  const space = get_workspace_context()
   const link_positions = space.get_link_positions()
   const active_link = space.get_active_link_position()
 
