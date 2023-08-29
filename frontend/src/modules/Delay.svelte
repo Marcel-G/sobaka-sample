@@ -34,7 +34,7 @@
 
   onMount(async () => {
     const { Delay } = await import('sobaka-dsp')
-    delay = await Delay.create($context)
+    delay = await Delay.create($context.audio)
     node = delay.node()
     delay_time_param = delay.get_param('DelayTime')
     loading = false
@@ -42,7 +42,7 @@
 
   // Update the sobaka node when the state changes
   $: time = state.time
-  $: delay_time_param?.setValueAtTime(time, $context.currentTime)
+  $: delay_time_param?.setValueAtTime(time, $context.audio.currentTime)
 
   const delay_range = createTimeRange(0, 10)
 

@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { AudioData } from '../../worker/media'
+  import { AudioData } from "../../models/MediaManager"
+
 
   // Data about the loaded audio file
   export let audio_data: AudioData

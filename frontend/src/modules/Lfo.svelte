@@ -33,7 +33,7 @@
   const lfo_range = createBpmRange(0, 600)
 
   onMount(async () => {
-    lfo = new OscillatorNode($context, { type: 'sine' })
+    lfo = new OscillatorNode($context.audio, { type: 'sine' })
 
     loading = false
 
@@ -41,7 +41,7 @@
   })
 
   // Update the sobaka node when the state changes
-  $: lfo?.frequency.setValueAtTime((state.bpm || 0) / 60, $context.currentTime)
+  $: lfo?.frequency.setValueAtTime((state.bpm || 0) / 60, $context.audio.currentTime)
 </script>
 
 <Panel {name} height={6} width={5} custom_style={into_style(theme)}>

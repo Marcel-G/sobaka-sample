@@ -3,21 +3,17 @@
   import Theme from '../components/Theme.svelte'
   import { navigating } from '$app/stores'
   import Loading from '../components/Loading.svelte'
-  import { onDestroy, onMount, setContext } from 'svelte'
+  import { onDestroy, onMount } from 'svelte'
   import { init_audio } from '../audio'
   import { browser } from '$app/environment'
-  import { init_media, MEDIA_CONTEXT } from '../worker/media'
   import NetworkDebug from '../components/NetworkDebug.svelte'
 
   let loading = true
   const audio = init_audio()
-  const media = init_media()
-  setContext(MEDIA_CONTEXT, media)
 
   if (browser) {
     onMount(async () => {
       await audio.load()
-      await media.load()
       loading = false
     })
 

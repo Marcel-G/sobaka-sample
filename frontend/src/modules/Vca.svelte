@@ -35,13 +35,13 @@
   const attenuverter = createScaleRange(-1, 1)
 
   onMount(async () => {
-    vca = new GainNode($context)
+    vca = new GainNode($context.audio)
     gain_param = vca.gain
     loading = false
   })
 
   $: gain = state.value
-  $: gain_param?.setValueAtTime(gain || 0, $context.currentTime)
+  $: gain_param?.setValueAtTime(gain || 0, $context.audio.currentTime)
 </script>
 
 <Panel {name} height={6} width={5} custom_style={into_style(theme)}>

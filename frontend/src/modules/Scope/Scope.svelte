@@ -54,7 +54,7 @@
 
   onMount(async () => {
     const { ScopeController } = await import('sobaka-dsp')
-    scope = await ScopeController.create($context)
+    scope = await ScopeController.create($context.audio)
     node = scope.node()
 
     requestAnimationFrame(update_frame)

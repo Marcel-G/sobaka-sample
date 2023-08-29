@@ -44,7 +44,7 @@
 
   onMount(async () => {
     const { Filter } = await import('sobaka-dsp')
-    filter = await Filter.create($context)
+    filter = await Filter.create($context.audio)
     node = filter.node()
     frequency_param = filter.get_param('Frequency')
     q_param = filter.get_param('Q')
@@ -53,9 +53,9 @@
 
   // Update the sobaka node when the state changes
   $: frequency = state.frequency
-  $: frequency_param?.setValueAtTime(frequency, $context.currentTime)
+  $: frequency_param?.setValueAtTime(frequency, $context.audio.currentTime)
   $: q = state.q
-  $: q_param?.setValueAtTime(q, $context.currentTime)
+  $: q_param?.setValueAtTime(q, $context.audio.currentTime)
 
   const freq_range = createVoltPerOctaveRange()
   const scalar = createScaleRange()

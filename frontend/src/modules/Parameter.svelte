@@ -34,7 +34,7 @@
   let loading = true
 
   onMount(async () => {
-    parameter = new ConstantSourceNode($context)
+    parameter = new ConstantSourceNode($context.audio)
     parameter.start()
     loading = false
   })
@@ -43,7 +43,7 @@
 
   // Update the sobaka node when the state changes
   $: value = state.value
-  $: parameter?.offset.setValueAtTime(value, $context.currentTime)
+  $: parameter?.offset.setValueAtTime(value, $context.audio.currentTime)
 </script>
 
 <Panel {name} height={6} width={5} custom_style={into_style(theme)}>

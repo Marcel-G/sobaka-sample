@@ -25,10 +25,10 @@
   const context = get_audio_context()
 
   onMount(async () => {
-    output = $context.createChannelMerger(2)
+    output = $context.audio.createChannelMerger(2)
     loading = false
 
-    output.connect($context.destination)
+    output.connect($context.audio.destination)
   })
 </script>
 

@@ -50,7 +50,7 @@
 
   onMount(async () => {
     const { Quantiser } = await import('sobaka-dsp')
-    quantiser = await Quantiser.create($context)
+    quantiser = await Quantiser.create($context.audio)
     node = quantiser.node()
     loading = false
   })

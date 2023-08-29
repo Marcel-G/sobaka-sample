@@ -1,7 +1,7 @@
 <script lang="ts">
   import Layout from '../../components/Layout.svelte'
   import RingSpinner from '../../components/RingSpinner.svelte'
-  import { AudioData } from '../../worker/media'
+  import { AudioData } from '../../models/MediaManager'
   import AudioSegments from './AudioSegments.svelte'
   import AudioWaveCanvas from './AudioWaveCanvas.svelte'
   import { WINDOW_SIZE } from './constants'

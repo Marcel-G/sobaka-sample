@@ -139,6 +139,13 @@ export class SobakaStorage {
     return this.file.addBytes(data)
   }
 
+  public async add_file(file: File): Promise<CID> {
+    return this.file.addFile({
+      path: file.name,
+      content: new Uint8Array(await file.arrayBuffer())
+    })
+  }
+
   // @todo
   private async wait_for_connection(): Promise<void> {
     if (this.helia.libp2p.getMultiaddrs().length > 0) return

@@ -32,8 +32,8 @@
   const midi_volt = (pitch: number): number => pitch / 12
 
   onMount(async () => {
-    note = new ConstantSourceNode($context)
-    gate = new ConstantSourceNode($context)
+    note = new ConstantSourceNode($context.audio)
+    gate = new ConstantSourceNode($context.audio)
 
     note.start()
     gate.start()
@@ -49,11 +49,11 @@
     // Attach new device
     default_device = inputs.find(matches({ id: active_device_id }))!
     default_device?.addListener('noteon', event => {
-      note?.offset.setValueAtTime(midi_volt(event.note.number), $context.currentTime)
-      gate?.offset.setValueAtTime(1.0, $context.currentTime)
+      note?.offset.setValueAtTime(midi_volt(event.note.number), $context.audio.currentTime)
+      gate?.offset.setValueAtTime(1.0, $context.audio.currentTime)
     })
     default_device?.addListener('noteoff', () => {
-      gate?.offset.setValueAtTime(0.0, $context.currentTime)
+      gate?.offset.setValueAtTime(0.0, $context.audio.currentTime)
     })
   }
 

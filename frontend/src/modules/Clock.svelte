@@ -36,14 +36,14 @@
   const bpm = createBpmRange()
 
   onMount(async () => {
-    clock = await Clock.create($context)
+    clock = await Clock.create($context.audio)
     node = clock.node()
     bpm_param = clock.get_param('Bpm')
 
     loading = false
   })
 
-  $: bpm_param?.setValueAtTime(state.bpm, $context.currentTime)
+  $: bpm_param?.setValueAtTime(state.bpm, $context.audio.currentTime)
 </script>
 
 <Panel {name} height={8} width={5} custom_style={into_style(theme)}>

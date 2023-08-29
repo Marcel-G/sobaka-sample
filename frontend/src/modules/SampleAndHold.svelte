@@ -28,7 +28,7 @@
 
   onMount(async () => {
     const { SampleAndHold } = await import('sobaka-dsp')
-    sample_and_hold = await SampleAndHold.create($context)
+    sample_and_hold = await SampleAndHold.create($context.audio)
     node = sample_and_hold.node()
     loading = false
   })

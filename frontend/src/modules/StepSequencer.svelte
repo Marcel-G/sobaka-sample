@@ -38,7 +38,7 @@
 
   onMount(async () => {
     const { StepSequencer } = await import('sobaka-dsp')
-    step_sequencer = await StepSequencer.create($context)
+    step_sequencer = await StepSequencer.create($context.audio)
     node = step_sequencer.node()
     loading = false
 

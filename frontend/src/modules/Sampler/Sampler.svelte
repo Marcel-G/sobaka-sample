@@ -34,7 +34,6 @@
   import AudioPreview from './AudioPreview.svelte'
   import AudioDetail from './AudioDetail.svelte'
   import Button from '../../components/Button.svelte'
-  import { get_media_context } from '../../worker/media'
   import Layout from '../../components/Layout.svelte'
   import RingSpinner from '../../components/RingSpinner.svelte'
   import { Range, RangeType } from '../../components/Knob/range'
@@ -48,7 +47,6 @@
   let files: string[] = []
 
   const context = get_audio_context()
-  const media = get_media_context()
 
   let trigger_segment: (segment_index: number) => void
   let audio_data: SharedAudio | null
@@ -56,7 +54,7 @@
 
   onMount(async () => {
     const { SamplerController } = await import('sobaka-dsp')
-    sampler = await SamplerController.create($context)
+    sampler = await SamplerController.create($context.audio)
 
     node = sampler.node()
     loading = false
@@ -71,7 +69,7 @@
       }
     })
 
-    files = await media.list()
+    files = await $context.media.list()
   })
 
   type InputChangeEvent = Event & {
@@ -83,7 +81,7 @@
 
     if (file) {
       loading = true
-      state.sound_id = await media.store(file)
+      state.sound_id = await $context.media.add_file(file)
       loading = false
       state.active_segment = 0
       state.view_position = 0
@@ -102,7 +100,7 @@
   async function load_audio(id: string) {
     audio_data = null
     detections = []
-    const audio = await media.open(id)
+    const audio = await $context.media.load_file(id)
     audio_data = audio.cloned()
 
     if (audio) {
@@ -127,7 +125,7 @@
 
   // Update the sobaka node when the state changes
   $: playback_rate = state.playback_rate
-  $: rate_param?.setValueAtTime(playback_rate, $context.currentTime)
+  $: rate_param?.setValueAtTime(playback_rate, $context.audio.currentTime)
 
   $: active_segment = state.active_segment
   $: sampler?.command({ SetSample: active_segment })
@@ -188,7 +186,7 @@
           <Button
             onClick={async () => {
               state.sound_id = null
-              files = await media.list()
+              files = await $context.media.list()
             }}>Change</Button
           >
         </div>

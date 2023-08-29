@@ -41,7 +41,7 @@
 
   onMount(async () => {
     const { Reverb } = await import('sobaka-dsp')
-    reverb = await Reverb.create($context)
+    reverb = await Reverb.create($context.audio)
     node = reverb.node()
     wet_param = reverb.get_param('Wet')
     delay_param = reverb.get_param('Delay')
@@ -51,10 +51,10 @@
 
   // Update the sobaka node when the state changes
   $: wet = state.wet
-  $: wet_param?.setValueAtTime(wet, $context.currentTime)
+  $: wet_param?.setValueAtTime(wet, $context.audio.currentTime)
 
   $: delay = state.length
-  $: delay_param?.setValueAtTime(delay, $context.currentTime)
+  $: delay_param?.setValueAtTime(delay, $context.audio.currentTime)
 
   const scalar = createScaleRange()
 
