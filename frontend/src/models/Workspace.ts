@@ -60,6 +60,9 @@ export class SobakaWorkspace {
 
   static async from_id(storage: SobakaStorage, id: PeerId): Promise<SobakaWorkspace> {
     const key = await storage.find_key(id.toString())
+    if (key) {
+      await storage.export_key(key)
+    }
     const metadata = await storage.resolve_json<SobakaWorkspaceMetadata>(id)
     const workspace = new SobakaWorkspace(storage, metadata, key)
 
@@ -75,8 +78,10 @@ export class SobakaWorkspace {
     ))
 
     Y.transact(this.doc, () => {
-      Y.applyUpdate(this.doc, Y.mergeUpdates(updates), 'init')
-    })
+      this.doc.getMap('metadata').set('title', this.metadata.name)
+
+      Y.applyUpdate(this.doc, Y.mergeUpdates(updates))
+    }, 'init')
 
     return new SobakaWorkspaceStore(this)
   }

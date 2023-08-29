@@ -22,7 +22,7 @@ import SampleAndHold, {
   initialState as sampleAndHoldInitialState
 } from './SampleAndHold.svelte'
 import Sampler, { initialState as samplerInitialState } from './Sampler/Sampler.svelte'
-import { Module } from '../workspace/state'
+import { Module } from '../models/WorkspaceStore'
 
 export const MODULES = {
   Clock,
