@@ -1,6 +1,7 @@
 import { AudioDataTransport, MediaManager, SharedAudio } from 'sobaka-dsp'
 import { SobakaStorage } from '../worker/storage'
 import { CID } from 'multiformats/cid'
+import { SobakaMediaCollection } from './MediaCollection'
 
 export type AudioData = {
   id: string
@@ -40,23 +41,27 @@ const into_audo_data = async (id: string, data: ArrayBuffer): Promise<AudioData>
 export class SobakaMediaManager {
   private storage: SobakaStorage
   private manager: MediaManager
+  private collection: SobakaMediaCollection
 
-  constructor(storage: SobakaStorage) {
+  constructor(storage: SobakaStorage, collection: SobakaMediaCollection) {
     this.storage = storage
     this.manager = new MediaManager()
+    this.collection = collection
   }
 
-  async load_file(id: string): Promise<SharedAudio> {
+  static async create(storage: SobakaStorage): Promise<SobakaMediaManager> {
+    const collection = await SobakaMediaCollection.from_id(storage, storage.get_client_id());
+    return new SobakaMediaManager(storage, collection)
+  }
+
+  async decode_file(id: string): Promise<SharedAudio> {
     const cid = await CID.parse(id)
 
     return this.manager.load_with(id, async () => {
       try {
-        // Load raw file as bytes from storage
-        const bytes = await this.storage.load_bytes(cid)
+        const file = await this.storage.load_file(cid);
 
-        // Convert bytes to file
-        const blob = new Blob([bytes])
-        const file = new File([blob], cid.toString())
+        this.collection.add(cid)
 
         // Convert file to audio data
         // @todo -- can I use the raw bytes here?
@@ -77,11 +82,16 @@ export class SobakaMediaManager {
   }
 
   async list(): Promise<string[]> {
-    return []
+    const files = await this.collection.list()
+
+    return files.map((id) => id.toString())
   }
 
   async add_file(file: File): Promise<string> {
     const cid = await this.storage.add_file(file)
+
+    await this.collection.add(cid)
+
     return cid.toString()
   }
 }

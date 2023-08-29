@@ -9,7 +9,7 @@ export interface SobakaCollectionMetadata {
   items: string[]
 }
 
-export class SobakaCollection {
+export class SobakaWorkspaceCollection {
   public metadata: SobakaCollectionMetadata
 
   private storage: SobakaStorage
@@ -21,19 +21,19 @@ export class SobakaCollection {
     this.key = key || null
   }
 
-  static async from_id(storage: SobakaStorage, owner_id: PeerId): Promise<SobakaCollection> {
-    const name = 'USER_COL_' + owner_id.toString()
+  static async from_id(storage: SobakaStorage, owner_id: PeerId): Promise<SobakaWorkspaceCollection> {
+    const name = 'USER_WS_' + owner_id.toString()
     try {
       const key = await storage.find_key_by_name(name)
       if (!key) throw new Error('Key not found')
       const id = await storage.export_key(key)
       const metadata = await storage.resolve_json<SobakaCollectionMetadata>(id, { offline: true })
       console.log('Found collection', metadata)
-      return new SobakaCollection(storage, metadata, key)
+      return new SobakaWorkspaceCollection(storage, metadata, key)
     } catch {
       const key = await storage.find_key_by_name(name) || await storage.init_key(name)
       const id = await storage.export_key(key)
-      const collection = new SobakaCollection(storage, {
+      const collection = new SobakaWorkspaceCollection(storage, {
         id: id.toString(),
         items: []
       }, key)
@@ -66,7 +66,7 @@ export class SobakaCollection {
     await this.storage.publish_json(this.metadata, this.key)
   }
 
-  public remove(workspace: SobakaWorkspace): void {
+  public async remove(workspace: SobakaWorkspace): Promise<void> {
     if (!this.key) throw new Error('Cannot mutate collection without key')
     const items = new Set(this.metadata.items)
 
@@ -74,6 +74,6 @@ export class SobakaCollection {
 
     items.delete(workspace.metadata.id)
     this.metadata.items = Array.from(items)
-    this.storage.publish_json(this.metadata, this.key)
+    await this.storage.publish_json(this.metadata, this.key)
   }
 }

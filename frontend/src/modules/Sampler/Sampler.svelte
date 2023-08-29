@@ -100,7 +100,7 @@
   async function load_audio(id: string) {
     audio_data = null
     detections = []
-    const audio = await $context.media.load_file(id)
+    const audio = await $context.media.decode_file(id)
     audio_data = audio.cloned()
 
     if (audio) {

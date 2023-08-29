@@ -38,7 +38,7 @@ export const init_audio = () => {
     )
 
     const storage = await get_storage()
-    const media = new SobakaMediaManager(storage)
+    const media = await SobakaMediaManager.create(storage)
 
     audio_context.update(s => {
       s = {

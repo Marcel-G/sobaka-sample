@@ -16,7 +16,7 @@ import { IDBDatastore } from "datastore-idb"
 
 import { SobakaWorkspace } from "../models/Workspace";
 import { createLibp2p } from './network'
-import { SobakaCollection } from '../models/Collection';
+import { SobakaWorkspaceCollection } from '../models/WorkspaceCollection';
 
 let storage: Promise<SobakaStorage> | SobakaStorage
 
@@ -49,12 +49,14 @@ export class SobakaStorage {
   private json: DAGJSON
   private name: IPNS
   private file: UnixFS
+  private key_cache: Map<KeyInfo, PeerId> = new Map()
 
   constructor(helia: Helia<Libp2p<{ pubsub: PubSub }>>) {
     this.helia = helia
     this.json = dagJson(helia)
     this.name = ipns(helia, [dht(helia), pubsub(helia)])
     this.file = unixfs(helia)
+    this.key_cache = new Map()
   }
 
   /**
@@ -71,8 +73,8 @@ export class SobakaStorage {
     return SobakaWorkspace.from_id(this, id)
   }
 
-  public async get_collection(id: PeerId): Promise<SobakaCollection> {
-    return SobakaCollection.from_id(this, id)
+  public async get_collection(id: PeerId): Promise<SobakaWorkspaceCollection> {
+    return SobakaWorkspaceCollection.from_id(this, id)
   }
 
   public async init_key(name: string = crypto.randomUUID()): Promise<KeyInfo> {
@@ -103,8 +105,12 @@ export class SobakaStorage {
     return this.helia.libp2p.peerId
   }
 
-  public export_key(key: KeyInfo): Promise<PeerId> {
-    return this.helia.libp2p.keychain.exportPeerId(key.name)
+  public async export_key(key: KeyInfo): Promise<PeerId> {
+    if (!this.key_cache.has(key)) {
+      this.key_cache.set(key, await this.helia.libp2p.keychain.exportPeerId(key.name))
+    }
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    return this.key_cache.get(key)!
   }
 
   public async resolve_json<T>(id: PeerId, options?: { offline: boolean }): Promise<T> {
@@ -120,7 +126,7 @@ export class SobakaStorage {
   public async publish_json(data: unknown, key: KeyInfo): Promise<void> {
     const cid = await this.json.add(data)
 
-    const key_id = await this.helia.libp2p.keychain.exportPeerId(key.name)
+    const key_id = await this.export_key(key)
 
     await this.name.publish(key_id, cid, {
       offline: true
@@ -144,6 +150,15 @@ export class SobakaStorage {
       path: file.name,
       content: new Uint8Array(await file.arrayBuffer())
     })
+  }
+
+  public async load_file(cid: CID): Promise<File> {
+    // Load raw file as bytes from storage
+    const bytes = await this.load_bytes(cid)
+
+    // Convert bytes to file
+    const blob = new Blob([bytes])
+    return new File([blob], cid.toString())
   }
 
   // @todo
