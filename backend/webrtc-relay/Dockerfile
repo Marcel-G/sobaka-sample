@@ -13,7 +13,7 @@ RUN cargo build \
 
 FROM scratch
 COPY --from=builder \
-  /app/target/x86_64-unknown-linux-musl/release/rust-libp2p-webrtc-peer \
-  /usr/local/bin/rust-libp2p-webrtc-peer
+  /app/target/x86_64-unknown-linux-musl/release/rust-relay \
+  /usr/local/bin/webrtc-relay
 
-CMD ["rust-libp2p-webrtc-peer"]
+CMD ["webrtc-relay"]

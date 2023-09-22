@@ -40,19 +40,11 @@ module "global" {
   subdomain = var.subdomain
 }
 
-module "signaling" {
-  source = "../backend/signaling/infrastructure"
+module "backend" {
+  source = "../backend/infrastructure"
+  name   = "sobaka-backend-${terraform.workspace}"
 
-  name                       = "sobaka-signaling-${terraform.workspace}"
-  subdomain                  = "signaling.${var.subdomain}"
-  domain_name                = var.domain_name
-  global_acm_certificate_arn = module.global.global_acm_certificate_arn
-}
-
-module "libp2p_bootstrap" {
-  source = "../backend/libp2p-bootstrap/infrastructure"
-  name                       = "${terraform.workspace}-libp2p"
-  global_deploy_role         = module.global.global_deploy_role.arn
+  global_deploy_role         = module.global.global_deploy_role.name
 }
 
 module "frontend" {

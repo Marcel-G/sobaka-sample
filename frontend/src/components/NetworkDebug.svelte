@@ -12,6 +12,7 @@
     const { libp2p } = repo.helia
 
     self_id = libp2p.peerId.toString()
+    open_connections = libp2p.getConnections().map(conn => conn.remoteAddr.toString())
 
     // @todo events can come before NetworkDebug is mounted
     libp2p.addEventListener('connection:open', event => {

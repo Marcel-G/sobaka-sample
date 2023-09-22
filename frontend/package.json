@@ -73,6 +73,7 @@
     "lodash": "^4.17.21",
     "multihashes": "^4.0.3",
     "p-retry": "^6.0.0",
+    "private-ip": "^3.0.1",
     "ress": "^4.0.0",
     "sobaka-dsp": "file:../sobaka-dsp",
     "svelte-boring-avatars": "^1.2.2",

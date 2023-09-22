@@ -1,0 +1,39 @@
+[package]
+name = "rust-relay"
+version = "0.1.0"
+edition = "2021"
+publish = false
+license = "MIT"
+
+[dependencies]
+anyhow = "1.0"
+clap = { version = "4.3.10", features = ["derive"] }
+async-std = { version = "1.12", features = ["attributes"] }
+async-trait = "0.1"
+env_logger = "0.10.0"
+futures = "0.3.28"
+log = "0.4.17"
+rand = "0.8.5"
+tokio = { version = "1.27.0", features = ["full"] }
+tokio-util = { version = "0.7", features = ["full"] }
+libp2p = { version = "0.52.3", features = [
+  "ed25519",
+  "identify",
+  "macros",
+  "ping",
+  "kad",
+  "quic",
+  "relay",
+  "rsa",
+  "tokio",
+] }
+libp2p-webrtc = { version = "0.6.0-alpha", features = ["tokio", "pem"] }
+
+# Patching for https://github.com/libp2p/rust-libp2p/issues/4333
+[patch.crates-io]
+multiaddr = { git = "https://github.com/Marcel-G/rust-multiaddr", branch = "webrtc" }
+# libp2p = { path = "../../../../random/rust-libp2p/libp2p" }
+# libp2p-webrtc = { path = "../../../../random/rust-libp2p/transports/webrtc" }
+libp2p =  { git = "https://github.com/Marcel-G/rust-libp2p", branch = "feat/close-webrtc-connections" }
+libp2p-webrtc =  { git = "https://github.com/Marcel-G/rust-libp2p", branch = "feat/close-webrtc-connections" }
+webrtc = { git = "https://github.com/webrtc-rs/webrtc", branch = "master" }

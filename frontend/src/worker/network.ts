@@ -1,4 +1,5 @@
 import { noise } from "@chainsafe/libp2p-noise"
+import isPrivate from 'private-ip'
 import { kadDHT } from "@libp2p/kad-dht"
 import { mplex } from "@libp2p/mplex"
 import { webRTC, webRTCDirect } from "@libp2p/webrtc"
@@ -9,24 +10,30 @@ import { autoNATService } from 'libp2p/autonat'
 import { gossipsub } from "@chainsafe/libp2p-gossipsub"
 import type { Datastore } from 'interface-datastore'
 import { bootstrap } from "@libp2p/bootstrap"
-import { type Multiaddr } from "@multiformats/multiaddr"
 import { ipnsSelector } from 'ipns/selector'
 import { ipnsValidator } from 'ipns/validator'
+import { webSockets  } from "@libp2p/websockets"
+import { type Multiaddr } from '@multiformats/multiaddr'
+import { TOPIC, pubsubPeerDiscovery } from '@libp2p/pubsub-peer-discovery'
+import { webTransport } from "@libp2p/webtransport"
+import { pingService } from 'libp2p/ping'
+
+
 
 export const createLibp2p = async (datastore: Datastore) => {
   const node = await create({
     datastore,
     addresses: {
       listen: [
-        '/webrtc'
+        '/webrtc',
       ]
     },
     transports: [
+      webSockets(),
       webRTCDirect(),
       webRTC({
         rtcConfiguration: {
           iceServers:[{
-            // urls: servers.map(s => `stun:${s}`)
             urls: [
               'stun:stun.l.google.com:19302',
               'stun:global.stun.twilio.com:3478'
@@ -38,32 +45,41 @@ export const createLibp2p = async (datastore: Datastore) => {
         discoverRelays: 1,
       }),
     ],
-    // connectionManager: {
-    //   dialTimeout: 60000
-    // },
     connectionEncryption: [noise()],
     streamMuxers: [mplex()],
     connectionGater: {
       denyDialMultiaddr: (multiaddr: Multiaddr) => {
         if (multiaddr.toString().includes('/p2p-circuit/p2p/')) return true
-        // by default we refuse to dial local addresses from the browser since they
-        // are usually sent by remote peers broadcasting undialable multiaddrs but
-        // here we are explicitly connecting to a local node so do not deny dialing
-        // any discovered address
+
+        const tuples = multiaddr.stringTuples()
+
+        if (tuples[0][0] === 4 || tuples[0][0] === 41) {
+          return Boolean(isPrivate(`${tuples[0][1]}`))
+        }
+
         return false
       },
     },
+    connectionManager: {
+      maxConnections: 10,
+      minConnections: 5
+    },
     peerDiscovery: [
       bootstrap({
-        timeout: 0,
         list: [
-          // @todo -- setup dnsaddr
-          '/ip4/192.168.178.86/udp/9090/webrtc-direct/certhash/uEiCqVO5UKxxQSixgKG0aVGtAzVoY06vUj1uAqsTFIOm9kw/p2p/12D3KooWNmyGUNnt1xaybMR2C2pXLwnYxy3EnfWN4TkPamxdi5Jy',
-          // '/ip4/54.235.239.198/udp/9090/webrtc-direct/certhash/uEiCo_Q0A-X34pNYqoxs_xtyxQr4nu-Z-8o3sCyfp7uSLWg/p2p/12D3KooWSZCye1g4L3kFGQVw5YrCYhBt2hLnG49RTxqnqHAotvBQ'
+          '/ip4/34.224.25.21/udp/9090/webrtc-direct/certhash/uEiAvqGRWnmpkLZGw9CShseyDZEDDCOLMUSp8Je_A0SX8wg/p2p/12D3KooWKJjhikLtY9sZyFFHVg4mZaDVSodKCjQ6XwgaE6kDe62y',
+          // '/dns4/elastic.dag.house/tcp/443/wss/p2p/bafzbeibhqavlasjc7dvbiopygwncnrtvjd2xmryk5laib7zyjor6kf3avm',
+          // '/ip4/192.168.178.86/udp/9090/webrtc-direct/certhash/uEiBlkoDXQqqWQreuLYsyw1oAE7F2xUrC8eueWZWBGiPC6A/p2p/12D3KooWMYZs6qRyZmPXgUmSHwW412PRHVroK2MSc2ehQJss3LVz',
+          // '/dnsaddr/bootstrap.libp2p.io/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN',
+          // '/dnsaddr/bootstrap.libp2p.io/p2p/QmQCU2EcMqAqQPR2i9bChDtGNJchTbq5TbXJJ16u19uLTa',
+          // '/dnsaddr/bootstrap.libp2p.io/p2p/QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb',
+          // '/dnsaddr/bootstrap.libp2p.io/p2p/QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt',
+          // '/ip4/104.131.131.82/tcp/4001/p2p/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ',
         ]
       })
     ],
     services: {
+      ping: pingService(),
       identify: identifyService(),
       autoNAT: autoNATService(),
       // https://github.com/ChainSafe/js-libp2p-gossipsub/issues/448
@@ -72,9 +88,7 @@ export const createLibp2p = async (datastore: Datastore) => {
         allowPublishToZeroPeers: true,
       }),
       dht: kadDHT({
-        // allowQueryWithZeroPeers: true,
-        // kBucketSize: 1,
-        protocolPrefix: "/universal-connectivity",
+        clientMode: false,
         validators: {
           ipns: ipnsValidator
         },

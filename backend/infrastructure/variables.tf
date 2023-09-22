@@ -4,6 +4,6 @@ variable "name" {
 }
 
 variable "global_deploy_role" {
-  description = "Deployment role ARN"
+  description = "Deployment role name"
   type        = string
 }

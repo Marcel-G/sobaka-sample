@@ -19,7 +19,7 @@ variable "global_acm_certificate_arn" {
 }
 
 variable "global_deploy_role" {
-  description = "Deployment role ARN"
+  description = "Deployment role name"
   type        = string
 }
 
