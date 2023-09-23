@@ -16,10 +16,6 @@ locals {
 
 data "aws_availability_zones" "available" {}
 
-data "aws_iam_role" "deploy" {
-  name = var.global_deploy_role
-}
-
 module "container_image_ecr" {
   source  = "terraform-aws-modules/ecr/aws"
   version = "~> 1.6"
@@ -52,17 +48,47 @@ module "container_image_ecr" {
   repository_force_delete           = true
 }
 
-resource "aws_iam_policy" "ecr" {
-  name   = "AccessECRReadOnly"
-  policy = data.aws_iam_policy_document.ecr.json
+data "aws_iam_role" "deploy" {
+  name = var.global_deploy_role
 }
 
-data "aws_iam_policy_document" "ecr" {
+data "aws_iam_policy_document" "ecr_login" {
   statement {
     effect    = "Allow"
-    actions   = ["ecr:GetAuthorizationToken","ecr:BatchGetImage","ecr:GetDownloadUrlForLayer"]
+    actions   = ["ecr:GetAuthorizationToken"]
     resources = ["*"]
   }
+}
+
+resource "aws_iam_policy" "ecr_login" {
+  name   = "${local.name}-ecr-login-policy"
+  policy = data.aws_iam_policy_document.ecr_login.json
+}
+
+resource "aws_iam_role_policy_attachment" "deploy_ecr" {
+  role       = data.aws_iam_role.deploy.name
+  policy_arn = aws_iam_policy.ecr_login.arn
+}
+
+data "aws_iam_policy_document" "deploy_ssm" {
+  statement {
+    effect    = "Allow"
+    actions   = ["ssm:SendCommand"]
+    resources = [
+      "arn:aws:ssm:*:*:document/AWS-RunShellScript",
+      module.instance.arn
+    ]
+  }
+}
+
+resource "aws_iam_policy" "deploy_ssm" {
+  name   = "${local.name}-deploy-ssm-policy"
+  policy = data.aws_iam_policy_document.deploy_ssm.json
+}
+
+resource "aws_iam_role_policy_attachment" "deploy_ssm" {
+  role       = data.aws_iam_role.deploy.name
+  policy_arn = aws_iam_policy.deploy_ssm.arn
 }
 
 module "instance" {
@@ -78,9 +104,13 @@ module "instance" {
   create_iam_instance_profile = true
   iam_role_description        = "IAM role for EC2 instance"
   iam_role_policies = {
-    AccessECRReadOnly = aws_iam_policy.ecr.arn
+    AccessECRReadOnly = aws_iam_policy.ecr_login.arn
     AmazonSSMManagedInstanceCore = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
   }
+
+  root_block_device = [{
+    delete_on_termination = false
+  }]
 
   user_data_base64            = base64encode(local.user_data)
   user_data_replace_on_change = true
@@ -138,11 +168,10 @@ data "aws_ami" "amazon_linux" {
   }
 }
 
-output "ecr_repository_url" {
+output "ecr_repository" {
   value = module.container_image_ecr.repository_url
 }
 
-output "ssm_connect_command" {
-  description = "The AWS CLI command to connect to the instance using Session Manager"
-  value       = "aws ssm start-session --target ${module.instance.id}"
+output "instance_id" {
+  value = module.instance.id
 }

@@ -19,8 +19,8 @@ use tokio::fs;
 
 const PORT_WEBRTC: u16 = 9090;
 const PORT_QUIC: u16 = 9091;
-const LOCAL_KEY_PATH: &str = "./local_key";
-const LOCAL_CERT_PATH: &str = "./cert.pem";
+const LOCAL_KEY_PATH: &str = "./cert/local_key";
+const LOCAL_CERT_PATH: &str = "./cert/cert.pem";
 
 #[derive(Debug, Parser)]
 #[clap(name = "universal connectivity rust peer")]
@@ -177,6 +177,7 @@ async fn read_or_create_certificate(path: &Path) -> Result<Certificate> {
     }
 
     let cert = Certificate::generate(&mut rand::thread_rng())?;
+    fs::create_dir_all(path.parent().unwrap()).await?;
     fs::write(&path, &cert.serialize_pem().as_bytes()).await?;
 
     info!(
@@ -198,6 +199,7 @@ async fn read_or_create_identity(path: &Path) -> Result<identity::Keypair> {
 
     let identity = identity::Keypair::generate_ed25519();
 
+    fs::create_dir_all(path.parent().unwrap()).await?;
     fs::write(&path, &identity.to_protobuf_encoding()?).await?;
 
     info!("Generated new identity and wrote it to {}", path.display());

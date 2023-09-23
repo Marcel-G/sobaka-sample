@@ -8,3 +8,11 @@ module "webrtc_relay" {
 
   global_deploy_role         = var.global_deploy_role
 }
+
+output "ecr_repository_webrtc_relay" {
+  value = module.webrtc_relay.ecr_repository
+}
+
+output "instance_id_webrtc_relay" {
+  value = module.webrtc_relay.instance_id
+}
