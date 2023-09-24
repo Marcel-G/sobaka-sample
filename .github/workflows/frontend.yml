@@ -1,0 +1,92 @@
+name: "Frontend"
+
+on:
+  push:
+    branches: [master, next, feat/helia]
+    paths:
+      - 'frontend/**'
+      - 'sobaka-dsp/**'
+  pull_request:
+    branches: [master, next]
+    paths:
+      - 'frontend/**'
+      - 'sobaka-dsp/**'
+
+jobs:
+  build:
+    name: "🧦 Build"
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install latest nightly
+        uses: actions-rs/toolchain@v1
+        with:
+            toolchain: nightly
+            components: rust-src
+            target: wasm32-unknown-unknown
+            override: true
+      # Cache somehow breaks wasm_opt
+      # https://github.com/Marcel-G/xtask-wasm/blob/main/src/wasm_opt.rs#L38
+      # - uses: Swatinem/rust-cache@v2
+      #   with:
+      #       workspaces: sobaka-dsp
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16.14
+          cache: 'npm'
+          cache-dependency-path: '**/package-lock.json'
+      - run: npm ci 
+      - run: npm run build
+      - uses: actions/upload-artifact@v3
+        with:
+          name: frontend-build-output
+          path: frontend/build
+
+  infrastructure:
+    needs:
+      - build
+    uses: ./.github/workflows/infrastructure.yml
+
+  deploy:
+    name: "🏃‍♂️ Deploy"
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    needs:
+      - infrastructure
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-region: us-east-1
+          role-to-assume: ${{ needs.infrastructure.outputs.deploy_role }}
+          role-session-name: DeploySession
+      - uses: actions/download-artifact@v2
+        with:
+          name: frontend-build-output
+          path: frontend/build
+      - name: "Deploy files to S3"
+        run: |
+          aws s3 sync frontend/build s3://${{ needs.infrastructure.outputs.deploy_bucket }} \
+            --metadata-directive REPLACE \
+            --cache-control 'max-age=31104000'
+          
+           aws s3 cp frontend/build/index.html s3://${{ needs.infrastructure.outputs.deploy_bucket }} \
+            --metadata-directive REPLACE \
+            --cache-control 'max-age=3600'
+      - name: "Invalidate CloudFront Cache"
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ needs.infrastructure.outputs.cdn_distribution_id }} \
+            --paths "/index.html"
+
+
+concurrency: 
+  group: "${{ github.ref }}-frontend"
+  cancel-in-progress: true

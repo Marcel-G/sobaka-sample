@@ -1,0 +1,79 @@
+name: "Infrastructure"
+on:
+  workflow_call:
+    outputs:
+      deploy_bucket:
+        description: "S3 bucket to deploy to"
+        value: ${{ jobs.infrastructure.outputs.deploy_bucket }}
+      deploy_role:
+        description: "IAM role to deploy with"
+        value: ${{ jobs.infrastructure.outputs.deploy_role }}
+      cdn_distribution_id:
+        description: "CloudFront distribution ID"
+        value: ${{ jobs.infrastructure.outputs.cdn_distribution_id }}
+      ecr_repository_webrtc_relay:
+        description: "ECR repository for webrtc-relay"
+        value: ${{ jobs.infrastructure.outputs.ecr_repository_webrtc_relay }}
+      instance_id_webrtc_relay:
+        description: "EC2 instance ID for webrtc-relay"
+        value: ${{ jobs.infrastructure.outputs.instance_id_webrtc_relay }}
+
+jobs:
+  infrastructure:
+    name: "👟 Terraform"
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    environment: 
+      name: next
+      url: https://next.sobaka.marcelgleeson.com
+      # name: ${{ fromJSON('{"refs/heads/master":"production","refs/heads/next":"next"}')[github.ref] }}
+      # url: ${{ fromJSON('{"refs/heads/master":"https://sobaka.marcelgleeson.com","refs/heads/next":"https://next.sobaka.marcelgleeson.com"}')[github.ref] }}
+    env:
+      # TF_WORKSPACE: ${{ fromJSON('{"refs/heads/master":"sobaka-prod","refs/heads/next":"sobaka-next"}')[github.ref] }}
+      TF_WORKSPACE: sobaka-next
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    outputs:
+      deploy_bucket: ${{ steps.collect-outputs.outputs.deploy_bucket }}
+      deploy_role: ${{ steps.collect-outputs.outputs.deploy_role }}
+      cdn_distribution_id: ${{ steps.collect-outputs.outputs.cdn_distribution_id }}
+      ecr_repository_webrtc_relay: ${{ steps.collect-outputs.outputs.ecr_repository_webrtc_relay }}
+      instance_id_webrtc_relay: ${{ steps.collect-outputs.outputs.instance_id_webrtc_relay }}
+    defaults:
+      run:
+        working-directory: infrastructure
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v1
+        with:
+          # https://github.com/hashicorp/setup-terraform/issues/20#issuecomment-679424701
+          terraform_wrapper: false
+          # terraform_version: 0.13.0:
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+
+      - name: Terraform Init
+        run: terraform init -upgrade
+
+      - name: Terraform Plan
+        id: plan
+        run: terraform plan -no-color -var-file="$TF_WORKSPACE.tfvars"
+        continue-on-error: true
+
+      - name: Terraform Plan Status
+        if: steps.plan.outcome == 'failure'
+        run: exit 1
+      
+      - name: Terraform Apply
+        run: terraform apply -auto-approve -var-file="$TF_WORKSPACE.tfvars"
+      
+      - name: Terraform Outputs
+        id: collect-outputs
+        run: |
+          echo "deploy_bucket=$(terraform output -raw deploy_bucket)" >> $GITHUB_OUTPUT
+          echo "deploy_role=$(terraform output -raw deploy_role)" >> $GITHUB_OUTPUT
+          echo "cdn_distribution_id=$(terraform output -raw cdn_distribution_id)" >> $GITHUB_OUTPUT
+          echo "ecr_repository_webrtc_relay=$(terraform output -raw ecr_repository_webrtc_relay)" >> $GITHUB_OUTPUT
+          echo "instance_id_webrtc_relay=$(terraform output -raw instance_id_webrtc_relay)" >> $GITHUB_OUTPUT
