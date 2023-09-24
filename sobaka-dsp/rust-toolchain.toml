@@ -1,0 +1,4 @@
+[toolchain]
+# https://substrate.stackexchange.com/a/9069
+channel = "nightly-2023-06-15"
+

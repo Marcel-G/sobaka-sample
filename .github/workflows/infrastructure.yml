@@ -1,6 +1,13 @@
 name: "Infrastructure"
 on:
   workflow_call:
+    secrets:
+      AWS_ACCESS_KEY_ID:
+        required: true
+      AWS_SECRET_ACCESS_KEY:
+        required: true
+      TF_API_TOKEN:
+        required: true
     outputs:
       deploy_bucket:
         description: "S3 bucket to deploy to"

@@ -24,7 +24,8 @@ jobs:
       - name: Install latest nightly
         uses: actions-rs/toolchain@v1
         with:
-            toolchain: nightly
+            # https://substrate.stackexchange.com/a/9069
+            toolchain: nightly-2023-06-15
             components: rust-src
             target: wasm32-unknown-unknown
             override: true
@@ -49,6 +50,7 @@ jobs:
     needs:
       - build
     uses: ./.github/workflows/infrastructure.yml
+    secrets: inherit
 
   deploy:
     name: "🏃‍♂️ Deploy"

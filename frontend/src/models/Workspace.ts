@@ -2,10 +2,11 @@ import type { CID } from 'multiformats/cid'
 import type { KeyInfo } from '@libp2p/interface/keychain'
 import type { PeerId } from "@libp2p/interface-peer-id"
 import type { SobakaStorage } from '../worker/storage'
+import type { DebouncedFunc } from 'lodash'
 
 import * as Y from 'yjs'
-import { debounce, type DebouncedFunc } from 'lodash'
-import { SobakaWorkspaceStore, WorkspaceDocument } from './WorkspaceStore'
+import debounce from 'lodash/debounce'
+import { SobakaWorkspaceStore } from './WorkspaceStore'
 
 export interface SobakaWorkspaceMetadata {
   id: string

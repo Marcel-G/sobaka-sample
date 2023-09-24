@@ -13,7 +13,7 @@
   import { onDestroy, onMount } from 'svelte'
   import Panel from './shared/Panel.svelte'
   import Dropdown from '../components/Dropdown.svelte'
-  import { matches } from 'lodash'
+  import matches from 'lodash/matches'
   import Plug from './shared/Plug.svelte'
   import { into_style } from '../components/Theme.svelte'
   import { PlugType } from '../workspace/plugs'

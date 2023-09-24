@@ -5,7 +5,7 @@ import { svelteSyncedStore } from "@syncedstore/svelte"
 import { SobakaWorkspace } from "./Workspace"
 import { Readable, Writable, derived, get, writable } from "svelte/store"
 import syncedStore from "@syncedstore/core"
-import { cloneDeep } from "lodash"
+import cloneDeep from "lodash/cloneDeep"
 import { Position } from "../@types"
 
 export interface WorkspaceDocument extends DocTypeDescription {

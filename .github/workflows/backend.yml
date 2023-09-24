@@ -37,6 +37,7 @@ jobs:
     needs:
       - build
     uses: ./.github/workflows/infrastructure.yml
+    secrets: inherit
 
   deploy:
     name: "🏃‍♂️ Deploy"
