@@ -2,12 +2,12 @@ use anyhow::{Context, Result};
 use clap::Parser;
 use futures::StreamExt;
 use libp2p::{
-    Transport,
     core::muxing::StreamMuxerBox,
+    kad::{store::MemoryStore, Kademlia, KademliaConfig},
     multiaddr::{Multiaddr, Protocol},
     relay,
-    swarm::{NetworkBehaviour, Swarm, SwarmBuilder, SwarmEvent, keep_alive},
-    PeerId, kad::{KademliaConfig, store::MemoryStore, Kademlia, Mode},
+    swarm::{keep_alive, NetworkBehaviour, Swarm, SwarmBuilder, SwarmEvent},
+    PeerId, Transport,
 };
 use libp2p::{identify, identity, ping, quic};
 use libp2p_webrtc as webrtc;
@@ -72,28 +72,31 @@ async fn main() -> Result<()> {
                 info!("Connection to {peer_id} closed: {cause:?}");
                 swarm.behaviour_mut().kademlia.remove_peer(&peer_id);
                 println!("Removed {peer_id} from the routing table (if it was in there).");
-            },
+            }
             SwarmEvent::Behaviour(BehaviourEvent::Identify(identify::Event::Received {
                 peer_id,
                 info,
                 ..
             })) => {
-                    if !info.observed_addr.is_empty() {
-                        swarm.add_external_address(info.observed_addr.clone());
+                if !info.observed_addr.is_empty() {
+                    swarm.add_external_address(info.observed_addr.clone());
+                }
+
+                for addr in &info.listen_addrs {
+                    if !addr.is_empty() {
+                        swarm
+                            .behaviour_mut()
+                            .kademlia
+                            .add_address(&peer_id, addr.clone());
+
+                        println!("Adding address {:?} to peer {:?}", addr, peer_id)
                     }
+                }
 
-                    for addr in &info.listen_addrs {
-                        if !addr.is_empty() {
-                            swarm
-                                .behaviour_mut()
-                                .kademlia
-                                .add_address(&peer_id, addr.clone());
-
-                            println!("Adding address {:?} to peer {:?}", addr, peer_id)
-                        }
-                    }
-
-                    println!("Identify Event Received, peer_id :{}, info:{:?}", peer_id, info);
+                println!(
+                    "Identify Event Received, peer_id :{}, info:{:?}",
+                    peer_id, info
+                );
             }
             SwarmEvent::NewListenAddr { address, .. } => {
                 println!("Listening on {address:?}");
