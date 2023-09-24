@@ -9,16 +9,10 @@ import { identifyService } from 'libp2p/identify'
 import { autoNATService } from 'libp2p/autonat'
 import { gossipsub } from "@chainsafe/libp2p-gossipsub"
 import type { Datastore } from 'interface-datastore'
-import { bootstrap } from "@libp2p/bootstrap"
 import { ipnsSelector } from 'ipns/selector'
 import { ipnsValidator } from 'ipns/validator'
-import { webSockets  } from "@libp2p/websockets"
-import { type Multiaddr } from '@multiformats/multiaddr'
-import { TOPIC, pubsubPeerDiscovery } from '@libp2p/pubsub-peer-discovery'
-import { webTransport } from "@libp2p/webtransport"
+import { multiaddr, type Multiaddr } from '@multiformats/multiaddr'
 import { pingService } from 'libp2p/ping'
-
-
 
 export const createLibp2p = async (datastore: Datastore) => {
   const node = await create({
@@ -29,7 +23,6 @@ export const createLibp2p = async (datastore: Datastore) => {
       ]
     },
     transports: [
-      webSockets(),
       webRTCDirect(),
       webRTC({
         rtcConfiguration: {
@@ -61,23 +54,9 @@ export const createLibp2p = async (datastore: Datastore) => {
       },
     },
     connectionManager: {
-      maxConnections: 10,
+      maxConnections: 100,
       minConnections: 5
     },
-    peerDiscovery: [
-      bootstrap({
-        list: [
-          '/ip4/34.224.25.21/udp/9090/webrtc-direct/certhash/uEiAvqGRWnmpkLZGw9CShseyDZEDDCOLMUSp8Je_A0SX8wg/p2p/12D3KooWKJjhikLtY9sZyFFHVg4mZaDVSodKCjQ6XwgaE6kDe62y',
-          // '/dns4/elastic.dag.house/tcp/443/wss/p2p/bafzbeibhqavlasjc7dvbiopygwncnrtvjd2xmryk5laib7zyjor6kf3avm',
-          // '/ip4/192.168.178.86/udp/9090/webrtc-direct/certhash/uEiBlkoDXQqqWQreuLYsyw1oAE7F2xUrC8eueWZWBGiPC6A/p2p/12D3KooWMYZs6qRyZmPXgUmSHwW412PRHVroK2MSc2ehQJss3LVz',
-          // '/dnsaddr/bootstrap.libp2p.io/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN',
-          // '/dnsaddr/bootstrap.libp2p.io/p2p/QmQCU2EcMqAqQPR2i9bChDtGNJchTbq5TbXJJ16u19uLTa',
-          // '/dnsaddr/bootstrap.libp2p.io/p2p/QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb',
-          // '/dnsaddr/bootstrap.libp2p.io/p2p/QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt',
-          // '/ip4/104.131.131.82/tcp/4001/p2p/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ',
-        ]
-      })
-    ],
     services: {
       ping: pingService(),
       identify: identifyService(),
@@ -128,6 +107,8 @@ export const createLibp2p = async (datastore: Datastore) => {
 
     console.log('self:peer:update',multiaddrs)
   })
+
+  await node.dial(multiaddr('/dnsaddr/next.sobaka.marcelgleeson.com'))
 
   return node
 }

@@ -45,6 +45,9 @@ module "backend" {
   name   = "sobaka-backend-${terraform.workspace}"
 
   global_deploy_role         = module.global.global_deploy_role.name
+
+  subdomain   = var.subdomain
+  domain_name = var.domain_name
 }
 
 module "frontend" {
