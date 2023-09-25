@@ -1,20 +1,20 @@
 use anyhow::{Context, Result};
 use clap::Parser;
-use futures::StreamExt;
+use futures::{StreamExt, future::Either};
 use libp2p::{
     core::muxing::StreamMuxerBox,
     kad::{store::MemoryStore, Kademlia, KademliaConfig},
     multiaddr::{Multiaddr, Protocol},
     relay,
-    swarm::{keep_alive, NetworkBehaviour, Swarm, SwarmBuilder, SwarmEvent},
-    PeerId, Transport,
+    swarm::{NetworkBehaviour, Swarm, SwarmBuilder, SwarmEvent},
+    PeerId, Transport, dns::TokioDnsConfig,
 };
 use libp2p::{identify, identity, ping, quic};
 use libp2p_webrtc as webrtc;
 use libp2p_webrtc::tokio::Certificate;
 use log::info;
-use std::net::Ipv4Addr;
 use std::path::Path;
+use std::{net::Ipv4Addr, str::FromStr};
 use tokio::fs;
 
 const PORT_WEBRTC: u16 = 9090;
@@ -29,6 +29,13 @@ struct Opt {
     #[clap(long)]
     remote_address: Option<Multiaddr>,
 }
+
+const BOOTNODES: [&str; 4] = [
+    "QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN",
+    "QmQCU2EcMqAqQPR2i9bChDtGNJchTbq5TbXJJ16u19uLTa",
+    "QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb",
+    "QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt",
+];
 
 /// An example WebRTC peer that will accept connections
 #[tokio::main]
@@ -69,9 +76,8 @@ async fn main() -> Result<()> {
     loop {
         match swarm.next().await.expect("Infinite Stream.") {
             SwarmEvent::ConnectionClosed { peer_id, cause, .. } => {
-                info!("Connection to {peer_id} closed: {cause:?}");
+                log::debug!("Connection to {peer_id} closed: {cause:?}");
                 swarm.behaviour_mut().kademlia.remove_peer(&peer_id);
-                println!("Removed {peer_id} from the routing table (if it was in there).");
             }
             SwarmEvent::Behaviour(BehaviourEvent::Identify(identify::Event::Received {
                 peer_id,
@@ -79,6 +85,8 @@ async fn main() -> Result<()> {
                 ..
             })) => {
                 if !info.observed_addr.is_empty() {
+                    log::debug!("Removed {peer_id} from the routing table (if it was in there).");
+                    log::info!("Adding observed address {:?}", info.observed_addr);
                     swarm.add_external_address(info.observed_addr.clone());
                 }
 
@@ -89,11 +97,11 @@ async fn main() -> Result<()> {
                             .kademlia
                             .add_address(&peer_id, addr.clone());
 
-                        println!("Adding address {:?} to peer {:?}", addr, peer_id)
+                        log::debug!("Adding address {:?} to peer {:?}", addr, peer_id)
                     }
                 }
 
-                println!(
+                log::debug!(
                     "Identify Event Received, peer_id :{}, info:{:?}",
                     peer_id, info
                 );
@@ -101,7 +109,7 @@ async fn main() -> Result<()> {
             SwarmEvent::NewListenAddr { address, .. } => {
                 println!("Listening on {address:?}");
             }
-            event => println!("Unhandled Swarm Event {:?}", event),
+            event => log::debug!("Unhandled Swarm Event {:?}", event),
         }
     }
 }
@@ -109,7 +117,6 @@ async fn main() -> Result<()> {
 #[derive(NetworkBehaviour)]
 struct Behaviour {
     kademlia: Kademlia<MemoryStore>,
-    keep_alive: keep_alive::Behaviour,
     relay: relay::Behaviour,
     ping: ping::Behaviour,
     identify: identify::Behaviour,
@@ -126,46 +133,42 @@ fn create_swarm(
         let webrtc = webrtc::tokio::Transport::new(local_key.clone(), certificate);
         let quic = quic::tokio::Transport::new(quic::Config::new(&local_key));
 
+        // @todo -- change to dns::async_std::Transport
+        // https://github.com/libp2p/rust-libp2p/pull/4505/files
+        let dns = TokioDnsConfig::system(quic)?;
+        
         webrtc
-            .or_transport(quic)
-            .map(|fut, _| match fut {
-                futures::future::Either::Right((local_peer_id, conn)) => {
-                    (local_peer_id, StreamMuxerBox::new(conn))
-                }
-                futures::future::Either::Left((local_peer_id, conn)) => {
-                    (local_peer_id, StreamMuxerBox::new(conn))
-                }
+            .or_transport(dns)
+            .map(|either_output, _| match either_output {
+                Either::Left((peer_id, muxer)) => (peer_id, StreamMuxerBox::new(muxer)),
+                Either::Right((peer_id, muxer)) => (peer_id, StreamMuxerBox::new(muxer)),
             })
             .boxed()
     };
 
-    let identify_config = identify::Behaviour::new(identify::Config::new(
-        "/ipfs/id/1.0.0".to_string(),
-        local_key.public(),
-    ));
+    let identify_config = identify::Behaviour::new(
+        identify::Config::new("/ipfs/id/1.0.0".to_string(), local_key.public())
+            .with_agent_version(format!("sobaka-rust-relay/{}", env!("CARGO_PKG_VERSION"))),
+    );
 
     // Create a Kademlia behaviour.
     let cfg = KademliaConfig::default();
     let store = MemoryStore::new(local_peer_id);
-    let kad_behaviour = Kademlia::with_config(local_peer_id, store, cfg);
+    let mut kademlia = Kademlia::with_config(local_peer_id, store, cfg);
+
+    let bootaddr = Multiaddr::from_str("/dnsaddr/bootstrap.libp2p.io").unwrap();
+
+    for peer in &BOOTNODES {
+        kademlia.add_address(&PeerId::from_str(peer).unwrap(), bootaddr.clone());
+    }
+
+    kademlia.bootstrap().unwrap();
 
     let behaviour = Behaviour {
-        kademlia: kad_behaviour,
-        keep_alive: keep_alive::Behaviour,
+        kademlia,
         identify: identify_config,
         ping: ping::Behaviour::new(ping::Config::new()),
-        relay: relay::Behaviour::new(
-            local_peer_id,
-            relay::Config {
-                max_reservations: usize::MAX,
-                max_reservations_per_peer: 100,
-                reservation_rate_limiters: Vec::default(),
-                circuit_src_rate_limiters: Vec::default(),
-                max_circuits: usize::MAX,
-                max_circuits_per_peer: 100,
-                ..Default::default()
-            },
-        ),
+        relay: relay::Behaviour::new(local_peer_id, Default::default()),
     };
     Ok(SwarmBuilder::with_tokio_executor(transport, behaviour, local_peer_id).build())
 }
