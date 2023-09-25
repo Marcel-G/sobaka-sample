@@ -6,7 +6,7 @@ module "webrtc_relay" {
   source = "../webrtc-relay/infrastructure"
   name   = "${local.name}-webrtc-relay"
 
-  global_deploy_role         = var.global_deploy_role
+  global_deploy_role = var.global_deploy_role
 
   subdomain   = var.subdomain
   domain_name = var.domain_name

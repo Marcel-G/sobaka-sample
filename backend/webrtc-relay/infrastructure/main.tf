@@ -1,7 +1,7 @@
 locals {
-  name = var.name
+  name           = var.name
   container_name = "webrtc-relay"
-  azs      = slice(data.aws_availability_zones.available.names, 0, 3)
+  azs            = slice(data.aws_availability_zones.available.names, 0, 3)
 
   user_data = <<-EOT
     #!/bin/bash
@@ -25,8 +25,8 @@ module "container_image_ecr" {
   repository_read_write_access_arns = [data.aws_iam_role.deploy.arn]
   repository_read_access_arns       = [module.instance.iam_role_arn]
 
-  repository_image_tag_mutability   = "MUTABLE"
-  create_lifecycle_policy           = true
+  repository_image_tag_mutability = "MUTABLE"
+  create_lifecycle_policy         = true
   repository_lifecycle_policy = jsonencode({
     rules = [
       {
@@ -45,7 +45,7 @@ module "container_image_ecr" {
     ]
   })
 
-  repository_force_delete           = true
+  repository_force_delete = true
 }
 
 data "aws_iam_role" "deploy" {
@@ -72,8 +72,8 @@ resource "aws_iam_role_policy_attachment" "deploy_ecr" {
 
 data "aws_iam_policy_document" "deploy_ssm" {
   statement {
-    effect    = "Allow"
-    actions   = ["ssm:SendCommand"]
+    effect  = "Allow"
+    actions = ["ssm:SendCommand"]
     resources = [
       "arn:aws:ssm:*:*:document/AWS-RunShellScript",
       module.instance.arn
@@ -104,7 +104,7 @@ module "instance" {
   create_iam_instance_profile = true
   iam_role_description        = "IAM role for EC2 instance"
   iam_role_policies = {
-    AccessECRReadOnly = aws_iam_policy.ecr_login.arn
+    AccessECRReadOnly            = aws_iam_policy.ecr_login.arn
     AmazonSSMManagedInstanceCore = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
   }
 
@@ -133,7 +133,7 @@ module "security_group" {
       description = "Allow WebRTC ports"
       cidr_blocks = "0.0.0.0/0"
     },
-     {
+    {
       from_port   = 9091
       to_port     = 9091
       protocol    = "udp"
@@ -141,7 +141,7 @@ module "security_group" {
       cidr_blocks = "0.0.0.0/0"
     }
   ]
-  egress_rules        = ["all-all"]
+  egress_rules = ["all-all"]
 }
 
 module "vpc" {
@@ -152,8 +152,8 @@ module "vpc" {
   cidr = "10.0.0.0/16"
 
   azs             = local.azs
-  private_subnets         = ["10.0.141.0/24"]
-  public_subnets          = ["10.0.142.0/24"]
+  private_subnets = ["10.0.141.0/24"]
+  public_subnets  = ["10.0.142.0/24"]
 
   enable_nat_gateway = false
 }

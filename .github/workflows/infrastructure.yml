@@ -2,10 +2,6 @@ name: "Infrastructure"
 on:
   workflow_call:
     secrets:
-      AWS_ACCESS_KEY_ID:
-        required: true
-      AWS_SECRET_ACCESS_KEY:
-        required: true
       TF_API_TOKEN:
         required: true
     outputs:
@@ -38,8 +34,6 @@ jobs:
     env:
       # TF_WORKSPACE: ${{ fromJSON('{"refs/heads/master":"sobaka-prod","refs/heads/next":"sobaka-next"}')[github.ref] }}
       TF_WORKSPACE: sobaka-next
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
     outputs:
       deploy_bucket: ${{ steps.collect-outputs.outputs.deploy_bucket }}
       deploy_role: ${{ steps.collect-outputs.outputs.deploy_role }}
@@ -66,7 +60,7 @@ jobs:
 
       - name: Terraform Plan
         id: plan
-        run: terraform plan -no-color -var-file="$TF_WORKSPACE.tfvars"
+        run: terraform plan -no-color
         continue-on-error: true
 
       - name: Terraform Plan Status
@@ -74,7 +68,7 @@ jobs:
         run: exit 1
       
       - name: Terraform Apply
-        run: terraform apply -auto-approve -var-file="$TF_WORKSPACE.tfvars"
+        run: terraform apply -auto-approve
       
       - name: Terraform Outputs
         id: collect-outputs
