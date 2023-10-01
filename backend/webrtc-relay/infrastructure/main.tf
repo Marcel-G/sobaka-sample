@@ -11,6 +11,15 @@ locals {
     sudo chkconfig docker on
     sudo usermod -a -G docker ec2-user
     newgrp docker
+
+    mkdir -p /cert
+    if file -sL /dev/sdh | grep -q "SGI XFS filesystem data"
+    then
+      echo "Filesystem already formatted"
+    else
+      mkfs -t xfs /dev/sdh 
+    fi
+    mount /dev/sdh /cert
   EOT
 }
 
@@ -93,7 +102,7 @@ resource "aws_iam_role_policy_attachment" "deploy_ssm" {
 
 module "instance" {
   source  = "terraform-aws-modules/ec2-instance/aws"
-  version = "~> 4.0"
+  version = "~> 5.4"
 
   ami                         = data.aws_ami.amazon_linux.id
   instance_type               = "t3.micro"
@@ -107,10 +116,6 @@ module "instance" {
     AccessECRReadOnly            = aws_iam_policy.ecr_login.arn
     AmazonSSMManagedInstanceCore = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
   }
-
-  root_block_device = [{
-    delete_on_termination = false
-  }]
 
   user_data_base64            = base64encode(local.user_data)
   user_data_replace_on_change = true
@@ -156,6 +161,17 @@ module "vpc" {
   public_subnets  = ["10.0.142.0/24"]
 
   enable_nat_gateway = false
+}
+
+resource "aws_volume_attachment" "this" {
+  device_name = "/dev/sdh"
+  volume_id   = aws_ebs_volume.this.id
+  instance_id = module.instance.id
+}
+
+resource "aws_ebs_volume" "this" {
+  availability_zone = module.instance.availability_zone
+  size              = 1
 }
 
 data "aws_ami" "amazon_linux" {
