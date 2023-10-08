@@ -1,7 +1,7 @@
 import { noise } from "@chainsafe/libp2p-noise"
-import isPrivate from 'private-ip'
 import { kadDHT } from "@libp2p/kad-dht"
 import { mplex } from "@libp2p/mplex"
+import { yamux } from "@chainsafe/libp2p-yamux"
 import { webRTC, webRTCDirect } from "@libp2p/webrtc"
 import { createLibp2p as create } from "libp2p"
 import { circuitRelayTransport } from 'libp2p/circuit-relay'
@@ -9,9 +9,10 @@ import { identifyService } from 'libp2p/identify'
 import { autoNATService } from 'libp2p/autonat'
 import { gossipsub } from "@chainsafe/libp2p-gossipsub"
 import type { Datastore } from 'interface-datastore'
+import { dcutrService } from 'libp2p/dcutr'
 import { ipnsSelector } from 'ipns/selector'
 import { ipnsValidator } from 'ipns/validator'
-import { multiaddr, type Multiaddr } from '@multiformats/multiaddr'
+import { multiaddr } from '@multiformats/multiaddr'
 import { pingService } from 'libp2p/ping'
 
 export const createLibp2p = async (datastore: Datastore) => {
@@ -23,36 +24,30 @@ export const createLibp2p = async (datastore: Datastore) => {
       ]
     },
     transports: [
-      webRTCDirect(),
-      webRTC({
-        rtcConfiguration: {
-          iceServers:[{
-            urls: [
-              'stun:stun.l.google.com:19302',
-              'stun:global.stun.twilio.com:3478'
-            ]
-          }]
-        }
-      }),
       circuitRelayTransport({
         discoverRelays: 1,
       }),
+      webRTC(),
+      webRTCDirect(),
     ],
     connectionEncryption: [noise()],
-    streamMuxers: [mplex()],
-    connectionGater: {
-      denyDialMultiaddr: (multiaddr: Multiaddr) => {
-        if (multiaddr.toString().includes('/p2p-circuit/p2p/')) return true
+    streamMuxers: [
+      yamux(),
+      mplex()
+    ],
+    // connectionGater: {
+    //   denyDialMultiaddr: (multiaddr: Multiaddr) => {
+    //     // if (multiaddr.toString().includes('/p2p-circuit/p2p/')) return true
 
-        const tuples = multiaddr.stringTuples()
+    //     const tuples = multiaddr.stringTuples()
 
-        if (tuples[0][0] === 4 || tuples[0][0] === 41) {
-          return Boolean(isPrivate(`${tuples[0][1]}`))
-        }
+    //     if (tuples[0][0] === 4 || tuples[0][0] === 41) {
+    //       return Boolean(isPrivate(`${tuples[0][1]}`))
+    //     }
 
-        return false
-      },
-    },
+    //     return false
+    //   },
+    // },
     connectionManager: {
       maxConnections: 100,
       minConnections: 5
@@ -61,6 +56,7 @@ export const createLibp2p = async (datastore: Datastore) => {
       ping: pingService(),
       identify: identifyService(),
       autoNAT: autoNATService(),
+      dcutr: dcutrService(),
       // https://github.com/ChainSafe/js-libp2p-gossipsub/issues/448
       pubsub: gossipsub({
         emitSelf: true,
