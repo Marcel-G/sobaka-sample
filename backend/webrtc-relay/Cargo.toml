@@ -17,7 +17,6 @@ rand = "0.8.5"
 tokio = { version = "1.27.0", features = ["full"] }
 tokio-util = { version = "0.7", features = ["full"] }
 libp2p = { version = "0.52.3", features = [
-  "tokio",
   "ed25519",
   "identify",
   "macros",
@@ -25,8 +24,8 @@ libp2p = { version = "0.52.3", features = [
   "kad",
   "quic",
   "relay",
-  "dns",
   "rsa",
+  "tokio",
 ] }
 libp2p-webrtc = { version = "0.6.0-alpha", features = ["tokio", "pem"] }
 
