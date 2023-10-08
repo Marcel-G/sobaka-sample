@@ -52,7 +52,8 @@ jobs:
         with:
           # https://github.com/hashicorp/setup-terraform/issues/20#issuecomment-679424701
           terraform_wrapper: false
-          # terraform_version: 0.13.0:
+          # Pinning to pre 1.6.0 version due to https://github.com/hashicorp/terraform/issues/33976
+          terraform_version: 1.5.7 
           cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
 
       - name: Terraform Init
