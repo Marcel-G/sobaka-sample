@@ -3,13 +3,14 @@ use clap::Parser;
 use futures::StreamExt;
 use libp2p::{
     core::muxing::StreamMuxerBox,
-    kad::{store::MemoryStore, Kademlia, KademliaConfig},
+    kad,
     multiaddr::{Multiaddr, Protocol},
     relay,
-    swarm::{keep_alive, NetworkBehaviour, Swarm, SwarmBuilder, SwarmEvent},
-    PeerId, Transport,
+    swarm::{NetworkBehaviour, Swarm, SwarmBuilder, SwarmEvent},
+    PeerId, Transport
 };
-use libp2p::{identify, identity, ping, quic};
+
+use libp2p::{identify, identity, ping, quic };
 use libp2p_webrtc as webrtc;
 use libp2p_webrtc::tokio::Certificate;
 use log::info;
@@ -109,7 +110,7 @@ async fn main() -> Result<()> {
 
 #[derive(NetworkBehaviour)]
 struct Behaviour {
-    kademlia: Kademlia<MemoryStore>,
+    kademlia: kad::Behaviour<kad::store::MemoryStore>,
     relay: relay::Behaviour,
     ping: ping::Behaviour,
     identify: identify::Behaviour,
@@ -145,9 +146,9 @@ fn create_swarm(
     ));
 
     // Create a Kademlia behaviour.
-    let cfg = KademliaConfig::default();
-    let store = MemoryStore::new(local_peer_id);
-    let kad_behaviour = Kademlia::with_config(local_peer_id, store, cfg);
+    let cfg = kad::Config::default();
+    let store = kad::store::MemoryStore::new(local_peer_id);
+    let kad_behaviour = kad::Behaviour::with_config(local_peer_id, store, cfg);
 
     let behaviour = Behaviour {
         kademlia: kad_behaviour,
