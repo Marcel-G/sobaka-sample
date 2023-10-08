@@ -51,6 +51,7 @@
     "@helia/ipns": "^2.0.1",
     "@helia/unixfs": "^1.4.2",
     "@libp2p/bootstrap": "^9.0.8",
+    "@libp2p/ipni-content-routing": "^2.0.1",
     "@libp2p/kad-dht": "^10.0.9",
     "@libp2p/mplex": "^9.0.8",
     "@libp2p/peer-id": "^3.0.3",

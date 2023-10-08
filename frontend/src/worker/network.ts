@@ -4,6 +4,7 @@ import { mplex } from "@libp2p/mplex"
 import { yamux } from "@chainsafe/libp2p-yamux"
 import { webRTC, webRTCDirect } from "@libp2p/webrtc"
 import { createLibp2p as create } from "libp2p"
+import { ipniContentRouting } from '@libp2p/ipni-content-routing'
 import { circuitRelayTransport } from 'libp2p/circuit-relay'
 import { identifyService } from 'libp2p/identify'
 import { autoNATService } from 'libp2p/autonat'
@@ -34,6 +35,9 @@ export const createLibp2p = async (datastore: Datastore) => {
     streamMuxers: [
       yamux(),
       mplex()
+    ],
+    contentRouters: [
+      ipniContentRouting('https://cid.contact')
     ],
     // connectionGater: {
     //   denyDialMultiaddr: (multiaddr: Multiaddr) => {
