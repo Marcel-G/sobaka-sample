@@ -1,6 +1,6 @@
 locals {
-  peer_id  = "12D3KooWCLuyQTvCicusHSTYAippMWCbmuZJGqEbeSxJpfLGwhsJ"
-  certhash = "uEiAlr3AFLBw5nPMgEQSipYh2rW6EsfdhDCA-D2KvNSfTYA"
+  peer_id  = "12D3KooWCBY1V7j9u8rjf2bE4DbMmUYRVKXSFRMJT6zwWBuackFa"
+  certhash = "uEiBnJpbCl6lKEZmXUR2hO8TAO8S3Gf2Eyxwues0umqCCyQ"
 }
 
 module "records" {
