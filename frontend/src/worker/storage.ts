@@ -114,7 +114,7 @@ export class SobakaStorage {
   }
 
   public async resolve_json<T>(id: PeerId, options?: { offline: boolean }): Promise<T> {
-    const cid = await pRetry(async () => await this.name.resolve(id, options), { retries: 5 });
+    const cid = await pRetry(async () => await this.name.resolve(id, options), { retries: 2 });
 
     return pRetry(async () => {
       const signal = AbortSignal.timeout(500);

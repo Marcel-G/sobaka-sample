@@ -8,6 +8,7 @@ import { ipniContentRouting } from '@libp2p/ipni-content-routing'
 import { circuitRelayTransport } from 'libp2p/circuit-relay'
 import { identifyService } from 'libp2p/identify'
 import { autoNATService } from 'libp2p/autonat'
+import { webTransport } from '@libp2p/webtransport'
 import { gossipsub } from "@chainsafe/libp2p-gossipsub"
 import type { Datastore } from 'interface-datastore'
 import { dcutrService } from 'libp2p/dcutr'
@@ -15,6 +16,8 @@ import { ipnsSelector } from 'ipns/selector'
 import { ipnsValidator } from 'ipns/validator'
 import { multiaddr } from '@multiformats/multiaddr'
 import { pingService } from 'libp2p/ping'
+import { bootstrap } from "@libp2p/bootstrap"
+import { bootstrapConfig } from "./bootstrapper"
 
 export const createLibp2p = async (datastore: Datastore) => {
   const node = await create({
@@ -30,32 +33,19 @@ export const createLibp2p = async (datastore: Datastore) => {
       }),
       webRTC(),
       webRTCDirect(),
+      webTransport()
     ],
     connectionEncryption: [noise()],
     streamMuxers: [
       yamux(),
       mplex()
     ],
+    peerDiscovery: [
+      bootstrap(bootstrapConfig)
+    ],
     contentRouters: [
       ipniContentRouting('https://cid.contact')
     ],
-    // connectionGater: {
-    //   denyDialMultiaddr: (multiaddr: Multiaddr) => {
-    //     // if (multiaddr.toString().includes('/p2p-circuit/p2p/')) return true
-
-    //     const tuples = multiaddr.stringTuples()
-
-    //     if (tuples[0][0] === 4 || tuples[0][0] === 41) {
-    //       return Boolean(isPrivate(`${tuples[0][1]}`))
-    //     }
-
-    //     return false
-    //   },
-    // },
-    connectionManager: {
-      maxConnections: 100,
-      minConnections: 5
-    },
     services: {
       ping: pingService(),
       identify: identifyService(),
