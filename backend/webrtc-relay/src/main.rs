@@ -82,8 +82,6 @@ async fn main() -> Result<()> {
                 ..
             })) => {
                 if !info.observed_addr.is_empty() {
-                    log::debug!("Removed {peer_id} from the routing table (if it was in there).");
-                    log::info!("Adding observed address {:?}", info.observed_addr);
                     swarm.add_external_address(info.observed_addr.clone());
                 }
             }
