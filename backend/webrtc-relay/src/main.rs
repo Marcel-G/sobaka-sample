@@ -6,7 +6,7 @@ use libp2p::{
     dns, gossipsub, kad,
     multiaddr::{Multiaddr, Protocol},
     relay,
-    swarm::{NetworkBehaviour, Swarm, SwarmBuilder},
+    swarm::{NetworkBehaviour, Swarm, SwarmBuilder, SwarmEvent},
     PeerId, Transport,
 };
 
@@ -76,6 +76,9 @@ async fn main() -> Result<()> {
 
     loop {
         match swarm.next().await.expect("Infinite Stream.") {
+            SwarmEvent::NewListenAddr { address, .. } => {
+                println!("Listening on {address:?}");
+            }
             event => log::debug!("Unhandled Swarm Event {:?}", event),
         }
     }

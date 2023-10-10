@@ -172,6 +172,7 @@ resource "aws_volume_attachment" "this" {
 resource "aws_ebs_volume" "this" {
   availability_zone = module.instance.availability_zone
   size              = 1
+  snapshot_id = "snap-011b14a72d48e06d2"
 }
 
 data "aws_ami" "amazon_linux" {
