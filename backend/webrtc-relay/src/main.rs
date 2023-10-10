@@ -76,6 +76,17 @@ async fn main() -> Result<()> {
 
     loop {
         match swarm.next().await.expect("Infinite Stream.") {
+            SwarmEvent::Behaviour(BehaviourEvent::Identify(identify::Event::Received {
+                peer_id,
+                info,
+                ..
+            })) => {
+                if !info.observed_addr.is_empty() {
+                    log::debug!("Removed {peer_id} from the routing table (if it was in there).");
+                    log::info!("Adding observed address {:?}", info.observed_addr);
+                    swarm.add_external_address(info.observed_addr.clone());
+                }
+            }
             SwarmEvent::NewListenAddr { address, .. } => {
                 println!("Listening on {address:?}");
             }
