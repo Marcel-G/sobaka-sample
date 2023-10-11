@@ -28,6 +28,7 @@ libp2p = { version = "0.52.3", features = [
   "relay",
   "dns",
   "rsa",
+  "memory-connection-limits"
 ] }
 libp2p-webrtc = { version = "0.6.1-alpha", features = ["tokio", "pem"] }
 

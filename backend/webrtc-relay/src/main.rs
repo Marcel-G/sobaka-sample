@@ -3,14 +3,14 @@ use clap::Parser;
 use futures::{future::Either, StreamExt};
 use libp2p::{
     core::muxing::StreamMuxerBox,
-    dns, gossipsub, kad,
+    dns, gossipsub, kad::{self, Mode},
     multiaddr::{Multiaddr, Protocol},
     relay,
     swarm::{NetworkBehaviour, Swarm, SwarmBuilder, SwarmEvent},
     PeerId, Transport,
 };
 
-use libp2p::{identify, identity, ping, quic};
+use libp2p::{identify, identity, ping, quic, memory_connection_limits};
 use libp2p_webrtc as webrtc;
 use libp2p_webrtc::tokio::Certificate;
 use log::info;
@@ -95,6 +95,7 @@ async fn main() -> Result<()> {
 
 #[derive(NetworkBehaviour)]
 struct Behaviour {
+    limits: memory_connection_limits::Behaviour,
     kademlia: kad::Behaviour<kad::store::MemoryStore>,
     relay: relay::Behaviour,
     ping: ping::Behaviour,
@@ -140,6 +141,8 @@ fn create_swarm(
     let cfg = kad::Config::default();
     let store = kad::store::MemoryStore::new(local_peer_id);
     let mut kademlia = kad::Behaviour::with_config(local_peer_id, store, cfg);
+    
+    kademlia.set_mode(Some(Mode::Client));
 
     let bootaddr = Multiaddr::from_str("/dnsaddr/bootstrap.libp2p.io").unwrap();
 
@@ -150,6 +153,7 @@ fn create_swarm(
     kademlia.bootstrap().unwrap();
 
     let behaviour = Behaviour {
+        limits: memory_connection_limits::Behaviour::with_max_percentage(50.0),
         gossipsub: gossipsub::Behaviour::new(
             gossipsub::MessageAuthenticity::Signed(local_key),
             gossipsub_config,
