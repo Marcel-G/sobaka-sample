@@ -50,7 +50,7 @@ export const createLibp2p = async (datastore: Datastore) => {
         allowPublishToZeroPeers: true,
       }),
       dht: kadDHT({
-        clientMode: false,
+        clientMode: true,
         validators: {
           ipns: ipnsValidator
         },
