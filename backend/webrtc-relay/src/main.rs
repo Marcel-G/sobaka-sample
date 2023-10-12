@@ -183,8 +183,6 @@ fn create_swarm(
     let cfg = kad::Config::default();
     let store = kad::store::MemoryStore::new(local_peer_id);
     let mut kademlia = kad::Behaviour::with_config(local_peer_id, store, cfg);
-    
-    kademlia.set_mode(Some(Mode::Client));
 
     let bootaddr = Multiaddr::from_str("/dnsaddr/bootstrap.libp2p.io").unwrap();
 
