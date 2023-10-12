@@ -14,7 +14,7 @@ use libp2p::{identify, identity, ping, quic, memory_connection_limits};
 use libp2p_webrtc as webrtc;
 use libp2p_webrtc::tokio::Certificate;
 use log::info;
-use std::{io, path::Path};
+use std::{io, path::Path, net::IpAddr};
 use std::{net::Ipv4Addr, str::FromStr};
 use tokio::fs;
 
@@ -26,6 +26,10 @@ const LOCAL_CERT_PATH: &str = "./cert/cert.pem";
 #[derive(Debug, Parser)]
 #[clap(name = "universal connectivity rust peer")]
 struct Opt {
+    /// Address to listen on.
+    #[clap(long, default_value = "0.0.0.0")]
+    listen_address: IpAddr,
+
     /// Address of a remote peer to connect to.
     #[clap(long)]
     remote_address: Option<Multiaddr>,
@@ -76,17 +80,52 @@ async fn main() -> Result<()> {
 
     loop {
         match swarm.next().await.expect("Infinite Stream.") {
-            SwarmEvent::Behaviour(BehaviourEvent::Identify(identify::Event::Received {
-                peer_id,
-                info,
-                ..
-            })) => {
-                if !info.observed_addr.is_empty() {
-                    swarm.add_external_address(info.observed_addr.clone());
+            SwarmEvent::Behaviour(BehaviourEvent::Identify(e)) => {
+                info!("BehaviourEvent::Identify {:?}", e);
+                if let identify::Event::Error { peer_id, error } = e {
+                    match error {
+                        libp2p::swarm::StreamUpgradeError::Timeout => {
+                            // When a browser tab closes, we don't get a swarm event
+                            // maybe there's a way to get this with TransportEvent
+                            // but for now remove the peer from routing table if there's an Identify timeout
+                            swarm.behaviour_mut().kademlia.remove_peer(&peer_id);
+                            info!("Removed {peer_id} from the routing table (if it was in there).");
+                        }
+                        _ => {
+                            log::debug!("{error}");
+                        }
+                    }
+                } else if let identify::Event::Received {
+                    peer_id,
+                    info:
+                        identify::Info {
+                            listen_addrs,
+                            observed_addr,
+                            ..
+                        },
+                } = e
+                {
+                    log::debug!("identify::Event::Received observed_addr: {}", observed_addr);
+
+                    swarm.add_external_address(observed_addr);
+
+                    for addr in listen_addrs {
+                        log::debug!("identify::Event::Received listen addr: {}", addr);
+
+                        swarm
+                            .behaviour_mut()
+                            .kademlia
+                            .add_address(&peer_id, addr.clone());
+
+                        log::debug!("Added {addr} to the routing table.");
+                    }
                 }
             }
             SwarmEvent::NewListenAddr { address, .. } => {
-                println!("Listening on {address:?}");
+                swarm.add_external_address(address.clone());
+
+                let p2p_address = address.with(Protocol::P2p(*swarm.local_peer_id()));
+                info!("Listening on {p2p_address}");
             }
             event => log::debug!("Unhandled Swarm Event {:?}", event),
         }
@@ -133,7 +172,10 @@ fn create_swarm(
     );
 
     let gossipsub_config = gossipsub::ConfigBuilder::default()
-        .max_transmit_size(262144)
+        .validation_mode(gossipsub::ValidationMode::Permissive)
+        .mesh_outbound_min(1)
+        .mesh_n_low(1)
+        .flood_publish(true)
         .build()
         .map_err(|msg| io::Error::new(io::ErrorKind::Other, msg))?; // Temporary hack because `build` does not return a proper `std::error::Error`.
 
