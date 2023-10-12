@@ -81,7 +81,7 @@ async fn main() -> Result<()> {
     loop {
         match swarm.next().await.expect("Infinite Stream.") {
             SwarmEvent::Behaviour(BehaviourEvent::Identify(e)) => {
-                info!("BehaviourEvent::Identify {:?}", e);
+                log::debug!("BehaviourEvent::Identify {:?}", e);
                 if let identify::Event::Error { peer_id, error } = e {
                     match error {
                         libp2p::swarm::StreamUpgradeError::Timeout => {
@@ -89,7 +89,7 @@ async fn main() -> Result<()> {
                             // maybe there's a way to get this with TransportEvent
                             // but for now remove the peer from routing table if there's an Identify timeout
                             swarm.behaviour_mut().kademlia.remove_peer(&peer_id);
-                            info!("Removed {peer_id} from the routing table (if it was in there).");
+                            log::debug!("Removed {peer_id} from the routing table (if it was in there).");
                         }
                         _ => {
                             log::debug!("{error}");
@@ -193,7 +193,7 @@ fn create_swarm(
     kademlia.bootstrap().unwrap();
 
     let behaviour = Behaviour {
-        limits: memory_connection_limits::Behaviour::with_max_percentage(50.0),
+        limits: memory_connection_limits::Behaviour::with_max_percentage(0.8),
         gossipsub: gossipsub::Behaviour::new(
             gossipsub::MessageAuthenticity::Signed(local_key),
             gossipsub_config,
