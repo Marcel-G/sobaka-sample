@@ -1,31 +1,38 @@
 use anyhow::{Context, Result};
+use behaviour::BehaviourEvent;
 use clap::Parser;
 use futures::StreamExt;
+use futures_timer::Delay;
 use libp2p::{
     core::muxing::StreamMuxerBox,
-    gossipsub,
-    kad::{self, Mode},
+    kad::{self},
     multiaddr::{Multiaddr, Protocol},
-    noise, relay,
-    swarm::{NetworkBehaviour, Swarm, SwarmEvent},
-    tcp, yamux, PeerId, Transport, autonat,
+    noise,
+    swarm::{Swarm, SwarmEvent},
+    tcp, yamux, PeerId, Transport,
 };
 
-use libp2p::{identify, identity, memory_connection_limits, ping};
+use libp2p::{identify, identity};
 use libp2p_webrtc as webrtc;
 use libp2p_webrtc::tokio::Certificate;
 use log::info;
-use std::net::Ipv4Addr;
-use std::{io, net::IpAddr, path::Path, time::Duration};
+use std::{net::IpAddr, path::Path, time::Duration};
+use std::{net::Ipv4Addr, task::Poll};
 use tokio::fs;
+
+use crate::behaviour::Behaviour;
+
+mod behaviour;
 
 const PORT_WEBRTC: u16 = 9090;
 const PORT_QUIC: u16 = 9091;
 const LOCAL_KEY_PATH: &str = "./cert/local_key";
 const LOCAL_CERT_PATH: &str = "./cert/cert.pem";
 
+const BOOTSTRAP_INTERVAL: Duration = Duration::from_secs(5 * 60);
+
 #[derive(Debug, Parser)]
-#[clap(name = "universal connectivity rust peer")]
+#[clap(name = "sobaka relay rust peer")]
 struct Opt {
     /// Address to listen on.
     #[clap(long, default_value = "0.0.0.0")]
@@ -35,13 +42,6 @@ struct Opt {
     #[clap(long)]
     remote_address: Option<Multiaddr>,
 }
-
-const BOOTNODES: [&str; 4] = [
-    "QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN",
-    "QmQCU2EcMqAqQPR2i9bChDtGNJchTbq5TbXJJ16u19uLTa",
-    "QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb",
-    "QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt",
-];
 
 /// An example WebRTC peer that will accept connections
 #[tokio::main]
@@ -57,18 +57,6 @@ async fn main() -> Result<()> {
         .context("Failed to read certificate")?;
 
     let mut swarm = create_swarm(local_key, webrtc_cert)?;
-
-    swarm.behaviour_mut().kademlia.set_mode(Some(Mode::Client));
-
-    // Add the bootnodes to the local routing table. `libp2p-dns` built
-    // into the `transport` resolves the `dnsaddr` when Kademlia tries
-    // to dial these nodes.
-    for peer in &BOOTNODES {
-        swarm
-            .behaviour_mut()
-            .kademlia
-            .add_address(&peer.parse()?, "/dnsaddr/bootstrap.libp2p.io".parse()?);
-    }
 
     swarm
         .listen_on(
@@ -96,7 +84,14 @@ async fn main() -> Result<()> {
             .expect("a valid remote address to be provided");
     }
 
+    let mut bootstrap_timer = Delay::new(BOOTSTRAP_INTERVAL);
+
     loop {
+        if let Poll::Ready(()) = futures::poll!(&mut bootstrap_timer) {
+            bootstrap_timer.reset(BOOTSTRAP_INTERVAL);
+            let _ = swarm.behaviour_mut().kademlia.bootstrap();
+        }
+
         match swarm.next().await.expect("Infinite Stream.") {
             SwarmEvent::Behaviour(BehaviourEvent::Identify(e)) => {
                 log::debug!("BehaviourEvent::Identify {:?}", e);
@@ -119,6 +114,7 @@ async fn main() -> Result<()> {
                     peer_id,
                     info:
                         identify::Info {
+                            protocols,
                             listen_addrs,
                             observed_addr,
                             ..
@@ -129,15 +125,10 @@ async fn main() -> Result<()> {
 
                     swarm.add_external_address(observed_addr);
 
-                    for addr in listen_addrs {
-                        log::debug!("identify::Event::Received listen addr: {}", addr);
-
-                        swarm
-                            .behaviour_mut()
-                            .kademlia
-                            .add_address(&peer_id, addr.clone());
-
-                        log::debug!("Added {addr} to the routing table.");
+                    if protocols.iter().any(|p| *p == kad::PROTOCOL_NAME) {
+                        for addr in listen_addrs {
+                            swarm.behaviour_mut().kademlia.add_address(&peer_id, addr);
+                        }
                     }
                 }
             }
@@ -152,39 +143,12 @@ async fn main() -> Result<()> {
     }
 }
 
-#[derive(NetworkBehaviour)]
-struct Behaviour {
-    limits: memory_connection_limits::Behaviour,
-    kademlia: kad::Behaviour<kad::store::MemoryStore>,
-    relay: relay::Behaviour,
-    auto_nat: autonat::Behaviour,
-    ping: ping::Behaviour,
-    gossipsub: gossipsub::Behaviour,
-    identify: identify::Behaviour,
-}
-
 fn create_swarm(
     local_key: identity::Keypair,
     certificate: Certificate,
 ) -> Result<Swarm<Behaviour>> {
     let local_peer_id = PeerId::from(local_key.public());
     println!("Local peer id: {local_peer_id}");
-
-    let identify_config = identify::Behaviour::new(
-        identify::Config::new("/ipfs/id/1.0.0".to_string(), local_key.public())
-            .with_agent_version(format!("sobaka-rust-relay/{}", env!("CARGO_PKG_VERSION"))),
-    );
-    let gossipsub_config = gossipsub::ConfigBuilder::default()
-        .validation_mode(gossipsub::ValidationMode::Permissive)
-        .mesh_outbound_min(1)
-        .mesh_n_low(1)
-        .flood_publish(true)
-        .build()
-        .map_err(|msg| io::Error::new(io::ErrorKind::Other, msg))?; // Temporary hack because `build` does not return a proper `std::error::Error`.
-
-    // Create a Kademlia behaviour.
-    let mut cfg = kad::Config::default();
-    cfg.set_query_timeout(Duration::from_secs(5 * 60));
 
     let swarm = libp2p::SwarmBuilder::with_existing_identity(local_key.clone())
         .with_tokio()
@@ -199,29 +163,7 @@ fn create_swarm(
                 .map(|(peer_id, conn), _| (peer_id, StreamMuxerBox::new(conn))))
         })?
         .with_dns()?
-        .with_behaviour(move |key| -> Behaviour {
-            let store = kad::store::MemoryStore::new(key.public().to_peer_id());
-
-            Behaviour {
-                kademlia: kad::Behaviour::with_config(key.public().to_peer_id(), store, cfg),
-                limits: memory_connection_limits::Behaviour::with_max_percentage(0.8),
-                gossipsub: gossipsub::Behaviour::new(
-                    gossipsub::MessageAuthenticity::Signed(local_key),
-                    gossipsub_config,
-                )
-                .expect("Correct configuration"),
-                identify: identify_config,
-                auto_nat: autonat::Behaviour::new(
-                    key.public().to_peer_id(),
-                    autonat::Config {
-                        only_global_ips: false,
-                        ..Default::default()
-                    },
-                ),
-                ping: ping::Behaviour::new(ping::Config::new()),
-                relay: relay::Behaviour::new(key.public().to_peer_id(), Default::default()),
-            }
-        })?
+        .with_behaviour(Behaviour::new)?
         .build();
 
     Ok(swarm)
