@@ -1668,6 +1668,7 @@ dependencies = [
  "getrandom 0.2.10",
  "instant",
  "libp2p-allow-block-list",
+ "libp2p-autonat",
  "libp2p-connection-limits",
  "libp2p-core",
  "libp2p-dns",
@@ -1701,6 +1702,24 @@ dependencies = [
  "libp2p-identity",
  "libp2p-swarm",
  "void",
+]
+
+[[package]]
+name = "libp2p-autonat"
+version = "0.11.0"
+source = "git+https://github.com/Marcel-G/rust-libp2p?branch=feat/close-webrtc-connections#8438163e04a7ace748730fb2b03ee889ca12e292"
+dependencies = [
+ "async-trait",
+ "futures",
+ "futures-timer",
+ "instant",
+ "libp2p-core",
+ "libp2p-identity",
+ "libp2p-request-response",
+ "libp2p-swarm",
+ "log",
+ "quick-protobuf",
+ "rand",
 ]
 
 [[package]]
@@ -1994,6 +2013,23 @@ dependencies = [
  "rand",
  "static_assertions",
  "thiserror",
+ "void",
+]
+
+[[package]]
+name = "libp2p-request-response"
+version = "0.25.1"
+source = "git+https://github.com/Marcel-G/rust-libp2p?branch=feat/close-webrtc-connections#8438163e04a7ace748730fb2b03ee889ca12e292"
+dependencies = [
+ "async-trait",
+ "futures",
+ "instant",
+ "libp2p-core",
+ "libp2p-identity",
+ "libp2p-swarm",
+ "log",
+ "rand",
+ "smallvec",
  "void",
 ]
 

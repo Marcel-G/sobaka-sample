@@ -8,7 +8,7 @@ use libp2p::{
     multiaddr::{Multiaddr, Protocol},
     noise, relay,
     swarm::{NetworkBehaviour, Swarm, SwarmEvent},
-    tcp, yamux, PeerId, Transport,
+    tcp, yamux, PeerId, Transport, autonat,
 };
 
 use libp2p::{identify, identity, memory_connection_limits, ping};
@@ -157,6 +157,7 @@ struct Behaviour {
     limits: memory_connection_limits::Behaviour,
     kademlia: kad::Behaviour<kad::store::MemoryStore>,
     relay: relay::Behaviour,
+    auto_nat: autonat::Behaviour,
     ping: ping::Behaviour,
     gossipsub: gossipsub::Behaviour,
     identify: identify::Behaviour,
@@ -210,6 +211,13 @@ fn create_swarm(
                 )
                 .expect("Correct configuration"),
                 identify: identify_config,
+                auto_nat: autonat::Behaviour::new(
+                    key.public().to_peer_id(),
+                    autonat::Config {
+                        only_global_ips: false,
+                        ..Default::default()
+                    },
+                ),
                 ping: ping::Behaviour::new(ping::Config::new()),
                 relay: relay::Behaviour::new(key.public().to_peer_id(), Default::default()),
             }
