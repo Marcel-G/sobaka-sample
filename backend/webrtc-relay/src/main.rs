@@ -43,10 +43,28 @@ struct Opt {
     remote_address: Option<Multiaddr>,
 }
 
+fn listen_addrs<T>(ip: T) -> Vec<Multiaddr>
+where
+    Multiaddr: From<T>,
+    T: Clone,
+{
+    vec![
+        Multiaddr::from(ip.clone())
+            .with(Protocol::Udp(PORT_WEBRTC))
+            .with(Protocol::WebRTCDirect),
+        Multiaddr::from(ip.clone())
+            .with(Protocol::Udp(PORT_QUIC))
+            .with(Protocol::QuicV1),
+        Multiaddr::from(ip).with(Protocol::Tcp(PORT_QUIC)),
+    ]
+}
+
 /// An example WebRTC peer that will accept connections
 #[tokio::main]
 async fn main() -> Result<()> {
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
+
+    let ip = public_ip::addr().await.expect("no public IP");
 
     let opt = Opt::parse();
     let local_key = read_or_create_identity(Path::new(LOCAL_KEY_PATH))
@@ -58,25 +76,15 @@ async fn main() -> Result<()> {
 
     let mut swarm = create_swarm(local_key, webrtc_cert)?;
 
-    swarm
-        .listen_on(
-            Multiaddr::from(Ipv4Addr::UNSPECIFIED)
-                .with(Protocol::Udp(PORT_WEBRTC))
-                .with(Protocol::WebRTCDirect),
-        )
-        .expect("listen on webrtc");
+    for addr in listen_addrs(Ipv4Addr::UNSPECIFIED) {
+        swarm
+            .listen_on(addr.clone())
+            .unwrap_or_else(|_| panic!("listen on {}", addr));
+    }
 
-    swarm
-        .listen_on(
-            Multiaddr::from(Ipv4Addr::UNSPECIFIED)
-                .with(Protocol::Udp(PORT_QUIC))
-                .with(Protocol::QuicV1),
-        )
-        .expect("listen on quic-v1");
-
-    swarm
-        .listen_on(Multiaddr::from(Ipv4Addr::UNSPECIFIED).with(Protocol::Tcp(PORT_QUIC)))
-        .expect("listen on tcp");
+    for addr in listen_addrs(ip) {
+        swarm.add_external_address(addr);
+    }
 
     if let Some(remote_address) = opt.remote_address {
         swarm
@@ -117,15 +125,17 @@ async fn main() -> Result<()> {
                             protocols,
                             listen_addrs,
                             observed_addr,
+                            agent_version,
                             ..
                         },
                 } = e
                 {
-                    log::debug!("identify::Event::Received observed_addr: {}", observed_addr);
-
-                    swarm.add_external_address(observed_addr);
-
-                    if protocols.iter().any(|p| *p == kad::PROTOCOL_NAME) {
+                    if agent_version.contains("sobaka/0.0.1") {
+                        log::info!("Sobaka agent added: peer_id: {peer_id} protocols: {protocols:?} listen_addrs: {listen_addrs:?} observed_addr: {observed_addr} agent_version: {agent_version}");
+                    }
+                    if protocols.iter().any(|p| *p == kad::PROTOCOL_NAME)
+                        || agent_version.contains("sobaka/0.0.1")
+                    {
                         for addr in listen_addrs {
                             swarm.behaviour_mut().kademlia.add_address(&peer_id, addr);
                         }
@@ -133,8 +143,6 @@ async fn main() -> Result<()> {
                 }
             }
             SwarmEvent::NewListenAddr { address, .. } => {
-                swarm.add_external_address(address.clone());
-
                 let p2p_address = address.with(Protocol::P2p(*swarm.local_peer_id()));
                 info!("Listening on {p2p_address}");
             }

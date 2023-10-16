@@ -41,7 +41,9 @@ export const createLibp2p = async (datastore: Datastore) => {
     ],
     services: {
       ping: pingService(),
-      identify: identifyService(),
+      identify: identifyService({
+        agentVersion: 'sobaka/0.0.1',
+      }),
       autoNAT: autoNATService(),
       dcutr: dcutrService(),
       // https://github.com/ChainSafe/js-libp2p-gossipsub/issues/448
