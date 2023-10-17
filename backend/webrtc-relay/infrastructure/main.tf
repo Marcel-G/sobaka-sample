@@ -146,8 +146,8 @@ module "security_group" {
       cidr_blocks = "0.0.0.0/0"
     },
     {
-      from_port   = 9091
-      to_port     = 9091
+      from_port   = 9092
+      to_port     = 9092
       protocol    = "tcp"
       description = "Allow TCP ports"
       cidr_blocks = "0.0.0.0/0"

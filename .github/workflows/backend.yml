@@ -89,6 +89,7 @@ jobs:
                   " --name instance \\",
                   " -p 9090:9090/udp \\",
                   " -p 9091:9091/udp \\",
+                  " -p 9092:9092/tcp \\",
                   " -v /cert:/cert \\",
                   " -d ${{ needs.infrastructure.outputs.ecr_repository_webrtc_relay }}:latest"
             ]}' --region us-east-1

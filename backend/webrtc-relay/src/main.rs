@@ -26,6 +26,7 @@ mod behaviour;
 
 const PORT_WEBRTC: u16 = 9090;
 const PORT_QUIC: u16 = 9091;
+const PORT_TCP: u16 = 9092;
 const LOCAL_KEY_PATH: &str = "./cert/local_key";
 const LOCAL_CERT_PATH: &str = "./cert/cert.pem";
 
@@ -55,7 +56,7 @@ where
         Multiaddr::from(ip.clone())
             .with(Protocol::Udp(PORT_QUIC))
             .with(Protocol::QuicV1),
-        Multiaddr::from(ip).with(Protocol::Tcp(PORT_QUIC)),
+        Multiaddr::from(ip).with(Protocol::Tcp(PORT_TCP)),
     ]
 }
 
