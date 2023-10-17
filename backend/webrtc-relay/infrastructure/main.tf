@@ -144,6 +144,13 @@ module "security_group" {
       protocol    = "udp"
       description = "Allow Quic ports"
       cidr_blocks = "0.0.0.0/0"
+    },
+    {
+      from_port   = 9091
+      to_port     = 9091
+      protocol    = "tcp"
+      description = "Allow TCP ports"
+      cidr_blocks = "0.0.0.0/0"
     }
   ]
   egress_rules = ["all-all"]
