@@ -26,7 +26,6 @@ pub(crate) struct Behaviour {
 impl Behaviour {
     pub(crate) fn new(local_key: &Keypair) -> Behaviour {
         let mut kademlia_config = kad::Config::default();
-        kademlia_config.set_query_timeout(Duration::from_secs(5 * 60));
         // Instantly remove records and provider records.
         //
         // TODO: Replace hack with option to disable both.
