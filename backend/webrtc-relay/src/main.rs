@@ -162,7 +162,7 @@ fn create_swarm(
     let swarm = libp2p::SwarmBuilder::with_existing_identity(local_key.clone())
         .with_tokio()
         .with_tcp(
-            tcp::Config::default(),
+            tcp::Config::default().port_reuse(true).nodelay(true),
             noise::Config::new,
             yamux::Config::default,
         )?

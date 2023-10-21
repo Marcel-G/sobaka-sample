@@ -60,15 +60,13 @@ impl Behaviour {
             )
             .expect("Correct configuration"),
             identify: identify::Behaviour::new(
-                identify::Config::new("/ipfs/id/1.0.0".to_string(), local_key.public())
-                    .with_agent_version(format!("sobaka-rust-relay/{}", env!("CARGO_PKG_VERSION"))),
+                identify::Config::new("ipfs/0.1.0".to_string(), local_key.public()).with_agent_version(
+                    format!("sobaka-rust-relay/{}", env!("CARGO_PKG_VERSION")),
+                ),
             ),
             auto_nat: autonat::Behaviour::new(
                 local_key.public().to_peer_id(),
-                autonat::Config {
-                    only_global_ips: false,
-                    ..Default::default()
-                },
+                Default::default()
             ),
             ping: ping::Behaviour::new(ping::Config::new()),
             relay: relay::Behaviour::new(local_key.public().to_peer_id(), Default::default()),
