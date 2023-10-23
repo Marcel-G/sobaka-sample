@@ -14,12 +14,12 @@ on:
       cdn_distribution_id:
         description: "CloudFront distribution ID"
         value: ${{ jobs.infrastructure.outputs.cdn_distribution_id }}
-      ecr_repository_webrtc_relay:
-        description: "ECR repository for webrtc-relay"
-        value: ${{ jobs.infrastructure.outputs.ecr_repository_webrtc_relay }}
-      instance_id_webrtc_relay:
-        description: "EC2 instance ID for webrtc-relay"
-        value: ${{ jobs.infrastructure.outputs.instance_id_webrtc_relay }}
+      ecr_repository_ipfs:
+        description: "ECR repository for ipfs"
+        value: ${{ jobs.infrastructure.outputs.ecr_repository_ipfs }}
+      instance_id_ipfs:
+        description: "EC2 instance ID for ipfs"
+        value: ${{ jobs.infrastructure.outputs.instance_id_ipfs }}
 
 jobs:
   infrastructure:
@@ -38,8 +38,8 @@ jobs:
       deploy_bucket: ${{ steps.collect-outputs.outputs.deploy_bucket }}
       deploy_role: ${{ steps.collect-outputs.outputs.deploy_role }}
       cdn_distribution_id: ${{ steps.collect-outputs.outputs.cdn_distribution_id }}
-      ecr_repository_webrtc_relay: ${{ steps.collect-outputs.outputs.ecr_repository_webrtc_relay }}
-      instance_id_webrtc_relay: ${{ steps.collect-outputs.outputs.instance_id_webrtc_relay }}
+      ecr_repository_ipfs: ${{ steps.collect-outputs.outputs.ecr_repository_ipfs }}
+      instance_id_ipfs: ${{ steps.collect-outputs.outputs.instance_id_ipfs }}
     defaults:
       run:
         working-directory: infrastructure
@@ -77,5 +77,5 @@ jobs:
           echo "deploy_bucket=$(terraform output -raw deploy_bucket)" >> $GITHUB_OUTPUT
           echo "deploy_role=$(terraform output -raw deploy_role)" >> $GITHUB_OUTPUT
           echo "cdn_distribution_id=$(terraform output -raw cdn_distribution_id)" >> $GITHUB_OUTPUT
-          echo "ecr_repository_webrtc_relay=$(terraform output -raw ecr_repository_webrtc_relay)" >> $GITHUB_OUTPUT
-          echo "instance_id_webrtc_relay=$(terraform output -raw instance_id_webrtc_relay)" >> $GITHUB_OUTPUT
+          echo "ecr_repository_ipfs=$(terraform output -raw ecr_repository_ipfs)" >> $GITHUB_OUTPUT
+          echo "instance_id_ipfs=$(terraform output -raw instance_id_ipfs)" >> $GITHUB_OUTPUT

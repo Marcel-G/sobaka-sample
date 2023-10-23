@@ -13,6 +13,14 @@ output "deploy_role" {
   value       = module.global.global_deploy_role.arn
 }
 
+output "ecr_repository_ipfs" {
+  value = module.backend.ecr_repository_ipfs
+}
+
+output "instance_id_ipfs" {
+  value = module.backend.instance_id_ipfs
+}
+
 output "ecr_repository_webrtc_relay" {
   value = module.backend.ecr_repository_webrtc_relay
 }

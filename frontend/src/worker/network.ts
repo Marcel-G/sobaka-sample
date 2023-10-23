@@ -29,8 +29,12 @@ export const createLibp2p = async (datastore: Datastore) => {
         discoverRelays: 1,
       }),
       webRTC(),
-      webRTCDirect(),
+      webRTCDirect()
     ],
+    connectionManager: {
+      maxParallelDials: 5,
+      autoDialConcurrency: 5,
+    },
     connectionEncryption: [noise()],
     streamMuxers: [
       yamux(),
@@ -93,7 +97,11 @@ export const createLibp2p = async (datastore: Datastore) => {
     console.log('self:peer:update',multiaddrs)
   })
 
-  await node.dial(multiaddr('/dnsaddr/next.sobaka.marcelgleeson.com'))
+  try {
+    await node.dial(multiaddr('/dnsaddr/next.sobaka.marcelgleeson.com'))
+  } catch (error) {
+    console.error(error)
+  }
 
   return node
 }
