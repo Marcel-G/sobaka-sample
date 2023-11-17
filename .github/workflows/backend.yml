@@ -2,7 +2,7 @@ name: "Backend"
 
 on:
   push:
-    branches: [master, next, feat/helia]
+    branches: [master, next, feat/helia-helia]
     paths:
       - 'backend/**'
   pull_request:
@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: backend/webrtc-relay
+        working-directory: backend/helia
     steps:
       - uses: actions/checkout@v3
       - name: Set up Docker Buildx
@@ -24,14 +24,14 @@ jobs:
       - name: Build and export
         uses: docker/build-push-action@v5
         with:
-          context: backend/webrtc-relay
-          tags: rust-relay:latest
-          outputs: type=docker,dest=/tmp/rust-relay.tar
+          context: backend/helia
+          tags: sobaka-helia:latest
+          outputs: type=docker,dest=/tmp/sobaka-helia.tar
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
-          name: rust-relay
-          path: /tmp/rust-relay.tar
+          name: sobaka-helia
+          path: /tmp/sobaka-helia.tar
 
   infrastructure:
     needs:
@@ -62,37 +62,22 @@ jobs:
       - name: Download artifact
         uses: actions/download-artifact@v3
         with:
-          name: rust-relay
+          name: sobaka-helia
           path: /tmp
       - name: Tag and upload image to ECR
         env:
-          ECR_REPOSITORY: ${{ needs.infrastructure.outputs.ecr_repository_webrtc_relay }}
+          ECR_REPOSITORY: ${{ needs.infrastructure.outputs.ecr_repository_helia }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          docker load --input /tmp/rust-relay.tar
-          docker tag rust-relay:latest $ECR_REPOSITORY:$IMAGE_TAG
-          docker tag rust-relay:latest $ECR_REPOSITORY:latest
+          docker load --input /tmp/sobaka-helia.tar
+          docker tag sobaka-helia:latest $ECR_REPOSITORY:$IMAGE_TAG
+          docker tag sobaka-helia:latest $ECR_REPOSITORY:latest
           docker push $ECR_REPOSITORY --all-tags
       - name: Deploy image to EC2
         run: |
           aws ssm send-command \
-            --document-name "AWS-RunShellScript" \
-            --instance-id "${{ needs.infrastructure.outputs.instance_id_webrtc_relay }}" \
-            --parameters '{
-              "executionTimeout":["3600"],
-              "commands":[
-                "sudo su ec2-user",
-                "aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ needs.infrastructure.outputs.ecr_repository_webrtc_relay }}",
-                "docker pull ${{ needs.infrastructure.outputs.ecr_repository_webrtc_relay }}",
-                "docker rm -f instance || true",
-                "docker run \\",
-                  " --name instance \\",
-                  " -p 9090:9090/udp \\",
-                  " -p 9091:9091/udp \\",
-                  " -p 9092:9092/tcp \\",
-                  " -v /cert:/cert \\",
-                  " -d ${{ needs.infrastructure.outputs.ecr_repository_webrtc_relay }}:latest"
-            ]}' --region us-east-1
+            --document-name "sobaka-backend-sobaka-next-helia-deploy" \
+            --instance-id "${{ needs.infrastructure.outputs.instance_id_helia }}" 
 
 concurrency: 
   group: "${{ github.ref }}-backend"

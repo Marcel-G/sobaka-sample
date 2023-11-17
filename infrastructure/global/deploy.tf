@@ -3,7 +3,7 @@ terraform {
   required_providers {
     github = {
       source  = "integrations/github"
-      version = ">= 5.0"
+      version = "5.40" // https://github.com/integrations/terraform-provider-github/issues/2008
     }
   }
 }

@@ -13,10 +13,10 @@ output "deploy_role" {
   value       = module.global.global_deploy_role.arn
 }
 
-output "ecr_repository_webrtc_relay" {
-  value = module.backend.ecr_repository_webrtc_relay
+output "ecr_repository_helia" {
+  value = module.backend.ecr_repository_helia
 }
 
-output "instance_id_webrtc_relay" {
-  value = module.backend.instance_id_webrtc_relay
+output "instance_id_helia" {
+  value = module.backend.instance_id_helia
 }
