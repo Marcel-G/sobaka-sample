@@ -4,7 +4,6 @@ import { mplex } from "@libp2p/mplex"
 import { yamux } from "@chainsafe/libp2p-yamux"
 import { webRTC, webRTCDirect } from "@libp2p/webrtc"
 import { createLibp2p as create } from "libp2p"
-import { ipniContentRouting } from '@libp2p/ipni-content-routing'
 import { circuitRelayTransport } from 'libp2p/circuit-relay'
 import { identifyService } from 'libp2p/identify'
 import { autoNATService } from 'libp2p/autonat'
@@ -13,8 +12,9 @@ import type { Datastore } from 'interface-datastore'
 import { dcutrService } from 'libp2p/dcutr'
 import { ipnsSelector } from 'ipns/selector'
 import { ipnsValidator } from 'ipns/validator'
-import { multiaddr } from '@multiformats/multiaddr'
+import { bootstrap } from '@libp2p/bootstrap'
 import { pingService } from 'libp2p/ping'
+import { webSockets } from '@libp2p/websockets'
 
 export const createLibp2p = async (datastore: Datastore) => {
   const node = await create({
@@ -30,14 +30,19 @@ export const createLibp2p = async (datastore: Datastore) => {
       }),
       webRTC(),
       webRTCDirect(),
+      webSockets()
     ],
     connectionEncryption: [noise()],
     streamMuxers: [
       yamux(),
       mplex()
     ],
-    contentRouters: [
-      ipniContentRouting('https://cid.contact')
+    peerDiscovery: [
+      bootstrap({
+        list: [
+          ''
+        ]
+      })
     ],
     services: {
       ping: pingService(),
@@ -52,6 +57,7 @@ export const createLibp2p = async (datastore: Datastore) => {
         allowPublishToZeroPeers: true,
       }),
       dht: kadDHT({
+        protocolPrefix: 'sobaka',
         clientMode: true,
         validators: {
           ipns: ipnsValidator
@@ -92,8 +98,6 @@ export const createLibp2p = async (datastore: Datastore) => {
 
     console.log('self:peer:update',multiaddrs)
   })
-
-  await node.dial(multiaddr('/dnsaddr/next.sobaka.marcelgleeson.com'))
 
   return node
 }

@@ -69,7 +69,7 @@ export async function main() {
         allowPublishToZeroPeers: true,
       }),
       dht: kadDHT({
-        clientMode: true,
+        clientMode: false,
         protocolPrefix: 'sobaka',
         validators: {
           ipns: ipnsValidator
