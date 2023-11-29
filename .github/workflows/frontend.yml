@@ -2,7 +2,7 @@ name: "Frontend"
 
 on:
   push:
-    branches: [master, next, feat/helia]
+    branches: [master, next, feat/helia-helia]
     paths:
       - 'frontend/**'
       - 'sobaka-dsp/**'

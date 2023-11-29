@@ -8,6 +8,13 @@ const config = {
   preprocess: preprocess(),
 
   kit: {
+    prerender: {
+      handleHttpError: () => {
+        // Ignore all errors as @libp2p/webrtc -> node-datachannel failes to load during prerendering
+        // @todo fix this
+        return 
+      }
+    },
     // See SPA mode docs https://github.com/sveltejs/kit/blob/master/packages/adapter-static/README.md#spa-mode
     adapter: adapter({
       fallback: '404.html'

@@ -14,6 +14,7 @@ import { ipnsSelector } from 'ipns/selector'
 import { ipnsValidator } from 'ipns/validator'
 import { bootstrap } from '@libp2p/bootstrap'
 import { pingService } from 'libp2p/ping'
+import * as filters from "@libp2p/websockets/filters"
 import { webSockets } from '@libp2p/websockets'
 
 export const createLibp2p = async (datastore: Datastore) => {
@@ -28,9 +29,19 @@ export const createLibp2p = async (datastore: Datastore) => {
       circuitRelayTransport({
         discoverRelays: 1,
       }),
-      webRTC(),
-      webRTCDirect(),
-      webSockets()
+      webRTC({
+        rtcConfiguration: {
+          iceServers:[{
+            urls: [
+              'stun:stun.l.google.com:19302',
+              'stun:global.stun.twilio.com:3478'
+            ]
+          }]
+        }
+      }),
+      webSockets({
+        filter: filters.all
+      })
     ],
     connectionEncryption: [noise()],
     streamMuxers: [
@@ -40,7 +51,7 @@ export const createLibp2p = async (datastore: Datastore) => {
     peerDiscovery: [
       bootstrap({
         list: [
-          ''
+          '/dns4/bootstrap.next.sobaka.marcelgleeson.com/tcp/443/wss/p2p/12D3KooWHqCHo4Yy5FGWQ7RAKQpqPAhGwSUstKaRtMGdR1gDd1oe'
         ]
       })
     ],
