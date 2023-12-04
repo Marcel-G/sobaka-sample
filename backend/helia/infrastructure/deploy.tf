@@ -6,7 +6,7 @@ locals {
     docker rm -f instance || true
     docker run \
       --name instance \
-      -e NODE_DEBUG='tls,https' \
+      -e DEBUG='libp2p:*' \
       -e AWS_REGION=${data.aws_region.current.name} \
       -p 443:4001 \
       -d ${module.container_image_ecr.repository_url}:latest
