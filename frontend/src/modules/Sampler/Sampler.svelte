@@ -34,7 +34,6 @@
   import AudioPreview from './AudioPreview.svelte'
   import AudioDetail from './AudioDetail.svelte'
   import Button from '../../components/Button.svelte'
-  import { get_media_context } from '../../worker/media'
   import Layout from '../../components/Layout.svelte'
   import RingSpinner from '../../components/RingSpinner.svelte'
   import { Range, RangeType } from '../../components/Knob/range'
@@ -48,7 +47,6 @@
   let files: string[] = []
 
   const context = get_audio_context()
-  const media = get_media_context()
 
   let trigger_segment: (segment_index: number) => void
   let audio_data: SharedAudio | null
@@ -71,7 +69,8 @@
       }
     })
 
-    files = await media.list()
+    // files = await media.list()
+    throw new Error('Not implemented')
   })
 
   type InputChangeEvent = Event & {
@@ -83,10 +82,11 @@
 
     if (file) {
       loading = true
-      state.sound_id = await media.store(file)
-      loading = false
-      state.active_segment = 0
-      state.view_position = 0
+      // state.sound_id = await media.store(file)
+      throw new Error('Not implemented')
+      // loading = false
+      // state.active_segment = 0
+      // state.view_position = 0
     }
   }
 
@@ -102,15 +102,16 @@
   async function load_audio(id: string) {
     audio_data = null
     detections = []
-    const audio = await media.open(id)
-    audio_data = audio.cloned()
-
-    if (audio) {
-      // Send updated data to audio worklet - @todo this may not be the most efficient format
-      setTimeout(() => {
-        sampler?.update_audio(audio)
-      }, 1000)
-    }
+    throw new Error('Not implemented')
+    // const audio = await media.open(id)
+    // audio_data = audio.cloned()
+    //
+    // if (audio) {
+    //   // Send updated data to audio worklet - @todo this may not be the most efficient format
+    //   setTimeout(() => {
+    //     sampler?.update_audio(audio)
+    //   }, 1000)
+    // }
   }
 
   // Update the sobaka node when the state changes
@@ -188,7 +189,8 @@
           <Button
             onClick={async () => {
               state.sound_id = null
-              files = await media.list()
+              throw new Error('Not implemented')
+              // files = await media.list()
             }}>Change</Button
           >
         </div>

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Module } from '../workspace/state'
+  import { Module } from '../workspace/workspace'
   import { get_component } from '.'
   import { init_module_context } from './context'
 

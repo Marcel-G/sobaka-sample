@@ -2,9 +2,8 @@
   import { clamp } from 'lodash'
   import RingSpinner from '../../components/RingSpinner.svelte'
   import useDrag, { OnDrag, relative_to_element } from '../../actions/drag'
-  import { AudioData } from '../../worker/media'
   import AudioWaveCanvas from './AudioWaveCanvas.svelte'
-  import { WINDOW_SIZE } from './constants'
+  import { AudioData, WINDOW_SIZE } from './constants'
   import Layout from '../../components/Layout.svelte'
 
   // How far along the audio the detail view is at (0-1)

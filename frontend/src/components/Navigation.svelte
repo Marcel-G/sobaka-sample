@@ -12,7 +12,7 @@
     </li>
     <li>
       <slot name="right">
-        <a href="/workspace/draft/new">
+        <a href="/workspace/new">
           <NavigationButton>New</NavigationButton>
         </a>
       </slot>

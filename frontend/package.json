@@ -42,7 +42,6 @@
     "@syncedstore/core": "^0.4.3",
     "@syncedstore/svelte": "^0.4.3",
     "date-fns": "^2.29.2",
-    "ipfs-core": "^0.18.0",
     "lodash": "^4.17.21",
     "ress": "^4.0.0",
     "sobaka-dsp": "file:../sobaka-dsp",

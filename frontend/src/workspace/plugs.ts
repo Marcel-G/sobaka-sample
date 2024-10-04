@@ -1,5 +1,5 @@
 import { get, Readable, writable } from 'svelte/store'
-import { is_fully_linked, WorkspaceStore } from './state'
+import { is_fully_linked, WorkspaceStore } from './workspace'
 
 // @todo export these from sobaka-dsp without ssr breaking
 const In = (n: number) => `in-${n}`

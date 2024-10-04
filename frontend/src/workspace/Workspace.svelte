@@ -79,7 +79,7 @@
     >
       <NavigationButton>Save</NavigationButton>
     </a>
-    <a href="/workspace/draft/new">
+    <a href="/workspace/new">
       <NavigationButton>New</NavigationButton>
     </a>
   </svelte:fragment>

@@ -1,15 +1,18 @@
 <script lang="ts">
   import type { PageData } from './$types'
 
+  import { WorkspaceManager } from '../../../models/manager'
   import Workspace from '../../../workspace/Workspace.svelte'
   import { init_workspace } from '../../../workspace/context'
 
   export let data: PageData
 
-  const space = init_workspace()
-
   if (data.workspace.id) {
-    space.load_from_remote(data.workspace.id)
+    const doc = WorkspaceManager.fromData(data.managerData)
+      .storageSynced()
+      .loadWorkspace(data.workspace.id)
+
+    init_workspace(doc)
   }
 </script>
 

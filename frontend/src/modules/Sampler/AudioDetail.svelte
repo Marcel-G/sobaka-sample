@@ -1,10 +1,9 @@
 <script lang="ts">
   import Layout from '../../components/Layout.svelte'
   import RingSpinner from '../../components/RingSpinner.svelte'
-  import { AudioData } from '../../worker/media'
   import AudioSegments from './AudioSegments.svelte'
   import AudioWaveCanvas from './AudioWaveCanvas.svelte'
-  import { WINDOW_SIZE } from './constants'
+  import { WINDOW_SIZE, AudioData } from './constants'
 
   // How far along the audio the detail view is at (0-1)
   export let view_position: number

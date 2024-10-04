@@ -1,6 +1,5 @@
 export interface User {
   uuid: string
-  name: string
 }
 
 const SOBAKA_USER = 'sobaka-user'
@@ -18,12 +17,9 @@ export const update_user = (user: User) => {
   localStorage.setItem(SOBAKA_USER, JSON.stringify(user))
 }
 
-export const create_user = (name?: string) => {
+export const create_user = () => {
   const uuid = crypto.randomUUID()
-  const user: User = {
-    uuid,
-    name: name || uuid
-  }
+  const user: User = { uuid }
 
   update_user(user)
 
