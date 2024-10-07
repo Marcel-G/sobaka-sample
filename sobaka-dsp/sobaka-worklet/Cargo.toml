@@ -16,8 +16,8 @@ rustfft = { version = "6.0.1" }
 fundsp = "0.13.0"
 
 waw = { git = "https://github.com/Marcel-G/waw-rs", features = ["shared-memory"] }
-wasm-bindgen = { version = "0.2.82" }
-wasm-bindgen-futures = { version = "0.4.34" }
+wasm-bindgen = { version = "0.2.91" }
+wasm-bindgen-futures = { version = "0.4.43" }
 
 serde_bytes = "0.11"
 bytemuck = "1.12.3"
