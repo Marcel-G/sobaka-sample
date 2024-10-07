@@ -4,9 +4,7 @@
 </script>
 
 <script lang="ts">
-  import { onDestroy } from 'svelte'
   import { writable } from 'svelte/store'
-  import { get_workspace } from './context'
 
   import ModuleWrapper from '../modules/ModuleWrapper.svelte'
   import Toolbox from '../components/Toolbox.svelte'
@@ -14,22 +12,16 @@
   import Navigation from '../components/Navigation.svelte'
   import TitleInput from '../components/TitleInput.svelte'
   import NavigationButton from '../components/NavigationButton.svelte'
-
-  import PointerPositions from '../components/collaborative/PointerPositions.svelte'
-  import AvatarList from '../components/collaborative/AvatarList.svelte'
+  import { get_workspace } from '../context/workspace'
 
   let loading = false
   let toolbox_visible = false
   let toolbox_position: Position = { x: 0, y: 0 }
   let workspace_element: Element
 
-  const space = get_workspace()
-
-  onDestroy(() => {
-    space.cleanup()
-  })
-
-  const store = space.store
+  const { workspace, plugs } = get_workspace()
+  const meta = workspace.meta
+  const modules = workspace.modules
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handle_double_click = (event: MouseEvent) => {
@@ -43,7 +35,7 @@
       toolbox_visible = true
       toolbox_position = $mouse_position
     } else if (event.code === 'Escape') {
-      const active_link = space.get_active_link_substore()
+      const active_link = plugs.active_link_store
       active_link.update(() => null)
     }
   }
@@ -67,18 +59,9 @@
     </a>
   </svelte:fragment>
   <svelte:fragment slot="mid">
-    <TitleInput bind:value={$store.meta.title} />
+    <TitleInput bind:value={$meta.title} />
   </svelte:fragment>
   <svelte:fragment slot="right">
-    <AvatarList />
-    <a
-      href="#"
-      on:click={() => {
-        space.save_to_remote()
-      }}
-    >
-      <NavigationButton>Save</NavigationButton>
-    </a>
     <a href="/workspace/new">
       <NavigationButton>New</NavigationButton>
     </a>
@@ -103,10 +86,9 @@
       <Toolbox position={toolbox_position} onClose={handle_close} />
     {/if}
 
-    {#each $store.modules as module (module.id)}
+    {#each $modules as module (module.id)}
       <ModuleWrapper {module} />
     {/each}
-    <PointerPositions />
     <Wires />
   {/if}
 </div>

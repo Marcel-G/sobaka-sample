@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { get_workspace } from '../workspace/context'
+  import { get_workspace } from '../context/workspace'
   import Wire from './Wire.svelte'
-  const space = get_workspace()
-  const link_positions = space.get_link_positions()
-  const active_link = space.get_active_link_position()
+  const { workspace, plugs } = get_workspace()
+  const link_positions = plugs.get_link_positions()
+  const active_link = plugs.get_active_link_position()
 
   $: [active_to, active_from] = $active_link
 </script>
@@ -15,7 +15,7 @@
   {#each $link_positions as [from, to, link] (link.id)}
     <Wire
       on_click={() => {
-        space.remove_link(link.id)
+        workspace.remove_link(link.id)
       }}
       {from}
       {to}

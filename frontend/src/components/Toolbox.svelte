@@ -1,13 +1,13 @@
 <script lang="ts">
   import { clamp } from 'lodash'
-  import { get_workspace } from '../workspace/context'
+  import { get_workspace } from '../context/workspace'
   import { MODULES, ModuleUI } from '../modules'
   import { into_grid_coords } from '../modules/shared/Panel.svelte'
 
   export let position = { x: 0, y: 0 }
   export let onClose: () => void
 
-  const space = get_workspace()
+  const { workspace } = get_workspace()
 
   let search = ''
   let selected_index = 0
@@ -31,7 +31,7 @@
   })
 
   function handle_create(type: ModuleUI) {
-    space.create_module(type, into_grid_coords(position))
+    workspace.create_module(type, into_grid_coords(position))
     onClose()
   }
 

@@ -1,9 +1,11 @@
 <script lang="ts">
-  import type { PageData } from './$types'
   import Navigation from '../components/Navigation.svelte'
-  import WorkspaceSummary from '../components/WorkspaceSummary.svelte'
+  import WorkspaceList from '../components/WorkspaceList.svelte'
+  import { get_root } from '../context/root'
 
-  export let data: PageData
+  const root = get_root()
+
+  const lists = root.workspaceLists()
 </script>
 
 <Navigation />
@@ -14,29 +16,16 @@
 
   <p>Press new in the top right to begin!</p>
 
-  {#if data.orphan_drafts.length}
-    <h2>Workspaces:</h2>
+  <h2>Lists:</h2>
+  {#if $lists.length}
     <ul>
-      {#each data.orphan_drafts as workspace (workspace.cid)}
-        <WorkspaceSummary meta={workspace} />
+      {#each $lists as workspaceList (workspaceList.id)}
+        <h2>Workspaces ({workspaceList.id}):</h2>
+        <button on:click={() => workspaceList.new()}>Add workspace</button>
+        <WorkspaceList {workspaceList} />
       {/each}
     </ul>
   {/if}
-
-  <!-- {#if data.shared_with_drafts.length} -->
-  <!--   <h2>Shared workspaces:</h2> -->
-  <!--   <ul> -->
-  <!--     {#each data.shared_with_drafts as pair (pair.remote.cid)} -->
-  <!--       <WorkspaceSummary meta={pair.remote}> -->
-  <!--         <ul> -->
-  <!--           {#each pair.drafts as draft (draft.cid)} -->
-  <!--             <WorkspaceSummary meta={draft} /> -->
-  <!--           {/each} -->
-  <!--         </ul> -->
-  <!--       </WorkspaceSummary> -->
-  <!--     {/each} -->
-  <!--   </ul> -->
-  <!-- {/if} -->
 </div>
 
 <style>

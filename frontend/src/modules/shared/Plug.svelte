@@ -1,14 +1,14 @@
 <script lang="ts">
   import { onDestroy } from 'svelte'
   import { writable, Writable } from 'svelte/store'
-  import context, { NodeContext, ParamContext, PlugType } from '../../workspace/plugs'
+  import { NodeContext, ParamContext, PlugType } from '../../context/plugs'
   import Tooltip from '../../components/Tooltip.svelte'
-  import { get_workspace } from '../../workspace/context'
+  import { get_workspace } from '../../context/workspace'
   import { get_module_context } from '../context'
 
-  const space = get_workspace()
+  const { workspace, plugs } = get_workspace()
   const { id: module_id } = get_module_context()
-  const position = space.module_position(module_id)
+  const position = workspace.module_position(module_id)
 
   export let ctx: ParamContext | NodeContext
   export let id: number
@@ -29,25 +29,26 @@
     (ctx.type !== PlugType.Param && ctx.module)
   ) {
     // Register once module is defined
-    plug_id = context.register(module_id, { index: id, node, ctx })
+    plug_id = plugs.register(module_id, { index: id, node, ctx })
   }
 
   function handle_click() {
-    context.make(space, plug_id)
+    plugs.make(plug_id)
   }
 
-  function on_move() {
-    requestAnimationFrame(() => {
-      // Trigger a state update so that dependencies re-calculate the new position
-      node.update(plug_element => plug_element)
-    })
+  $: {
+    // position values must be subscribed to in here to trigger reactivity
+    // even if we don't really need the values of x and y
+    if ($position.x !== 0 || $position.y !== 0) {
+      requestAnimationFrame(() => {
+        // Trigger a state update so that dependencies re-calculate the new position
+        node.update(plug_element => plug_element)
+      })
+    }
   }
-
-  const cleanup = position.subscribe(on_move)
 
   onDestroy(() => {
-    cleanup()
-    context.remove(space, plug_id)
+    plugs.remove(plug_id)
   })
 </script>
 

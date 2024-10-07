@@ -1,21 +1,23 @@
 <script lang="ts">
   import type { PageData } from './$types'
 
-  import { WorkspaceManager } from '../../../models/manager'
-  import Workspace from '../../../workspace/Workspace.svelte'
-  import { init_workspace } from '../../../workspace/context'
+  import WorkspaceView from '../../../workspace/Workspace.svelte'
+  import { init_workspace } from '../../../context/workspace'
+  import { get_root } from '../../../context/root'
 
   export let data: PageData
 
-  if (data.workspace.id) {
-    const doc = WorkspaceManager.fromData(data.managerData)
-      .storageSynced()
-      .loadWorkspace(data.workspace.id)
+  const root = get_root()
 
-    init_workspace(doc)
+  const workspace = root.find_workspace(data.workspace.id)
+
+  if (!workspace) {
+    throw new Error(`Workspace ${data.workspace.id} not found`)
   }
+
+  init_workspace(workspace)
 </script>
 
 {#key data.workspace.id}
-  <Workspace />
+  <WorkspaceView />
 {/key}

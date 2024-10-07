@@ -18,7 +18,7 @@
   import Plug from './shared/Plug.svelte'
   import { into_style } from '../components/Theme.svelte'
   import Knob from '../components/Knob/Knob.svelte'
-  import { PlugType } from '../workspace/plugs'
+  import { PlugType } from '../context/plugs'
   import { get_context as get_audio_context } from '../audio'
   import Layout from '../components/Layout.svelte'
   import RingSpinner from '../components/RingSpinner.svelte'

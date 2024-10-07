@@ -34,7 +34,7 @@
   import Panel from './shared/Panel.svelte'
   import Plug from './shared/Plug.svelte'
   import { into_style } from '../components/Theme.svelte'
-  import { PlugType } from '../workspace/plugs'
+  import { PlugType } from '../context/plugs'
   import { get_context as get_audio_context } from '../audio'
   import { Tuple } from '../@types'
   import Layout from '../components/Layout.svelte'

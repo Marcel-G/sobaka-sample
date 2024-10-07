@@ -19,7 +19,7 @@
   import Panel from './shared/Panel.svelte'
   import Plug from './shared/Plug.svelte'
   import { into_style } from '../components/Theme.svelte'
-  import { PlugType } from '../workspace/plugs'
+  import { PlugType } from '../context/plugs'
   import { onDestroy, onMount } from 'svelte'
   import Button from '../components/Button.svelte'
   import Led from '../components/Led.svelte'

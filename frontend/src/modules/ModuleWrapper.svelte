@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { Module } from '../workspace/workspace'
   import { get_component } from '.'
+  import { Module } from '../models/workspace'
   import { init_module_context } from './context'
 
   export let module: Module

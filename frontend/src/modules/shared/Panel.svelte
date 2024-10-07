@@ -15,7 +15,7 @@
 <script lang="ts">
   import { relative_to_element, useDrag } from '../../actions/drag'
   import type { OnDrag } from '../../actions/drag'
-  import { get_workspace } from '../../workspace/context'
+  import { get_workspace } from '../../context/workspace'
   import { get_module_context } from '../context'
 
   export let custom_style = ''
@@ -23,10 +23,10 @@
   export let height = 0
   export let width = 0
 
-  const space = get_workspace()
+  const { workspace } = get_workspace()
   const { id } = get_module_context()
 
-  const position = space.module_position(id)
+  const position = workspace.module_position(id)
 
   $: col = `${$position.x + 1} / span ${width}`
   $: row = `${$position.y + 1} / span ${height}`
@@ -40,7 +40,7 @@
       if (x < 0 || y < 0) {
         return
       }
-      space.move_module(id, x, y)
+      workspace.move_module(id, x, y)
     }
   }
 </script>
@@ -53,8 +53,8 @@
   <div class="bar">
     <span class="name">{name}</span>
     <span class="actions">
-      <button class="clone" on:click={() => space.clone_module(id)}>+</button>
-      <button class="close" on:click={() => space.remove_module(id)}>x</button>
+      <button class="clone" on:click={() => workspace.clone_module(id)}>+</button>
+      <button class="close" on:click={() => workspace.remove_module(id)}>x</button>
     </span>
   </div>
   <slot />
