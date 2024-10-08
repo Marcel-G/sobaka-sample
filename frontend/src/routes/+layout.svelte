@@ -6,10 +6,8 @@
   import { onDestroy, onMount } from 'svelte'
   import { init_audio } from '../audio'
   import { browser } from '$app/environment'
-  import { init_root } from '../context/root'
 
   let loading = true
-  init_root()
   const audio = init_audio()
   // const media = init_media()
   // setContext(MEDIA_CONTEXT, media)

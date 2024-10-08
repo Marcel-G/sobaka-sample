@@ -8,6 +8,10 @@
 </script>
 
 {#each $workspaces as workspace (workspace.id)}
-  <WorkspaceSummary {workspace} />
-  <button on:click={() => workspaceList.remove(workspace)}>Remove</button>
+  {#await workspace.load()}
+    <!-- TODO: skeleton loading UI -->
+  {:then}
+    <WorkspaceSummary {workspace} />
+    <button on:click={() => workspaceList.remove(workspace)}>Remove</button>
+  {/await}
 {/each}

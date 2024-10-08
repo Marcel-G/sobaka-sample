@@ -58,6 +58,7 @@
 </script>
 
 <div class="toolbox" style={`left: ${position.x}px; top: ${position.y}px`}>
+  <!-- svelte-ignore a11y-autofocus -->
   <input autofocus bind:value={search} on:keydown={handle_key_down} />
   <div class="list-wrapper">
     <div class="list">

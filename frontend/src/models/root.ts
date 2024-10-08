@@ -3,9 +3,9 @@ import { MappedTypeDescription } from '@syncedstore/core/types/doc'
 import { derived, Readable } from 'svelte/store'
 import * as Y from 'yjs'
 import { WorkspaceList } from './workspaceList'
-import { SubdocIndexeddbPersistence } from '../providers/subdocIndexeddbPersistence'
 import { SubDocReference } from '../util/subdoc'
 import { intoReadable } from '../util/store'
+import { IndexeddbPersistence } from 'y-indexeddb'
 
 type RootStore = {
   workspaceLists: SubDocReference[]
@@ -25,10 +25,10 @@ const USER_LIST_GUID = 'sobaka-user-list'
  */
 export class Root {
   private store: MappedTypeDescription<RootStore>
+  private cache: WeakMap<SubDocReference, WorkspaceList> = new WeakMap()
 
   constructor(private doc: Y.Doc) {
     this.store = syncedStore(ROOT_STORE_SHAPE, doc)
-    new SubdocIndexeddbPersistence(doc)
 
     this.doc.on('synced', () => {
       this.populate()
@@ -37,6 +37,23 @@ export class Root {
 
   static init() {
     return new Root(new Y.Doc({ guid: ROOT_DOC_GUID }))
+  }
+
+  /**
+   * Loads entity from local storage
+   */
+  async load() {
+    this.storageSynced()
+    this.doc.load()
+    return new Promise(resolve => this.doc.on('synced', resolve))
+  }
+
+  storageSynced(): Root {
+    const provider = new IndexeddbPersistence(this.doc.guid, this.doc)
+    provider.on('synced', () => {
+      this.doc.emit('synced', [this])
+    })
+    return this
   }
 
   populate() {
@@ -55,14 +72,23 @@ export class Root {
     return this.doc.getMap('user')
   }
 
+  private getCachedWorkspaceList(ref: SubDocReference): WorkspaceList {
+    let list = this.cache.get(ref)
+    if (!list) {
+      list = WorkspaceList.fromRef(ref)
+      this.cache.set(ref, list)
+    }
+    return list
+  }
+
   // TODO: What do do about readable vs non readable methods.
   _workspaceLists(): WorkspaceList[] {
-    return this.store.workspaceLists.map(doc => WorkspaceList.fromRef(doc))
+    return this.store.workspaceLists.map(ref => this.getCachedWorkspaceList(ref))
   }
 
   workspaceLists(): Readable<WorkspaceList[]> {
     return derived(intoReadable(this.store.workspaceLists), workspaceLists =>
-      workspaceLists.map(doc => WorkspaceList.fromRef(doc))
+      workspaceLists.map(ref => this.getCachedWorkspaceList(ref))
     )
   }
 

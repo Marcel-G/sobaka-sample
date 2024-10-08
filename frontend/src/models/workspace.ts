@@ -7,8 +7,9 @@ import { derived, Readable } from 'svelte/store'
 import { cloneDeep } from 'lodash'
 import { INITIAL_STATE, ModuleUI } from '../modules'
 import { intoReadable } from '../util/store'
-import { SubDoc, SubDocReference } from '../util/subdoc'
+import { SubDocReference } from '../util/subdoc'
 import { Position } from '../@types'
+import { IndexeddbPersistence } from 'y-indexeddb'
 
 export type WorkspaceMeta = {
   title: string
@@ -56,11 +57,17 @@ export class Workspace {
   private store: MappedTypeDescription<WorkspaceStore>
 
   constructor(private doc: Y.Doc) {
-    doc.load()
     this.store = syncedStore(WORKSPACE_STORE_SHAPE, doc)
 
     this.doc.on('synced', () => {
       this.populate()
+
+      this.doc.on('update', (_, origin) => {
+        if (origin === this) return
+        this.doc.transact(() => {
+          this.handleDocumentUpdated()
+        }, this)
+      })
     })
   }
 
@@ -68,20 +75,52 @@ export class Workspace {
     return new Workspace(doc)
   }
 
-  static fromRef(ref: SubDocReference) {
-    return new Workspace(SubDoc.fromRef(ref).inner)
+  static fromId(id: string) {
+    return new Workspace(new Y.Doc({ guid: id }))
   }
 
-  populate() {
+  static fromRef(ref: SubDocReference) {
+    return new Workspace(new Y.Doc(ref))
+  }
+
+  intoRef(): SubDocReference {
+    return { guid: this.doc.guid }
+  }
+
+  get id() {
+    return this.doc.guid
+  }
+
+  /**
+   * Loads entity from local storage
+   */
+  async load() {
+    this.storageSynced()
+    this.doc.load()
+    await new Promise(resolve => this.doc.on('synced', resolve))
+    return this
+  }
+
+  storageSynced(): Workspace {
+    const provider = new IndexeddbPersistence(this.doc.guid, this.doc)
+    provider.on('synced', () => {
+      this.doc.emit('synced', [this])
+    })
+    return this
+  }
+
+  private handleDocumentUpdated() {
+    const { meta } = this.store
+
+    meta.updatedAt ??= new Date().toISOString()
+  }
+
+  private populate() {
     const { meta } = this.store
 
     meta.title ??= 'Untitled Workspace'
     meta.createdAt ??= new Date().toISOString()
     meta.updatedAt ??= new Date().toISOString()
-  }
-
-  intoRef(): SubDocReference {
-    return new SubDoc(this.doc).intoRef()
   }
 
   get meta(): Readable<WorkspaceMeta> {
@@ -95,10 +134,6 @@ export class Workspace {
 
   get modules(): Readable<Module[]> {
     return intoReadable(this.store.modules)
-  }
-
-  get id() {
-    return this.doc.guid
   }
 
   // Module actions
