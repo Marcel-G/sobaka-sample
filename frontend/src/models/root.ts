@@ -6,6 +6,7 @@ import { WorkspaceList } from './workspaceList'
 import { SubDocReference } from '../util/subdoc'
 import { intoReadable } from '../util/store'
 import { IndexeddbPersistence } from 'y-indexeddb'
+import { Workspace } from './workspace'
 
 type RootStore = {
   workspaceLists: SubDocReference[]
@@ -66,6 +67,13 @@ export class Root {
         WorkspaceList.create(new Y.Doc({ guid: USER_LIST_GUID })).intoRef()
       )
     }
+  }
+
+  async addToUserList(workspace: Workspace) {
+    await this.load()
+    const userList = this.getCachedWorkspaceList({ guid: USER_LIST_GUID })
+    await userList.storageSynced().load()
+    userList.add(workspace)
   }
 
   user() {
