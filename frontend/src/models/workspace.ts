@@ -123,17 +123,21 @@ export class Workspace {
     meta.updatedAt ??= new Date().toISOString()
   }
 
+  private get storeReactive() {
+    return intoReadable(this.store)
+  }
+
   get meta(): Readable<WorkspaceMeta> {
     // TODO: meta may be empty until synced
-    return intoReadable(this.store.meta as WorkspaceMeta)
+    return derived(this.storeReactive, store => store.meta as WorkspaceMeta)
   }
 
   get links(): Readable<Required<Link>[]> {
-    return intoReadable(this.store.links)
+    return derived(this.storeReactive, store => store.links)
   }
 
   get modules(): Readable<Module[]> {
-    return intoReadable(this.store.modules)
+    return derived(this.storeReactive, store => store.modules)
   }
 
   // Module actions
