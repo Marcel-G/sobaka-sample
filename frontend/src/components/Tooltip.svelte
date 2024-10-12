@@ -19,6 +19,7 @@
     position: relative;
     font-family: monospace;
     text-transform: lowercase;
+    display: flex;
   }
 
   .wrapper .tooltip {

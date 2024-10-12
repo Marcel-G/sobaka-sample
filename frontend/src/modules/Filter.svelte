@@ -28,9 +28,9 @@
   import Layout from '../components/Layout.svelte'
   import RingSpinner from '../components/RingSpinner.svelte'
   import {
-    createScaleRange,
-    createVoltPerOctaveRange
-  } from '../components/Knob/range/rangeCreators'
+    create_scale_range,
+    create_volt_per_octave_range
+  } from '../range/range_creators'
 
   export let state: State
   let name = 'filter'
@@ -57,8 +57,8 @@
   $: q = state.q
   $: q_param?.setValueAtTime(q, $context.currentTime)
 
-  const freq_range = createVoltPerOctaveRange()
-  const scalar = createScaleRange()
+  const freq_range = create_volt_per_octave_range()
+  const scalar = create_scale_range()
 
   onDestroy(() => {
     filter?.destroy()

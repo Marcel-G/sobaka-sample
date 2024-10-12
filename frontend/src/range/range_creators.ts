@@ -1,32 +1,6 @@
 import { ContinuousRange, ChoiceRange, RangeType, Scale } from './range'
 
-/**
- * Creates a range for frequency values.
- *
- * @param start The start frequency in hertz (default = 20).
- * @param end The end frequency in hertz (default = 20000).
- */
-export const createFrequencyRange = (start = 20, end = 20000): ContinuousRange => ({
-  type: RangeType.Continuous,
-  start,
-  end,
-  scale: { type: Scale.Logarithmic },
-  stringToValue: (value, unit) => {
-    if (unit === 'k') {
-      return value * 1000
-    }
-    return value
-  },
-  valueToString: (v: number) => {
-    if (v < 10000) {
-      return Math.round(v) + ' Hz'
-    } else {
-      return (v / 1000).toFixed(1) + ' kHz'
-    }
-  }
-})
-
-export const createVolumeRange = (start = 0, end = 1): ContinuousRange => ({
+export const create_volume_range = (start = 0, end = 1): ContinuousRange => ({
   type: RangeType.Continuous,
   start,
   end,
@@ -54,7 +28,7 @@ export const createVolumeRange = (start = 0, end = 1): ContinuousRange => ({
  * @param start The start value (default = 0).
  * @param end The end value (default = 1).
  */
-export const createPercentageRange = (start = 0, end = 1): ContinuousRange => ({
+export const create_percentage_range = (start = 0, end = 1): ContinuousRange => ({
   type: RangeType.Continuous,
   start,
   end,
@@ -70,7 +44,7 @@ export const createPercentageRange = (start = 0, end = 1): ContinuousRange => ({
  * @param start The start value (default = 0).
  * @param end The end value (default = 1).
  */
-export const createBipolarPercentageRange = (start = 0, end = 1): ContinuousRange => ({
+export const create_bipolar_percentage_range = (start = 0, end = 1): ContinuousRange => ({
   type: RangeType.Continuous,
   start,
   end,
@@ -87,7 +61,10 @@ export const createBipolarPercentageRange = (start = 0, end = 1): ContinuousRang
  * @param start The start value (default = 0).
  * @param end The end value (default = 1).
  */
-export const createAccuratePercentageRange = (start = 0, end = 1): ContinuousRange => ({
+export const create_accurate_percentage_range = (
+  start = 0,
+  end = 1
+): ContinuousRange => ({
   type: RangeType.Continuous,
   start,
   end,
@@ -105,7 +82,7 @@ export const createAccuratePercentageRange = (start = 0, end = 1): ContinuousRan
  * @param offLabel The label for when the value is 0.
  * @param onLabel The label for when the value is 1.
  */
-export const createToggleRange = (offLabel = 'Off', onLabel = 'On'): ChoiceRange => ({
+export const create_toggle_range = (offLabel = 'Off', onLabel = 'On'): ChoiceRange => ({
   type: RangeType.Choice,
   choices: [
     { value: 0, label: offLabel },
@@ -119,7 +96,7 @@ export const createToggleRange = (offLabel = 'Off', onLabel = 'On'): ChoiceRange
  * @param offLabel The label for when the value is 0.
  * @param onLabel The label for when the value is 1.
  */
-export const createTimeRange = (start = 0, end = 1): ContinuousRange => ({
+export const create_time_range = (start = 0, end = 1): ContinuousRange => ({
   type: RangeType.Continuous,
   start,
   end,
@@ -137,36 +114,66 @@ export const createTimeRange = (start = 0, end = 1): ContinuousRange => ({
   }
 })
 
-export const createScaleRange = (start = 0, end = 1): ContinuousRange => ({
+export const create_scale_range = (start = 0, end = 1): ContinuousRange => ({
   type: RangeType.Continuous,
   start,
   end,
   step: 0.01
 })
 
-// @todo -- accept frequency as A4, A#4, etc. & combine with `createFrequencyRange`
-export const createVoltPerOctaveRange = (start = 0, end = 8): ContinuousRange => ({
+export const create_bipolar_scale_range = (start = -1, end = 1): ContinuousRange => ({
   type: RangeType.Continuous,
   start,
   end,
+  bipolar: true,
+  step: 0.01
+})
+
+const note_to_voltage = (note: string): number => {
+  const octave = parseInt(note.slice(-1), 10)
+  const noteName = note.slice(0, -1)
+  const noteIndex = [
+    'C',
+    'C#',
+    'D',
+    'Eb',
+    'E',
+    'F',
+    'F#',
+    'G',
+    'Ab',
+    'A',
+    'Bb',
+    'B'
+  ].indexOf(noteName.toUpperCase())
+  return octave + noteIndex / 12
+}
+
+export const create_volt_per_octave_range = (start = 0, end = 8): ContinuousRange => ({
+  type: RangeType.Continuous,
+  start,
+  end,
+  stringMatcher: value => Boolean(value.match(/^[A-g]#?[0-9]+/g)),
   stringToValue: (value: number, unit: string) => {
-    if (unit.toLowerCase() === 'hz') {
+    if (unit.match(/^[A-g]#?[0-9]+/g)) {
+      return note_to_voltage(unit)
+    } else if (unit === 'hz') {
       return Math.log2(value / 16.35)
-    } else if (unit.toLowerCase() === 'khz') {
-      return Math.log2(value / 16384)
+    } else if (unit === 'khz') {
+      return Math.log2((value * 1000) / 16.35)
     }
 
     return value
   }
 })
 
-export const createBpmRange = (start = 0, end = 320): ContinuousRange => ({
+export const create_bpm_range = (start = 0, end = 320): ContinuousRange => ({
   type: RangeType.Continuous,
   start,
   end,
   step: 1,
   stringToValue: (value: number, unit: string) => {
-    if (unit.toLowerCase() === 'hz') {
+    if (unit === 'hz') {
       return 60 / value
     }
     return value

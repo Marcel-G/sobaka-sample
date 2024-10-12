@@ -49,6 +49,11 @@ export interface ContinuousRange {
   stringToValue?: (value: number, unit: string) => number
 
   /**
+   * Additional string matching function for {@link stringToValue}.
+   */
+  stringMatcher?: (value: string) => boolean
+
+  /**
    * A function for formatting a value of this range as a string.
    */
   valueToString?: (value: number) => string

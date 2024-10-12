@@ -27,8 +27,8 @@
   import { get_context as get_audio_context } from '../audio'
   import Layout from '../components/Layout.svelte'
   import RingSpinner from '../components/RingSpinner.svelte'
-  import { Range, RangeType } from '../components/Knob/range'
-  import { createScaleRange } from '../components/Knob/range/rangeCreators'
+  import { Range, RangeType } from '../range/range'
+  import { create_scale_range } from '../range/range_creators'
 
   export let state: State
   let name = 'reverb'
@@ -56,7 +56,7 @@
   $: delay = state.length
   $: delay_param?.setValueAtTime(delay, $context.currentTime)
 
-  const scalar = createScaleRange()
+  const scalar = create_scale_range()
 
   const delay_length_range: Range = {
     type: RangeType.Continuous,

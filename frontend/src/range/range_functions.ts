@@ -7,7 +7,7 @@ import { ContinuousRange, Range, RangeType, Scale } from './range'
 /**
  * Converts `value` to a normalised value (ranging from 0 to 1) and returns it.
  */
-export function toNormalised(range: Range, value: number): number {
+export function to_normalised(range: Range, value: number): number {
   switch (range.type) {
     case RangeType.Choice:
       return range.choices.findIndex(c => c.value === value) / (range.choices.length - 1)
@@ -16,11 +16,11 @@ export function toNormalised(range: Range, value: number): number {
       const interpolatedEnd = interpolate(range, range.end)
       if (range.bipolar) {
         const interpolatedValue =
-          Math.sign(value) * interpolate(range, limitToStep(range, Math.abs(value)))
-        return toRange(interpolatedValue, -interpolatedEnd, interpolatedEnd, 0, 1)
+          Math.sign(value) * interpolate(range, limit_to_step(range, Math.abs(value)))
+        return to_range(interpolatedValue, -interpolatedEnd, interpolatedEnd, 0, 1)
       }
-      const interpolatedValue = interpolate(range, limitToStep(range, value))
-      return toRange(interpolatedValue, interpolatedStart, interpolatedEnd, 0, 1)
+      const interpolatedValue = interpolate(range, limit_to_step(range, value))
+      return to_range(interpolatedValue, interpolatedStart, interpolatedEnd, 0, 1)
     }
   }
 }
@@ -28,36 +28,36 @@ export function toNormalised(range: Range, value: number): number {
 /**
  * Converts a normalised `value` (ranging from 0 to 1) to it's natural range and returns it.
  */
-export function fromNormalised(range: Range, normalisedValue: number): number {
+export function from_normalised(range: Range, normalisedValue: number): number {
   switch (range.type) {
     case RangeType.Continuous: {
       const interpolatedStart = interpolate(range, range.start)
       const interpolatedEnd = interpolate(range, range.end)
       if (range.bipolar) {
-        const denormalisedValue = toRange(
+        const denormalisedValue = to_range(
           normalisedValue,
           0,
           1,
           -interpolatedEnd,
           interpolatedEnd
         )
-        return limitToStep(
+        return limit_to_step(
           range,
           Math.sign(denormalisedValue) *
-            inverseInterpolate(range, Math.abs(denormalisedValue))
+            inverse_interpolate(range, Math.abs(denormalisedValue))
         )
       }
-      const denormalisedValue = toRange(
+      const denormalisedValue = to_range(
         normalisedValue,
         0,
         1,
         interpolatedStart,
         interpolatedEnd
       )
-      return limitToStep(range, inverseInterpolate(range, denormalisedValue))
+      return limit_to_step(range, inverse_interpolate(range, denormalisedValue))
     }
     case RangeType.Choice: {
-      normalisedValue = limitValue(normalisedValue, 0, 1)
+      normalisedValue = limit_value(normalisedValue, 0, 1)
       return range.choices[Math.round(normalisedValue * (range.choices.length - 1))].value
     }
   }
@@ -66,7 +66,7 @@ export function fromNormalised(range: Range, normalisedValue: number): number {
 /**
  * Parses `value` from a value and a unit and returns the value as a number.
  */
-export function fromString(range: Range, value: number, unit: string): number {
+export function from_string(range: Range, value: number, unit: string): number {
   switch (range.type) {
     case RangeType.Choice: {
       unit = unit.toLowerCase()
@@ -94,7 +94,7 @@ export function fromString(range: Range, value: number, unit: string): number {
 /**
  * Converts an unnormalised `value` to a user-friendly string representation.
  */
-export function toString(range: Range, value: number): string {
+export function to_string(range: Range, value: number): string {
   switch (range.type) {
     case RangeType.Continuous: {
       return range.valueToString ? range.valueToString(value) : value.toFixed(1)
@@ -111,16 +111,16 @@ export function toString(range: Range, value: number): string {
 export function snap(range: Range, value: number): number {
   switch (range.type) {
     case RangeType.Continuous: {
-      value = toNormalised(range, value)
+      value = to_normalised(range, value)
       if (Array.isArray(range.snap)) {
         for (const step of range.snap) {
-          if (Math.abs(value - toNormalised(range, step)) <= (range.snapMargin || 0.025))
+          if (Math.abs(value - to_normalised(range, step)) <= (range.snapMargin || 0.025))
             return step
         }
       } else if (range.snap !== undefined) {
-        return Math.round(fromNormalised(range, value) / range.snap) * range.snap
+        return Math.round(from_normalised(range, value) / range.snap) * range.snap
       }
-      return fromNormalised(range, value)
+      return from_normalised(range, value)
     }
     case RangeType.Choice: {
       return value
@@ -131,8 +131,8 @@ export function snap(range: Range, value: number): number {
 /**
  * Returns a random un-normalised value.
  */
-export function getRandom(range: Range): number {
-  return fromNormalised(range, Math.random())
+export function get_random(range: Range): number {
+  return from_normalised(range, Math.random())
 }
 
 /**
@@ -149,9 +149,9 @@ export function limit(range: Range, value: number): number {
     }
     case RangeType.Continuous: {
       if (range.bipolar) {
-        return limitValue(value, -range.end, range.end)
+        return limit_value(value, -range.end, range.end)
       }
-      return limitValue(value, range.start, range.end)
+      return limit_value(value, range.start, range.end)
     }
   }
 }
@@ -162,7 +162,7 @@ export function limit(range: Range, value: number): number {
 export function nudge(range: Range, value: number, steps: number): number {
   switch (range.type) {
     case RangeType.Choice: {
-      const index = limitValue(
+      const index = limit_value(
         range.choices.findIndex(c => c.value === value) + steps,
         0,
         range.choices.length - 1
@@ -171,14 +171,14 @@ export function nudge(range: Range, value: number, steps: number): number {
     }
     case RangeType.Continuous: {
       if (range.step) {
-        return limitToStep(range, value + steps)
+        return limit_to_step(range, value + steps)
       }
-      return fromNormalised(range, toNormalised(range, value) + steps * 0.01)
+      return from_normalised(range, to_normalised(range, value) + steps * 0.01)
     }
   }
 }
 
-export function getStart(range: Range) {
+export function get_start(range: Range) {
   switch (range.type) {
     case RangeType.Choice: {
       if (range.choices.length === 0) {
@@ -192,7 +192,7 @@ export function getStart(range: Range) {
   }
 }
 
-export function getEnd(range: Range) {
+export function get_end(range: Range) {
   switch (range.type) {
     case RangeType.Choice: {
       if (range.choices.length === 0) {
@@ -216,7 +216,7 @@ function interpolate(range: ContinuousRange, value: number) {
   return value
 }
 
-function inverseInterpolate(range: ContinuousRange, value: number) {
+function inverse_interpolate(range: ContinuousRange, value: number) {
   switch (range.scale?.type) {
     case Scale.Exponential:
       return Math.pow(value, range.scale.exp || 1)
@@ -226,7 +226,7 @@ function inverseInterpolate(range: ContinuousRange, value: number) {
   return value
 }
 
-function limitToStep(range: ContinuousRange, value: number) {
+function limit_to_step(range: ContinuousRange, value: number) {
   if (range.step) {
     value = Math.round(value / range.step) * range.step
   }
@@ -236,14 +236,14 @@ function limitToStep(range: ContinuousRange, value: number) {
 /**
  * Clamps `value` to at least `min` and at most `max`.
  */
-export function limitValue(value: number, min: number, max: number) {
+export function limit_value(value: number, min: number, max: number) {
   return Math.min(Math.max(min, value), max)
 }
 
 /**
  * Converts `value` from the range `valueStart`...`valueEnd` to the range `targetStart`...`targetEnd`.
  */
-function toRange(
+function to_range(
   value: number,
   valueStart: number,
   valueEnd: number,
@@ -254,7 +254,7 @@ function toRange(
     return targetStart
   }
   const normalised = (value - valueStart) / (valueEnd - valueStart)
-  return limitValue(
+  return limit_value(
     targetStart + normalised * (targetEnd - targetStart),
     targetStart,
     targetEnd

@@ -28,13 +28,10 @@
   import Layout from '../../components/Layout.svelte'
   import RingSpinner from '../../components/RingSpinner.svelte'
   import { PointBufferData, ScopeController } from 'sobaka-dsp'
-  import {
-    createScaleRange,
-    createTimeRange
-  } from '../../components/Knob/range/rangeCreators'
+  import { create_scale_range, create_time_range } from '../../range/range_creators'
   import ScopeChannel from './ScopeChannel.svelte'
   import Tooltip from '../../components/Tooltip.svelte'
-  import Input from '../../components/Knob/Input.svelte'
+  import Input from '../../components/Input.svelte'
 
   export let state: State
   let name = 'scope'
@@ -68,8 +65,8 @@
   $: time = state.time
   $: scope?.command({ SetScale: time })
 
-  const threshold_range = createScaleRange(-1, 1)
-  const time_range = createTimeRange(0, 0.5)
+  const threshold_range = create_scale_range(-1, 1)
+  const time_range = create_time_range(0, 0.5)
 
   onDestroy(() => {
     cancelAnimationFrame(next_frame)

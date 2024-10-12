@@ -3,7 +3,9 @@ import Envelope, {
   initialState as envelopeInitialState
 } from './Envelope/Envelope.svelte'
 import Filter, { initialState as filterInitialState } from './Filter.svelte'
-import Oscillator, { initialState as oscillatorInitialState } from './Oscillator.svelte'
+import Oscillator, {
+  initialState as oscillatorInitialState
+} from './Oscillator/Oscillator.svelte'
 import Parameter, { initialState as ParameterInitialState } from './Parameter.svelte'
 import Reverb, { initialState as reverbInitialState } from './Reverb.svelte'
 import Sequencer, { initialState as sequencerInitialState } from './Sequencer.svelte'
@@ -15,6 +17,7 @@ import Vca, { initialState as vcaInitialState } from './Vca.svelte'
 import Noise, { initialState as noiseInitialState } from './Noise.svelte'
 import Delay, { initialState as delayInitialState } from './Delay.svelte'
 import Scope, { initialState as scopeInitialState } from './Scope/Scope.svelte'
+import SpecScope, { initialState as specScopeInitialState } from './SpecScope.svelte'
 import Midi, { initialState as midiInitialState } from './Midi.svelte'
 import Lfo, { initialState as lfoInitialState } from './Lfo.svelte'
 import Quantiser, { initialState as quantiserInitialState } from './Quantiser.svelte'
@@ -38,6 +41,7 @@ export const MODULES = {
   Noise,
   Delay,
   Scope,
+  SpecScope,
   Midi,
   Lfo,
   Quantiser,
@@ -63,6 +67,7 @@ export const INITIAL_STATE = {
   Noise: noiseInitialState,
   Delay: delayInitialState,
   Scope: scopeInitialState,
+  SpecScope: specScopeInitialState,
   Midi: midiInitialState,
   Lfo: lfoInitialState,
   Quantiser: quantiserInitialState,

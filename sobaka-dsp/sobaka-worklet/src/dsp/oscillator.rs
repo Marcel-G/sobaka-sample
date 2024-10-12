@@ -145,3 +145,15 @@ pub fn sobaka_saw<T: Real>() -> An<impl AudioNode<Sample = T, Inputs = U1, Outpu
         None,
     ))
 }
+
+/// Sine oscillator.
+/// - Input 0: frequency (Hz)
+/// - Output 0: sine wave
+#[inline]
+pub fn sobaka_sine<T: Real>() -> An<impl AudioNode<Sample = T, Inputs = U1, Outputs = U1>> {
+    An(PhaseOscillator::with_phase(
+        |phase| -> T { (phase * T::from_f64(std::f64::consts::TAU)).sin() },
+        DEFAULT_SR,
+        None,
+    ))
+}

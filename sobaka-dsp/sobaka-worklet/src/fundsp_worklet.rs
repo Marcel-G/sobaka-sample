@@ -4,6 +4,7 @@ use std::fmt::Debug;
 use waw::{
     buffer::{AudioBuffer, Param, ParamBuffer},
     types::Never,
+    worklet::sample_rate,
 };
 
 pub struct FundspWorklet<P = Never>
@@ -25,10 +26,13 @@ where
         module: An<X>,
         param_storage: EnumMap<P, Shared<f32>>,
     ) -> Self {
-        FundspWorklet {
+        let mut worklet = FundspWorklet {
             inner: Box::new(module),
             param_storage,
-        }
+        };
+
+        worklet.inner.reset(Some(sample_rate()));
+        worklet
     }
 
     pub fn process(&mut self, audio: &mut AudioBuffer, params: &ParamBuffer<P>) {

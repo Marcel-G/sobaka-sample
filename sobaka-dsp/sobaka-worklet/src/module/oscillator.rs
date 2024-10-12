@@ -1,6 +1,6 @@
 use crate::{
     dsp::{
-        oscillator::{sobaka_saw, sobaka_square, sobaka_triangle},
+        oscillator::{sobaka_saw, sobaka_sine, sobaka_square, sobaka_triangle},
         trigger::reset_trigger,
         volt_hz,
     },
@@ -21,79 +21,106 @@ pub enum OscillatorParams {
         default_value = 120.
     )]
     Pitch,
-    #[param(
-        automation_rate = "a-rate",
-        min_value = 0.,
-        max_value = 1.,
-        default_value = 0.25
-    )]
-    Saw,
-    #[param(
-        automation_rate = "a-rate",
-        min_value = 0.,
-        max_value = 1.,
-        default_value = 0.25
-    )]
+}
+
+#[waw::derive::derive_initial_state]
+pub enum OscillatorShape {
     Sine,
-    #[param(
-        automation_rate = "a-rate",
-        min_value = 0.,
-        max_value = 1.,
-        default_value = 0.25
-    )]
     Square,
-    #[param(
-        automation_rate = "a-rate",
-        min_value = 0.,
-        max_value = 1.,
-        default_value = 0.25
-    )]
     Triangle,
+    Saw,
+}
+
+#[waw::derive::derive_command]
+pub enum OscillatorCommand {
+    /// Selects the oscillator shape.
+    SetShape(OscillatorShape),
 }
 
 pub struct Oscillator {
-    inner: FundspWorklet<OscillatorParams>,
+    current_shape: OscillatorShape,
+    sine: FundspWorklet<OscillatorParams>,
+    square: FundspWorklet<OscillatorParams>,
+    triangle: FundspWorklet<OscillatorParams>,
+    saw: FundspWorklet<OscillatorParams>,
 }
 
 impl AudioModule for Oscillator {
     type Param = OscillatorParams;
+    type Command = OscillatorCommand;
 
-    const INPUTS: u32 = 2;
+    const INPUTS: u32 = 1;
     const OUTPUTS: u32 = 1;
 
     fn create(_init: Option<Self::InitialState>, _emitter: Emitter<Self::Event>) -> Self {
-        let param_storage = FundspWorklet::create_param_storage();
-
-        let module = {
-            let multi_osc = {
-                let input = split::<U2, _>()
-                    >> ((pass() + var(&param_storage[OscillatorParams::Pitch])) | pass())
-                    >> (map::<_, _, U1, _>(|pitch| volt_hz(pitch[0])) | pass());
-                let attenuated_saw = sobaka_saw() * var(&param_storage[OscillatorParams::Saw]);
-                // let attenuated_sine = sine_phase(0.0) * var(&param_storage[OscillatorParams::Sine]);
-                let attenuated_sine = sobaka_saw() * var(&param_storage[OscillatorParams::Sine]);
-                let attenuated_square =
-                    sobaka_square() * var(&param_storage[OscillatorParams::Square]);
-                let attenuated_triangle =
-                    sobaka_triangle() * var(&param_storage[OscillatorParams::Triangle]);
-
-                input
-                    >> ((attenuated_saw & attenuated_sine & attenuated_square & attenuated_triangle)
-                        | pass())
-                    // if the pitch is 0, we'll just mute the output
-                    >> map(|f| if f[1] > 0.0 { f[0] } else { 0.0 })
+        let sine = {
+            let param_storage = FundspWorklet::create_param_storage();
+            let osc = reset_trigger({
+                var(&param_storage[OscillatorParams::Pitch])
+                    >> map::<_, _, U1, _>(|pitch| volt_hz(pitch[0]))
+                    >> sobaka_sine()
                     >> shape(Shape::Tanh(0.8))
-            };
+            });
+            FundspWorklet::create(osc, param_storage)
+        };
 
-            reset_trigger(multi_osc)
+        let triangle = {
+            let param_storage = FundspWorklet::create_param_storage();
+            let osc = reset_trigger({
+                var(&param_storage[OscillatorParams::Pitch])
+                    >> map::<_, _, U1, _>(|pitch| volt_hz(pitch[0]))
+                    >> sobaka_triangle()
+                    >> shape(Shape::Tanh(0.8))
+            });
+            FundspWorklet::create(osc, param_storage)
+        };
+
+        let saw = {
+            let param_storage = FundspWorklet::create_param_storage();
+            let osc = reset_trigger({
+                var(&param_storage[OscillatorParams::Pitch])
+                    >> map::<_, _, U1, _>(|pitch| volt_hz(pitch[0]))
+                    >> sobaka_saw()
+                    >> shape(Shape::Tanh(0.8))
+            });
+            FundspWorklet::create(osc, param_storage)
+        };
+
+        let square = {
+            let param_storage = FundspWorklet::create_param_storage();
+            let osc = reset_trigger({
+                var(&param_storage[OscillatorParams::Pitch])
+                    >> map::<_, _, U1, _>(|pitch| volt_hz(pitch[0]))
+                    >> sobaka_square()
+                    >> shape(Shape::Tanh(0.8))
+            });
+            FundspWorklet::create(osc, param_storage)
         };
 
         Oscillator {
-            inner: FundspWorklet::create(module, param_storage),
+            current_shape: OscillatorShape::Sine,
+            sine,
+            saw,
+            square,
+            triangle,
         }
     }
+
+    fn on_command(&mut self, command: Self::Command) {
+        match command {
+            OscillatorCommand::SetShape(shape) => {
+                self.current_shape = shape;
+            }
+        }
+    }
+
     fn process(&mut self, audio: &mut AudioBuffer, params: &ParamBuffer<Self::Param>) {
-        self.inner.process(audio, params);
+        match self.current_shape {
+            OscillatorShape::Sine => self.sine.process(audio, params),
+            OscillatorShape::Square => self.square.process(audio, params),
+            OscillatorShape::Triangle => self.triangle.process(audio, params),
+            OscillatorShape::Saw => self.saw.process(audio, params),
+        }
     }
 }
 

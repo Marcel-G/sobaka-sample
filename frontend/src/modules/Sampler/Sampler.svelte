@@ -36,7 +36,7 @@
   import Button from '../../components/Button.svelte'
   import Layout from '../../components/Layout.svelte'
   import RingSpinner from '../../components/RingSpinner.svelte'
-  import { Range, RangeType } from '../../components/Knob/range'
+  import { Range, RangeType } from '../../range/range'
 
   export let state: State
   let name = 'sampler'
