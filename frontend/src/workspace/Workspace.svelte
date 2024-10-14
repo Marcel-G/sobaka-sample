@@ -13,6 +13,7 @@
   import TitleInput from '../components/TitleInput.svelte'
   import NavigationButton from '../components/NavigationButton.svelte'
   import { get_workspace } from '../context/workspace'
+  import { onMount } from 'svelte'
 
   let toolbox_visible = false
   let toolbox_position: Position = { x: 0, y: 0 }
@@ -21,6 +22,10 @@
   const { workspace, plugs } = get_workspace()
   const meta = workspace.meta
   const modules = workspace.modules
+
+  onMount(() => {
+    workspace.remoteSynced()
+  })
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handle_double_click = (event: MouseEvent) => {

@@ -10,6 +10,7 @@ import { intoReadable } from '../util/store'
 import { SubDocReference } from '../util/subdoc'
 import { Position } from '../@types'
 import { IndexeddbPersistence } from 'y-indexeddb'
+import { WebrtcProvider } from 'y-webrtc'
 
 export type WorkspaceMeta = {
   title: string
@@ -106,6 +107,15 @@ export class Workspace {
     provider.on('synced', () => {
       this.doc.emit('synced', [this])
     })
+    return this
+  }
+
+  remoteSynced(): Workspace {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const provider = new WebrtcProvider(this.doc.guid, this.doc, {
+      signaling: ['ws://localhost:8000/signaling']
+    })
+
     return this
   }
 
