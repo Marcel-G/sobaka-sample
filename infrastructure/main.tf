@@ -40,15 +40,6 @@ module "global" {
   subdomain = var.subdomain
 }
 
-module "signaling" {
-  source = "../backend/signaling/infrastructure"
-
-  name                       = "sobaka-signaling-${terraform.workspace}"
-  subdomain                  = "signaling.${var.subdomain}"
-  domain_name                = var.domain_name
-  global_acm_certificate_arn = module.global.global_acm_certificate_arn
-}
-
 module "frontend" {
   source = "../frontend/infrastructure"
 
