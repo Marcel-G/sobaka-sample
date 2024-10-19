@@ -1,0 +1,11 @@
+[package]
+name = "signaling"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+env_logger = "0.11.5"
+tokio = { version = "1.34", features = ["rt", "rt-multi-thread", "macros"] }
+warp = "0.3.7"
+yrs = "0.21"
+yrs-warp = { path = "../../../yrs-warp" }
