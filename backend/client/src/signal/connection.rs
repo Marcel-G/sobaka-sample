@@ -88,7 +88,6 @@ impl SignalConnection {
 
     pub fn poll(&mut self, cx: &mut Context) -> Poll<Result<SignalEvent, SignalError>> {
         loop {
-            println!("Polling State: {}", self.state);
             // First, check if we are connected.
             let stream = match &mut self.state {
                 State::Closed => return Poll::Ready(Ok(SignalEvent::Closed)),
@@ -201,7 +200,6 @@ impl SignalConnection {
                 Poll::Pending => {}
             }
 
-            log::trace!("signal connection waiting");
             return Poll::Pending;
         }
     }

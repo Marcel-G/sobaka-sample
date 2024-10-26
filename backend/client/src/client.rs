@@ -14,7 +14,7 @@ use crate::{
         connection::{SignalConnection, SignalEvent, SignalOptions},
         protocol::{Message, MessageData},
     },
-    workspace::Workspace,
+    workspace::{Workspace, WorkspaceEvent},
 };
 
 pub struct Client {
@@ -173,35 +173,7 @@ impl Client {
                 Poll::Pending => {}
             }
 
-            log::trace!(
-                "waiting for {:?} clients",
-                self.workspaces
-                    .iter()
-                    .flat_map(|(id, workspace)| {
-                        workspace
-                            .peers
-                            .iter()
-                            .map(move |(peer_id, _)| (id, peer_id))
-                    })
-                    .count()
-            );
-
-            // 2. Work on the workspace connections
-            // let workspace_events = self
-            //     .workspaces
-            //     .iter_mut()
-            //     .map(|(id, workspace)| (id.clone(), workspace.poll()))
-            //     .collect::<Vec<_>>();
-            //
-            // for (workspace_id, event) in workspace_events {
-            //     match event {
-            //         Ok(WorkspaceEvent::OutboundSignal(from, signal)) => {
-            //             self.handle_outgoing_signal(workspace_id, from, signal);
-            //         }
-            //         _ => {}
-            //     }
-            // }
-
+            // 2. Handle SIGTERM
             if self.sigterm.poll_recv(cx).is_ready() {
                 if self.shutting_down {
                     // Received a repeated SIGTERM whilst shutting down
@@ -217,8 +189,25 @@ impl Client {
                 continue;
             }
 
-            log::trace!("waiting for client");
-            return Poll::Pending;
+            // 3. Work on the workspace connections
+            let workspace_events = self
+                .workspaces
+                .iter_mut()
+                .map(|(id, workspace)| (id.clone(), workspace.poll_output()))
+                .collect::<Vec<_>>();
+
+            for (workspace_id, event) in workspace_events {
+                match event {
+                    Ok(Some(WorkspaceEvent::OutboundSignal(from, signal))) => {
+                        self.handle_outgoing_signal(workspace_id, from, signal);
+                    }
+                    _ => {}
+                }
+            }
+
+            // TODO: optimization, task can never go into Pending state
+            //       since we're currently using sync sockets for RTC on the main thread
+            //       These should probably run in their on thread
         }
     }
 }

@@ -1,11 +1,10 @@
 use std::{
     collections::VecDeque,
     io::ErrorKind,
-    net::{Ipv4Addr, SocketAddr, UdpSocket},
+    net::{IpAddr, UdpSocket},
     time::Instant,
 };
 
-use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use str0m::{
     change::{SdpAnswer, SdpOffer, SdpPendingOffer},
@@ -13,7 +12,10 @@ use str0m::{
     net::{Protocol, Receive},
     Candidate, Event as RTCEvent, IceConnectionState, Input, Output, Rtc,
 };
+use systemstat::{Platform, System};
 use yrs::updates::{decoder::Decode, encoder::Encode};
+
+use super::signal::Signal;
 
 pub struct PeerConnection {
     state: State,
@@ -57,15 +59,6 @@ pub enum PeerConnError {
     WebRtc,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(untagged)]
-pub enum Signal {
-    ICERenegotiate(bool),
-    ICECandidate(Candidate),
-    SdpAnswer(SdpAnswer),
-    SdpOffer(SdpOffer),
-}
-
 pub enum PeerConnEvent {
     // https://github.com/feross/simple-peer/blob/f1a492d1999ce727fa87193ebdea20ac89c1fc6d/README.md?plain=1#L315
     OutboundSignal(Signal),
@@ -74,8 +67,12 @@ pub enum PeerConnEvent {
 
 impl PeerConnection {
     pub fn new() -> Self {
-        let rtc = Rtc::new();
+        let mut rtc = Rtc::new();
         let socket = create_rtc_socket();
+
+        let addr = socket.local_addr().expect("a local socket adddress");
+        let candidate = Candidate::host(addr, "udp").expect("a host candidate");
+        rtc.add_local_candidate(candidate);
 
         Self {
             rtc,
@@ -91,15 +88,20 @@ impl PeerConnection {
     }
 
     pub fn handle_incoming_signal(&mut self, signal: Value) {
-        let signal: Signal = serde_json::from_value(signal)
-            .map_err(|_| PeerConnError::SdpError)
-            .expect("Failed to deserialize signal");
+        let Ok(signal) = serde_json::from_value::<Signal>(signal.clone()) else {
+            // mDNS signals are not supported by Candidate, if one is received, ignore it.
+            log::warn!(
+                "failed to parse signal, ignoring it, {}",
+                signal.to_string()
+            );
+            return;
+        };
 
         match signal {
-            Signal::ICERenegotiate(renegotiate) if renegotiate => {
+            Signal::Renegotiate(renegotiate) if renegotiate => {
                 // TODO: not sure what this means
             }
-            Signal::ICECandidate(candidate) => {
+            Signal::Candidate(candidate) => {
                 self.remote_candidate(candidate);
             }
             Signal::SdpAnswer(sdp) => {
@@ -122,12 +124,6 @@ impl PeerConnection {
             }
             _ => self.rtc.add_remote_candidate(candidate),
         }
-    }
-
-    fn create_candidate(&mut self) {
-        let addr = self.socket.local_addr().expect("a local socket adddress");
-        let candidate = Candidate::host(addr, "udp").expect("a host candidate");
-        self.rtc.add_local_candidate(candidate);
     }
 
     pub fn send(&mut self, message: yrs::sync::Message) {
@@ -269,7 +265,7 @@ impl PeerConnection {
         Ok(())
     }
 
-    pub fn poll(&mut self) -> Result<PeerConnEvent, PeerConnError> {
+    pub fn poll_output(&mut self) -> Result<Option<PeerConnEvent>, PeerConnError> {
         loop {
             // 1. Work on the RTC connection
             //
@@ -278,9 +274,9 @@ impl PeerConnection {
             let timeout = match self.rtc.poll_output() {
                 Ok(Output::Timeout(v)) => v,
                 Ok(Output::Transmit(v)) => {
-                    if let Err(_) = self.socket.send_to(&v.contents, v.destination) {
-                        // Error sending to socket, return error
-                    }
+                    self.socket
+                        .send_to(&v.contents, v.destination)
+                        .expect("Failed to send data");
                     continue;
                 }
                 Ok(Output::Event(v)) => match v {
@@ -313,7 +309,7 @@ impl PeerConnection {
                     RTCEvent::ChannelData(info) => {
                         return self
                             .on_inbound_data(info.id, info.data)
-                            .map(|event| PeerConnEvent::IncomingMessage(event))
+                            .map(|event| Some(PeerConnEvent::IncomingMessage(event)))
                     }
                     _ => {
                         continue;
@@ -342,7 +338,7 @@ impl PeerConnection {
                     pending_signals, ..
                 }) => {
                     if let Some(signal) = pending_signals.pop_front() {
-                        return Ok(PeerConnEvent::OutboundSignal(signal));
+                        return Ok(Some(PeerConnEvent::OutboundSignal(signal)));
                     }
                 }
                 State::Ready(Ready {
@@ -358,6 +354,9 @@ impl PeerConnection {
             }
 
             // 3. Poll the UDP socket for incoming data
+            self.socket
+                .set_nonblocking(true)
+                .expect("Failed to set non-blocking mode");
             self.socket
                 .set_read_timeout(Some(timeout))
                 .expect("Failed to set read timeout");
@@ -380,7 +379,6 @@ impl PeerConnection {
                         },
                     )
                 }
-
                 Err(e) => match e.kind() {
                     // Expected error for set_read_timeout(). One for windows, one for the rest.
                     ErrorKind::WouldBlock | ErrorKind::TimedOut => Input::Timeout(Instant::now()),
@@ -391,13 +389,31 @@ impl PeerConnection {
             self.rtc
                 .handle_input(input)
                 .map_err(|_| PeerConnError::WebRtc)?;
+
+            return Ok(None);
         }
     }
 }
 
+fn select_host_address() -> IpAddr {
+    let system = System::new();
+    let networks = system.networks().unwrap();
+
+    for net in networks.values() {
+        for n in &net.addrs {
+            if let systemstat::IpAddr::V4(v) = n.addr {
+                if !v.is_loopback() && !v.is_link_local() && !v.is_broadcast() {
+                    return IpAddr::V4(v);
+                }
+            }
+        }
+    }
+
+    panic!("Found no usable network interface");
+}
+
 fn create_rtc_socket() -> UdpSocket {
-    // TODO make this configurable
-    let host_address = SocketAddr::from((Ipv4Addr::UNSPECIFIED, 0));
+    let addr = select_host_address();
     // Spin up a UDP socket for the RTC
-    UdpSocket::bind(host_address).expect("binding a random UDP port")
+    UdpSocket::bind(format!("{addr}:0")).expect("binding a random UDP port")
 }

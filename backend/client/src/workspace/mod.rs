@@ -3,13 +3,15 @@ use std::collections::HashMap;
 use serde_json::Value;
 use yrs::{
     sync::{Awareness, DefaultProtocol, Message, Protocol, SyncMessage},
-    ReadTxn, Transact,
+    updates::decoder::Decode,
+    ReadTxn, Subscription, Transact, Update,
 };
 
 use crate::peer::connection::{PeerConnEvent, PeerConnection};
 
 pub struct Workspace {
     awareness: Awareness,
+    subscription: Subscription,
     pub peers: HashMap<String, PeerConnection>,
 }
 
@@ -24,8 +26,19 @@ pub enum WorkspaceError {
 
 impl Workspace {
     pub fn new() -> Self {
+        let awareness = Awareness::default();
+
+        let subscription = awareness
+            .doc()
+            .observe_update_v1(move |_, u| {
+                let u = Update::decode_v1(&u.update).unwrap();
+                log::info!("update decoded: {u}");
+            })
+            .unwrap();
+
         Self {
-            awareness: Default::default(),
+            subscription,
+            awareness,
             peers: HashMap::new(),
         }
     }
@@ -47,11 +60,13 @@ impl Workspace {
         }
     }
 
-    pub fn poll(&mut self) -> Result<WorkspaceEvent, WorkspaceError> {
+    pub fn poll_output(&mut self) -> Result<Option<WorkspaceEvent>, WorkspaceError> {
         // Poll all the peers for updates
         for (peer_id, connection) in self.peers.iter_mut() {
-            match connection.poll() {
-                Ok(PeerConnEvent::IncomingMessage(message)) => {
+            match connection.poll_output() {
+                Ok(Some(PeerConnEvent::IncomingMessage(message))) => {
+                    log::info!("peer-conn incoming message: {message:?}");
+
                     if let Some(message) = DefaultProtocol
                         .handle_message(&self.awareness, message)
                         .map_err(|_| WorkspaceError::Todo)?
@@ -60,14 +75,18 @@ impl Workspace {
                     }
                     continue;
                 }
-                Ok(PeerConnEvent::OutboundSignal(signal)) => {
+                Ok(Some(PeerConnEvent::OutboundSignal(signal))) => {
                     let signal = serde_json::to_value(signal).expect("Failed to serialize signal");
-                    return Ok(WorkspaceEvent::OutboundSignal(peer_id.clone(), signal));
+                    return Ok(Some(WorkspaceEvent::OutboundSignal(
+                        peer_id.clone(),
+                        signal,
+                    )));
                 }
+                Ok(None) => return Ok(None),
                 _ => return Err(WorkspaceError::Todo),
             };
         }
 
-        return Err(WorkspaceError::Todo);
+        return Ok(None);
     }
 }
