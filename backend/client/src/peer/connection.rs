@@ -1,10 +1,16 @@
+use core::panic;
 use std::{
     collections::VecDeque,
-    io::ErrorKind,
-    net::{IpAddr, UdpSocket},
-    time::Instant,
+    future::Future,
+    io::{self},
+    mem,
+    net::IpAddr,
+    pin::Pin,
+    task::{Context, Poll},
+    time::{Duration, Instant},
 };
 
+use futures::{future::BoxFuture, FutureExt};
 use serde_json::Value;
 use str0m::{
     change::{SdpAnswer, SdpOffer, SdpPendingOffer},
@@ -13,6 +19,7 @@ use str0m::{
     Candidate, Event as RTCEvent, IceConnectionState, Input, Output, Rtc,
 };
 use systemstat::{Platform, System};
+use tokio::{net::UdpSocket, time::Sleep};
 use yrs::updates::{decoder::Decode, encoder::Encode};
 
 use super::signal::Signal;
@@ -20,35 +27,69 @@ use super::signal::Signal;
 pub struct PeerConnection {
     state: State,
     rtc: Rtc,
-    socket: UdpSocket,
+    timer: Pin<Box<Sleep>>,
+    pending_incoming_signals: VecDeque<Signal>,
     pending_messages: VecDeque<Vec<u8>>,
-    receive_buffer: Vec<u8>,
 }
 
 #[derive(Debug)]
 enum Negotiation {
     Initiator {
+        socket: UdpSocket,
         pending_signals: VecDeque<Signal>,
         pending_offer: Option<SdpPendingOffer>,
         candidates: Vec<Candidate>,
     },
     Responder {
+        socket: UdpSocket,
         pending_signals: VecDeque<Signal>,
         candidates: Vec<Candidate>,
     },
 }
 
-#[derive(Debug)]
-struct Ready {
-    channel: Option<ChannelId>,
+#[derive(Debug, PartialEq, Eq, Clone)]
+pub enum NegotiationMode {
+    Initiator,
+    Responder,
 }
 
-#[derive(Debug)]
 enum State {
-    Waiting,
+    Waiting {
+        future: BoxFuture<'static, Result<UdpSocket, io::Error>>,
+        mode: NegotiationMode,
+    },
     Negotiating(Negotiation),
-    Ready(Ready),
+    Ready {
+        socket: UdpSocket,
+        channel: Option<ChannelId>,
+    },
     Closed,
+}
+
+impl State {
+    pub fn ready(socket: UdpSocket) -> Self {
+        return State::Ready {
+            socket,
+            channel: None,
+        };
+    }
+
+    pub fn negotiate(socket: UdpSocket, mode: NegotiationMode) -> Self {
+        if mode == NegotiationMode::Initiator {
+            return State::Negotiating(Negotiation::Initiator {
+                socket,
+                pending_signals: Default::default(),
+                pending_offer: None,
+                candidates: Default::default(),
+            });
+        } else {
+            return State::Negotiating(Negotiation::Responder {
+                socket,
+                pending_signals: Default::default(),
+                candidates: Default::default(),
+            });
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -66,20 +107,19 @@ pub enum PeerConnEvent {
 }
 
 impl PeerConnection {
-    pub fn new() -> Self {
-        let mut rtc = Rtc::new();
+    pub fn connect(mode: NegotiationMode) -> Self {
+        let rtc = Rtc::new();
         let socket = create_rtc_socket();
-
-        let addr = socket.local_addr().expect("a local socket adddress");
-        let candidate = Candidate::host(addr, "udp").expect("a host candidate");
-        rtc.add_local_candidate(candidate);
 
         Self {
             rtc,
-            socket,
-            state: State::Waiting,
+            timer: Box::pin(tokio::time::sleep(Duration::default())),
+            state: State::Waiting {
+                future: socket.boxed(),
+                mode,
+            },
             pending_messages: Default::default(),
-            receive_buffer: Vec::new(),
+            pending_incoming_signals: Default::default(),
         }
     }
 
@@ -97,57 +137,30 @@ impl PeerConnection {
             return;
         };
 
-        match signal {
-            Signal::Renegotiate(renegotiate) if renegotiate => {
-                // TODO: not sure what this means
-            }
-            Signal::Candidate(candidate) => {
-                self.remote_candidate(candidate);
-            }
-            Signal::SdpAnswer(sdp) => {
-                self.accept_answer(sdp).expect("Failed to accept answer");
-            }
-            Signal::SdpOffer(sdp) => {
-                self.accept_offer(sdp).expect("Failed to accept offer");
-            }
-            _ => {}
-        }
+        self.pending_incoming_signals.push_back(signal);
     }
 
     fn remote_candidate(&mut self, candidate: Candidate) {
+        log::debug!("add remote candidate");
+        // TODO: race condition, remote candidate added after negotiate
         match &mut self.state {
-            State::Negotiating(Negotiation::Initiator { candidates, .. }) => {
-                candidates.push(candidate);
-            }
-            State::Negotiating(Negotiation::Responder { candidates, .. }) => {
-                candidates.push(candidate);
-            }
+            // State::Negotiating(Negotiation::Initiator { candidates, .. }) => {
+            //     candidates.push(candidate);
+            // }
+            // State::Negotiating(Negotiation::Responder { candidates, .. }) => {
+            //     candidates.push(candidate);
+            // }
             _ => self.rtc.add_remote_candidate(candidate),
         }
     }
 
     pub fn send(&mut self, message: yrs::sync::Message) {
+        log::debug!("sending message");
         self.pending_messages.push_back(message.encode_v1());
     }
 
-    fn create_offer(&mut self) {
-        let mut sdp = self.rtc.sdp_api();
-        sdp.add_channel("data".to_string());
-        let (offer, pending) = sdp.apply().expect("Should create offer");
-
-        let mut pending_signals: VecDeque<Signal> = Default::default();
-
-        // Emit offer via signal
-        pending_signals.push_back(Signal::SdpOffer(offer));
-
-        self.state = State::Negotiating(Negotiation::Initiator {
-            pending_offer: Some(pending),
-            pending_signals,
-            candidates: Default::default(),
-        });
-    }
-
     fn accept_answer(&mut self, answer: SdpAnswer) -> Result<(), PeerConnError> {
+        log::debug!("accepting answer");
         match &mut self.state {
             State::Negotiating(Negotiation::Initiator {
                 pending_offer,
@@ -163,7 +176,7 @@ impl PeerConnection {
                     self.rtc.add_remote_candidate(candidate);
                 }
 
-                self.rtc.sdp_api().add_channel("testing123".to_string());
+                log::debug!("answer accepted");
 
                 Ok(())
             }
@@ -171,28 +184,52 @@ impl PeerConnection {
         }
     }
 
-    pub fn connect(&mut self, initiator: bool) {
-        if initiator {
-            // Active (AKA Initiator) path: https://github.com/algesten/str0m/tree/7170c3a3a5ef2d9446ac7193b5d2faa79e577a2a?tab=readme-ov-file#active
-            // 1. Create an offer
-            // 2. Send the offer to the remote peer
-            // 3. Receive an answer from the remote peer
-            // 4. Accept the answer
-            // For creating SignalEvent::Signal event signal
-            self.create_offer();
-        } else {
-            // Passive path: https://github.com/algesten/str0m/tree/7170c3a3a5ef2d9446ac7193b5d2faa79e577a2a?tab=readme-ov-file#passive
-            // 1. Incoming offer from remote peer
-            // 2. Forward the answer to the remote peer. (via signaling conn)
-            self.state = State::Negotiating(Negotiation::Responder {
-                candidates: Default::default(),
-                pending_signals: Default::default(),
-            });
+    fn on_socket_ready(&mut self, socket: UdpSocket, mode: NegotiationMode) {
+        log::debug!("socket ready");
+        let addr = socket.local_addr().expect("a local socket adddress");
+        let candidate = Candidate::host(addr, "udp").expect("a host candidate");
+        self.rtc.add_local_candidate(candidate);
+
+        log::debug!("negotiating, {mode:?}");
+        self.change_state(|_| State::negotiate(socket, mode));
+        self.start_negotiating()
+    }
+
+    fn start_negotiating(&mut self) {
+        match &mut self.state {
+            State::Negotiating(Negotiation::Initiator {
+                pending_signals,
+                pending_offer,
+                ..
+            }) => {
+                // Active (AKA Initiator) path: https://github.com/algesten/str0m/tree/7170c3a3a5ef2d9446ac7193b5d2faa79e577a2a?tab=readme-ov-file#active
+                // 1. Create an offer
+                // 2. Send the offer to the remote peer
+                // 3. Receive an answer from the remote peer
+                // 4. Accept the answer
+                // For creating SignalEvent::Signal event signal
+                let mut sdp = self.rtc.sdp_api();
+                sdp.add_channel("data".to_string());
+                let (offer, pending) = sdp.apply().expect("Should create offer");
+
+                pending_offer.replace(pending);
+                // Emit offer via signal
+                pending_signals.push_back(Signal::SdpOffer(offer));
+            }
+            _ => {}
         }
+    }
+
+    fn change_state<F>(&mut self, func: F)
+    where
+        F: FnOnce(State) -> State,
+    {
+        self.state = func(mem::replace(&mut self.state, State::Closed));
     }
 
     /// For consuming SignalEvent::Signal event signal
     fn accept_offer(&mut self, offer: SdpOffer) -> Result<(), PeerConnError> {
+        log::debug!("accepting offer");
         match &mut self.state {
             State::Negotiating(Negotiation::Responder {
                 candidates,
@@ -211,37 +248,57 @@ impl PeerConnection {
 
                 pending_signals.push_back(Signal::SdpAnswer(answer));
 
+                log::debug!("offer accepted");
+
                 Ok(())
             }
             _ => Err(PeerConnError::SdpError),
         }
     }
 
-    fn on_connection_opened(&mut self) {
-        self.state = State::Ready(Ready { channel: None });
-    }
-
     fn on_connection_closed(&mut self) {
-        self.state = State::Closed;
+        log::debug!("connection closed");
+        self.change_state(|_| State::Closed);
+    }
+    fn on_connection_opened(&mut self) {
+        log::debug!("connection opened");
+        self.change_state(|s| {
+            if let State::Negotiating(Negotiation::Initiator { socket, .. })
+            | State::Negotiating(Negotiation::Responder { socket, .. }) = s
+            {
+                State::ready(socket)
+            } else {
+                s
+            }
+        });
     }
 
     fn on_channel_opened(&mut self, channel_id: ChannelId, _name: String) {
-        if let State::Ready(ready) = &mut self.state {
-            ready.channel = Some(channel_id);
-        }
+        log::debug!("channel opened");
+        self.change_state(|s| {
+            if let State::Ready { channel, socket } = s {
+                State::Ready {
+                    channel: Some(channel_id),
+                    socket,
+                }
+            } else {
+                s
+            }
+        });
     }
 
     fn on_channel_closed(&mut self, channel_id: ChannelId) {
-        if let State::Ready(ready) = &mut self.state {
-            if let Some(id) = ready.channel {
-                if id == channel_id {
-                    ready.channel = None;
-                    return;
+        log::debug!("channel closed");
+        self.change_state(|s| {
+            if let State::Ready { socket, .. } = s {
+                State::Ready {
+                    channel: None,
+                    socket,
                 }
+            } else {
+                s
             }
-            panic!("Channel closed that was not open")
-        }
-        panic!("Channel closed but not in ready state")
+        });
     }
 
     fn on_inbound_data(
@@ -265,71 +322,135 @@ impl PeerConnection {
         Ok(())
     }
 
-    pub fn poll_output(&mut self) -> Result<Option<PeerConnEvent>, PeerConnError> {
+    pub fn poll_output(&mut self, cx: &mut Context) -> Poll<Result<PeerConnEvent, PeerConnError>> {
         loop {
-            // 1. Work on the RTC connection
-            //
-            // Poll output until we get a timeout. The timeout means we are either awaiting UDP socket input
-            // or the timeout to happen.
-            let timeout = match self.rtc.poll_output() {
-                Ok(Output::Timeout(v)) => v,
-                Ok(Output::Transmit(v)) => {
-                    self.socket
-                        .send_to(&v.contents, v.destination)
-                        .expect("Failed to send data");
-                    continue;
+            {
+                // 1. Get the socket
+                let socket = match &mut self.state {
+                    State::Negotiating(Negotiation::Initiator { socket, .. })
+                    | State::Negotiating(Negotiation::Responder { socket, .. })
+                    | State::Ready { socket, .. } => socket,
+                    State::Waiting { future, mode } => {
+                        return match future.poll_unpin(cx) {
+                            Poll::Ready(Ok(socket)) => {
+                                let m = mode.clone();
+                                self.on_socket_ready(socket, m);
+                                continue;
+                            }
+                            Poll::Pending => Poll::Pending,
+                            Poll::Ready(Err(_)) => Poll::Ready(Err(PeerConnError::WebRtc)),
+                        };
+                    }
+                    State::Closed => return Poll::Pending,
+                };
+
+                // 2. Work on the RTC connection
+                //
+                // Poll output until we get a timeout. The timeout means we are either awaiting UDP socket input
+                // or the timeout to happen.
+                let deadline = match self.rtc.poll_output() {
+                    Ok(Output::Timeout(v)) => v,
+                    Ok(Output::Transmit(v)) => {
+                        return match socket.poll_send_to(cx, &v.contents, v.destination) {
+                            Poll::Ready(Err(e)) => {
+                                log::warn!("failed to send {}", e);
+                                return Poll::Ready(Err(PeerConnError::WebRtc));
+                            }
+                            Poll::Ready(Ok(_)) => {
+                                continue;
+                            }
+                            _ => Poll::Pending,
+                        }
+                    }
+                    Ok(Output::Event(v)) => match v {
+                        RTCEvent::IceConnectionStateChange(IceConnectionState::Disconnected) => {
+                            // TODO: disconnect is not a full close
+                            // Connection failed. This is a less stringent test than `failed` and may trigger
+                            // intermittently and resolve just as spontaneously on less reliable networks,
+                            // or during temporary disconnections. When the problem resolves, the connection
+                            // may return to the connected state.
+                            self.on_connection_closed();
+
+                            continue;
+                        }
+                        RTCEvent::IceConnectionStateChange(IceConnectionState::Connected)
+                        | RTCEvent::IceConnectionStateChange(IceConnectionState::Completed) => {
+                            self.on_connection_opened();
+
+                            continue;
+                        }
+                        RTCEvent::ChannelOpen(channel_id, name) => {
+                            self.on_channel_opened(channel_id, name);
+
+                            continue;
+                        }
+                        RTCEvent::ChannelClose(channel_id) => {
+                            self.on_channel_closed(channel_id);
+
+                            continue;
+                        }
+                        RTCEvent::ChannelData(info) => {
+                            cx.waker().wake_by_ref();
+                            return Poll::Ready(
+                                self.on_inbound_data(info.id, info.data)
+                                    .map(|message| PeerConnEvent::IncomingMessage(message)),
+                            );
+                        }
+                        other => {
+                            log::debug!("ignoring event: {:?}", other);
+                            continue;
+                        }
+                    },
+                    Err(e) => {
+                        log::warn!("Failed to poll output: {:?}", e);
+                        continue;
+                    }
+                };
+
+                // 3. Wake up the timer
+                self.timer.as_mut().reset(deadline.into());
+                match self.timer.as_mut().poll(cx) {
+                    Poll::Ready(_) => {
+                        self.rtc
+                            .handle_input(Input::Timeout(Instant::now()))
+                            .expect("Failed to handle input");
+                    }
+                    Poll::Pending => {}
                 }
-                Ok(Output::Event(v)) => match v {
-                    RTCEvent::IceConnectionStateChange(IceConnectionState::Disconnected) => {
-                        // TODO: disconnect is not a full close
-                        // Connection failed. This is a less stringent test than `failed` and may trigger
-                        // intermittently and resolve just as spontaneously on less reliable networks,
-                        // or during temporary disconnections. When the problem resolves, the connection
-                        // may return to the connected state.
-                        self.on_connection_closed();
+
+                // 4. Poll the UDP socket for incoming data
+                let mut recv_buf = [0u8; 2000];
+                let mut buf = tokio::io::ReadBuf::new(&mut recv_buf);
+
+                match socket.poll_recv_from(cx, &mut buf) {
+                    Poll::Ready(Ok(source)) => {
+                        let input = Input::Receive(
+                            Instant::now(),
+                            Receive {
+                                proto: Protocol::Udp,
+                                source,
+                                destination: socket.local_addr().unwrap(),
+                                contents: buf
+                                    .filled()
+                                    .try_into()
+                                    .expect("Failed to convert buffer to slice"),
+                            },
+                        );
+
+                        self.rtc
+                            .handle_input(input)
+                            .map_err(|_| PeerConnError::WebRtc)?;
 
                         continue;
                     }
-                    RTCEvent::IceConnectionStateChange(IceConnectionState::Connected)
-                    | RTCEvent::IceConnectionStateChange(IceConnectionState::Completed) => {
-                        self.on_connection_opened();
-
-                        continue;
+                    Poll::Ready(Err(e)) => {
+                        log::warn!("Failed to receive from socket: {}", e);
                     }
-                    RTCEvent::ChannelOpen(channel_id, name) => {
-                        self.on_channel_opened(channel_id, name);
-
-                        continue;
-                    }
-                    RTCEvent::ChannelClose(channel_id) => {
-                        self.on_channel_closed(channel_id);
-
-                        continue;
-                    }
-                    RTCEvent::ChannelData(info) => {
-                        return self
-                            .on_inbound_data(info.id, info.data)
-                            .map(|event| Some(PeerConnEvent::IncomingMessage(event)))
-                    }
-                    _ => {
-                        continue;
-                    }
-                },
-                _ => {
-                    continue;
-                }
-            };
-
-            let timeout = timeout - Instant::now();
-
-            if timeout.is_zero() {
-                self.rtc
-                    .handle_input(Input::Timeout(Instant::now()))
-                    .expect("Failed to handle input");
-                continue;
+                    Poll::Pending => {}
+                };
             }
 
-            // 2. Flush any pending messages to go out
+            // 5. Flush any pending messages to go out
             match &mut self.state {
                 State::Negotiating(Negotiation::Initiator {
                     pending_signals, ..
@@ -337,60 +458,48 @@ impl PeerConnection {
                 | State::Negotiating(Negotiation::Responder {
                     pending_signals, ..
                 }) => {
+                    if let Some(signal) = self.pending_incoming_signals.pop_front() {
+                        match signal {
+                            Signal::Renegotiate(renegotiate) if renegotiate => {
+                                // TODO: not sure what this means
+                                log::warn!("Renegotiate not implemented");
+                                continue;
+                            }
+                            Signal::Candidate(candidate) => {
+                                self.remote_candidate(candidate);
+                                continue;
+                            }
+                            Signal::SdpAnswer(sdp) => {
+                                self.accept_answer(sdp).expect("Failed to accept answer");
+                                continue;
+                            }
+                            Signal::SdpOffer(sdp) => {
+                                self.accept_offer(sdp).expect("Failed to accept offer");
+                                continue;
+                            }
+                            _ => {}
+                        }
+                    }
                     if let Some(signal) = pending_signals.pop_front() {
-                        return Ok(Some(PeerConnEvent::OutboundSignal(signal)));
+                        cx.waker().wake_by_ref();
+                        return Poll::Ready(Ok(PeerConnEvent::OutboundSignal(signal)));
                     }
                 }
-                State::Ready(Ready {
-                    channel: Some(channel_id),
-                }) => {
-                    let id = channel_id.clone();
-                    if let Some(data) = self.pending_messages.pop_front() {
-                        self.on_outbound_data(id, data)?;
-                        continue;
+                State::Ready { channel, .. } => {
+                    if let Some(id) = channel {
+                        let id = id.clone();
+                        if let Some(data) = self.pending_messages.pop_front() {
+                            self.on_outbound_data(id, data)?;
+                            continue;
+                        }
                     }
                 }
-                _ => {}
-            }
-
-            // 3. Poll the UDP socket for incoming data
-            self.socket
-                .set_nonblocking(true)
-                .expect("Failed to set non-blocking mode");
-            self.socket
-                .set_read_timeout(Some(timeout))
-                .expect("Failed to set read timeout");
-            self.receive_buffer.resize(2000, 0);
-
-            let input = match self.socket.recv_from(&mut self.receive_buffer) {
-                Ok((n, source)) => {
-                    self.receive_buffer.truncate(n);
-                    Input::Receive(
-                        Instant::now(),
-                        Receive {
-                            proto: Protocol::Udp,
-                            source,
-                            destination: self.socket.local_addr().unwrap(),
-                            contents: self
-                                .receive_buffer
-                                .as_slice()
-                                .try_into()
-                                .expect("Failed to convert buffer to slice"),
-                        },
-                    )
+                _ => {
+                    log::warn!("got some other state")
                 }
-                Err(e) => match e.kind() {
-                    // Expected error for set_read_timeout(). One for windows, one for the rest.
-                    ErrorKind::WouldBlock | ErrorKind::TimedOut => Input::Timeout(Instant::now()),
-                    _ => return Err(PeerConnError::WebRtc),
-                },
             };
 
-            self.rtc
-                .handle_input(input)
-                .map_err(|_| PeerConnError::WebRtc)?;
-
-            return Ok(None);
+            return Poll::Pending;
         }
     }
 }
@@ -412,8 +521,9 @@ fn select_host_address() -> IpAddr {
     panic!("Found no usable network interface");
 }
 
-fn create_rtc_socket() -> UdpSocket {
+async fn create_rtc_socket() -> io::Result<UdpSocket> {
     let addr = select_host_address();
+    // TODO: switch to Tokio
     // Spin up a UDP socket for the RTC
-    UdpSocket::bind(format!("{addr}:0")).expect("binding a random UDP port")
+    UdpSocket::bind(format!("{addr}:0")).await
 }

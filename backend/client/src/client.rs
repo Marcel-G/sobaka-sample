@@ -9,7 +9,7 @@ use url::Url;
 use yrs::{uuid_v4, Uuid};
 
 use crate::{
-    peer::connection::PeerConnection,
+    peer::connection::{NegotiationMode, PeerConnection},
     signal::{
         connection::{SignalConnection, SignalEvent, SignalOptions},
         protocol::{Message, MessageData},
@@ -73,12 +73,10 @@ impl Client {
         }
 
         // Get or create the peer connection
-        let peer_connection = workspace.peers.entry(from.clone()).or_insert_with(|| {
-            // TODO: this is awkward
-            let mut conn = PeerConnection::new();
-            conn.connect(false); // negotiate as non-initiator
-            conn
-        });
+        let peer_connection = workspace
+            .peers
+            .entry(from.clone())
+            .or_insert_with(|| PeerConnection::connect(NegotiationMode::Responder));
 
         // Handle the incoming signal for negotiation
         peer_connection.handle_incoming_signal(signal);
@@ -136,10 +134,7 @@ impl Client {
 
         // If we don't already have a peer connection, initiate one.
         if let Entry::Vacant(entry) = workspace.peers.entry(from.clone()) {
-            // TODO: this is awkward
-            let mut peer = PeerConnection::new();
-            peer.connect(true); // negotiate as initiator
-            entry.insert(peer);
+            entry.insert(PeerConnection::connect(NegotiationMode::Initiator));
         }
     }
 
@@ -193,21 +188,19 @@ impl Client {
             let workspace_events = self
                 .workspaces
                 .iter_mut()
-                .map(|(id, workspace)| (id.clone(), workspace.poll_output()))
+                .map(|(id, workspace)| (id.clone(), workspace.poll_output(cx)))
                 .collect::<Vec<_>>();
 
             for (workspace_id, event) in workspace_events {
                 match event {
-                    Ok(Some(WorkspaceEvent::OutboundSignal(from, signal))) => {
+                    Poll::Ready(Ok(WorkspaceEvent::OutboundSignal(from, signal))) => {
                         self.handle_outgoing_signal(workspace_id, from, signal);
                     }
                     _ => {}
                 }
             }
 
-            // TODO: optimization, task can never go into Pending state
-            //       since we're currently using sync sockets for RTC on the main thread
-            //       These should probably run in their on thread
+            return Poll::Pending;
         }
     }
 }

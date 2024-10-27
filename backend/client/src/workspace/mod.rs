@@ -1,4 +1,7 @@
-use std::collections::HashMap;
+use std::{
+    collections::HashMap,
+    task::{Context, Poll},
+};
 
 use serde_json::Value;
 use yrs::{
@@ -60,11 +63,14 @@ impl Workspace {
         }
     }
 
-    pub fn poll_output(&mut self) -> Result<Option<WorkspaceEvent>, WorkspaceError> {
+    pub fn poll_output(
+        &mut self,
+        cx: &mut Context,
+    ) -> Poll<Result<WorkspaceEvent, WorkspaceError>> {
         // Poll all the peers for updates
         for (peer_id, connection) in self.peers.iter_mut() {
-            match connection.poll_output() {
-                Ok(Some(PeerConnEvent::IncomingMessage(message))) => {
+            match connection.poll_output(cx) {
+                Poll::Ready(Ok(PeerConnEvent::IncomingMessage(message))) => {
                     log::info!("peer-conn incoming message: {message:?}");
 
                     if let Some(message) = DefaultProtocol
@@ -75,18 +81,21 @@ impl Workspace {
                     }
                     continue;
                 }
-                Ok(Some(PeerConnEvent::OutboundSignal(signal))) => {
+                Poll::Ready(Ok(PeerConnEvent::OutboundSignal(signal))) => {
                     let signal = serde_json::to_value(signal).expect("Failed to serialize signal");
-                    return Ok(Some(WorkspaceEvent::OutboundSignal(
+                    return Poll::Ready(Ok(WorkspaceEvent::OutboundSignal(
                         peer_id.clone(),
                         signal,
                     )));
                 }
-                Ok(None) => return Ok(None),
-                _ => return Err(WorkspaceError::Todo),
+                Poll::Ready(Err(e)) => {
+                    log::error!("peer-conn error: {e:?}");
+                    return Poll::Ready(Err(WorkspaceError::Todo));
+                }
+                Poll::Pending => {}
             };
         }
 
-        return Ok(None);
+        return Poll::Pending;
     }
 }
