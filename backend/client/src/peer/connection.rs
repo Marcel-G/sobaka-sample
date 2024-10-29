@@ -104,6 +104,7 @@ pub enum PeerConnEvent {
     // https://github.com/feross/simple-peer/blob/f1a492d1999ce727fa87193ebdea20ac89c1fc6d/README.md?plain=1#L315
     OutboundSignal(Signal),
     IncomingMessage(yrs::sync::Message),
+    Connected
 }
 
 impl PeerConnection {
@@ -382,7 +383,8 @@ impl PeerConnection {
                         RTCEvent::ChannelOpen(channel_id, name) => {
                             self.on_channel_opened(channel_id, name);
 
-                            continue;
+                            cx.waker().wake_by_ref();
+                            return Poll::Ready(Ok(PeerConnEvent::Connected));
                         }
                         RTCEvent::ChannelClose(channel_id) => {
                             self.on_channel_closed(channel_id);

@@ -71,13 +71,14 @@ impl Workspace {
         for (peer_id, connection) in self.peers.iter_mut() {
             match connection.poll_output(cx) {
                 Poll::Ready(Ok(PeerConnEvent::IncomingMessage(message))) => {
-                    log::info!("peer-conn incoming message: {message:?}");
-
-                    if let Some(message) = DefaultProtocol
-                        .handle_message(&self.awareness, message)
-                        .map_err(|_| WorkspaceError::Todo)?
-                    {
-                        connection.send(message);
+                    match DefaultProtocol.handle_message(&self.awareness, message) {
+                        Ok(Some(reply)) => {
+                            connection.send(reply);
+                        },
+                        Err(e) => {
+                            log::error!("Failed to handle message: {e:?}");
+                        },
+                        _ => {},
                     }
                     continue;
                 }
@@ -88,6 +89,15 @@ impl Workspace {
                         signal,
                     )));
                 }
+                Poll::Ready(Ok(PeerConnEvent::Connected)) => {
+                    let sv = self.awareness.doc().transact().state_vector();
+                    let sync_step1 = Message::Sync(SyncMessage::SyncStep1(sv));
+                    let awareness_query = Message::AwarenessQuery;
+                    connection.send(sync_step1.clone());
+                    connection.send(awareness_query.clone());
+
+                    continue;
+                },
                 Poll::Ready(Err(e)) => {
                     log::error!("peer-conn error: {e:?}");
                     return Poll::Ready(Err(WorkspaceError::Todo));
