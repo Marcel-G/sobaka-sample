@@ -168,7 +168,7 @@ impl Client {
                 Poll::Pending => {}
             }
 
-            // 2. Handle SIGTERM
+            // 2. Handle SIGTERM TODO: should move to main
             if self.sigterm.poll_recv(cx).is_ready() {
                 if self.shutting_down {
                     // Received a repeated SIGTERM whilst shutting down

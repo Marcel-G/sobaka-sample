@@ -29,3 +29,25 @@ async fn main() -> Result<(), ClientError> {
 
     Ok(())
 }
+
+// API 
+// - `/auth` ?
+// - `/subscribe/{cid}` - jwt { uuid: string, role: string }
+// - `/unsubscribe/{cid}` - jwt { uuid: string, role: string }
+//
+// Subscribe
+//  Adds uuid to list of subscribers for cid
+//
+// Unsuscribe
+//  Removes uuid from list of subscribers for cid
+//
+// Document Worker
+//  One worker is spawned for each cid that has more tha 0 subscribers
+//
+// Document
+//  Owner: uuid of the owner
+//  Collaborators: uuids of anyone who can edit
+//
+// Incoming updates are discarded from users that are not Owner or Collaborator (Client and Server)
+// Any user may get synced updates
+//
