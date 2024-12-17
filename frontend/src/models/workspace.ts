@@ -10,12 +10,13 @@ import { intoReadable } from '../util/store'
 import { SubDocReference } from '../util/subdoc'
 import { Position } from '../@types'
 import { IndexeddbPersistence } from 'y-indexeddb'
-import { WebrtcProvider } from 'y-webrtc'
+import { Room, WebrtcConn, WebrtcProvider } from 'y-webrtc'
 
 export type WorkspaceMeta = {
   title: string
   createdAt: string
   updatedAt: string
+  collaborators: string[]
 }
 
 export interface WorkspaceDoc extends DocTypeDescription {
@@ -54,8 +55,45 @@ const WORKSPACE_STORE_SHAPE = {
   links: []
 }
 
+function patchRoom(
+  room: Room,
+  conns: WeakSet<WebrtcConn>,
+  isReadOnly: (roomId: string) => boolean
+) {
+  for (const conn of room?.webrtcConns?.values() || []) {
+    if (conns.has(conn)) continue
+
+    const existingListeners: Array<(data: Uint8Array) => void> = conn.peer.listeners('data');
+    existingListeners.forEach((listener) => conn.peer.off('data', listener));
+
+    conn.peer.on('data', (data: Uint8Array) => {
+      // Apply your filtering logic
+      if (!isReadOnly(conn.remotePeerId) || isReadOnlyMessage(data)) {
+        // Call the original listeners with the (optionally transformed) data
+        existingListeners.forEach(listener => listener(data));
+      } else {
+        console.warn('Filtered message');
+      }
+    });
+
+    conns.add(conn)
+  }
+}
+
+// Example filtering function
+function isReadOnlyMessage(data: Uint8Array) {
+  const [byte1, byte2] = data;
+
+  // It suffices to read the first two bytes in order to determine whether a message should be accepted from a read-only user.
+  // https://github.com/yjs/y-protocols/blob/40dbe4eebb1e53a7e86932ef3232f9abd5037569/PROTOCOL.md?plain=1#L100-L111
+
+  // Allow only SyncStep1 messages ([0, 0, ...])
+  return (byte1 === 0 && byte2 === 0)
+}
+
 export class Workspace {
   private store: MappedTypeDescription<WorkspaceStore>
+  private user: null | string = null 
 
   constructor(private doc: Y.Doc) {
     this.store = syncedStore(WORKSPACE_STORE_SHAPE, doc)
@@ -113,8 +151,60 @@ export class Workspace {
   remoteSynced(): Workspace {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const provider = new WebrtcProvider(this.doc.guid, this.doc, {
-      signaling: ['ws://localhost:8000/signaling']
+      signaling: ['ws://localhost:8000/signaling'],
     })
+
+    const conns = new WeakSet<WebrtcConn>()
+    const verifiedPeers = new Map<string, string>();
+    for (const signal of provider.signalingConns) {
+      signal.on('message', (message: { type: string, identity: string, data: any }) => {
+        if (message.type === "publish") {
+          if (!verifiedPeers.has(message.data.from)) {
+            verifiedPeers.set(message.data.from, message.identity);
+            // TODO: cleanup after we loose connection to peer
+            
+            if (provider.room && verifiedPeers.has(provider.room.peerId)) {
+              this.user = verifiedPeers.get(provider.room.peerId) || null;
+
+              // TODO: assign user as owner before sharing
+            }
+          }
+        }
+      });
+    }
+
+    const isReadOnly = (peerId: string) => {
+      const collaborators = this.store.meta.collaborators || [];
+      if (collaborators.length === 0) {
+        return false;
+      }
+      if (verifiedPeers.has(peerId)) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        const identity = verifiedPeers.get(peerId)!;
+
+        return !collaborators.includes(identity);
+      }
+
+      return true
+    }
+
+    provider.on('peers', () => {
+        if (provider.room) {
+          patchRoom(provider.room, conns, isReadOnly)
+        }
+    });
+
+    // TODO: reactively disable updates to doc in readonly mode
+    // const errorOnReadOnly = () => {
+    //   throw new Error('Updates are not allowed in read only mode')
+    // }
+    // effect(() => {
+    //  if (isReadOnly()) {
+    //    this.doc.on('beforeTransaction', errorOnReadOnly);
+    //  } else {
+    //    this.doc.off('beforeTransaction', errorOnReadOnly);
+    //  }
+    // });
 
     return this
   }
@@ -131,6 +221,7 @@ export class Workspace {
     meta.title ??= 'Untitled Workspace'
     meta.createdAt ??= new Date().toISOString()
     meta.updatedAt ??= new Date().toISOString()
+    meta.collaborators ??= []
   }
 
   private get storeReactive() {

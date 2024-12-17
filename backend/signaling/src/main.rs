@@ -1,9 +1,71 @@
 use std::error::Error;
 
-use signal_server::signaling_server;
+use jwt::Token;
+use signaling::{signaling_conn, SignalingService};
+use std::sync::Arc;
+use tokio::sync::RwLock;
+use warp::ws::{WebSocket, Ws};
+use warp::{http::Response, Filter, Rejection, Reply};
 
-mod signal_server;
+mod broadcast;
+mod conn;
+mod jwt;
+mod protocol;
+mod signaling;
+mod ws;
 
+pub type AwarenessRef = Arc<RwLock<yrs::sync::Awareness>>;
+
+// TODO: The signaling server has with ping to resolve
+//       try https://github.com/ngryman/signaling
+//       In any case signaling server will need to handle auth
+pub async fn signaling_server() {
+    let signaling = SignalingService::new();
+
+    let ws = warp::path("signaling")
+        .and(warp::ws())
+        .and(warp::cookie::optional("jwt"))
+        .and(warp::any().map(move || signaling.clone()))
+        .and_then(ws_handler);
+
+    warp::serve(ws).run(([0, 0, 0, 0], 8000)).await;
+}
+
+async fn ws_handler(
+    ws: Ws,
+    jwt_cookie: Option<String>,
+    svc: SignalingService,
+) -> Result<impl Reply, Rejection> {
+    let token = match jwt_cookie {
+        Some(token_str) => {
+            // Try to validate the existing token
+            match Token::decode(&token_str) {
+                Ok(t) => t,
+                Err(_) => Token::new(), // Generate a new token if invalid
+            }
+        }
+        None => Token::new(), // No cookie; generate a new token
+    };
+
+    let jwt = token.encode(); // Encode the token into a JWT string
+                              //
+    println!("uuid: {}", token.uuid);
+
+    Ok(ws.on_upgrade(move |socket| peer(socket, svc, token))).map(|reply| {
+        warp::reply::with_header(
+            reply,
+            "Set-Cookie",
+            format!("jwt={}; HttpOnly; Path=/", jwt),
+        )
+    })
+}
+
+async fn peer(ws: WebSocket, svc: SignalingService, token: Token) {
+    match signaling_conn(ws, svc, token.uuid).await {
+        Ok(_) => println!("signaling connection stopped"),
+        Err(e) => eprintln!("signaling connection failed: {}", e),
+    }
+}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -13,4 +75,3 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     Ok(())
 }
-

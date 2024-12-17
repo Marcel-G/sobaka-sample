@@ -5,7 +5,18 @@ edition = "2021"
 
 [dependencies]
 env_logger = "0.11.5"
-tokio = { version = "1.34", features = ["rt", "rt-multi-thread", "macros"] }
-warp = "0.3.7"
-yrs = "0.21"
-yrs-warp = { path = "../../../yrs-warp" }
+futures-util = { version = "0.3", features = ["sink"] }
+jsonwebtoken = "8"
+serde = { version = "1.0", features = ["derive", "rc"] }
+serde_json = "1.0"
+tokio = { version = "1.36", features = ["rt", "net", "sync", "macros", "rt-multi-thread"] }
+tokio-util = { version = "0.7.10", features = ["codec"] }
+tracing = { version = "0.1", features = ["log"] }
+uuid = { version = "1", features = ["v4"] }
+warp = "0.3"
+yrs = "0.18.2"
+
+[dev-dependencies]
+bytes = "1.6"
+tokio = { version = "1", features = ["full"] }
+tokio-tungstenite = "0.21"
