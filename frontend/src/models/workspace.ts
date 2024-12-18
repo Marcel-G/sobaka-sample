@@ -2,7 +2,7 @@ import * as Y from 'yjs'
 
 import syncedStore from '@syncedstore/core'
 import { DocTypeDescription, MappedTypeDescription } from '@syncedstore/core/types/doc'
-import { derived, Readable } from 'svelte/store'
+import { derived, get, Readable, writable } from 'svelte/store'
 
 import { cloneDeep } from 'lodash'
 import { INITIAL_STATE, ModuleUI } from '../modules'
@@ -10,7 +10,8 @@ import { intoReadable } from '../util/store'
 import { SubDocReference } from '../util/subdoc'
 import { Position } from '../@types'
 import { IndexeddbPersistence } from 'y-indexeddb'
-import { Room, WebrtcConn, WebrtcProvider } from 'y-webrtc'
+import { VerifiedRTCProvider } from './rtc'
+import { get_user, update_user, User } from './user'
 
 export type WorkspaceMeta = {
   title: string
@@ -55,63 +56,28 @@ const WORKSPACE_STORE_SHAPE = {
   links: []
 }
 
-function patchRoom(
-  room: Room,
-  conns: WeakSet<WebrtcConn>,
-  isReadOnly: (roomId: string) => boolean
-) {
-  for (const conn of room?.webrtcConns?.values() || []) {
-    if (conns.has(conn)) continue
-
-    const existingListeners: Array<(data: Uint8Array) => void> = conn.peer.listeners('data');
-    existingListeners.forEach((listener) => conn.peer.off('data', listener));
-
-    conn.peer.on('data', (data: Uint8Array) => {
-      // Apply your filtering logic
-      if (!isReadOnly(conn.remotePeerId) || isReadOnlyMessage(data)) {
-        // Call the original listeners with the (optionally transformed) data
-        existingListeners.forEach(listener => listener(data));
-      } else {
-        console.warn('Filtered message');
-      }
-    });
-
-    conns.add(conn)
-  }
-}
-
-// Example filtering function
-function isReadOnlyMessage(data: Uint8Array) {
-  const [byte1, byte2] = data;
-
-  // It suffices to read the first two bytes in order to determine whether a message should be accepted from a read-only user.
-  // https://github.com/yjs/y-protocols/blob/40dbe4eebb1e53a7e86932ef3232f9abd5037569/PROTOCOL.md?plain=1#L100-L111
-
-  // Allow only SyncStep1 messages ([0, 0, ...])
-  return (byte1 === 0 && byte2 === 0)
-}
-
 export class Workspace {
   private store: MappedTypeDescription<WorkspaceStore>
-  private user: null | string = null 
+  private currentUser = writable<User | null>(get_user())
+
+  private storage: IndexeddbPersistence | null = null
+  private rtc: VerifiedRTCProvider | null = null
 
   constructor(private doc: Y.Doc) {
     this.store = syncedStore(WORKSPACE_STORE_SHAPE, doc)
 
-    this.doc.on('synced', () => {
-      this.populate()
-
-      this.doc.on('update', (_, origin) => {
-        if (origin === this) return
-        this.doc.transact(() => {
-          this.handleDocumentUpdated()
-        }, this)
-      })
-    })
+    // this.doc.on('update', (_, origin) => {
+    //   if (origin === this) return
+    //   this.doc.transact(() => {
+    //     this.handleDocumentUpdated()
+    //   }, this)
+    // })
   }
 
   static create(doc: Y.Doc = new Y.Doc()) {
-    return new Workspace(doc)
+    const workspace = new Workspace(doc)
+    workspace.populate()
+    return workspace
   }
 
   static fromId(id: string) {
@@ -130,81 +96,58 @@ export class Workspace {
     return this.doc.guid
   }
 
+  private isCollaborator(identity: string) {
+    const collaborators = this.store.meta.collaborators || []
+    if (!collaborators.length) return true
+    return collaborators.includes(identity)
+  }
+
+  async save() {
+    if (!this.storage) {
+      // First try load from local storage
+      this.storage = new IndexeddbPersistence(this.doc.guid, this.doc)
+    }
+
+    await new Promise(resolve => this.storage?.once('synced', resolve))
+  }
+
   /**
    * Loads entity from local storage
    */
   async load() {
-    this.storageSynced()
+    const signal = (AbortSignal as any).timeout(2000)
+
+    if (!this.storage) {
+      // First try load from local storage
+      this.storage = new IndexeddbPersistence(this.doc.guid, this.doc)
+    }
+
     this.doc.load()
-    await new Promise(resolve => this.doc.on('synced', resolve))
-    return this
-  }
 
-  storageSynced(): Workspace {
-    const provider = new IndexeddbPersistence(this.doc.guid, this.doc)
-    provider.on('synced', () => {
-      this.doc.emit('synced', [this])
-    })
-    return this
-  }
+    if (!this.rtc) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      this.rtc = new VerifiedRTCProvider(this.doc.guid, this.doc, {
+        signaling: ['ws://localhost:8000/signaling'],
+        // Ignore updates from non-collaborators
+        filterIncomingMessage: from => this.isCollaborator(from)
+      })
 
-  remoteSynced(): Workspace {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const provider = new WebrtcProvider(this.doc.guid, this.doc, {
-      signaling: ['ws://localhost:8000/signaling'],
-    })
-
-    const conns = new WeakSet<WebrtcConn>()
-    const verifiedPeers = new Map<string, string>();
-    for (const signal of provider.signalingConns) {
-      signal.on('message', (message: { type: string, identity: string, data: any }) => {
-        if (message.type === "publish") {
-          if (!verifiedPeers.has(message.data.from)) {
-            verifiedPeers.set(message.data.from, message.identity);
-            // TODO: cleanup after we loose connection to peer
-            
-            if (provider.room && verifiedPeers.has(provider.room.peerId)) {
-              this.user = verifiedPeers.get(provider.room.peerId) || null;
-
-              // TODO: assign user as owner before sharing
-            }
-          }
-        }
-      });
+      // get verified uuid from provider
+      this.rtc.once('user', (uuid: string) => {
+        const user = { uuid }
+        this.currentUser.set(user)
+        update_user(user)
+      })
     }
 
-    const isReadOnly = (peerId: string) => {
-      const collaborators = this.store.meta.collaborators || [];
-      if (collaborators.length === 0) {
-        return false;
-      }
-      if (verifiedPeers.has(peerId)) {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        const identity = verifiedPeers.get(peerId)!;
-
-        return !collaborators.includes(identity);
-      }
-
-      return true
-    }
-
-    provider.on('peers', () => {
-        if (provider.room) {
-          patchRoom(provider.room, conns, isReadOnly)
+    await new Promise((resolve, reject) => {
+      signal.addEventListener('abort', () => reject(new Error('Not found')))
+      intoReadable(this.store.meta).subscribe(meta => {
+        if (meta.createdAt) {
+          resolve(void 0)
         }
-    });
-
-    // TODO: reactively disable updates to doc in readonly mode
-    // const errorOnReadOnly = () => {
-    //   throw new Error('Updates are not allowed in read only mode')
-    // }
-    // effect(() => {
-    //  if (isReadOnly()) {
-    //    this.doc.on('beforeTransaction', errorOnReadOnly);
-    //  } else {
-    //    this.doc.off('beforeTransaction', errorOnReadOnly);
-    //  }
-    // });
+      })
+    })
 
     return this
   }
@@ -221,11 +164,26 @@ export class Workspace {
     meta.title ??= 'Untitled Workspace'
     meta.createdAt ??= new Date().toISOString()
     meta.updatedAt ??= new Date().toISOString()
-    meta.collaborators ??= []
+    const currentUser = get(this.currentUser)
+    if (currentUser) {
+      meta.collaborators ??= [currentUser.uuid]
+    } else {
+      meta.collaborators ??= []
+    }
   }
 
   private get storeReactive() {
     return intoReadable(this.store)
+  }
+
+  get isEditable(): Readable<boolean> {
+    return derived(
+      [intoReadable(this.store.meta), this.currentUser],
+      ([meta, currentUser]) => {
+        if (!meta.collaborators?.length || !currentUser) return false
+        return meta.collaborators.includes(currentUser.uuid)
+      }
+    )
   }
 
   get meta(): Readable<WorkspaceMeta> {

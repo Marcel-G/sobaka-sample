@@ -48,7 +48,7 @@ async fn ws_handler(
     };
 
     let jwt = token.encode(); // Encode the token into a JWT string
-                              //
+
     println!("uuid: {}", token.uuid);
 
     Ok(ws.on_upgrade(move |socket| peer(socket, svc, token))).map(|reply| {

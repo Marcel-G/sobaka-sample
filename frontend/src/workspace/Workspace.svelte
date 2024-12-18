@@ -13,7 +13,6 @@
   import TitleInput from '../components/TitleInput.svelte'
   import NavigationButton from '../components/NavigationButton.svelte'
   import { get_workspace } from '../context/workspace'
-  import { onMount } from 'svelte'
 
   let toolbox_visible = false
   let toolbox_position: Position = { x: 0, y: 0 }
@@ -22,10 +21,7 @@
   const { workspace, plugs } = get_workspace()
   const meta = workspace.meta
   const modules = workspace.modules
-
-  onMount(() => {
-    workspace.remoteSynced()
-  })
+  const isEditable = workspace.isEditable
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handle_double_click = (event: MouseEvent) => {
@@ -66,6 +62,9 @@
     <TitleInput bind:value={$meta.title} />
   </svelte:fragment>
   <svelte:fragment slot="right">
+    <span>
+      {$isEditable ? 'editable' : 'read-only'}
+    </span>
     <a href="/workspace/new">
       <NavigationButton>New</NavigationButton>
     </a>
@@ -79,6 +78,7 @@
 />
 <!-- svelte-ignore a11y-click-events-have-key-events -->
 <div
+  class:disabled={!$isEditable}
   class="workspace"
   on:click|self={handle_close}
   on:dblclick|self={handle_double_click}

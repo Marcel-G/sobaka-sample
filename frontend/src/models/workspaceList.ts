@@ -82,7 +82,10 @@ export class WorkspaceList {
 
   new() {
     const workspace = Workspace.create()
-    this.store.workspaces.push(workspace.intoRef())
+
+    workspace.save().then(() => {
+      this.store.workspaces.push(workspace.intoRef())
+    })
   }
 
   remove(workspace: Workspace) {

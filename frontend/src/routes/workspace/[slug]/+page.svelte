@@ -20,4 +20,6 @@
   <!-- TODO: skeleton loading UI -->
 {:then}
   <WorkspaceView />
+{:catch error}
+  Failed to load workspace: {error.message}
 {/await}

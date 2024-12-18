@@ -9,6 +9,7 @@ export const load: PageLoad = async () => {
 
   const root = Root.init()
   const workspace = Workspace.create()
+  await workspace.save()
   await root.addToUserList(workspace)
 
   throw redirect(307, `/workspace/${workspace.id}`)
