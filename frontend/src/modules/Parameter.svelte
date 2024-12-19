@@ -29,6 +29,7 @@
   const context = get_audio_context()
 
   export let state: State
+  export let disabled = false
   let name = 'parameter'
   let parameter: ConstantSourceNode
   let loading = true
@@ -46,19 +47,20 @@
   $: parameter?.offset.setValueAtTime(value, $context.currentTime)
 </script>
 
-<Panel {name} height={6} width={5} custom_style={into_style(theme)}>
+<Panel {name} height={6} width={5} {disabled} custom_style={into_style(theme)}>
   {#if loading}
     <Layout type="center">
       <RingSpinner />
     </Layout>
   {:else}
     <span>
-      <Knob bind:value={state.value} range={param_range} label="value" />
+      <Knob {disabled} bind:value={state.value} range={param_range} label="value" />
     </span>
   {/if}
   <div slot="outputs">
     <Plug
       id={0}
+      {disabled}
       label="output"
       ctx={{ type: PlugType.Output, connectIndex: 0, module: parameter }}
     />
