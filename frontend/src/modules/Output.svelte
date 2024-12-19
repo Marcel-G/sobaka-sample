@@ -19,6 +19,7 @@
   import Layout from '../components/Layout.svelte'
   import RingSpinner from '../components/RingSpinner.svelte'
 
+  export let disabled = false
   let output: AudioNode
   let loading = true
 
@@ -32,7 +33,7 @@
   })
 </script>
 
-<Panel name="output" height={7} width={20} custom_style={into_style(theme)}>
+<Panel name="output" height={7} width={20} {disabled} custom_style={into_style(theme)}>
   {#if loading}
     <Layout type="center">
       <RingSpinner />
@@ -46,11 +47,13 @@
   <div slot="inputs">
     <Plug
       id={0}
+      {disabled}
       label="l"
       ctx={{ type: PlugType.Input, connectIndex: 0, module: output }}
     />
     <Plug
       id={1}
+      {disabled}
       label="r"
       ctx={{ type: PlugType.Input, connectIndex: 1, module: output }}
     />
