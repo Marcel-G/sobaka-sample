@@ -25,6 +25,7 @@
   import { create_bipolar_scale_range } from '../range/range_creators'
 
   export let state: State
+  export let disabled = false
   let name = 'vca'
   let vca: GainNode
   let gain_param: AudioParam
@@ -44,29 +45,41 @@
   $: gain_param?.setValueAtTime(gain || 0, $context.currentTime)
 </script>
 
-<Panel {name} height={6} width={5} custom_style={into_style(theme)}>
+<Panel {name} height={6} width={5} {disabled} custom_style={into_style(theme)}>
   {#if loading}
     <Layout type="center">
       <RingSpinner />
     </Layout>
   {:else}
     <span>
-      <Knob bind:value={state.value} range={attenuverter} label="attenuverter" />
+      <Knob
+        {disabled}
+        bind:value={state.value}
+        range={attenuverter}
+        label="attenuverter"
+      />
     </span>
   {/if}
 
   <div slot="inputs">
     <Plug
       id={0}
+      {disabled}
       label="Signal"
       ctx={{ type: PlugType.Input, module: vca, connectIndex: 0 }}
     />
-    <Plug id={1} label="Cv" ctx={{ type: PlugType.Param, param: gain_param }} />
+    <Plug
+      id={1}
+      {disabled}
+      label="Cv"
+      ctx={{ type: PlugType.Param, param: gain_param }}
+    />
   </div>
 
   <div slot="outputs">
     <Plug
       id={0}
+      {disabled}
       label="Output"
       ctx={{ type: PlugType.Output, module: vca, connectIndex: 0 }}
     />
