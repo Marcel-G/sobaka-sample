@@ -24,6 +24,7 @@
   import { create_time_range } from '../range/range_creators'
 
   export let state: State
+  export let disabled = false
   let name = 'delay'
   let delay: Delay
   let node: AudioNode
@@ -52,17 +53,18 @@
   })
 </script>
 
-<Panel {name} height={6} width={7} custom_style={into_style(theme)}>
+<Panel {name} height={6} width={7} {disabled} custom_style={into_style(theme)}>
   {#if loading}
     <Layout type="center">
       <RingSpinner />
     </Layout>
   {:else}
     <div class="controls">
-      <Knob bind:value={state.time} range={delay_range} label="seconds">
+      <Knob {disabled} bind:value={state.time} range={delay_range} label="seconds">
         <div slot="knob-inputs">
           <Plug
             id={0}
+            {disabled}
             label="seconds_cv"
             ctx={{ type: PlugType.Param, param: delay_time_param }}
           />
@@ -73,11 +75,13 @@
   <div slot="inputs">
     <Plug
       id={0}
+      {disabled}
       label="signal"
       ctx={{ type: PlugType.Input, module: node, connectIndex: 1 }}
     />
     <Plug
       id={1}
+      {disabled}
       label="reset"
       ctx={{ type: PlugType.Input, module: node, connectIndex: 0 }}
     />
@@ -85,6 +89,7 @@
   <div slot="outputs">
     <Plug
       id={0}
+      {disabled}
       label="output"
       ctx={{ type: PlugType.Output, module: node, connectIndex: 0 }}
     />
