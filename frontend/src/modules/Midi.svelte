@@ -19,6 +19,7 @@
   import { PlugType } from '../context/plugs'
   import { get_context as get_audio_context } from '../audio'
 
+  export let disabled = false
   let active_device_id: string
   let default_device: Input
   let inputs: Input[] = []
@@ -73,12 +74,14 @@
   })
 </script>
 
-<Panel name="midi" height={4} width={7} custom_style={into_style(theme)}>
+<Panel name="midi" height={4} width={7} {disabled} custom_style={into_style(theme)}>
+  <!-- TODO: allow the dropdown to be used when the module is disabled -->
   <Dropdown options={inputs.map(input => input.id)} bind:selected={active_device_id} />
 
   <div slot="outputs">
     <Plug
       id={0}
+      {disabled}
       label="gate_1"
       ctx={{ type: PlugType.Output, connectIndex: 0, module: gate }}
     />
@@ -89,6 +92,7 @@
     -->
     <Plug
       id={1}
+      {disabled}
       label="pitch_1"
       ctx={{ type: PlugType.Output, connectIndex: 0, module: note }}
     />
