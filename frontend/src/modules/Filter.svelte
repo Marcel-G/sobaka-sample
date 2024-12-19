@@ -33,6 +33,7 @@
   } from '../range/range_creators'
 
   export let state: State
+  export let disabled = false
   let name = 'filter'
   let filter: Filter
   let node: AudioNode
@@ -66,7 +67,7 @@
   })
 </script>
 
-<Panel {name} height={8} width={8} custom_style={into_style(theme)}>
+<Panel {name} height={8} width={8} {disabled} custom_style={into_style(theme)}>
   {#if loading}
     <Layout type="center">
       <RingSpinner />
@@ -74,6 +75,7 @@
   {:else}
     <div class="controls">
       <Knob
+        {disabled}
         bind:value={state.frequency}
         range={freq_range}
         label="cutoff"
@@ -82,14 +84,20 @@
         <div slot="knob-inputs">
           <Plug
             id={1}
+            {disabled}
             label="cutoff_cv"
             ctx={{ type: PlugType.Param, param: frequency_param }}
           />
         </div>
       </Knob>
-      <Knob bind:value={state.q} range={scalar} label="q" orientation="ns">
+      <Knob {disabled} bind:value={state.q} range={scalar} label="q" orientation="ns">
         <div slot="knob-inputs">
-          <Plug id={2} label="q_cv" ctx={{ type: PlugType.Param, param: q_param }} />
+          <Plug
+            id={2}
+            {disabled}
+            label="q_cv"
+            ctx={{ type: PlugType.Param, param: q_param }}
+          />
         </div>
       </Knob>
     </div>
@@ -97,6 +105,7 @@
   <div slot="inputs">
     <Plug
       id={0}
+      {disabled}
       label="signal"
       ctx={{ type: PlugType.Input, module: node, connectIndex: 0 }}
     />
@@ -104,21 +113,25 @@
   <div slot="outputs">
     <Plug
       id={0}
+      {disabled}
       label="lowpass"
       ctx={{ type: PlugType.Output, module: node, connectIndex: 0 }}
     />
     <Plug
       id={1}
+      {disabled}
       label="highpass"
       ctx={{ type: PlugType.Output, module: node, connectIndex: 1 }}
     />
     <Plug
       id={2}
+      {disabled}
       label="bandpass"
       ctx={{ type: PlugType.Output, module: node, connectIndex: 2 }}
     />
     <Plug
       id={3}
+      {disabled}
       label="moog"
       ctx={{ type: PlugType.Output, module: node, connectIndex: 3 }}
     />
