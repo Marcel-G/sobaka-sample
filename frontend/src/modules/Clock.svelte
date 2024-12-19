@@ -24,6 +24,7 @@
   import { Clock } from 'sobaka-dsp'
 
   export let state: State
+  export let disabled = false
   let clock: Clock
   let name = 'clock'
   let bpm_param: AudioParam
@@ -46,14 +47,19 @@
   $: bpm_param?.setValueAtTime(state.bpm, $context.currentTime)
 </script>
 
-<Panel {name} height={8} width={5} custom_style={into_style(theme)}>
+<Panel {name} height={8} width={5} {disabled} custom_style={into_style(theme)}>
   <Layout type="center">
     {#if loading}
       <RingSpinner />
     {:else}
-      <Knob bind:value={state.bpm} range={bpm} label="bpm" orientation="ns">
+      <Knob bind:value={state.bpm} range={bpm} label="bpm" orientation="ns" {disabled}>
         <div slot="knob-inputs">
-          <Plug id={0} label="bpm_cv" ctx={{ type: PlugType.Param, param: bpm_param }} />
+          <Plug
+            id={0}
+            {disabled}
+            label="bpm_cv"
+            ctx={{ type: PlugType.Param, param: bpm_param }}
+          />
         </div>
       </Knob>
     {/if}
@@ -62,26 +68,31 @@
   <div slot="outputs">
     <Plug
       id={0}
+      {disabled}
       label="1/1"
       ctx={{ type: PlugType.Output, module: node, connectIndex: 0 }}
     />
     <Plug
       id={1}
+      {disabled}
       label="1/2"
       ctx={{ type: PlugType.Output, module: node, connectIndex: 1 }}
     />
     <Plug
       id={2}
+      {disabled}
       label="1/4"
       ctx={{ type: PlugType.Output, module: node, connectIndex: 2 }}
     />
     <Plug
       id={3}
+      {disabled}
       label="1/8"
       ctx={{ type: PlugType.Output, module: node, connectIndex: 3 }}
     />
     <Plug
       id={4}
+      {disabled}
       label="1/16"
       ctx={{ type: PlugType.Output, module: node, connectIndex: 4 }}
     />

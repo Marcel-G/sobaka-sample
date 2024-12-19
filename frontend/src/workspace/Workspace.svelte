@@ -25,12 +25,14 @@
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handle_double_click = (event: MouseEvent) => {
+    if (!$isEditable) return
     $mouse_position = { x: event.offsetX, y: event.offsetY }
     toolbox_visible = true
     toolbox_position = $mouse_position
   }
 
   const handle_global_keydown = (event: KeyboardEvent) => {
+    if (!$isEditable) return
     if (event.code === 'Space' && !toolbox_visible) {
       toolbox_visible = true
       toolbox_position = $mouse_position
@@ -78,7 +80,6 @@
 />
 <!-- svelte-ignore a11y-click-events-have-key-events -->
 <div
-  class:disabled={!$isEditable}
   class="workspace"
   on:click|self={handle_close}
   on:dblclick|self={handle_double_click}
@@ -89,7 +90,7 @@
   {/if}
 
   {#each $modules as module (module.id)}
-    <ModuleWrapper {module} />
+    <ModuleWrapper {module} disabled={!$isEditable} />
   {/each}
   <Wires />
 </div>

@@ -20,6 +20,7 @@
     font-family: monospace;
     text-transform: lowercase;
     display: flex;
+    pointer-events: all;
   }
 
   .wrapper .tooltip {

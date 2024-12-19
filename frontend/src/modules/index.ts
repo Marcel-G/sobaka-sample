@@ -6,7 +6,7 @@ import Filter, { initialState as filterInitialState } from './Filter.svelte'
 import Oscillator, {
   initialState as oscillatorInitialState
 } from './Oscillator/Oscillator.svelte'
-import Parameter, { initialState as ParameterInitialState } from './Parameter.svelte'
+import Parameter, { initialState as parameterInitialState } from './Parameter.svelte'
 import Reverb, { initialState as reverbInitialState } from './Reverb.svelte'
 import Sequencer, { initialState as sequencerInitialState } from './Sequencer.svelte'
 import StepSequencer, {
@@ -58,7 +58,7 @@ export const INITIAL_STATE = {
   Envelope: envelopeInitialState,
   Filter: filterInitialState,
   Oscillator: oscillatorInitialState,
-  Parameter: ParameterInitialState,
+  Parameter: parameterInitialState,
   Reverb: reverbInitialState,
   Sequencer: sequencerInitialState,
   StepSequencer: stepSequencerInitialState,

@@ -20,6 +20,7 @@
 
   export let custom_style = ''
   export let name: string
+  export let disabled = false
   export let height = 0
   export let width = 0
 
@@ -32,6 +33,7 @@
   $: row = `${$position.y + 1} / span ${height}`
 
   const handle_drag: OnDrag = (event, origin, element) => {
+    if (disabled) return true
     const parent = element.parentElement
     if (parent instanceof Element) {
       const { x: x_in, y: y_in } = relative_to_element(event, origin, parent)
@@ -48,14 +50,17 @@
 <div
   use:useDrag={{ onDrag: handle_drag }}
   class="panel"
+  class:disabled
   style={`grid-column: ${col}; grid-row: ${row}; ${custom_style}`}
 >
   <div class="bar">
     <span class="name">{name}</span>
-    <span class="actions">
-      <button class="clone" on:click={() => workspace.clone_module(id)}>+</button>
-      <button class="close" on:click={() => workspace.remove_module(id)}>x</button>
-    </span>
+    {#if !disabled}
+      <span class="actions">
+        <button class="clone" on:click={() => workspace.clone_module(id)}>+</button>
+        <button class="close" on:click={() => workspace.remove_module(id)}>x</button>
+      </span>
+    {/if}
   </div>
   <slot />
   <div class="inputs">
@@ -83,6 +88,13 @@
 
     position: relative;
     z-index: 5;
+  }
+
+  .disabled {
+    filter: grayscale(60%) brightness(90%);
+    pointer-events: none;
+    user-select: none;
+    cursor: none;
   }
 
   .bar .actions {

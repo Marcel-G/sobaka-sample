@@ -140,6 +140,14 @@ export class Workspace {
       })
     }
 
+    this.storage.on('synced', () => {
+      console.log('storage synced')
+    })
+
+    this.rtc.on('synced', () => {
+      console.log('rtc synced')
+    })
+
     await new Promise((resolve, reject) => {
       signal.addEventListener('abort', () => reject(new Error('Not found')))
       intoReadable(this.store.meta).subscribe(meta => {
@@ -148,6 +156,21 @@ export class Workspace {
         }
       })
     })
+
+    // function assertReadOnly (tr: Y.Transaction) {
+    //   console.log(tr.origin, tr.local, tr);
+    //   if (tr) {
+    //     // throw new Error('Modifications cannot be made in readonly mode');
+    //   }
+    // }
+
+    // this.isEditable.subscribe(editable => {
+    //   if (!editable) {
+    //     this.doc.on('beforeTransaction', assertReadOnly);
+    //   } else {
+    //     this.doc.off('beforeTransaction', assertReadOnly)
+    //   }
+    // });
 
     return this
   }

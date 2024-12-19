@@ -4,6 +4,7 @@
 
   export let value = 0.0
   export let range: Range
+  export let disabled = false
   export const focus = () => {
     input_ref?.focus()
     input_ref?.select()
@@ -61,6 +62,7 @@
 <input
   bind:this={input_ref}
   type="text"
+  {disabled}
   on:mousedown={handleMouseDown}
   on:mouseup={handleMouseUp}
   on:keydown={handleKeyDown}

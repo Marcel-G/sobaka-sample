@@ -3,20 +3,19 @@
 </script>
 
 <script lang="ts">
-  import Arc from './Arc.svelte'
   import { from_normalised, to_normalised } from '../../range/range_functions'
   import Input from '../Input.svelte'
   import useDrag, { OnDrag, relative_to_element } from '../../actions/drag'
   import useWheel, { OnWheel } from '../../actions/wheel'
-  import Tooltip from '../Tooltip.svelte'
+  import Dial from './Dial.svelte'
 
   export let value = 0.0
   export let range: Range
   export let label: string
+  export let disabled = false
   export let orientation: 'ns' | 'ew' = 'ew'
 
   let focus_input: () => void
-  const baseAngle = 135
 
   $: normalised_value = to_normalised(range, value)
 
@@ -41,61 +40,49 @@
   }
 </script>
 
-<div
-  class="knob"
-  class:ns={orientation === 'ns'}
-  class:ew={orientation === 'ew'}
-  on:dblclick={handle_double_click}
-  use:useDrag={{ onDrag: handle_drag, onDragStart: capture_start_value }}
-  use:useWheel={{ onWheel: handle_wheel, onWheelStart: capture_start_value }}
->
-  <slot name="knob-inputs" />
-  <div class="dial">
-    <Tooltip {label}>
-      <svg viewBox="0 0 100 100">
-        <Arc
-          x={50}
-          y={50}
-          radius={40}
-          startAngle={-baseAngle}
-          endAngle={baseAngle}
-          stroke="var(--current-line)"
-        />
-        <Arc
-          x={50}
-          y={50}
-          radius={40}
-          startAngle={range.type === RangeType.Continuous && range.bipolar
-            ? 0
-            : -baseAngle}
-          endAngle={-baseAngle + baseAngle * 2 * normalised_value}
-          stroke="var(--module-highlight)"
-        />
-      </svg>
-    </Tooltip>
+{#if disabled}
+  <div
+    class="knob"
+    class:disabled
+    class:ns={orientation === 'ns'}
+    class:ew={orientation === 'ew'}
+  >
+    <slot name="knob-inputs" />
+    <Dial {value} {range} {label} />
+    <div class="input">
+      <Input disabled bind:value {range} />
+    </div>
   </div>
-  <div class="input">
-    <Input bind:value bind:focus={focus_input} {range} />
+{:else}
+  <div
+    class="knob"
+    class:disabled
+    class:ns={orientation === 'ns'}
+    class:ew={orientation === 'ew'}
+    on:dblclick={handle_double_click}
+    use:useDrag={{ onDrag: handle_drag, onDragStart: capture_start_value }}
+    use:useWheel={{ onWheel: handle_wheel, onWheelStart: capture_start_value }}
+  >
+    <slot name="knob-inputs" />
+    <Dial {value} {range} {label} />
+    <div class="input">
+      <Input bind:value bind:focus={focus_input} {range} />
+    </div>
   </div>
-</div>
+{/if}
 
 <style>
   .knob {
     display: grid;
     grid-template-columns: min-content min-content;
 
-    pointer-events: all;
-    cursor: pointer;
     position: relative;
+    cursor: pointer;
   }
 
-  .dial {
-    grid-row: 1;
-    grid-column: 2;
-  }
-
-  svg {
-    height: 3rem;
+  .disabled.knob {
+    pointer-events: none;
+    cursor: initial;
   }
 
   .input {

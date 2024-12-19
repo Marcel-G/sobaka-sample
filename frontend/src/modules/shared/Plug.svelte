@@ -13,6 +13,7 @@
   export let ctx: ParamContext | NodeContext
   export let id: number
   export let label: string
+  export let disabled = false
 
   let plug_id: string
 
@@ -33,6 +34,7 @@
   }
 
   function handle_click() {
+    if (disabled) return
     plugs.make(plug_id)
   }
 
@@ -53,9 +55,11 @@
 </script>
 
 <Tooltip {label} position={ctx.type !== PlugType.Output ? 'left' : 'right'}>
+  <!-- svelte-ignore a11y-click-events-have-key-events -->
   <div
     role="button"
     aria-label={label}
+    class:disabled
     class="plug"
     on:click={() => handle_click()}
     bind:this={$node}
@@ -69,10 +73,16 @@
     height: 0.8rem;
     background-color: var(--background);
     border: 2px solid var(--module-highlight);
+    pointer-events: all;
 
     transition: border-color 0.25s;
 
     border-radius: 50%;
+  }
+
+  .disabled.plug {
+    pointer-events: hover;
+    cursor: crosshair;
   }
 
   .plug:hover {
