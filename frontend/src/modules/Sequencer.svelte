@@ -32,6 +32,7 @@
   const context = get_audio_context()
 
   export let state: State
+  export let disabled = false
   let name = 'sequencer'
   let sequencer: Sequencer
   let node: AudioNode
@@ -71,7 +72,7 @@
   })
 </script>
 
-<Panel {name} height={8} width={26} custom_style={into_style(theme)}>
+<Panel {name} height={8} width={26} {disabled} custom_style={into_style(theme)}>
   {#if loading}
     <Layout type="center">
       <RingSpinner />
@@ -80,6 +81,7 @@
     <div class="controls">
       {#each state.steps as step, i}
         <Knob
+          {disabled}
           bind:value={step.value}
           range={knob_range}
           label={`step_${i + 1}`}
@@ -95,11 +97,13 @@
   <div slot="inputs">
     <Plug
       id={0}
+      {disabled}
       label="gate"
       ctx={{ type: PlugType.Input, module: node, connectIndex: 0 }}
     />
     <Plug
       id={1}
+      {disabled}
       label="reset"
       ctx={{ type: PlugType.Input, module: node, connectIndex: 1 }}
     />
@@ -108,6 +112,7 @@
   <div slot="outputs">
     <Plug
       id={0}
+      {disabled}
       label="output"
       ctx={{ type: PlugType.Output, module: node, connectIndex: 0 }}
     />
