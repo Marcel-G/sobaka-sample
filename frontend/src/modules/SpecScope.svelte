@@ -5,9 +5,7 @@
     background: 'var(--cyan-dark)'
   }
 
-  type State = {}
-
-  export const initialState: State = {}
+  export const initialState: Record<string, never> = {}
 </script>
 
 <script lang="ts">
@@ -20,7 +18,7 @@
   import RingSpinner from '../components/RingSpinner.svelte'
   import { PlugType } from '../context/plugs'
 
-  export let state: State
+  export let disabled = false
   let name = 'spec_scope'
   let node: AnalyserNode
   let loading = true
@@ -156,7 +154,7 @@
   })
 </script>
 
-<Panel {name} height={15} width={13} custom_style={into_style(theme)}>
+<Panel {name} height={15} width={13} {disabled} custom_style={into_style(theme)}>
   {#if loading}
     <Layout type="center">
       <RingSpinner />
@@ -171,6 +169,7 @@
   <div slot="inputs">
     <Plug
       id={0}
+      {disabled}
       label="signal"
       ctx={{ type: PlugType.Input, module: node, connectIndex: 0 }}
     />
