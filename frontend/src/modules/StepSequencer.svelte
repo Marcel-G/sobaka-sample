@@ -29,6 +29,7 @@
   import RingSpinner from '../components/RingSpinner.svelte'
 
   export let state: State
+  export let disabled = false
   let name = 'step_sequencer'
   let step_sequencer: StepSequencer
   let node: AudioNode
@@ -71,7 +72,7 @@
   })
 </script>
 
-<Panel {name} height={11} width={17} custom_style={into_style(theme)}>
+<Panel {name} height={11} width={17} {disabled} custom_style={into_style(theme)}>
   {#if loading}
     <Layout type="center">
       <RingSpinner />
@@ -81,7 +82,11 @@
       {#each steps as step, x}
         <div class="branch">
           {#each step as s, y}
-            <Button pressed={s.value} onClick={() => update_step(x, y, !s.value)} />
+            <Button
+              {disabled}
+              pressed={s.value}
+              onClick={() => update_step(x, y, !s.value)}
+            />
           {/each}
         </div>
       {/each}
@@ -95,11 +100,13 @@
   <div slot="inputs">
     <Plug
       id={0}
+      {disabled}
       label="Gate"
       ctx={{ type: PlugType.Input, module: node, connectIndex: 0 }}
     />
     <Plug
       id={1}
+      {disabled}
       label="Reset"
       ctx={{ type: PlugType.Input, module: node, connectIndex: 1 }}
     />
@@ -108,21 +115,25 @@
   <div slot="outputs">
     <Plug
       id={0}
+      {disabled}
       label="Output_1"
       ctx={{ type: PlugType.Output, module: node, connectIndex: 0 }}
     />
     <Plug
       id={1}
+      {disabled}
       label="Output_2"
       ctx={{ type: PlugType.Output, module: node, connectIndex: 1 }}
     />
     <Plug
       id={2}
+      {disabled}
       label="Output_3"
       ctx={{ type: PlugType.Output, module: node, connectIndex: 2 }}
     />
     <Plug
       id={3}
+      {disabled}
       label="Output_4"
       ctx={{ type: PlugType.Output, module: node, connectIndex: 3 }}
     />
