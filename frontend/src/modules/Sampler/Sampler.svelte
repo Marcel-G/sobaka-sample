@@ -39,6 +39,7 @@
   import { Range, RangeType } from '../../range/range'
 
   export let state: State
+  export let disabled = false
   let name = 'sampler'
   let sampler: SamplerController
   let node: AudioNode
@@ -152,7 +153,7 @@
   })
 </script>
 
-<Panel {name} height={20} width={20} custom_style={into_style(theme)}>
+<Panel {name} height={20} width={20} {disabled} custom_style={into_style(theme)}>
   {#if loading}
     <Layout type="center">
       <RingSpinner />
@@ -175,16 +176,27 @@
           bind:trigger_segment
         />
         <div class="controls">
-          <Knob bind:value={state.playback_rate} range={playback_rate_range} label="rate">
+          <Knob
+            {disabled}
+            bind:value={state.playback_rate}
+            range={playback_rate_range}
+            label="rate"
+          >
             <div slot="knob-inputs">
               <Plug
                 id={1}
+                {disabled}
                 label="rate_cv"
                 ctx={{ type: PlugType.Param, param: rate_param }}
               />
             </div>
           </Knob>
-          <Knob bind:value={state.threshold} range={threshold_range} label="threshold" />
+          <Knob
+            {disabled}
+            bind:value={state.threshold}
+            range={threshold_range}
+            label="threshold"
+          />
           <!-- Lol need a better button -->
           <Button
             onClick={async () => {
@@ -204,6 +216,7 @@
       </label>
       <ol>
         {#each files as file (file)}
+          <!-- svelte-ignore a11y-click-events-have-key-events -->
           <li on:click={() => handle_file_select(file)}>
             {file}
           </li>
@@ -215,6 +228,7 @@
   <div slot="inputs">
     <Plug
       id={0}
+      {disabled}
       label="Gate"
       ctx={{ type: PlugType.Input, module: node, connectIndex: 0 }}
     />
@@ -222,6 +236,7 @@
   <div slot="outputs">
     <Plug
       id={0}
+      {disabled}
       label="Output"
       ctx={{ type: PlugType.Output, module: node, connectIndex: 0 }}
     />
