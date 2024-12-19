@@ -31,6 +31,7 @@
   import { create_scale_range } from '../range/range_creators'
 
   export let state: State
+  export let disabled = false
   let name = 'reverb'
   let reverb: Reverb
   let node: AudioNode
@@ -70,26 +71,33 @@
   })
 </script>
 
-<Panel {name} height={6} width={8} custom_style={into_style(theme)}>
+<Panel {name} height={6} width={8} {disabled} custom_style={into_style(theme)}>
   {#if loading}
     <Layout type="center">
       <RingSpinner />
     </Layout>
   {:else}
     <div class="controls">
-      <Knob bind:value={state.wet} range={scalar} label="wet" />
-      <Knob bind:value={state.length} range={delay_length_range} label="length" />
+      <Knob {disabled} bind:value={state.wet} range={scalar} label="wet" />
+      <Knob
+        {disabled}
+        bind:value={state.length}
+        range={delay_length_range}
+        label="length"
+      />
     </div>
   {/if}
 
   <div slot="inputs">
     <Plug
       id={0}
+      {disabled}
       label="l"
       ctx={{ type: PlugType.Input, module: node, connectIndex: 0 }}
     />
     <Plug
       id={1}
+      {disabled}
       label="r"
       ctx={{ type: PlugType.Input, module: node, connectIndex: 1 }}
     />
@@ -98,11 +106,13 @@
   <div slot="outputs">
     <Plug
       id={0}
+      {disabled}
       label="l"
       ctx={{ type: PlugType.Output, module: node, connectIndex: 0 }}
     />
     <Plug
       id={1}
+      {disabled}
       label="r"
       ctx={{ type: PlugType.Output, module: node, connectIndex: 1 }}
     />
