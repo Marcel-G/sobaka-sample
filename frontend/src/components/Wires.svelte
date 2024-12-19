@@ -5,6 +5,8 @@
   const link_positions = plugs.get_link_positions()
   const active_link = plugs.get_active_link_position()
 
+  const isEditable = workspace.isEditable
+
   $: [active_to, active_from] = $active_link
 </script>
 
@@ -14,6 +16,7 @@
   {/if}
   {#each $link_positions as [from, to, link] (link.id)}
     <Wire
+      disabled={!$isEditable}
       on_click={() => {
         workspace.remove_link(link.id)
       }}

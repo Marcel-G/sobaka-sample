@@ -81,6 +81,7 @@
 <!-- svelte-ignore a11y-click-events-have-key-events -->
 <div
   class="workspace"
+  class:editable={$isEditable}
   on:click|self={handle_close}
   on:dblclick|self={handle_double_click}
   bind:this={workspace_element}
@@ -107,7 +108,9 @@
 
     padding-right: 5rem;
     padding-bottom: 5rem;
+  }
 
+  .editable {
     background: conic-gradient(from 90deg at 1px 1px, #0000 90deg, var(--current-line) 0)
       0 0 / 1rem 1rem;
   }

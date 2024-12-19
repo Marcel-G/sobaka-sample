@@ -9,6 +9,7 @@
   export let on_click = () => {}
   export let from: PlugContext | null = null
   export let to: PlugContext | null = null
+  export let disabled = false
 
   const element: Writable<Element | null> = writable(null)
 
@@ -60,7 +61,13 @@
   }
 </script>
 
-<g class="wire" on:click={on_click} class:interactive={from && to} bind:this={$element}>
+<!-- svelte-ignore a11y-click-events-have-key-events -->
+<g
+  class="wire"
+  on:click={!disabled ? on_click : null}
+  class:interactive={!disabled && from && to}
+  bind:this={$element}
+>
   <line
     stroke-width="2"
     x1={$from_pos.x}
@@ -77,6 +84,10 @@
     stroke: var(--orange);
     fill: var(--orange);
     pointer-events: none;
+  }
+
+  .wire:not(.interactive) {
+    filter: grayscale(65%) contrast(130%);
   }
 
   .wire.interactive {

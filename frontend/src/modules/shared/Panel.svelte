@@ -91,7 +91,7 @@
   }
 
   .disabled {
-    filter: grayscale(60%) brightness(90%);
+    filter: grayscale(65%) contrast(130%);
     pointer-events: none;
     user-select: none;
     cursor: none;
