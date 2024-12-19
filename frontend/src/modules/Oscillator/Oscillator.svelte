@@ -36,6 +36,7 @@
   import { PlugType } from '../../context/plugs'
 
   export let state: State
+  export let disabled = false
   let name = 'oscillator'
   let oscillator: Oscillator
   let node: AudioNode
@@ -73,14 +74,14 @@
   })
 </script>
 
-<Panel {name} height={8} width={8} custom_style={into_style(theme)}>
+<Panel {name} height={8} width={8} {disabled} custom_style={into_style(theme)}>
   {#if loading}
     <Layout type="center">
       <RingSpinner />
     </Layout>
   {:else}
     <div class="controls">
-      <Switch bind:value={state.shape} range={shape_range} label="shape">
+      <Switch {disabled} bind:value={state.shape} range={shape_range} label="shape">
         <div class="wave" slot="value">
           {#if shapes[state.shape] === 'Square'}
             <Square />
@@ -93,10 +94,17 @@
           {/if}
         </div>
       </Switch>
-      <Knob bind:value={state.pitch} range={freq_range} label="pitch" orientation="ns">
+      <Knob
+        {disabled}
+        bind:value={state.pitch}
+        range={freq_range}
+        label="pitch"
+        orientation="ns"
+      >
         <div slot="knob-inputs">
           <Plug
             id={0}
+            {disabled}
             label="pitch cv"
             ctx={{ type: PlugType.Param, param: pitch_param }}
           />
@@ -107,6 +115,7 @@
   <div slot="inputs">
     <Plug
       id={1}
+      {disabled}
       label="reset"
       ctx={{ type: PlugType.Input, module: node, connectIndex: 0 }}
     />
@@ -114,6 +123,7 @@
   <div slot="outputs">
     <Plug
       id={0}
+      {disabled}
       label="output"
       ctx={{ type: PlugType.Output, module: node, connectIndex: 0 }}
     />

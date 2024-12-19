@@ -3,17 +3,15 @@
 </script>
 
 <script lang="ts">
-  import Arc from './Knob/Arc.svelte'
   import { from_normalised, to_normalised } from '../range/range_functions'
   import useDrag, { OnDrag, relative_to_element } from '../actions/drag'
   import useWheel, { OnWheel } from '../actions/wheel'
-  import Tooltip from './Tooltip.svelte'
+  import Dial from './Knob/Dial.svelte'
 
   export let value = 0.0
   export let range: ChoiceRange
   export let label: string
-
-  const baseAngle = 135
+  export let disabled = false
 
   $: normalised_value = to_normalised(range, value)
 
@@ -28,42 +26,30 @@
     value = from_normalised(range, start_value + delta)
   }
 
-  const handle_wheel: OnWheel = (event, position) => {
+  const handle_wheel: OnWheel = (_, position) => {
     value = from_normalised(range, start_value + position.y)
   }
 </script>
 
-<div
-  class="switch"
-  use:useDrag={{ onDrag: handle_drag, onDragStart: capture_start_value }}
-  use:useWheel={{ onWheel: handle_wheel, onWheelStart: capture_start_value }}
->
-  <div class="dial">
-    <Tooltip {label}>
-      <svg viewBox="0 0 100 100">
-        <Arc
-          x={50}
-          y={50}
-          radius={40}
-          startAngle={-baseAngle}
-          endAngle={baseAngle}
-          stroke="var(--current-line)"
-        />
-        <Arc
-          x={50}
-          y={50}
-          radius={40}
-          startAngle={-baseAngle + baseAngle * 2 * normalised_value - 2}
-          endAngle={-baseAngle + baseAngle * 2 * normalised_value + 2}
-          stroke="var(--module-highlight)"
-        />
-      </svg>
-    </Tooltip>
+{#if disabled}
+  <div class="switch disabled">
+    <Dial {value} {range} {label} />
+    <div class="input">
+      <slot name="value" />
+    </div>
   </div>
-  <div class="input">
-    <slot name="value" />
+{:else}
+  <div
+    class="switch"
+    use:useDrag={{ onDrag: handle_drag, onDragStart: capture_start_value }}
+    use:useWheel={{ onWheel: handle_wheel, onWheelStart: capture_start_value }}
+  >
+    <Dial {value} {range} {label} />
+    <div class="input">
+      <slot name="value" />
+    </div>
   </div>
-</div>
+{/if}
 
 <style>
   .switch {
@@ -72,10 +58,9 @@
     position: relative;
   }
 
-  .dial {
-    position: relative;
-    grid-row: 1;
-    grid-column: 2;
+  .disabled.switch {
+    pointer-events: none;
+    cursor: initial;
   }
 
   .input {
@@ -84,9 +69,5 @@
     margin-top: -0.5rem;
     grid-row: 2;
     grid-column: 2;
-  }
-
-  svg {
-    height: 3rem;
   }
 </style>
