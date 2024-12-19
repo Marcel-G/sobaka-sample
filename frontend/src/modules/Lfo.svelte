@@ -23,6 +23,7 @@
   import { create_bpm_range } from '../range/range_creators'
 
   export let state: State
+  export let disabled = false
   let name = 'lfo'
   let lfo: OscillatorNode
   let loading = true
@@ -44,13 +45,13 @@
   $: lfo?.frequency.setValueAtTime((state.bpm || 0) / 60, $context.currentTime)
 </script>
 
-<Panel {name} height={6} width={5} custom_style={into_style(theme)}>
+<Panel {name} height={6} width={5} {disabled} custom_style={into_style(theme)}>
   {#if loading}
     <Layout type="center">
       <RingSpinner />
     </Layout>
   {:else}
-    <Knob bind:value={state.bpm} range={lfo_range} label="bpm">
+    <Knob {disabled} bind:value={state.bpm} range={lfo_range} label="bpm">
       <!-- <div slot="inputs">
         <Plug
           id={1}
@@ -68,6 +69,7 @@
   <div slot="outputs">
     <Plug
       id={0}
+      {disabled}
       label="signal"
       ctx={{ type: PlugType.Output, connectIndex: 0, module: lfo }}
     />
