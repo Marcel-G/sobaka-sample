@@ -76,4 +76,7 @@
     text-align: center;
     color: var(--module-foreground);
   }
+  input[disabled] {
+    user-select: none;
+  }
 </style>

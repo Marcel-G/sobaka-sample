@@ -36,6 +36,7 @@
   import Tooltip from '../../components/Tooltip.svelte'
 
   export let state: State
+  export let disabled = false
   let name = 'envelope'
   let envelope: Envelope
   let node: AudioNode
@@ -85,7 +86,7 @@
   })
 </script>
 
-<Panel {name} height={10} width={16} custom_style={into_style(theme)}>
+<Panel {name} height={10} width={16} {disabled} custom_style={into_style(theme)}>
   {#if loading}
     <Layout type="center">
       <RingSpinner />
@@ -103,22 +104,22 @@
       <div class="values">
         <div class="input">
           <Tooltip label="attack" position="left">
-            <Input bind:value={state.attack} range={duration} />
+            <Input {disabled} bind:value={state.attack} range={duration} />
           </Tooltip>
         </div>
         <div class="input">
           <Tooltip label="decay">
-            <Input bind:value={state.decay} range={duration} />
+            <Input {disabled} bind:value={state.decay} range={duration} />
           </Tooltip>
         </div>
         <div class="input">
           <Tooltip label="sustain">
-            <Input bind:value={state.sustain} range={scalar} />
+            <Input {disabled} bind:value={state.sustain} range={scalar} />
           </Tooltip>
         </div>
         <div class="input">
           <Tooltip label="release">
-            <Input bind:value={state.release} range={duration} />
+            <Input {disabled} bind:value={state.release} range={duration} />
           </Tooltip>
         </div>
       </div>
@@ -127,6 +128,7 @@
   <div slot="inputs">
     <Plug
       id={0}
+      {disabled}
       label="gate"
       ctx={{ type: PlugType.Input, module: node, connectIndex: 0 }}
     />
@@ -134,6 +136,7 @@
   <div slot="outputs">
     <Plug
       id={0}
+      {disabled}
       label="envelope"
       ctx={{ type: PlugType.Output, module: node, connectIndex: 0 }}
     />

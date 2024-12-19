@@ -81,7 +81,7 @@
   }
 
   .disabled.plug {
-    pointer-events: hover;
+    pointer-events: auto;
     cursor: crosshair;
   }
 
