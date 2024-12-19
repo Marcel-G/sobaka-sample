@@ -41,6 +41,7 @@
   import RingSpinner from '../components/RingSpinner.svelte'
 
   export let state: State
+  export let disabled = false
   let name = 'quantiser'
   let quantiser: Quantiser
   let node: AudioNode
@@ -71,7 +72,7 @@
   })
 </script>
 
-<Panel {name} height={8} width={15} custom_style={into_style(theme)}>
+<Panel {name} height={8} width={15} {disabled} custom_style={into_style(theme)}>
   {#if loading}
     <Layout type="center">
       <RingSpinner />
@@ -79,10 +80,13 @@
   {:else}
     <ul class="board">
       {#each NOTE_LABELS as label, i}
+        <!-- svelte-ignore a11y-click-events-have-key-events -->
         <li
           class="key {label}"
           class:pressed={state.notes[i].value}
-          on:click={() => on_toggle(i)}
+          on:click={() => {
+            if (!disabled) on_toggle(i)
+          }}
         />
       {/each}
     </ul>
@@ -91,6 +95,7 @@
   <div slot="inputs">
     <Plug
       id={0}
+      {disabled}
       label="Signal_1"
       ctx={{ type: PlugType.Input, module: node, connectIndex: 0 }}
     />
@@ -99,6 +104,7 @@
   <div slot="outputs">
     <Plug
       id={0}
+      {disabled}
       label="Output_1"
       ctx={{ type: PlugType.Output, module: node, connectIndex: 0 }}
     />
