@@ -34,6 +34,7 @@
   import Input from '../../components/Input.svelte'
 
   export let state: State
+  export let disabled = false
   let name = 'scope'
   let scope: ScopeController
   let node: AudioNode
@@ -75,7 +76,7 @@
   })
 </script>
 
-<Panel {name} height={15} width={13} custom_style={into_style(theme)}>
+<Panel {name} height={15} width={13} {disabled} custom_style={into_style(theme)}>
   {#if loading}
     <Layout type="center">
       <RingSpinner />
@@ -92,12 +93,12 @@
       <div class="controls">
         <div class="input">
           <Tooltip label="threshold" position="left">
-            <Input bind:value={state.threshold} range={threshold_range} />
+            <Input {disabled} bind:value={state.threshold} range={threshold_range} />
           </Tooltip>
         </div>
         <div class="input">
           <Tooltip label="time">
-            <Input bind:value={state.time} range={time_range} />
+            <Input {disabled} bind:value={state.time} range={time_range} />
           </Tooltip>
         </div>
       </div>
@@ -106,21 +107,25 @@
   <div slot="inputs">
     <Plug
       id={0}
+      {disabled}
       label="signal_1"
       ctx={{ type: PlugType.Input, module: node, connectIndex: 0 }}
     />
     <Plug
       id={1}
+      {disabled}
       label="signal_2"
       ctx={{ type: PlugType.Input, module: node, connectIndex: 1 }}
     />
     <Plug
       id={2}
+      {disabled}
       label="signal_3"
       ctx={{ type: PlugType.Input, module: node, connectIndex: 2 }}
     />
     <Plug
       id={3}
+      {disabled}
       label="signal_4"
       ctx={{ type: PlugType.Input, module: node, connectIndex: 3 }}
     />
