@@ -52,7 +52,7 @@
     {#if loading}
       <RingSpinner />
     {:else}
-      <Knob bind:value={state.bpm} range={bpm} label="bpm" orientation="ns" {disabled}>
+      <Knob {disabled} bind:value={state.bpm} range={bpm} label="bpm" orientation="ns">
         <div slot="knob-inputs">
           <Plug
             id={0}

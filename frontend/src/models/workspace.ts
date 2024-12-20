@@ -66,12 +66,12 @@ export class Workspace {
   constructor(private doc: Y.Doc) {
     this.store = syncedStore(WORKSPACE_STORE_SHAPE, doc)
 
-    // this.doc.on('update', (_, origin) => {
-    //   if (origin === this) return
-    //   this.doc.transact(() => {
-    //     this.handleDocumentUpdated()
-    //   }, this)
-    // })
+    this.doc.on('update', (_, origin) => {
+      if (origin != null) return
+      this.doc.transact(() => {
+        this.handleDocumentUpdated()
+      }, this)
+    })
   }
 
   static create(doc: Y.Doc = new Y.Doc()) {
@@ -115,7 +115,7 @@ export class Workspace {
    * Loads entity from local storage
    */
   async load() {
-    const signal = (AbortSignal as any).timeout(2000)
+    const signal = AbortSignal.timeout(2000)
 
     if (!this.storage) {
       // First try load from local storage
@@ -140,12 +140,20 @@ export class Workspace {
       })
     }
 
-    this.storage.on('synced', () => {
-      console.log('storage synced')
-    })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    function warnReadOnlyEdit(_: Uint8Array, origin: any) {
+      if (origin != null) return
+      // TODO: state has been corrupted
+      // re-sync somehow?
+      throw new Error('Document is read-only')
+    }
 
-    this.rtc.on('synced', () => {
-      console.log('rtc synced')
+    this.isEditable.subscribe(editable => {
+      if (!editable) {
+        this.doc.on('update', warnReadOnlyEdit)
+      } else {
+        this.doc.off('update', warnReadOnlyEdit)
+      }
     })
 
     await new Promise((resolve, reject) => {
@@ -156,21 +164,6 @@ export class Workspace {
         }
       })
     })
-
-    // function assertReadOnly (tr: Y.Transaction) {
-    //   console.log(tr.origin, tr.local, tr);
-    //   if (tr) {
-    //     // throw new Error('Modifications cannot be made in readonly mode');
-    //   }
-    // }
-
-    // this.isEditable.subscribe(editable => {
-    //   if (!editable) {
-    //     this.doc.on('beforeTransaction', assertReadOnly);
-    //   } else {
-    //     this.doc.off('beforeTransaction', assertReadOnly)
-    //   }
-    // });
 
     return this
   }

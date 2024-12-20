@@ -1,5 +1,5 @@
 <script context="module" lang="ts">
-  import { Range, RangeType } from '../../range/range'
+  import { Range } from '../../range/range'
 </script>
 
 <script lang="ts">
@@ -31,7 +31,7 @@
     value = from_normalised(range, start_value + delta)
   }
 
-  const handle_wheel: OnWheel = (event, position) => {
+  const handle_wheel: OnWheel = (_, position) => {
     value = from_normalised(range, start_value + position.y)
   }
 

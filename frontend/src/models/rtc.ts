@@ -53,6 +53,8 @@ export class VerifiedRTCProvider extends WebrtcProvider {
 
         if (this.filterIncomingMessage(identity, data) || is_read_only_message(data)) {
           existingListeners.forEach(listener => listener(data))
+        } else {
+          console.warn(`Received message from unauthorized peer: ${identity}`)
         }
       })
 
