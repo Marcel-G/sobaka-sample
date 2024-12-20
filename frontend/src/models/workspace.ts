@@ -4,7 +4,7 @@ import syncedStore from '@syncedstore/core'
 import { DocTypeDescription, MappedTypeDescription } from '@syncedstore/core/types/doc'
 import { derived, get, Readable, writable } from 'svelte/store'
 
-import { cloneDeep } from 'lodash'
+import cloneDeep from 'lodash/cloneDeep'
 import { INITIAL_STATE, ModuleUI } from '../modules'
 import { intoReadable } from '../util/store'
 import { SubDocReference } from '../util/subdoc'

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { flatten } from 'lodash'
+  import flatten from 'lodash/flatten'
   import { onMount, onDestroy } from 'svelte'
 
   export let attack: number

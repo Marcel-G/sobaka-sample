@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { clamp } from 'lodash'
+  import clamp from 'lodash/clamp'
   import { get_workspace } from '../context/workspace'
   import { MODULES, ModuleUI } from '../modules'
   import { into_grid_coords } from '../modules/shared/Panel.svelte'
