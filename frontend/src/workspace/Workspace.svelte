@@ -13,6 +13,7 @@
   import TitleInput from '../components/TitleInput.svelte'
   import NavigationButton from '../components/NavigationButton.svelte'
   import { get_workspace } from '../context/workspace'
+  import AvatarList from '../components/collaborative/AvatarList.svelte'
 
   let toolbox_visible = false
   let toolbox_position: Position = { x: 0, y: 0 }
@@ -67,6 +68,7 @@
     <span>
       {$isEditable ? 'editable' : 'read-only'}
     </span>
+    <AvatarList />
     <a href="/workspace/new">
       <NavigationButton>New</NavigationButton>
     </a>

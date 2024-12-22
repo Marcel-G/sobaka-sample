@@ -104,7 +104,8 @@ pub enum PeerConnEvent {
     // https://github.com/feross/simple-peer/blob/f1a492d1999ce727fa87193ebdea20ac89c1fc6d/README.md?plain=1#L315
     OutboundSignal(Signal),
     IncomingMessage(yrs::sync::Message),
-    Connected
+    Disconnect,
+    Connected,
 }
 
 impl PeerConnection {
@@ -171,7 +172,7 @@ impl PeerConnection {
                 self.rtc
                     .sdp_api()
                     .accept_answer(pending_offer.take().ok_or(PeerConnError::SdpError)?, answer)
-                    .expect("Failed to accept answer");
+                    .map_err(|_| PeerConnError::SdpError)?;
 
                 for candidate in candidates.drain(..) {
                     self.rtc.add_remote_candidate(candidate);
@@ -181,7 +182,7 @@ impl PeerConnection {
 
                 Ok(())
             }
-            _ => panic!("Invalid state for accepting answer"),
+            _ => Err(PeerConnError::SdpError),
         }
     }
 
@@ -372,7 +373,8 @@ impl PeerConnection {
                             // may return to the connected state.
                             self.on_connection_closed();
 
-                            continue;
+                            cx.waker().wake_by_ref();
+                            return Poll::Ready(Ok(PeerConnEvent::Disconnect));
                         }
                         RTCEvent::IceConnectionStateChange(IceConnectionState::Connected)
                         | RTCEvent::IceConnectionStateChange(IceConnectionState::Completed) => {
@@ -472,11 +474,15 @@ impl PeerConnection {
                                 continue;
                             }
                             Signal::SdpAnswer(sdp) => {
-                                self.accept_answer(sdp).expect("Failed to accept answer");
+                                if let Err(error) = self.accept_answer(sdp) {
+                                    log::warn!("Failed to accept answer {:?}", error);
+                                };
                                 continue;
                             }
                             Signal::SdpOffer(sdp) => {
-                                self.accept_offer(sdp).expect("Failed to accept offer");
+                                if let Err(error) = self.accept_offer(sdp) {
+                                    log::warn!("Failed to accept offer {:?}", error);
+                                };
                                 continue;
                             }
                             _ => {}

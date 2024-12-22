@@ -1,18 +1,19 @@
 use std::{
-    collections::HashMap, sync::Arc, task::{Context, Poll}
+    collections::{hash_map::Entry, HashMap},
+    sync::Arc,
+    task::{Context, Poll},
 };
 
 use lmdb_rs::{core::DbCreate, Environment};
 use serde_json::Value;
 use yrs::{
     sync::{Awareness, DefaultProtocol, Message, Protocol, SyncMessage},
-    updates::decoder::Decode,
     ReadTxn, Subscription, Transact, Update,
 };
-use yrs_lmdb::LmdbStore;
 use yrs_kvstore::DocOps;
+use yrs_lmdb::LmdbStore;
 
-use crate::peer::connection::{PeerConnEvent, PeerConnection};
+use crate::peer::connection::{NegotiationMode, PeerConnEvent, PeerConnection};
 
 pub struct Workspace {
     awareness: Awareness,
@@ -30,7 +31,7 @@ pub enum WorkspaceError {
 }
 
 impl Workspace {
-    pub fn new() -> Self {
+    pub fn new(uuid: &str) -> Self {
         let env = Environment::new()
             .autocreate_dir(true)
             .map_size(256 * 1024 * 1024)
@@ -38,24 +39,23 @@ impl Workspace {
             .open(".db", 0o777)
             .unwrap();
 
-        let doc_name = "test";
-
         let env = Arc::new(env);
-        let handle = Arc::new(env.create_db("test", DbCreate).unwrap());
+        let handle = Arc::new(env.create_db(uuid, DbCreate).unwrap());
         let awareness = Awareness::default();
 
         let subscription = {
             let env = env.clone();
             let handle = handle.clone();
+            let uuid = uuid.to_string();
             awareness
                 .doc()
                 .observe_update_v1(move |_, e| {
                     let txn = env.new_transaction().unwrap();
                     let db = LmdbStore::from(txn.bind(&handle));
-                    let i = db.push_update(doc_name, &e.update).unwrap();
+                    let i = db.push_update(&uuid, &e.update).unwrap();
                     if i % 128 == 0 {
                         // compact updates into document
-                        db.flush_doc(doc_name).unwrap();
+                        db.flush_doc(&uuid).unwrap();
                     }
                     txn.commit().unwrap();
                 })
@@ -67,7 +67,7 @@ impl Workspace {
             let mut txn = awareness.doc().transact_mut();
             let db_txn = env.get_reader().unwrap();
             let db = LmdbStore::from(db_txn.bind(&handle));
-            db.load_doc(&doc_name, &mut txn).unwrap();
+            db.load_doc(uuid, &mut txn).unwrap();
         };
 
         Self {
@@ -83,17 +83,6 @@ impl Workspace {
         }
     }
 
-    // TODO: What does this do?
-    pub fn idk(&mut self) {
-        let sv = self.awareness.doc().transact().state_vector();
-        let sync_step1 = Message::Sync(SyncMessage::SyncStep1(sv));
-        let awareness_query = Message::AwarenessQuery;
-        for (_remote_peer_id, conn) in self.peers.iter_mut() {
-            conn.send(sync_step1.clone());
-            conn.send(awareness_query.clone());
-        }
-    }
-
     pub fn poll_output(
         &mut self,
         cx: &mut Context,
@@ -105,11 +94,11 @@ impl Workspace {
                     match DefaultProtocol.handle_message(&self.awareness, message) {
                         Ok(Some(reply)) => {
                             connection.send(reply);
-                        },
+                        }
                         Err(e) => {
                             log::error!("Failed to handle message: {e:?}");
-                        },
-                        _ => {},
+                        }
+                        _ => {}
                     }
                     continue;
                 }
@@ -121,6 +110,7 @@ impl Workspace {
                     )));
                 }
                 Poll::Ready(Ok(PeerConnEvent::Connected)) => {
+                    log::info!("peer-conn [{}]: connected", peer_id);
                     let sv = self.awareness.doc().transact().state_vector();
                     let sync_step1 = Message::Sync(SyncMessage::SyncStep1(sv));
                     let awareness_query = Message::AwarenessQuery;
@@ -128,7 +118,11 @@ impl Workspace {
                     connection.send(awareness_query.clone());
 
                     continue;
-                },
+                }
+                Poll::Ready(Ok(PeerConnEvent::Disconnect)) => {
+                    log::info!("peer-conn [{}]: disconnect", peer_id);
+                    continue;
+                }
                 Poll::Ready(Err(e)) => {
                     log::error!("peer-conn error: {e:?}");
                     return Poll::Ready(Err(WorkspaceError::Todo));

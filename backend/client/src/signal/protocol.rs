@@ -1,11 +1,24 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub enum PeerKind {
+    #[serde(rename = "worker")]
+    Worker,
+    #[serde(rename = "client")]
+    Client,
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum Message {
     #[serde(rename = "publish")]
-    Publish { topic: String, data: MessageData },
+    Publish {
+        topic: String,
+        data: MessageData,
+        identity: Option<String>,
+        kind: Option<PeerKind>,
+    },
     #[serde(rename = "subscribe")]
     Subscribe { topics: Vec<String> },
     #[serde(rename = "unsubscribe")]

@@ -5,11 +5,15 @@ use std::{
     task::{Context, Poll, Waker},
 };
 
+use cookie::Cookie;
 use futures::{future::BoxFuture, FutureExt, SinkExt, StreamExt};
 use tokio::net::TcpStream;
-use tokio_tungstenite::tungstenite::client::IntoClientRequest;
 use tokio_tungstenite::tungstenite::http::StatusCode;
 use tokio_tungstenite::tungstenite::protocol::Message as WsMessage;
+use tokio_tungstenite::tungstenite::{
+    client::IntoClientRequest,
+    http::{header::COOKIE, HeaderValue},
+};
 use tokio_tungstenite::{MaybeTlsStream, WebSocketStream};
 use url::Url;
 
@@ -24,6 +28,7 @@ pub struct SignalConnection {
 
 pub struct SignalOptions {
     pub url: Url,
+    pub token: Option<String>,
 }
 #[derive(Debug)]
 pub enum SignalError {
@@ -50,7 +55,7 @@ impl SignalConnection {
     }
 
     pub fn connect(&mut self) {
-        self.state = State::connect(self.options.url.clone());
+        self.state = State::connect(self.options.url.clone(), self.options.token.clone());
 
         if let Some(waker) = self.waker.take() {
             waker.wake();
@@ -226,20 +231,43 @@ impl Display for State {
 }
 
 impl State {
-    fn connect(url: Url) -> Self {
-        Self::Connecting(create_and_connect_websocket(url).boxed())
+    fn connect(url: Url, token: Option<String>) -> Self {
+        Self::Connecting(create_and_connect_websocket(url, token).boxed())
     }
 }
 
-async fn create_and_connect_websocket(url: Url) -> Result<SignalStream, InternalError> {
-    let request = url
+async fn create_and_connect_websocket(
+    url: Url,
+    token: Option<String>,
+) -> Result<SignalStream, InternalError> {
+    let mut request = url
         .to_string()
         .into_client_request()
         .map_err(|_| InternalError::InvalidUrl)?;
 
-    let (stream, _response) = tokio_tungstenite::connect_async(request)
+    if let Some(token) = token {
+        request.headers_mut().insert(
+            COOKIE,
+            HeaderValue::from_str(&format!("jwt={}; HttpOnly; Path=/", token))
+                .map_err(|_| InternalError::InvalidUrl)?,
+        );
+    }
+
+    let (stream, response) = tokio_tungstenite::connect_async(request)
         .await
         .map_err(InternalError::WebSocket)?;
+
+    let cookies = response
+        .headers()
+        .get_all("set-cookie")
+        .iter()
+        .filter_map(|header_value| header_value.to_str().ok())
+        .flat_map(|set_cookie| Cookie::parse(set_cookie).ok())
+        .collect::<Vec<Cookie>>();
+
+    for cookie in cookies {
+        println!("Cookie Name: {}, Value: {}", cookie.name(), cookie.value());
+    }
 
     Ok(stream)
 }

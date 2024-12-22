@@ -27,6 +27,7 @@ pub struct Client {
 
 pub struct ClientOptions {
     pub signal_url: String,
+    pub signal_token: Option<String>,
 }
 
 #[derive(Debug)]
@@ -47,6 +48,7 @@ impl Client {
             sigterm: signal(SignalKind::interrupt()).expect("Failed to create SIGTERM signal"),
             signal_connection: SignalConnection::new_with_options(SignalOptions {
                 url: Url::parse(&options.signal_url).expect("Failed to parse signal URL"),
+                token: options.signal_token,
             }),
             workspaces: HashMap::new(),
         }
@@ -87,13 +89,19 @@ impl Client {
 
         let message = Message::Publish {
             topic: workspace_id,
+            identity: None,
+            kind: None,
             data: MessageData::Signal { from, to, signal },
         };
         self.signal_connection.send(message);
     }
 
     pub fn join_workspace(&mut self, workspace_id: String) {
-        let workspace = Workspace::new();
+        if self.workspaces.contains_key(&workspace_id) {
+            return;
+        }
+        let workspace = Workspace::new(&workspace_id);
+        self.workspaces.insert(workspace_id.clone(), workspace);
 
         let subscribe = Message::Subscribe {
             topics: [workspace_id.clone()].to_vec(),
@@ -102,13 +110,13 @@ impl Client {
 
         let announce = Message::Publish {
             topic: workspace_id.clone(),
+            identity: None,
+            kind: None,
             data: MessageData::Announce {
                 from: self.peer_id.to_string(),
             },
         };
         self.signal_connection.send(announce);
-
-        self.workspaces.insert(workspace_id.clone(), workspace);
     }
 
     fn leave_workspace(&mut self, workspace_id: String) {
@@ -127,10 +135,12 @@ impl Client {
         if from == self.peer_id.to_string() {
             return;
         }
+        self.join_workspace(workspace_id.clone());
+
         let workspace = self
             .workspaces
             .get_mut(&workspace_id)
-            .expect("Workspace not found");
+            .expect("workspace not found");
 
         // If we don't already have a peer connection, initiate one.
         if let Entry::Vacant(entry) = workspace.peers.entry(from.clone()) {
@@ -143,7 +153,7 @@ impl Client {
             // 1. Work on the signal connection
             match self.signal_connection.poll(cx) {
                 Poll::Ready(Ok(SignalEvent::IncomingMessage(message))) => match message {
-                    Message::Publish { topic, data } => match data {
+                    Message::Publish { topic, data, .. } => match data {
                         MessageData::Announce { from } => {
                             self.handle_peer_discovered(topic, from);
                             continue;

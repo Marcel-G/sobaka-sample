@@ -4,6 +4,7 @@ import { WebrtcConn, WebrtcProvider, ProviderOptions } from 'y-webrtc'
 type SignalingMessage = {
   type: string
   identity: string
+  kind: 'client' | 'worker'
   data: { from: string }
 }
 
@@ -12,6 +13,7 @@ type MessageFilter = (from: string, data: Uint8Array) => boolean
 export class VerifiedRTCProvider extends WebrtcProvider {
   private peers = new WeakSet<WebrtcConn>()
   private verifiedPeerIdentities = new Map<string, string>()
+  private verifiedWorkerIdentities = new Map<string, string>()
   private filterIncomingMessage: MessageFilter
   private currentUser: null | string = null
 
@@ -48,13 +50,22 @@ export class VerifiedRTCProvider extends WebrtcProvider {
       existingListeners.forEach(listener => conn.peer.off('data', listener))
 
       conn.peer.on('data', (data: Uint8Array) => {
-        const identity = this.verifiedPeerIdentities.get(conn.remotePeerId)
-        if (!identity) return
+        const workerIdentity = this.verifiedWorkerIdentities.get(conn.remotePeerId)
+        if (workerIdentity) {
+          existingListeners.forEach(listener => listener(data))
+          return
+        }
 
-        if (this.filterIncomingMessage(identity, data) || is_read_only_message(data)) {
+        const peerIdentity = this.verifiedPeerIdentities.get(conn.remotePeerId)
+        if (!peerIdentity) return
+
+        if (
+          this.filterIncomingMessage(peerIdentity, data) ||
+          is_read_only_message(data)
+        ) {
           existingListeners.forEach(listener => listener(data))
         } else {
-          console.warn(`Received message from unauthorized peer: ${identity}`)
+          console.warn(`Received message from unauthorized peer: ${peerIdentity}`)
         }
       })
 
@@ -64,8 +75,9 @@ export class VerifiedRTCProvider extends WebrtcProvider {
 
   private handle_signal_message(message: SignalingMessage) {
     if (message.type === 'publish') {
-      if (!this.verifiedPeerIdentities.has(message.data.from)) {
-        this.verifiedPeerIdentities.set(message.data.from, message.identity)
+      const { data, identity, kind } = message
+      if (kind === 'client' && !this.verifiedPeerIdentities.has(data.from)) {
+        this.verifiedPeerIdentities.set(data.from, identity)
         // TODO: cleanup after we loose connection to peer
 
         if (
@@ -79,6 +91,9 @@ export class VerifiedRTCProvider extends WebrtcProvider {
           // TODO: assign user as owner before sharing
         }
       }
+      if (kind === 'worker' && !this.verifiedWorkerIdentities.has(data.from)) {
+        this.verifiedWorkerIdentities.set(data.from, identity)
+      }
     }
   }
 }
@@ -89,7 +104,8 @@ function is_read_only_message(data: Uint8Array) {
   // https://github.com/yjs/y-protocols/blob/40dbe4eebb1e53a7e86932ef3232f9abd5037569/PROTOCOL.md?plain=1#L100-L111
 
   // Allow only SyncStep1 messages ([0, 0, ...])
-  return byte1 === 0 && byte2 === 0
-
-  // TODO: posssibly also allow awareness messages
+  if (byte1 === 0 && byte2 === 0) return true
+  // Allow awareness messages
+  if (byte1 === 1) return true
+  return false
 }

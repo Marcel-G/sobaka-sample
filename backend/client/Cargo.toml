@@ -18,6 +18,8 @@ yrs = "0.21"
 yrs-kvstore = { path = "../../../yrs-persistence/yrs-kvstore" }
 yrs-lmdb = { path = "../../../yrs-persistence/yrs-lmdb" }
 lmdb-rs = { version = "0.7" }
+cookie = "0.18.1"
+dotenv = "0.15.0"
 
 
 

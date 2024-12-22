@@ -10,24 +10,32 @@ use tokio::time::interval;
 use warp::ws::{Message, WebSocket};
 use warp::Error;
 
-use crate::protocol::{Message as Signal, MessageData};
+use crate::jwt::Token;
+use crate::protocol::{Message as Signal, MessageData, PeerKind};
 
 const PING_TIMEOUT: Duration = Duration::from_secs(30);
 
 /// Signaling service is used by y-webrtc protocol in order to exchange WebRTC offerings between
 /// clients subscribing to particular rooms.
+// TODO: Arc the entire struct?
 #[derive(Debug, Clone)]
-pub struct SignalingService(Topics);
+pub struct SignalingService {
+    topics: Topics,
+    workers: Workers,
+}
 
 impl SignalingService {
     pub fn new() -> Self {
-        SignalingService(Arc::new(RwLock::new(Default::default())))
+        SignalingService {
+            topics: Arc::new(RwLock::new(Default::default())),
+            workers: Arc::new(RwLock::new(Default::default())),
+        }
     }
 
     pub async fn publish(&self, topic: &str, msg: Message) -> Result<(), Error> {
         let mut failed = Vec::new();
         {
-            let topics = self.0.read().await;
+            let topics = self.topics.read().await;
             if let Some(subs) = topics.get(topic) {
                 let client_count = subs.len();
                 tracing::info!("publishing message to {client_count} clients: {msg:?}");
@@ -40,7 +48,7 @@ impl SignalingService {
             }
         }
         if !failed.is_empty() {
-            let mut topics = self.0.write().await;
+            let mut topics = self.topics.write().await;
             if let Some(subs) = topics.get_mut(topic) {
                 for f in failed {
                     subs.remove(&f);
@@ -51,7 +59,7 @@ impl SignalingService {
     }
 
     pub async fn close_topic(&self, topic: &str) -> Result<(), Error> {
-        let mut topics = self.0.write().await;
+        let mut topics = self.topics.write().await;
         if let Some(subs) = topics.remove(topic) {
             for sub in subs {
                 if let Err(e) = sub.close().await {
@@ -63,7 +71,7 @@ impl SignalingService {
     }
 
     pub async fn close(self) -> Result<(), Error> {
-        let mut topics = self.0.write_owned().await;
+        let mut topics = self.topics.write_owned().await;
         let mut all_conns = HashSet::new();
         for (_, subs) in topics.drain() {
             for sub in subs {
@@ -88,6 +96,7 @@ impl Default for SignalingService {
 }
 
 type Topics = Arc<RwLock<HashMap<String, HashSet<WsSink>>>>;
+type Workers = Arc<RwLock<HashSet<WsSink>>>;
 
 #[derive(Debug, Clone)]
 struct WsSink(Arc<Mutex<SplitSink<WebSocket, Message>>>);
@@ -133,13 +142,20 @@ impl Eq for WsSink {}
 pub async fn signaling_conn(
     ws: WebSocket,
     service: SignalingService,
-    user: String,
+    token: Token,
 ) -> Result<(), Error> {
-    let mut topics: Topics = service.0;
+    let mut topics: Topics = service.topics;
+    let mut workers: Workers = service.workers;
     let (sink, mut stream) = ws.split();
     let ws = WsSink::new(sink);
     let mut ping_interval = interval(PING_TIMEOUT);
-    let mut state = ConnState::new(user);
+    let mut state = ConnState::new(token);
+    match state.token.kind {
+        PeerKind::Worker => {
+            workers.write().await.insert(ws.clone());
+        }
+        PeerKind::Client => {}
+    }
     loop {
         select! {
             _ = ping_interval.tick() => {
@@ -167,7 +183,7 @@ pub async fn signaling_conn(
                     },
                     Some(Ok(msg)) if msg.is_text() => {
                         let json = msg.to_str().unwrap();
-                        process_msg(json, &ws, &mut state, &mut topics).await?;
+                        process_msg(json, &ws, &mut state, &mut topics, &mut workers).await?;
                     },
                     Some(Ok(msg)) if msg.is_close() => {
                         let mut topics = topics.write().await;
@@ -201,6 +217,7 @@ async fn process_msg(
     ws: &WsSink,
     state: &mut ConnState,
     topics: &mut Topics,
+    workers: &mut Workers,
 ) -> Result<(), Error> {
     let signal = serde_json::from_str(msg).unwrap();
     match signal {
@@ -246,9 +263,30 @@ async fn process_msg(
                     tracing::trace!("publishing on {client_count} clients at '{topic}': {msg}");
                     let out_msg = Signal::Publish {
                         topic: topic.clone(),
-                        identity: Some(state.identity.clone()),
-                        data,
+                        identity: Some(state.token.uuid.clone()),
+                        kind: Some(state.token.kind.clone()),
+                        data: data.clone(),
                     };
+
+                    // Notify workers about the message
+                    if let PeerKind::Client = state.token.kind {
+                        match data {
+                            MessageData::Announce { .. } => {
+                                for receiver in workers.read().await.iter() {
+                                    if let Err(e) = receiver
+                                        .try_send(Message::text(&out_msg.to_json().unwrap()))
+                                        .await
+                                    {
+                                        tracing::info!(
+                                            "failed to publish message {msg} on '{topic}': {e}"
+                                        );
+                                        failed.push(receiver.clone());
+                                    }
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
 
                     for receiver in receivers.iter() {
                         if let Err(e) = receiver
@@ -281,15 +319,15 @@ async fn process_msg(
 #[derive(Debug)]
 struct ConnState {
     closed: bool,
-    identity: String,
+    token: Token,
     pong_received: bool,
     subscribed_topics: HashSet<String>,
 }
 
 impl ConnState {
-    fn new(identity: String) -> Self {
+    fn new(token: Token) -> Self {
         ConnState {
-            identity,
+            token,
             closed: false,
             pong_received: true,
             subscribed_topics: HashSet::new(),

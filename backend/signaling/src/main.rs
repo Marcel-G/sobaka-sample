@@ -5,7 +5,7 @@ use signaling::{signaling_conn, SignalingService};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use warp::ws::{WebSocket, Ws};
-use warp::{http::Response, Filter, Rejection, Reply};
+use warp::{Filter, Rejection, Reply};
 
 mod broadcast;
 mod conn;
@@ -49,7 +49,7 @@ async fn ws_handler(
 
     let jwt = token.encode(); // Encode the token into a JWT string
 
-    println!("uuid: {}", token.uuid);
+    println!("uuid: {} kind: {:?}", token.uuid, token.kind);
 
     Ok(ws.on_upgrade(move |socket| peer(socket, svc, token))).map(|reply| {
         warp::reply::with_header(
@@ -61,7 +61,7 @@ async fn ws_handler(
 }
 
 async fn peer(ws: WebSocket, svc: SignalingService, token: Token) {
-    match signaling_conn(ws, svc, token.uuid).await {
+    match signaling_conn(ws, svc, token).await {
         Ok(_) => println!("signaling connection stopped"),
         Err(e) => eprintln!("signaling connection failed: {}", e),
     }

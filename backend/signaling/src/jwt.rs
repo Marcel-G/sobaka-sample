@@ -4,12 +4,15 @@ use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, 
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+use crate::protocol::PeerKind;
+
 const JWT_SECRET: &[u8] = b"super_secret_key"; // TODO: load a proper secret
 
 // Token struct with space for more properties
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Token {
     pub uuid: String,
+    pub kind: PeerKind,
     pub exp: usize,
 }
 
@@ -23,6 +26,7 @@ impl Token {
 
         Token {
             uuid: Uuid::new_v4().to_string(),
+            kind: PeerKind::Client,
             exp: (now + 60 * 60 * 24 * 365) as usize, // 1 year expiration
         }
     }

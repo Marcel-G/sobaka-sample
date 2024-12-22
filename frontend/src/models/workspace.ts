@@ -50,6 +50,10 @@ type WorkspaceStore = {
   links: Array<Required<Link>>
 }
 
+type UserAwareness = {
+  user: User
+}
+
 const WORKSPACE_STORE_SHAPE = {
   meta: {} as WorkspaceMeta,
   modules: [],
@@ -59,6 +63,7 @@ const WORKSPACE_STORE_SHAPE = {
 export class Workspace {
   private store: MappedTypeDescription<WorkspaceStore>
   private currentUser = writable<User | null>(get_user())
+  user_store = writable<Record<string, UserAwareness>>({})
 
   private storage: IndexeddbPersistence | null = null
   private rtc: VerifiedRTCProvider | null = null
@@ -136,7 +141,22 @@ export class Workspace {
       this.rtc.once('user', (uuid: string) => {
         const user = { uuid }
         this.currentUser.set(user)
+        this.rtc?.awareness.setLocalStateField('user', user)
         update_user(user)
+      })
+
+      this.rtc.awareness.on('change', () => {
+        if (!this.rtc) return
+        const awareness = this.rtc.awareness
+        const newState: Record<string, UserAwareness> = {}
+        awareness.getStates().forEach((_state, cid: number) => {
+          if (cid === awareness.clientID) return
+
+          const state = _state as UserAwareness
+          newState[state.user.uuid] = state
+        })
+
+        this.user_store.update(() => newState)
       })
     }
 

@@ -1,6 +1,7 @@
 use std::future::poll_fn;
 
 use client::{Client, ClientError, ClientEvent, ClientOptions};
+use dotenv::dotenv;
 
 mod client;
 pub(crate) mod peer;
@@ -10,13 +11,14 @@ mod workspace;
 #[tokio::main]
 async fn main() -> Result<(), ClientError> {
     env_logger::init();
+    dotenv().ok();
 
     let mut client = Client::new_with_options(ClientOptions {
         signal_url: "ws://localhost:8000/signaling".into(),
+        signal_token: std::env::var("JWT").ok(),
     });
 
     client.connect();
-    client.join_workspace("test".into());
 
     match poll_fn(|cx| client.poll(cx)).await {
         Err(ClientError::ForceShutdown) => {
@@ -30,7 +32,7 @@ async fn main() -> Result<(), ClientError> {
     Ok(())
 }
 
-// API 
+// API
 // - `/auth` ?
 // - `/subscribe/{cid}` - jwt { uuid: string, role: string }
 // - `/unsubscribe/{cid}` - jwt { uuid: string, role: string }
