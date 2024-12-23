@@ -6,3 +6,4 @@ builds
 
 # Local .terraform directories
 **/.terraform*
+!.terraformignore

@@ -12,3 +12,4 @@ output "global_zone_id" {
   description = "Global zone ID"
   value       = data.aws_route53_zone.main.zone_id
 }
+

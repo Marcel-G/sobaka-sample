@@ -1,10 +1,5 @@
 data "aws_iam_policy_document" "this" {
   statement {
-    actions   = ["cloudfront:CreateInvalidation"]
-    resources = [module.cdn.cloudfront_distribution_arn]
-    effect    = "Allow"
-  }
-  statement {
     actions = ["s3:*"]
     resources = [
       module.storage.s3_bucket_arn,

@@ -1,9 +1,10 @@
 module "cdn" {
-  source = "terraform-aws-modules/cloudfront/aws"
+  source  = "terraform-aws-modules/cloudfront/aws"
+  version = "~> 3.0"
 
   aliases = ["${var.subdomain}.${var.domain_name}"]
 
-  comment             = "Frontend web-asset CDN (${var.name})"
+  comment             = "Main CDN (${terraform.workspace})"
   enabled             = true
   http_version        = "http2and3"
   is_ipv6_enabled     = true
@@ -29,8 +30,17 @@ module "cdn" {
 
   origin = {
     storage = { # with origin access control settings
-      domain_name           = module.storage.s3_bucket_bucket_regional_domain_name
+      domain_name           = module.frontend.deploy_bucket_domain
       origin_access_control = "storage"
+    }
+    websocket = {
+      domain_name = module.backend.instance.public_dns
+      custom_origin_config = {
+        origin_protocol_policy = "http-only"
+        http_port              = 8000
+        https_port             = 443
+        origin_ssl_protocols   = ["TLSv1.2"]
+      }
     }
   }
 
@@ -47,8 +57,29 @@ module "cdn" {
     response_headers_policy_id = aws_cloudfront_response_headers_policy.cross_origin_isolation.id
   }
 
+  ordered_cache_behavior = [
+    {
+      path_pattern           = "/signaling*"
+      target_origin_id       = "websocket"
+      viewer_protocol_policy = "redirect-to-https"
+      allowed_methods        = ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
+      cached_methods         = ["GET", "HEAD"]
+    },
+    {
+      path_pattern           = "/_app/immutable*"
+      target_origin_id       = "storage"
+      viewer_protocol_policy = "redirect-to-https"
+      allowed_methods        = ["GET", "HEAD", "OPTIONS"]
+      cached_methods         = ["GET", "HEAD"]
+      compress               = true
+      min_ttl                = 31536000 # 1 year
+      default_ttl            = 31536000 # 1 year
+      max_ttl                = 31536000 # 1 year
+    }
+  ]
+
   viewer_certificate = {
-    acm_certificate_arn = var.global_acm_certificate_arn
+    acm_certificate_arn = module.global.global_acm_certificate_arn
     ssl_support_method  = "sni-only"
   }
 
@@ -67,7 +98,7 @@ module "cdn" {
 # Cross origion isolation for SharedArrayBuffer usage
 # https://web.dev/cross-origin-isolation-guide/
 resource "aws_cloudfront_response_headers_policy" "cross_origin_isolation" {
-  name = "${var.name}-cross-origin-isolation-policy"
+  name = "${terraform.workspace}-cross-origin-isolation-policy"
 
   custom_headers_config {
     items {
@@ -82,4 +113,22 @@ resource "aws_cloudfront_response_headers_policy" "cross_origin_isolation" {
       value    = "same-origin"
     }
   }
+}
+
+data "aws_iam_policy_document" "this" {
+  statement {
+    actions   = ["cloudfront:CreateInvalidation"]
+    resources = [module.cdn.cloudfront_distribution_arn]
+    effect    = "Allow"
+  }
+}
+
+resource "aws_iam_policy" "deploy_policy" {
+  name   = "${terraform.workspace}-deploy-policy"
+  policy = data.aws_iam_policy_document.this.json
+}
+
+resource "aws_iam_role_policy_attachment" "s3_bucket_policy_attachment" {
+  policy_arn = aws_iam_policy.deploy_policy.arn
+  role       = module.global.global_deploy_role.name
 }

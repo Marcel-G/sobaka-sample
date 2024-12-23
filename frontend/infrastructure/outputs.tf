@@ -3,7 +3,7 @@ output "deploy_bucket" {
   value       = module.storage.s3_bucket_id
 }
 
-output "cloudfront_distribution_id" {
-  description = "Main CloudFront Distribution ID"
-  value       = module.cdn.cloudfront_distribution_id
+output "deploy_bucket_domain" {
+  description = "S3 bucket domain"
+  value       = module.storage.s3_bucket_bucket_regional_domain_name
 }

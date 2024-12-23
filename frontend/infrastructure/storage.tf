@@ -14,7 +14,7 @@ data "aws_iam_policy_document" "storage_policy" {
 
     principals {
       type        = "AWS"
-      identifiers = module.cdn.cloudfront_origin_access_identity_iam_arns
+      identifiers = var.cdn.cloudfront_origin_access_identity_iam_arns
     }
   }
 
@@ -31,7 +31,7 @@ data "aws_iam_policy_document" "storage_policy" {
     condition {
       test     = "StringEquals"
       variable = "aws:SourceArn"
-      values   = [module.cdn.cloudfront_distribution_arn]
+      values   = [var.cdn.cloudfront_distribution_arn]
     }
   }
 }

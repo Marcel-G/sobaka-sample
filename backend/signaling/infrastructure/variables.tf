@@ -13,13 +13,12 @@ variable "domain_name" {
   type        = string
 }
 
-variable "cdn" {
-  description = "CDN module"
-  type        = any
-}
-
 variable "global_deploy_role" {
-  description = "Deployment role ARN"
+  description = "Deployment role name"
   type        = string
 }
 
+variable "instance" {
+  description = "Instance to deploy to"
+  type        = any
+}

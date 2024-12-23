@@ -1,0 +1,81 @@
+name: "Infrastructure"
+on:
+  workflow_call:
+    secrets:
+      TF_API_TOKEN:
+        required: true
+    outputs:
+      deploy_bucket:
+        description: "S3 bucket to deploy to"
+        value: ${{ jobs.infrastructure.outputs.deploy_bucket }}
+      deploy_role:
+        description: "IAM role to deploy with"
+        value: ${{ jobs.infrastructure.outputs.deploy_role }}
+      cdn_distribution_id:
+        description: "CloudFront distribution ID"
+        value: ${{ jobs.infrastructure.outputs.cdn_distribution_id }}
+      signaling_ecr_url:
+        description: "ECR repository for signaling"
+        value: ${{ jobs.infrastructure.outputs.signaling_ecr_url }}
+      instance_id:
+        description: "EC2 instance ID"
+        value: ${{ jobs.infrastructure.outputs.instance_id }}
+
+jobs:
+  infrastructure:
+    name: "👟 Terraform"
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    environment: 
+      name: next
+      url: https://next.sobaka.marcelgleeson.com
+      # name: ${{ fromJSON('{"refs/heads/master":"production","refs/heads/next":"next"}')[github.ref] }}
+      # url: ${{ fromJSON('{"refs/heads/master":"https://sobaka.marcelgleeson.com","refs/heads/next":"https://next.sobaka.marcelgleeson.com"}')[github.ref] }}
+    env:
+      # TF_WORKSPACE: ${{ fromJSON('{"refs/heads/master":"sobaka-prod","refs/heads/next":"sobaka-next"}')[github.ref] }}
+      TF_WORKSPACE: sobaka-next
+    outputs:
+      deploy_bucket: ${{ steps.collect-outputs.outputs.deploy_bucket }}
+      deploy_role: ${{ steps.collect-outputs.outputs.deploy_role }}
+      cdn_distribution_id: ${{ steps.collect-outputs.outputs.cdn_distribution_id }}
+      signaling_ecr_url: ${{ steps.collect-outputs.outputs.signaling_ecr_url }}
+      instance_id: ${{ steps.collect-outputs.outputs.instance_id }}
+    defaults:
+      run:
+        working-directory: infrastructure
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v1
+        with:
+          # https://github.com/hashicorp/setup-terraform/issues/20#issuecomment-679424701
+          terraform_wrapper: false
+          # Pinning to pre 1.6.0 version due to https://github.com/hashicorp/terraform/issues/33976
+          terraform_version: 1.5.7 
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+
+      - name: Terraform Init
+        run: terraform init -upgrade
+
+      - name: Terraform Plan
+        id: plan
+        run: terraform plan -no-color
+        continue-on-error: true
+
+      - name: Terraform Plan Status
+        if: steps.plan.outcome == 'failure'
+        run: exit 1
+      
+      - name: Terraform Apply
+        run: terraform apply -auto-approve
+      
+      - name: Terraform Outputs
+        id: collect-outputs
+        run: |
+          echo "deploy_bucket=$(terraform output -raw deploy_bucket)" >> $GITHUB_OUTPUT
+          echo "deploy_role=$(terraform output -raw deploy_role)" >> $GITHUB_OUTPUT
+          echo "cdn_distribution_id=$(terraform output -raw cdn_distribution_id)" >> $GITHUB_OUTPUT
+          echo "signaling_ecr_url=$(terraform output -raw signaling_ecr_url)" >> $GITHUB_OUTPUT
+          echo "instance_id=$(terraform output -raw instance_id)" >> $GITHUB_OUTPUT

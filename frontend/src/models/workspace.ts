@@ -132,7 +132,8 @@ export class Workspace {
     if (!this.rtc) {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       this.rtc = new VerifiedRTCProvider(this.doc.guid, this.doc, {
-        signaling: ['ws://localhost:8000/signaling'],
+        // signaling: ['ws://localhost:8000/signaling'],
+        signaling: ['wss://next.sobaka.marcelgleeson.com/signaling'],
         // Ignore updates from non-collaborators
         filterIncomingMessage: from => this.isCollaborator(from)
       })

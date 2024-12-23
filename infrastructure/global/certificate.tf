@@ -4,6 +4,8 @@ module "acm" {
   domain_name = "${var.subdomain}.${var.global_domain_zone}"
   zone_id     = data.aws_route53_zone.main.zone_id
 
+  validation_method = "DNS"
+
   subject_alternative_names = [
     "*.${var.subdomain}.${var.global_domain_zone}",
   ]

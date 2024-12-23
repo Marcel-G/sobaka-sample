@@ -2,7 +2,7 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 4.59.0"
+      version = "~> 5.37.0"
     }
   }
 
@@ -40,12 +40,30 @@ module "global" {
   subdomain = var.subdomain
 }
 
+module "backend" {
+  source             = "../backend/infrastructure"
+  name               = "sobaka-instance-${terraform.workspace}"
+  global_deploy_role = module.global.global_deploy_role.name
+}
+
+module "signaling" {
+  source = "../backend/signaling/infrastructure"
+
+  name               = "sobaka-signaling-${terraform.workspace}"
+  global_deploy_role = module.global.global_deploy_role.name
+
+  instance = module.backend.instance
+
+  subdomain   = "signaling.${var.subdomain}"
+  domain_name = var.domain_name
+}
+
 module "frontend" {
   source = "../frontend/infrastructure"
 
-  name                       = "sobaka-frontend-${terraform.workspace}"
-  global_acm_certificate_arn = module.global.global_acm_certificate_arn
-  global_deploy_role         = module.global.global_deploy_role.name
+  name               = "sobaka-frontend-${terraform.workspace}"
+  global_deploy_role = module.global.global_deploy_role.name
+  cdn                = module.cdn
 
   subdomain   = var.subdomain
   domain_name = var.domain_name
