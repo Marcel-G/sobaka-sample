@@ -63,7 +63,9 @@ module "cdn" {
       target_origin_id       = "websocket"
       viewer_protocol_policy = "redirect-to-https"
       allowed_methods        = ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
-      cached_methods         = ["GET", "HEAD"]
+      cached_methods         = ["GET", "HEAD"],
+      cookies_forward           = "whitelist"
+      cookies_whitelisted_names = ["jwt"]
     },
     {
       path_pattern           = "/_app/immutable*"
@@ -75,6 +77,7 @@ module "cdn" {
       min_ttl                = 31536000 # 1 year
       default_ttl            = 31536000 # 1 year
       max_ttl                = 31536000 # 1 year
+      response_headers_policy_id = aws_cloudfront_response_headers_policy.cross_origin_isolation.id
     }
   ]
 

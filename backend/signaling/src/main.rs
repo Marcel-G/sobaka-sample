@@ -51,13 +51,15 @@ async fn ws_handler(
 
     println!("uuid: {} kind: {:?}", token.uuid, token.kind);
 
-    Ok(ws.on_upgrade(move |socket| peer(socket, svc, token))).map(|reply| {
-        warp::reply::with_header(
-            reply,
+    Ok(ws.on_upgrade(move |socket| peer(socket, svc, token)))
+        .map(|reply| warp::reply::with_header(reply,
             "Set-Cookie",
             format!("jwt={}; HttpOnly; Path=/", jwt),
-        )
-    })
+        ))
+        .map(|reply| warp::reply::with_header(reply,
+            "Cache-Control",
+            "no-cache=\"Set-Cookie\""
+        ))
 }
 
 async fn peer(ws: WebSocket, svc: SignalingService, token: Token) {
