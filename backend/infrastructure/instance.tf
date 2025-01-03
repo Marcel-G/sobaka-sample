@@ -6,14 +6,23 @@ locals {
 
   user_data = <<-EOT
     #!/bin/bash
+    set -e
+
+    # Update system and install required packages
     sudo yum update -y
-    sudo yum install docker jq -y
-    sudo service docker start
-    sudo chkconfig docker on
-    sudo usermod -a -G docker ec2-user
-    newgrp docker
+    sudo yum install -y docker jq awscli
+
+    # Configure and start Docker service
+    sudo systemctl enable docker
+    sudo systemctl start docker
+    sudo usermod -aG docker ec2-user
+
+    # Configure AWS CLI
+    aws configure set default.region ${data.aws_region.current.name}
   EOT
 }
+
+data "aws_region" "current" {}
 
 data "aws_ip_ranges" "cloudfront" {
   regions  = ["GLOBAL"]

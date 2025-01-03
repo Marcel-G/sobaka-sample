@@ -13,6 +13,16 @@ variable "ports" {
   type        = list(string)
 }
 
+variable "secrets" {
+  description = "Map of environment variable names to secret resources"
+  type = map(object({
+    name = string
+    arn = string
+  }))
+
+  default = {}
+}
+
 variable "global_deploy_role" {
   description = "Deployment role name"
   type        = string
@@ -23,18 +33,25 @@ variable "instance" {
   type        = any
 }
 
-module "secret" {
-  source  = "terraform-aws-modules/secrets-manager/aws"
-
-  name        =  "${var.name}-jwt-secret"
-  description = "Private key for issuing JWTs"
-
-  create_random_password = true
-  random_password_length = 1024 
-
-  recovery_window_in_days = 7 # Optional: for recovery
+data "aws_iam_policy_document" "secret_access" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "secretsmanager:GetSecretValue"
+    ]
+    resources = [for secret in var.secrets : secret.arn]
+  }
 }
 
+resource "aws_iam_policy" "secret_access" {
+  name   = "${var.name}-secret-access-policy"
+  policy = data.aws_iam_policy_document.secret_access.json
+}
+
+resource "aws_iam_role_policy_attachment" "secret_access" {
+  role       = var.instance.iam_role_name
+  policy_arn = aws_iam_policy.secret_access.arn
+}
 
 locals {
   deploy_script = <<-EOT
@@ -42,11 +59,20 @@ locals {
 
     set -e
 
-    # Fetch the secret from AWS Secrets Manager
-    export JWT_PRIVATE_KEY=$(aws secretsmanager get-secret-value --secret-id ${module.secret.secret_name} --query "SecretString" --output text)
+    # Fetch secrets from AWS Secrets Manager
+    %{for env_name, secret in var.secrets~}
+    export ${env_name}=$(aws secretsmanager get-secret-value \
+      --secret-id ${secret.name} \
+      --query "SecretString" \
+      --output text)
+    %{endfor~}
 
     # Login to the Docker registry
-    aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${var.repository_url}
+    aws ecr get-login-password \
+      | docker login \
+        --username AWS \
+        --password-stdin \
+        ${var.repository_url}
 
     # Pull the latest Docker image
     docker pull ${var.repository_url}
@@ -57,11 +83,13 @@ locals {
     # Run the Docker container
     docker run \
       --name ${var.name} \
-      ${join(" ", [for port in var.ports : "-p ${port}"])} \
-      -e JWT_PRIVATE_KEY \
       --restart always \
-      -d ${var.repository_url}:latest
+      --detach \
+      ${join(" ", [for port in var.ports : "-p ${port}"])} \
+      ${join(" ", [for env_name, _ in var.secrets : "-e ${env_name}"])} \
+      ${var.repository_url}:latest
   EOT
+
 }
 
 resource "aws_ssm_document" "deploy" {
