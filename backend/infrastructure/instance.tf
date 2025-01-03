@@ -1,6 +1,8 @@
 locals {
   name = var.name
   azs  = slice(data.aws_availability_zones.available.names, 0, 3)
+  chunk_size = 50
+  ip_chunks  = chunklist(data.aws_ip_ranges.cloudfront.cidr_blocks, local.chunk_size)
 
   user_data = <<-EOT
     #!/bin/bash
@@ -13,6 +15,10 @@ locals {
   EOT
 }
 
+data "aws_ip_ranges" "cloudfront" {
+  regions  = ["GLOBAL"]
+  services = ["CLOUDFRONT"]
+}
 data "aws_availability_zones" "available" {}
 
 module "instance" {
@@ -24,7 +30,8 @@ module "instance" {
   ami                         = data.aws_ami.amazon_linux.id
   instance_type               = "t3.micro"
   subnet_id                   = element(module.vpc.public_subnets, 0)
-  vpc_security_group_ids      = [module.security_group.security_group_id]
+  vpc_security_group_ids      = [for sg in module.security_groups : sg.security_group_id]
+
   associate_public_ip_address = true
 
   create_iam_instance_profile = true
@@ -38,12 +45,14 @@ module "instance" {
   user_data_replace_on_change = true
 }
 
-module "security_group" {
+module "security_groups" {
   source  = "terraform-aws-modules/security-group/aws"
   version = "~> 4.0"
 
-  name        = "${local.name}-sg"
-  description = "Security group for example usage with EC2 instance"
+  for_each = { for idx, chunk in local.ip_chunks : idx => chunk }
+
+  name        = "${local.name}-sg-${each.key}"
+  description = "Security group for CloudFront chunk ${each.key}"
   vpc_id      = module.vpc.vpc_id
 
   ingress_with_cidr_blocks = [
@@ -51,8 +60,8 @@ module "security_group" {
       from_port   = 8000
       to_port     = 8000
       protocol    = "tcp"
-      description = "Allow HTTP/WebSocket inbound from CloudFront"
-      cidr_blocks = "0.0.0.0/0"
+      description = "Allow HTTP/WebSocket inbound from CloudFront chunk ${each.key}"
+      cidr_blocks = join(",", each.value)
     }
   ]
 
