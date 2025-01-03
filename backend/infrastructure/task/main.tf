@@ -23,17 +23,45 @@ variable "instance" {
   type        = any
 }
 
+module "secret" {
+  source  = "terraform-aws-modules/secrets-manager/aws"
+
+  name        =  "${var.name}-jwt-secret"
+  description = "Private key for issuing JWTs"
+
+  create_random_password = true
+  random_password_length = 1024 
+
+  recovery_window_in_days = 7 # Optional: for recovery
+}
+
+
 locals {
   deploy_script = <<-EOT
     sudo su ec2-user
+
+    set -e
+
+    # Fetch the secret from AWS Secrets Manager
+    export JWT_PRIVATE_KEY=$(aws secretsmanager get-secret-value --secret-id ${module.secret.secret_name} --query "SecretString" --output text)
+
+    # Login to the Docker registry
     aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${var.repository_url}
+
+    # Pull the latest Docker image
     docker pull ${var.repository_url}
+
+    # Remove any existing container with the same name
     docker rm -f ${var.name} || true
+
+    # Run the Docker container
     docker run \
       --name ${var.name} \
       ${join(" ", [for port in var.ports : "-p ${port}"])} \
+      -e JWT_PRIVATE_KEY \
+      --restart always \
       -d ${var.repository_url}:latest
-    EOT
+  EOT
 }
 
 resource "aws_ssm_document" "deploy" {

@@ -6,7 +6,14 @@ use uuid::Uuid;
 
 use crate::protocol::PeerKind;
 
-const JWT_SECRET: &[u8] = b"super_secret_key"; // TODO: load a proper secret
+use std::env;
+
+// Remove the const JWT_SECRET and replace with a function to get the secret
+fn get_jwt_secret() -> Vec<u8> {
+    env::var("JWT_PRIVATE_KEY")
+        .expect("JWT_PRIVATE_KEY environment variable not set")
+        .into_bytes()
+}
 
 // Token struct with space for more properties
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -36,16 +43,16 @@ impl Token {
         encode(
             &Header::default(),
             &self,
-            &EncodingKey::from_secret(JWT_SECRET),
+            &EncodingKey::from_secret(&get_jwt_secret()),
         )
         .expect("Failed to encode JWT")
     }
 
-    // Decode a JWT string into a Token struct
+    // Update decode method
     pub fn decode(token: &str) -> Result<Self, jsonwebtoken::errors::Error> {
         decode::<Self>(
             token,
-            &DecodingKey::from_secret(JWT_SECRET),
+            &DecodingKey::from_secret(&get_jwt_secret()),
             &Validation::new(Algorithm::HS256),
         )
         .map(|data| data.claims)
