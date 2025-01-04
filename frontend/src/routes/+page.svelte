@@ -1,8 +1,10 @@
 <script lang="ts">
+  import type { PageData } from './$types'
   import Navigation from '../components/Navigation.svelte'
   import WorkspaceList from '../components/WorkspaceList.svelte'
   import { Root } from '../models/root'
 
+  export let data: PageData
   const root = Root.init()
 
   const lists = root.workspaceLists()
@@ -28,7 +30,7 @@
           {:then}
             <h2>Workspaces ({workspaceList.id}):</h2>
             <button on:click={() => workspaceList.new()}>Add workspace</button>
-            <WorkspaceList {workspaceList} />
+            <WorkspaceList config={data.config} {workspaceList} />
           {/await}
         {/each}
       </ul>

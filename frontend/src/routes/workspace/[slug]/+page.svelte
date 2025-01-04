@@ -16,7 +16,7 @@
   init_workspace(workspace)
 </script>
 
-{#await workspace.load()}
+{#await workspace.load(data.config)}
   <!-- TODO: skeleton loading UI -->
 {:then}
   <WorkspaceView />

@@ -12,6 +12,7 @@ import { Position } from '../@types'
 import { IndexeddbPersistence } from 'y-indexeddb'
 import { VerifiedRTCProvider } from './rtc'
 import { get_user, update_user, User } from './user'
+import { Config } from '../routes/+layout.server'
 
 export type WorkspaceMeta = {
   title: string
@@ -119,7 +120,7 @@ export class Workspace {
   /**
    * Loads entity from local storage
    */
-  async load() {
+  async load(config: Config) {
     const signal = AbortSignal.timeout(2000)
 
     if (!this.storage) {
@@ -130,17 +131,14 @@ export class Workspace {
     this.doc.load()
 
     if (!this.rtc) {
-      // TODO: move keys to env
-      const iceServers = await fetch("https://sobaka.metered.live/api/v1/turn/credentials?apiKey=2312667f3c9fb02e077ba1112512a3913aef")
-        .then(res => res.json())
-
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       this.rtc = new VerifiedRTCProvider(this.doc.guid, this.doc, {
-        // signaling: ['ws://localhost:8000/signaling'],
-        signaling: ['wss://next.sobaka.marcelgleeson.com/signaling'],
+        signaling: config.signaling,
         // Ignore updates from non-collaborators
         filterIncomingMessage: from => this.isCollaborator(from),
-        peerOpts: { config: { iceServers } }
+        peerOpts: {
+          config: { iceServers: config.iceServers }
+        }
       })
 
       // get verified uuid from provider
