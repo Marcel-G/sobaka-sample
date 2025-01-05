@@ -29,7 +29,7 @@ module "cdn" {
   }
 
   origin = {
-    storage = { # with origin access control settings
+    storage = {
       domain_name           = module.frontend.deploy_bucket_domain
       origin_access_control = "storage"
     }
@@ -59,6 +59,26 @@ module "cdn" {
 
   ordered_cache_behavior = [
     {
+      # Reuse static root layout data for dynamic routes
+      path_pattern           = "/workspace/*/__data.json"
+      target_origin_id       = "storage"
+      viewer_protocol_policy = "redirect-to-https"
+      allowed_methods        = ["GET", "HEAD", "OPTIONS"]
+      cached_methods         = ["GET", "HEAD"]
+      compress               = true
+      min_ttl                = "0"
+      default_ttl            = "300"
+      max_ttl                = "1200"
+      response_headers_policy_id = aws_cloudfront_response_headers_policy.cross_origin_isolation.id
+
+      function_association = {
+        viewer-request = {
+          function_arn = aws_cloudfront_function.rewrite_data_json.arn
+        }
+      }
+    },
+    {
+      # Route WebSocket signaling to ec2
       path_pattern           = "/signaling*"
       target_origin_id       = "websocket"
       viewer_protocol_policy = "redirect-to-https"
@@ -68,6 +88,7 @@ module "cdn" {
       cookies_whitelisted_names = ["jwt"]
     },
     {
+      # Increase cache duration for immutable assets
       path_pattern           = "/_app/immutable*"
       target_origin_id       = "storage"
       viewer_protocol_policy = "redirect-to-https"
@@ -96,6 +117,18 @@ module "cdn" {
     response_code      = 403
     response_page_path = "/404.html"
   }]
+}
+
+resource "aws_cloudfront_function" "rewrite_data_json" {
+  name    = "${terraform.workspace}-rewrite-data-json"
+  runtime = "cloudfront-js-1.0"
+  code    = <<-EOT
+function handler(event) {
+    var request = event.request;
+    request.uri = "/__data.json";
+    return request;
+}
+EOT
 }
 
 # Cross origion isolation for SharedArrayBuffer usage
