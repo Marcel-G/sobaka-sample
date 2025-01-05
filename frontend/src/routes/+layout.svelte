@@ -1,5 +1,5 @@
 <script lang="ts">
-  import CssReset from '../components/CSSReset.svelte'
+  import 'ress/dist/ress.min.css'
   import Theme from '../components/Theme.svelte'
   import { navigating } from '$app/stores'
   import Loading from '../components/Loading.svelte'
@@ -25,7 +25,6 @@
   }
 </script>
 
-<CssReset />
 <Theme />
 <main>
   {#if $navigating || loading}
