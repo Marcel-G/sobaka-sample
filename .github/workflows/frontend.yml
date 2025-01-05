@@ -37,7 +37,7 @@ jobs:
       #       workspaces: sobaka-dsp
       - uses: actions/setup-node@v3
         with:
-          node-version: 16.14
+          node-version: 20.18
           cache: 'npm'
           cache-dependency-path: '**/package-lock.json'
       - run: npm ci 

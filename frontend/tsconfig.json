@@ -1,13 +1,17 @@
 {
   "extends": "./.svelte-kit/tsconfig.json",
   "compilerOptions": {
-    "lib": ["es2021", "DOM"],
-    "importHelpers": true,
+    "checkJs": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "sourceMap": true,
     "allowJs": true,
-    "resolveJsonModule": true,
     "esModuleInterop": true,
+    "importHelpers": true,
     "importsNotUsedAsValues": "remove",
+    "moduleResolution": "bundler",
     "preserveValueImports": false,
+    "resolveJsonModule": true,
     "strict": true
   }
 }
