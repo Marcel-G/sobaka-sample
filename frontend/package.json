@@ -42,8 +42,8 @@
     "tslib": "^2.3.1"
   },
   "dependencies": {
-    "@syncedstore/core": "^0.4.3",
-    "@syncedstore/svelte": "^0.4.3",
+    "@syncedstore/core": "^0.6.0",
+    "@syncedstore/svelte": "^0.6.0",
     "date-fns": "^2.29.2",
     "lodash": "^4.17.21",
     "ress": "^4.0.0",
