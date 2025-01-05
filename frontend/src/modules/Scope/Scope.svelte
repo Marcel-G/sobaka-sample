@@ -1,5 +1,5 @@
 <script context="module" lang="ts">
-  import { ModuleTheme } from '../../components/Theme.svelte'
+  import { type ModuleTheme } from '../../components/Theme.svelte'
   export const theme: Partial<ModuleTheme> = {
     highlight: 'var(--cyan)',
     background: 'var(--cyan-dark)'
@@ -27,7 +27,7 @@
   import { get_context as get_audio_context } from '../../audio'
   import Layout from '../../components/Layout.svelte'
   import RingSpinner from '../../components/RingSpinner.svelte'
-  import { PointBufferData, ScopeController } from 'sobaka-dsp'
+  import { type PointBufferData, ScopeController } from 'sobaka-dsp'
   import { create_scale_range, create_time_range } from '../../range/range_creators'
   import ScopeChannel from './ScopeChannel.svelte'
   import Tooltip from '../../components/Tooltip.svelte'

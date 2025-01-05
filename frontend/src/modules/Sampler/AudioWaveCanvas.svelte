@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { AudioData } from './constants'
+  import { type AudioData } from './constants'
 
   // Data about the loaded audio file
   export let audio_data: AudioData

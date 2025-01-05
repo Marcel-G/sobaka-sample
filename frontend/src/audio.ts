@@ -1,4 +1,4 @@
-import { writable, Writable } from 'svelte/store'
+import { writable, type Writable } from 'svelte/store'
 import { getContext, setContext } from 'svelte'
 import init, { init_worker, init_worklet } from 'sobaka-dsp'
 import worklet_js_url from 'sobaka-dsp/pkg/sobaka-worklet.worklet.js?url&worker'

@@ -1,5 +1,5 @@
-import { derived, get, Readable, writable } from 'svelte/store'
-import { Link, Workspace } from '../models/workspace'
+import { derived, get, type Readable, writable } from 'svelte/store'
+import { type Link, Workspace } from '../models/workspace'
 
 const is_fully_linked = (link: Partial<Link> | null): link is Link => {
   return Boolean(link?.from && link?.to)

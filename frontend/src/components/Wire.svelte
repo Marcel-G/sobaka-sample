@@ -1,11 +1,10 @@
 <script lang="ts">
   import { onDestroy } from 'svelte'
-  import { derived, writable, Writable } from 'svelte/store'
-  import { PlugContext, PlugType } from '../context/plugs'
-  import { Position } from '../@types'
+  import { derived, writable, type Writable } from 'svelte/store'
+  import { type PlugContext, PlugType } from '../context/plugs'
+  import { type Position } from '../@types'
   import { mouse_position } from '../workspace/Workspace.svelte'
 
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
   export let on_click = () => {}
   export let from: PlugContext | null = null
   export let to: PlugContext | null = null

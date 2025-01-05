@@ -1,7 +1,7 @@
 <script lang="ts">
   import clamp from 'lodash/clamp'
   import { get_workspace } from '../context/workspace'
-  import { MODULES, ModuleUI } from '../modules'
+  import { MODULES, type ModuleUI } from '../modules'
   import { into_grid_coords } from '../modules/shared/Panel.svelte'
 
   export let position = { x: 0, y: 0 }
@@ -88,7 +88,9 @@
 
     background-color: var(--background);
 
-    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 10%), 0 4px 6px -2px rgb(0 0 0 / 5%);
+    box-shadow:
+      0 10px 15px -3px rgb(0 0 0 / 10%),
+      0 4px 6px -2px rgb(0 0 0 / 5%);
 
     overflow: hidden;
   }

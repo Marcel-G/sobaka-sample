@@ -1,10 +1,10 @@
 import syncedStore from '@syncedstore/core'
-import { MappedTypeDescription } from '@syncedstore/core/types/doc'
-import { derived, Readable } from 'svelte/store'
+import type { MappedTypeDescription } from '@syncedstore/core/types/doc'
+import { derived, type Readable } from 'svelte/store'
 import { IndexeddbPersistence } from 'y-indexeddb'
 import * as Y from 'yjs'
 import { intoReadable } from '../util/store'
-import { SubDocReference } from '../util/subdoc'
+import { type SubDocReference } from '../util/subdoc'
 import { Workspace } from './workspace'
 
 type WorkspaceListStore = {

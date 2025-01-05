@@ -1,18 +1,21 @@
 import * as Y from 'yjs'
 
 import syncedStore from '@syncedstore/core'
-import { DocTypeDescription, MappedTypeDescription } from '@syncedstore/core/types/doc'
-import { derived, get, Readable, writable } from 'svelte/store'
+import type {
+  DocTypeDescription,
+  MappedTypeDescription
+} from '@syncedstore/core/types/doc'
+import { derived, get, type Readable, writable } from 'svelte/store'
 
 import cloneDeep from 'lodash/cloneDeep'
-import { INITIAL_STATE, ModuleUI } from '../modules'
+import { INITIAL_STATE, type ModuleUI } from '../modules'
 import { intoReadable } from '../util/store'
-import { SubDocReference } from '../util/subdoc'
-import { Position } from '../@types'
+import { type SubDocReference } from '../util/subdoc'
+import { type Position } from '../@types'
 import { IndexeddbPersistence } from 'y-indexeddb'
 import { VerifiedRTCProvider } from './rtc'
-import { get_user, update_user, User } from './user'
-import { Config } from '../routes/+layout.server'
+import { get_user, update_user, type User } from './user'
+import type { Config } from '../routes/+layout.server'
 
 export type WorkspaceMeta = {
   title: string
@@ -131,7 +134,6 @@ export class Workspace {
     this.doc.load()
 
     if (!this.rtc) {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       this.rtc = new VerifiedRTCProvider(this.doc.guid, this.doc, {
         signaling: config.signaling,
         // Ignore updates from non-collaborators
@@ -250,7 +252,7 @@ export class Workspace {
         id,
         type,
         // TS doesn't know about svelte module imports - https://github.com/sveltejs/svelte/issues/5817
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
         state: INITIAL_STATE[type],
         position
       })

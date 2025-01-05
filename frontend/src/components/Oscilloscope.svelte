@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte'
-  import { get, Writable } from 'svelte/store'
+  import { get, type Writable } from 'svelte/store'
   import { get_context as get_audio_context } from '../audio'
   export let module: AudioNode
   const context: Writable<AudioContext> = get_audio_context()

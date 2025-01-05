@@ -1,5 +1,5 @@
 <script context="module" lang="ts">
-  import { ModuleTheme } from '../../components/Theme.svelte'
+  import { type ModuleTheme } from '../../components/Theme.svelte'
   export const theme: Partial<ModuleTheme> = {
     highlight: 'var(--pink)',
     background: 'var(--pink-dark)'
@@ -27,7 +27,7 @@
   import Layout from '../../components/Layout.svelte'
   import RingSpinner from '../../components/RingSpinner.svelte'
   import { create_volt_per_octave_range } from '../../range/range_creators'
-  import { ChoiceRange, RangeType } from '../../range/range'
+  import { type ChoiceRange, RangeType } from '../../range/range'
   import Switch from '../../components/Switch.svelte'
   import Sine from './Sine.svelte'
   import Saw from './Saw.svelte'

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Point } from 'sobaka-dsp'
+  import { type Point } from 'sobaka-dsp'
 
   export let data: Point[]
 
@@ -52,7 +52,7 @@
         canvas.width = width
         canvas.height = height
       }
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+
       const context = canvas.getContext('2d')!
 
       context.clearRect(0, 0, width, height)

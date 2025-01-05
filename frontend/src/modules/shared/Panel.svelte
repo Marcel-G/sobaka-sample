@@ -73,7 +73,9 @@
 
 <style>
   .panel {
-    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 10%), 0 4px 6px -2px rgb(0 0 0 / 5%);
+    box-shadow:
+      0 10px 15px -3px rgb(0 0 0 / 10%),
+      0 4px 6px -2px rgb(0 0 0 / 5%);
     border-radius: 0.5rem;
     background-color: var(--module-background);
     border: 2px solid var(--module-highlight);

@@ -1,5 +1,5 @@
 <script context="module" lang="ts">
-  import { ModuleTheme } from '../../components/Theme.svelte'
+  import { type ModuleTheme } from '../../components/Theme.svelte'
   export const theme: Partial<ModuleTheme> = {
     highlight: 'var(--pink)',
     background: 'var(--pink-dark)'
@@ -36,7 +36,7 @@
   import Button from '../../components/Button.svelte'
   import Layout from '../../components/Layout.svelte'
   import RingSpinner from '../../components/RingSpinner.svelte'
-  import { Range, RangeType } from '../../range/range'
+  import { type Range, RangeType } from '../../range/range'
 
   export let state: State
   export let disabled = false

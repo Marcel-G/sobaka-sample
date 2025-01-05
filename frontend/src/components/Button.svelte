@@ -1,6 +1,6 @@
 <script lang="ts">
   export let pressed = false
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
+
   export let onClick = () => {}
   export let disabled = false
 </script>
@@ -30,7 +30,9 @@
 
     box-shadow: inset 0 0 10px var(--background);
 
-    transition: border-color 0.25s, box-shadow 0.25s;
+    transition:
+      border-color 0.25s,
+      box-shadow 0.25s;
   }
 
   button[disabled] {

@@ -24,7 +24,7 @@
   }
 </script>
 
-<style lang="postcss">
+<style>
   :root {
     --background: #282a36;
     --current-line: #44475a;

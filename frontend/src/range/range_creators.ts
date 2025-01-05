@@ -1,4 +1,4 @@
-import { ContinuousRange, ChoiceRange, RangeType, Scale } from './range'
+import { type ContinuousRange, type ChoiceRange, RangeType, Scale } from './range'
 
 export const create_volume_range = (start = 0, end = 1): ContinuousRange => ({
   type: RangeType.Continuous,

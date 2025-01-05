@@ -1,5 +1,5 @@
 import * as Y from 'yjs'
-import { WebrtcConn, WebrtcProvider, ProviderOptions } from 'y-webrtc'
+import { WebrtcConn, WebrtcProvider, type ProviderOptions } from 'y-webrtc'
 
 type SignalingMessage = {
   type: string

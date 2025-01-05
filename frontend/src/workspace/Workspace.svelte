@@ -1,5 +1,5 @@
 <script context="module" lang="ts">
-  import { Position } from '../@types'
+  import { type Position } from '../@types'
   export const mouse_position = writable<Position>({ x: 0, y: 0 })
 </script>
 
@@ -24,7 +24,6 @@
   const modules = workspace.modules
   const isEditable = workspace.isEditable
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handle_double_click = (event: MouseEvent) => {
     if (!$isEditable) return
     $mouse_position = { x: event.offsetX, y: event.offsetY }

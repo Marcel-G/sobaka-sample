@@ -1,6 +1,6 @@
 import { getContext, setContext } from 'svelte'
 import { Workspace } from '../models/workspace'
-import { createPlugsContext, PlugsContext } from './plugs'
+import { createPlugsContext, type PlugsContext } from './plugs'
 
 const WORKSPACE_CONTEXT = 'WORKSPACE_CONTEXT'
 

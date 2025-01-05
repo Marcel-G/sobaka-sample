@@ -1,12 +1,12 @@
 <script context="module" lang="ts">
-  import { Range } from '../../range/range'
+  import { type Range } from '../../range/range'
 </script>
 
 <script lang="ts">
   import { from_normalised, to_normalised } from '../../range/range_functions'
   import Input from '../Input.svelte'
-  import useDrag, { OnDrag, relative_to_element } from '../../actions/drag'
-  import useWheel, { OnWheel } from '../../actions/wheel'
+  import useDrag, { type OnDrag, relative_to_element } from '../../actions/drag'
+  import useWheel, { type OnWheel } from '../../actions/wheel'
   import Dial from './Dial.svelte'
 
   export let value = 0.0

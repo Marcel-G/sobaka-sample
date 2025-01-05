@@ -2,7 +2,7 @@
  * @group Helpers
  */
 
-import { ContinuousRange, Range, RangeType, Scale } from './range'
+import { type ContinuousRange, type Range, RangeType, Scale } from './range'
 
 /**
  * Converts `value` to a normalised value (ranging from 0 to 1) and returns it.

@@ -3,7 +3,7 @@
   import RingSpinner from '../../components/RingSpinner.svelte'
   import AudioSegments from './AudioSegments.svelte'
   import AudioWaveCanvas from './AudioWaveCanvas.svelte'
-  import { WINDOW_SIZE, AudioData } from './constants'
+  import { WINDOW_SIZE, type AudioData } from './constants'
 
   // How far along the audio the detail view is at (0-1)
   export let view_position: number

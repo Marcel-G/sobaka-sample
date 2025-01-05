@@ -1,5 +1,5 @@
 <script context="module" lang="ts">
-  import { ModuleTheme } from '../components/Theme.svelte'
+  import { type ModuleTheme } from '../components/Theme.svelte'
   export const theme: Partial<ModuleTheme> = {
     highlight: 'var(--purple)',
     background: 'var(--purple-dark)'
@@ -27,7 +27,7 @@
   import { get_context as get_audio_context } from '../audio'
   import Layout from '../components/Layout.svelte'
   import RingSpinner from '../components/RingSpinner.svelte'
-  import { Range, RangeType } from '../range/range'
+  import { type Range, RangeType } from '../range/range'
   import { create_scale_range } from '../range/range_creators'
 
   export let state: State

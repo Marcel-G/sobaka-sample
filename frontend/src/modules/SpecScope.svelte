@@ -1,5 +1,5 @@
 <script context="module" lang="ts">
-  import { ModuleTheme } from '../components/Theme.svelte'
+  import { type ModuleTheme } from '../components/Theme.svelte'
   export const theme: Partial<ModuleTheme> = {
     highlight: 'var(--cyan)',
     background: 'var(--cyan-dark)'
@@ -125,7 +125,7 @@
         canvas.width = width
         canvas.height = height
       }
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+
       const context = canvas.getContext('2d')!
 
       context.clearRect(0, 0, width, height)

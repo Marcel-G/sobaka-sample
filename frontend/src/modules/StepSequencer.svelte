@@ -1,5 +1,5 @@
 <script context="module" lang="ts">
-  import { ModuleTheme } from '../components/Theme.svelte'
+  import { type ModuleTheme } from '../components/Theme.svelte'
   export const theme: Partial<ModuleTheme> = {
     highlight: 'var(--cyan)',
     background: 'var(--cyan-dark)'
@@ -24,7 +24,7 @@
   import Button from '../components/Button.svelte'
   import Led from '../components/Led.svelte'
   import { get_context as get_audio_context } from '../audio'
-  import { Tuple } from '../@types'
+  import { type Tuple } from '../@types'
   import Layout from '../components/Layout.svelte'
   import RingSpinner from '../components/RingSpinner.svelte'
 

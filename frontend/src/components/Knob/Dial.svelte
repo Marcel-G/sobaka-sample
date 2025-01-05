@@ -1,5 +1,5 @@
 <script context="module" lang="ts">
-  import { Range, RangeType } from '../../range/range'
+  import { type Range, RangeType } from '../../range/range'
 </script>
 
 <script lang="ts">

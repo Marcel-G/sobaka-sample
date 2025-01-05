@@ -25,7 +25,7 @@ import SampleAndHold, {
   initialState as sampleAndHoldInitialState
 } from './SampleAndHold.svelte'
 import Sampler, { initialState as samplerInitialState } from './Sampler/Sampler.svelte'
-import { Module } from '../workspace/state'
+import type { Module } from '../models/workspace'
 
 export const MODULES = {
   Clock,
@@ -52,7 +52,7 @@ export const MODULES = {
 export type ModuleUI = keyof typeof MODULES
 
 // TS doesn't know about svelte module imports - https://github.com/sveltejs/svelte/issues/5817
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+
 export const INITIAL_STATE = {
   Clock: clockInitialState,
   Envelope: envelopeInitialState,
@@ -74,7 +74,6 @@ export const INITIAL_STATE = {
   SampleAndHold: sampleAndHoldInitialState,
   Sampler: samplerInitialState
 } as const
-/* eslint-enable @typescript-eslint/no-unsafe-assignment */
 
 // Maybe it's better to use props somehow?
 // https://github.com/sveltejs/language-tools/issues/442#issuecomment-1145948441

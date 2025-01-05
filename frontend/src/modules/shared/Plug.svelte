@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onDestroy } from 'svelte'
-  import { writable, Writable } from 'svelte/store'
-  import { NodeContext, ParamContext, PlugType } from '../../context/plugs'
+  import { writable, type Writable } from 'svelte/store'
+  import { type NodeContext, type ParamContext, PlugType } from '../../context/plugs'
   import Tooltip from '../../components/Tooltip.svelte'
   import { get_workspace } from '../../context/workspace'
   import { get_module_context } from '../context'
