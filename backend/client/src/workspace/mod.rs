@@ -1,37 +1,114 @@
-use std::{
-    collections::{hash_map::Entry, HashMap},
-    sync::Arc,
-    task::{Context, Poll},
-};
+use std::sync::Arc;
 
-use lmdb_rs::{core::DbCreate, Environment};
-use serde_json::Value;
+use lmdb_rs::core::DbCreate;
+use lmdb_rs::{DbHandle, Environment};
+use yrs::sync::{Awareness, SyncMessage};
+use yrs::types::ToJson;
+use yrs::updates::encoder::{Encoder, EncoderV1};
 use yrs::{
-    sync::{Awareness, DefaultProtocol, Message, Protocol, SyncMessage},
-    ReadTxn, Subscription, Transact, Update,
+    sync::{DefaultProtocol, Message, Protocol},
+    updates::{decoder::Decode, encoder::Encode},
+    Subscription,
 };
+use yrs::{Array, Map, Out, ReadTxn, Transact, UpdateEvent};
 use yrs_kvstore::DocOps;
 use yrs_lmdb::LmdbStore;
 
-use crate::peer::connection::{NegotiationMode, PeerConnEvent, PeerConnection};
+use crate::peer::connection::PeerConnection;
 
 pub struct Workspace {
-    awareness: Awareness,
-    subscription: Subscription,
-    pub peers: HashMap<String, PeerConnection>,
-}
-
-pub enum WorkspaceEvent {
-    OutboundSignal(String, Value),
-    Closed,
-}
-
-pub enum WorkspaceError {
-    Todo,
+    doc: Awareness,
+    uuid: String,
+    _subscription: Subscription,
 }
 
 impl Workspace {
-    pub fn new(uuid: &str) -> Self {
+    pub fn new(uuid: &str, db: Arc<Db>) -> Self {
+        let mut doc: Awareness = Default::default();
+
+        let subscription = {
+            let db = db.clone();
+            let uuid = uuid.to_string();
+            doc.doc()
+                .observe_update_v1(move |_, e| {
+                    log::debug!("Workspace {} updated", uuid);
+                    db.update(&uuid, e)
+                })
+                .unwrap()
+        };
+
+        db.load(&uuid, doc.doc_mut());
+
+        Self {
+            _subscription: subscription,
+            uuid: uuid.to_string(),
+            doc,
+        }
+    }
+
+    pub fn handle_connection(&self, conn: &mut PeerConnection) {
+        let mut encoder = EncoderV1::new();
+        DefaultProtocol
+            .start(&self.doc, &mut encoder)
+            .expect("start failed");
+
+        conn.send(self.uuid.clone(), encoder.to_vec())
+            .expect("send failed");
+    }
+
+    fn collaborators(&self) -> Vec<String> {
+        let txn = self.doc.doc().transact();
+        // TODO: serde into struct?
+        match txn
+            .get_map("meta")
+            .and_then(|meta| meta.get(&txn, "collaborators"))
+        {
+            Some(Out::YArray(arr)) => arr.iter(&txn).flat_map(|i| i.try_into()).collect(),
+            _ => vec![],
+        }
+    }
+
+    pub fn handle_input(&self, input: &[u8], conn: &mut PeerConnection) {
+        let collaborators = self.collaborators();
+        let message = Message::decode_v1(input).expect("decode failed");
+
+        // Allow only read-only messages for non collaborators
+        // https://github.com/yjs/y-protocols/blob/40dbe4eebb1e53a7e86932ef3232f9abd5037569/PROTOCOL.md?plain=1#L100-L111
+        match message {
+            Message::Sync(SyncMessage::SyncStep2(_))
+            | Message::Sync(SyncMessage::Update(_))
+            | Message::Awareness(_) => {
+                if collaborators.len() > 0 && !collaborators.iter().any(|i| i == conn.identity()) {
+                    log::warn!(
+                        "Rejecting message {:?} is not a collaborator",
+                        conn.identity()
+                    );
+                    return;
+                }
+            }
+            _ => {}
+        }
+
+        match DefaultProtocol.handle_message(&self.doc, message) {
+            Ok(Some(reply)) => {
+                conn.send(self.uuid.clone(), reply.encode_v1())
+                    .expect("send failed");
+            }
+            Err(e) => {
+                log::error!("Failed to handle message: {e:?}");
+            }
+            _ => {}
+        }
+    }
+}
+
+pub struct Db {
+    env: Environment,
+    handle: DbHandle,
+}
+
+impl Db {
+    pub fn new() -> Self {
         let env = Environment::new()
             .autocreate_dir(true)
             .map_size(256 * 1024 * 1024)
@@ -39,98 +116,26 @@ impl Workspace {
             .open(".db", 0o777)
             .unwrap();
 
-        let env = Arc::new(env);
-        let handle = Arc::new(env.create_db(uuid, DbCreate).unwrap());
-        let awareness = Awareness::default();
+        let handle = env.create_db("sobaka", DbCreate).unwrap();
 
-        let subscription = {
-            let env = env.clone();
-            let handle = handle.clone();
-            let uuid = uuid.to_string();
-            awareness
-                .doc()
-                .observe_update_v1(move |_, e| {
-                    let txn = env.new_transaction().unwrap();
-                    let db = LmdbStore::from(txn.bind(&handle));
-                    let i = db.push_update(&uuid, &e.update).unwrap();
-                    if i % 128 == 0 {
-                        // compact updates into document
-                        db.flush_doc(&uuid).unwrap();
-                    }
-                    txn.commit().unwrap();
-                })
-                .unwrap()
-        };
-
-        {
-            // load document using readonly transaction
-            let mut txn = awareness.doc().transact_mut();
-            let db_txn = env.get_reader().unwrap();
-            let db = LmdbStore::from(db_txn.bind(&handle));
-            db.load_doc(uuid, &mut txn).unwrap();
-        };
-
-        Self {
-            subscription,
-            awareness,
-            peers: HashMap::new(),
-        }
+        Self { env, handle }
     }
 
-    pub fn close(&mut self) {
-        for (_remote_peer_id, conn) in self.peers.iter_mut() {
-            conn.close();
+    pub fn update(&self, topic: &str, event: &UpdateEvent) {
+        let txn = self.env.new_transaction().unwrap();
+        let db = LmdbStore::from(txn.bind(&self.handle));
+        let i = db.push_update(topic, &event.update).unwrap();
+        if i % 128 == 0 {
+            // compact updates into document
+            db.flush_doc(topic).unwrap();
         }
+        txn.commit().unwrap();
     }
 
-    pub fn poll_output(
-        &mut self,
-        cx: &mut Context,
-    ) -> Poll<Result<WorkspaceEvent, WorkspaceError>> {
-        // Poll all the peers for updates
-        for (peer_id, connection) in self.peers.iter_mut() {
-            match connection.poll_output(cx) {
-                Poll::Ready(Ok(PeerConnEvent::IncomingMessage(message))) => {
-                    match DefaultProtocol.handle_message(&self.awareness, message) {
-                        Ok(Some(reply)) => {
-                            connection.send(reply);
-                        }
-                        Err(e) => {
-                            log::error!("Failed to handle message: {e:?}");
-                        }
-                        _ => {}
-                    }
-                    continue;
-                }
-                Poll::Ready(Ok(PeerConnEvent::OutboundSignal(signal))) => {
-                    let signal = serde_json::to_value(signal).expect("Failed to serialize signal");
-                    return Poll::Ready(Ok(WorkspaceEvent::OutboundSignal(
-                        peer_id.clone(),
-                        signal,
-                    )));
-                }
-                Poll::Ready(Ok(PeerConnEvent::Connected)) => {
-                    log::info!("peer-conn [{}]: connected", peer_id);
-                    let sv = self.awareness.doc().transact().state_vector();
-                    let sync_step1 = Message::Sync(SyncMessage::SyncStep1(sv));
-                    let awareness_query = Message::AwarenessQuery;
-                    connection.send(sync_step1.clone());
-                    connection.send(awareness_query.clone());
-
-                    continue;
-                }
-                Poll::Ready(Ok(PeerConnEvent::Disconnect)) => {
-                    log::info!("peer-conn [{}]: disconnect", peer_id);
-                    continue;
-                }
-                Poll::Ready(Err(e)) => {
-                    log::error!("peer-conn error: {e:?}");
-                    return Poll::Ready(Err(WorkspaceError::Todo));
-                }
-                Poll::Pending => {}
-            };
-        }
-
-        return Poll::Pending;
+    pub fn load(&self, topic: &str, doc: &mut yrs::Doc) {
+        let mut txn = doc.transact_mut();
+        let db_txn = self.env.get_reader().unwrap();
+        let db = LmdbStore::from(db_txn.bind(&self.handle));
+        db.load_doc(topic, &mut txn).unwrap();
     }
 }

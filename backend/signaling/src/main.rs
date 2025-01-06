@@ -2,19 +2,12 @@ use std::error::Error;
 
 use jwt::Token;
 use signaling::{signaling_conn, SignalingService};
-use std::sync::Arc;
-use tokio::sync::RwLock;
 use warp::ws::{WebSocket, Ws};
 use warp::{Filter, Rejection, Reply};
 
-mod broadcast;
-mod conn;
 mod jwt;
 mod protocol;
 mod signaling;
-mod ws;
-
-pub type AwarenessRef = Arc<RwLock<yrs::sync::Awareness>>;
 
 // TODO: The signaling server has with ping to resolve
 //       try https://github.com/ngryman/signaling
@@ -52,14 +45,14 @@ async fn ws_handler(
     println!("uuid: {} kind: {:?}", token.uuid, token.kind);
 
     Ok(ws.on_upgrade(move |socket| peer(socket, svc, token)))
-        .map(|reply| warp::reply::with_header(reply,
-            "Set-Cookie",
-            format!("jwt={}; HttpOnly; Path=/", jwt),
-        ))
-        .map(|reply| warp::reply::with_header(reply,
-            "Cache-Control",
-            "no-cache=\"Set-Cookie\""
-        ))
+        .map(|reply| {
+            warp::reply::with_header(
+                reply,
+                "Set-Cookie",
+                format!("jwt={}; HttpOnly; Path=/", jwt),
+            )
+        })
+        .map(|reply| warp::reply::with_header(reply, "Cache-Control", "no-cache=\"Set-Cookie\""))
 }
 
 async fn peer(ws: WebSocket, svc: SignalingService, token: Token) {

@@ -1,245 +1,156 @@
-use std::{
-    collections::VecDeque,
-    fmt::Display,
-    future, mem,
-    task::{Context, Poll, Waker},
-};
-
 use cookie::Cookie;
-use futures::{future::BoxFuture, FutureExt, SinkExt, StreamExt};
+use futures::{stream::SplitSink, stream::SplitStream, SinkExt, StreamExt};
+use std::sync::Arc;
+use std::time::Duration;
 use tokio::net::TcpStream;
-use tokio_tungstenite::tungstenite::http::StatusCode;
-use tokio_tungstenite::tungstenite::protocol::Message as WsMessage;
-use tokio_tungstenite::tungstenite::{
-    client::IntoClientRequest,
-    http::{header::COOKIE, HeaderValue},
-};
-use tokio_tungstenite::{MaybeTlsStream, WebSocketStream};
+use tokio::sync::{mpsc, Mutex};
+use tokio::task;
+use tokio_tungstenite::tungstenite::client::IntoClientRequest;
+use tokio_tungstenite::tungstenite::http::header::COOKIE;
+use tokio_tungstenite::tungstenite::http::HeaderValue;
+use tokio_tungstenite::tungstenite::Error as WsError;
+use tokio_tungstenite::MaybeTlsStream;
+use tokio_tungstenite::{tungstenite::protocol::Message as WsMessage, WebSocketStream};
 use url::Url;
 
 use super::protocol::Message;
 
-pub struct SignalConnection {
-    options: SignalOptions,
-    state: State,
-    waker: Option<Waker>,
-    pending_messages: VecDeque<String>,
-}
-
-pub struct SignalOptions {
-    pub url: Url,
-    pub token: Option<String>,
-}
 #[derive(Debug)]
-pub enum SignalError {
-    Client(StatusCode),
-    Connecting,
+pub enum InternalError {
+    WebSocketError(WsError),
+    ConnectionError(String),
+    InvalidUrl,
 }
 
-#[derive(Debug)]
-pub enum SignalEvent {
-    IncomingMessage(Message),
-
-    /// The connection was closed successfully.
-    Closed,
+impl From<WsError> for InternalError {
+    fn from(err: WsError) -> Self {
+        InternalError::WebSocketError(err)
+    }
 }
 
-impl SignalConnection {
-    pub fn new_with_options(options: SignalOptions) -> Self {
-        Self {
-            options,
-            state: State::Closed,
-            waker: None,
-            pending_messages: VecDeque::new(),
-        }
+type WebSocket = WebSocketStream<MaybeTlsStream<TcpStream>>;
+
+pub struct WebSocketHandle {
+    sender: mpsc::UnboundedSender<Message>,
+    receiver: mpsc::UnboundedReceiver<Message>,
+}
+
+impl WebSocketHandle {
+    pub fn send(&self, message: Message) -> Result<(), InternalError> {
+        self.sender
+            .send(message)
+            .map_err(|_| InternalError::ConnectionError("Failed to send message".to_string()))
     }
 
-    pub fn connect(&mut self) {
-        self.state = State::connect(self.options.url.clone(), self.options.token.clone());
-
-        if let Some(waker) = self.waker.take() {
-            waker.wake();
-        }
+    pub fn receiver(&mut self) -> &mut mpsc::UnboundedReceiver<Message> {
+        &mut self.receiver
     }
+}
 
-    /// Initiate a graceful close of the connection.
-    pub fn close(&mut self) -> Result<(), SignalError> {
-        log::info!("Closing signal connection");
+pub fn websocket_client(url: Url, token: Option<String>) -> WebSocketHandle {
+    let (tx_out, rx_out) = mpsc::unbounded_channel::<Message>();
+    let (tx_in, rx_in) = mpsc::unbounded_channel::<Message>();
 
-        match mem::replace(&mut self.state, State::Closed) {
-            State::Connecting(_) => return Err(SignalError::Connecting),
-            State::Closing(stream) | State::Connected(stream) => {
-                self.state = State::Closing(stream);
-            }
-            State::Closed => {}
-        }
+    let cloned_url = url.clone();
+    let cloned_token = token.clone();
 
-        Ok(())
-    }
+    let rx_out = Arc::new(Mutex::new(rx_out));
 
-    /// Send a message to a topic.
-    pub fn send(&mut self, message: Message) {
-        self.pending_messages.push_back(
-            message
-                .to_json()
-                .expect("message should always be serialize"),
-        );
-    }
+    task::spawn(async move {
+        let mut backoff = Duration::from_secs(1);
 
-    /// Sets the channels state to [`State::Connecting`] with the given error.
-    fn reconnect_on_transient_error(&mut self, e: InternalError) {
-        self.state = State::Connecting(future::ready(Err(e)).boxed())
-    }
-
-    pub fn poll(&mut self, cx: &mut Context) -> Poll<Result<SignalEvent, SignalError>> {
         loop {
-            // First, check if we are connected.
-            let stream = match &mut self.state {
-                State::Closed => return Poll::Ready(Ok(SignalEvent::Closed)),
-                State::Closing(stream) => match stream.poll_close_unpin(cx) {
-                    Poll::Ready(Ok(())) => {
-                        self.state = State::Closed;
+            match create_and_connect_websocket(cloned_url.clone(), cloned_token.clone()).await {
+                Ok(ws_stream) => {
+                    log::info!("Connected to WebSocket server");
 
-                        return Poll::Ready(Ok(SignalEvent::Closed));
-                    }
-                    Poll::Ready(Err(_)) => {
-                        return Poll::Ready(Ok(SignalEvent::Closed));
-                    }
-                    Poll::Pending => return Poll::Pending,
-                },
-                State::Connected(stream) => stream,
-                State::Connecting(future) => match future.poll_unpin(cx) {
-                    Poll::Ready(Ok(stream)) => {
-                        self.state = State::Connected(stream);
+                    let (ws_sink, ws_stream) = ws_stream.split();
+                    let rx_out_clone = Arc::clone(&rx_out);
 
-                        continue;
-                    }
-                    Poll::Ready(Err(InternalError::WebSocket(
-                        tokio_tungstenite::tungstenite::Error::Http(r),
-                    ))) if r.status().is_client_error() => {
-                        log::trace!("Failed to connect to signaling server: {r:?}");
-                        return Poll::Ready(Err(SignalError::Client(r.status())));
-                    }
-                    Poll::Ready(Err(e)) => {
-                        // Connection failed
-                        // TODO: add exponential backoff and retry
-                        //      https://github.com/firezone/firezone/blob/b8f5fb9e251a9e4efe0e04cbee62cb67de5b0cb6/rust/phoenix-channel/src/lib.rs#L394-L401
-                        todo!("Failed to connect to signaling server: {e:?}");
-                    }
-                    Poll::Pending => {
-                        // Save a waker in case we want to reset the `Connecting` state while we are waiting.
-                        self.waker = Some(cx.waker().clone());
+                    let send_task = task::spawn(send_messages(ws_sink, rx_out_clone));
+                    let receive_task = task::spawn(receive_messages(ws_stream, tx_in.clone()));
 
-                        log::trace!("Waiting for connection");
-                        return Poll::Pending;
-                    }
-                },
-            };
-
-            // Priority 1: Keep local buffers small and send pending messages.
-            match stream.poll_ready_unpin(cx) {
-                Poll::Ready(Ok(())) => {
-                    if let Some(message) = self.pending_messages.pop_front() {
-                        match stream.start_send_unpin(WsMessage::Text(message.clone())) {
-                            Ok(()) => match stream.poll_flush_unpin(cx) {
-                                Poll::Ready(Ok(())) => {}
-                                Poll::Ready(Err(e)) => {
-                                    self.reconnect_on_transient_error(InternalError::WebSocket(e));
-                                    continue;
-                                }
-                                Poll::Pending => {}
-                            },
-                            Err(e) => {
-                                self.pending_messages.push_front(message);
-                                self.reconnect_on_transient_error(InternalError::WebSocket(e));
-                            }
-                        }
-                        continue;
+                    tokio::select! {
+                        _ = send_task => log::info!("Send task completed"),
+                        _ = receive_task => log::info!("Receive task completed"),
                     }
                 }
-                Poll::Ready(Err(e)) => {
-                    log::trace!("Failed to send message {e:?}");
-                    self.reconnect_on_transient_error(InternalError::WebSocket(e));
-                    continue;
+                Err(err) => {
+                    log::info!("Failed to connect: {:?}, retrying in {:?}", err, backoff);
+                    tokio::time::sleep(backoff).await;
+                    backoff = std::cmp::min(backoff * 2, Duration::from_secs(32));
                 }
-                Poll::Pending => {}
             }
+        }
+    });
 
-            // Priority 2: Handle incoming messages.
-            match stream.poll_next_unpin(cx) {
-                Poll::Ready(Some(Ok(message))) => {
-                    let WsMessage::Text(message) = message else {
-                        // Received non-text message
-                        log::trace!("ignoring non-text message {message:?}");
-                        continue;
-                    };
+    WebSocketHandle {
+        sender: tx_out,
+        receiver: rx_in,
+    }
+}
 
-                    log::trace!("handling incoming message {message:?}");
-
-                    let message = match serde_json::from_str::<Message>(&message) {
-                        Ok(m) => m,
-                        // TODO: receving Ping([]) seems to trigger this case!
-                        Err(e) if e.is_io() || e.is_eof() => {
-                            self.reconnect_on_transient_error(InternalError::Serde(e));
-                            continue;
+async fn send_messages(
+    mut ws_sink: SplitSink<WebSocket, WsMessage>,
+    rx_out: Arc<Mutex<mpsc::UnboundedReceiver<Message>>>,
+) {
+    let mut rx_out = rx_out.lock().await;
+    loop {
+        tokio::select! {
+            Some(message) = rx_out.recv() => {
+                log::debug!("Sending message: {:?}", message);
+                match serde_json::to_string(&message) {
+                    Ok(json) => {
+                        if let Err(err) = ws_sink.send(WsMessage::Text(json)).await {
+                            log::info!("Failed to send message: {:?}", err);
+                            break;
                         }
-                        Err(e) => {
-                            // Failed to deserialize message
-                            log::trace!("Parsing message failed {e:?}");
-                            continue;
-                        }
-                    };
-
-                    return Poll::Ready(Ok(SignalEvent::IncomingMessage(message)));
+                    }
+                    Err(err) => {
+                        log::info!("Failed to serialize message: {:?}", err);
+                    }
                 }
-                Poll::Ready(Some(Err(e))) => {
-                    log::trace!("Stream closed {e:?}");
-                    self.reconnect_on_transient_error(InternalError::WebSocket(e));
-                    continue;
-                }
-                Poll::Ready(None) => {
-                    log::trace!("Stream closed empty");
-                    self.reconnect_on_transient_error(InternalError::StreamClosed);
-                    continue;
-                }
-                Poll::Pending => {}
             }
-
-            return Poll::Pending;
+            else => break,
         }
     }
 }
 
-type SignalStream = WebSocketStream<MaybeTlsStream<TcpStream>>;
-
-enum State {
-    Connected(SignalStream),
-    Connecting(BoxFuture<'static, Result<SignalStream, InternalError>>),
-    Closing(SignalStream),
-    Closed,
-}
-
-impl Display for State {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            State::Connected(_) => write!(f, "Connected"),
-            State::Connecting(_) => write!(f, "Connecting"),
-            State::Closing(_) => write!(f, "Closing"),
-            State::Closed => write!(f, "Closed"),
+async fn receive_messages(
+    mut ws_stream: SplitStream<WebSocket>,
+    tx_in: mpsc::UnboundedSender<Message>,
+) {
+    while let Some(msg) = ws_stream.next().await {
+        match msg {
+            Ok(WsMessage::Text(json)) => match serde_json::from_str::<Message>(&json) {
+                Ok(message) => {
+                    log::debug!("Received message: {:?}", message);
+                    if tx_in.send(message).is_err() {
+                        log::info!("Receiver dropped, stopping receive task");
+                        break;
+                    }
+                }
+                Err(err) => {
+                    log::info!("Invalid message received: {:?}", err);
+                }
+            },
+            Ok(WsMessage::Close(_)) => {
+                log::info!("WebSocket connection closed");
+                break;
+            }
+            Err(err) => {
+                log::info!("WebSocket error: {:?}", err);
+                break;
+            }
+            _ => {}
         }
-    }
-}
-
-impl State {
-    fn connect(url: Url, token: Option<String>) -> Self {
-        Self::Connecting(create_and_connect_websocket(url, token).boxed())
     }
 }
 
 async fn create_and_connect_websocket(
     url: Url,
     token: Option<String>,
-) -> Result<SignalStream, InternalError> {
+) -> Result<WebSocket, InternalError> {
     let mut request = url
         .to_string()
         .into_client_request()
@@ -255,7 +166,7 @@ async fn create_and_connect_websocket(
 
     let (stream, response) = tokio_tungstenite::connect_async(request)
         .await
-        .map_err(InternalError::WebSocket)?;
+        .map_err(|e| InternalError::ConnectionError(e.to_string()))?;
 
     let cookies = response
         .headers()
@@ -266,18 +177,8 @@ async fn create_and_connect_websocket(
         .collect::<Vec<Cookie>>();
 
     for cookie in cookies {
-        println!("Cookie Name: {}, Value: {}", cookie.name(), cookie.value());
+        log::info!("Cookie Name: {}, Value: {}", cookie.name(), cookie.value());
     }
 
     Ok(stream)
-}
-
-#[derive(Debug)]
-enum InternalError {
-    WebSocket(tokio_tungstenite::tungstenite::Error),
-    Serde(serde_json::Error),
-    CloseMessage,
-    StreamClosed,
-    InvalidUrl,
-    SocketConnection(std::io::Error),
 }

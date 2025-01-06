@@ -29,11 +29,6 @@ pub enum Message {
     Pong,
 }
 
-impl Message {
-    pub fn to_json(&self) -> Result<String, serde_json::Error> {
-        Ok(serde_json::to_string(self)?)
-    }
-}
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum MessageData {

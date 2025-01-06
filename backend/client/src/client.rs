@@ -1,72 +1,66 @@
 use std::{
-    collections::{hash_map::Entry, HashMap},
-    task::{Context, Poll},
+    collections::{HashMap, VecDeque},
+    io::ErrorKind,
+    net::UdpSocket,
+    sync::Arc,
+    time::{Duration, Instant},
 };
 
 use serde_json::Value;
-use tokio::signal::unix::{signal, Signal, SignalKind};
-use url::Url;
+use str0m::{
+    net::{Protocol, Receive},
+    Input,
+};
 use yrs::{uuid_v4, Uuid};
 
 use crate::{
-    peer::connection::{NegotiationMode, PeerConnection},
+    peer::connection::{PeerConnection, Propagated},
     signal::{
-        connection::{SignalConnection, SignalEvent, SignalOptions},
+        connection::WebSocketHandle,
         protocol::{Message, MessageData},
     },
-    workspace::{Workspace, WorkspaceEvent},
+    workspace::{Db, Workspace},
 };
 
 pub struct Client {
+    buf: Vec<u8>,
+    connections: Vec<PeerConnection>,
+    db: Arc<Db>,
     peer_id: Uuid,
-    shutting_down: bool,
-    sigterm: Signal,
-    signal_connection: SignalConnection,
+    socket: UdpSocket,
+    to_propagate: VecDeque<(String, Propagated)>,
     workspaces: HashMap<String, Workspace>,
-}
-
-pub struct ClientOptions {
-    pub signal_url: String,
-    pub signal_token: Option<String>,
-}
-
-#[derive(Debug)]
-pub enum ClientError {
-    ForceShutdown,
-}
-
-#[derive(Debug)]
-pub enum ClientEvent {
-    Closed,
+    ws_handle: WebSocketHandle,
 }
 
 impl Client {
-    pub fn new_with_options(options: ClientOptions) -> Self {
+    pub fn new(socket: UdpSocket, ws_handle: WebSocketHandle) -> Self {
         Self {
+            buf: vec![0; 2000],
+            connections: Vec::new(),
+            db: Arc::new(Db::new()),
             peer_id: uuid_v4(),
-            shutting_down: false,
-            sigterm: signal(SignalKind::interrupt()).expect("Failed to create SIGTERM signal"),
-            signal_connection: SignalConnection::new_with_options(SignalOptions {
-                url: Url::parse(&options.signal_url).expect("Failed to parse signal URL"),
-                token: options.signal_token,
-            }),
+            socket,
+            to_propagate: VecDeque::new(),
             workspaces: HashMap::new(),
+            ws_handle,
         }
-    }
-
-    // TODO: for testing, keep-alive?
-    pub fn connect(&mut self) {
-        self.signal_connection.connect();
     }
 
     fn handle_incoming_signal(
         &mut self,
-        workspace_id: String,
+        topic: String,
+        identity: String,
         from: String,
         to: String,
         signal: Value,
     ) {
-        let Some(workspace) = self.workspaces.get_mut(&workspace_id) else {
+        let Ok(signal) = serde_json::from_value(signal.clone()) else {
+            // mDNS signals are not supported by Candidate, if one is received, ignore it.
+            log::warn!(
+                "failed to parse signal, ignoring it, {}",
+                signal.to_string()
+            );
             return;
         };
 
@@ -75,142 +69,226 @@ impl Client {
         }
 
         // Get or create the peer connection
-        let peer_connection = workspace
-            .peers
-            .entry(from.clone())
-            .or_insert_with(|| PeerConnection::connect(NegotiationMode::Responder));
-
-        // Handle the incoming signal for negotiation
-        peer_connection.handle_incoming_signal(signal);
+        if let Some(connection) = self
+            .connections
+            .iter_mut()
+            .find(|con| con.client_id() == from)
+        {
+            connection.handle_signal(signal)
+        } else {
+            let mut connection =
+                PeerConnection::new(&self.socket, identity.clone(), from.clone(), topic.clone());
+            connection.handle_signal(signal);
+            self.connections.push(connection);
+        }
     }
 
-    fn handle_outgoing_signal(&mut self, workspace_id: String, to: String, signal: Value) {
+    fn handle_outgoing_signal(&mut self, topic: String, to: String, signal: Value) {
         let from = self.peer_id.to_string();
 
         let message = Message::Publish {
-            topic: workspace_id,
+            topic,
             identity: None,
             kind: None,
             data: MessageData::Signal { from, to, signal },
         };
-        self.signal_connection.send(message);
+        self.ws_handle.send(message).expect("send to succeed");
     }
 
-    pub fn join_workspace(&mut self, workspace_id: String) {
-        if self.workspaces.contains_key(&workspace_id) {
-            return;
-        }
-        let workspace = Workspace::new(&workspace_id);
-        self.workspaces.insert(workspace_id.clone(), workspace);
-
+    pub fn join_topic(&mut self, topic: String) {
         let subscribe = Message::Subscribe {
-            topics: [workspace_id.clone()].to_vec(),
+            topics: [topic.clone()].to_vec(),
         };
-        self.signal_connection.send(subscribe);
+        self.ws_handle.send(subscribe).expect("send to succeed");
+
+        if !self.workspaces.contains_key(&topic) {
+            let workspace = Workspace::new(&topic, self.db.clone());
+            self.workspaces.insert(topic.clone(), workspace);
+        }
 
         let announce = Message::Publish {
-            topic: workspace_id.clone(),
+            topic: topic.clone(),
             identity: None,
             kind: None,
             data: MessageData::Announce {
                 from: self.peer_id.to_string(),
             },
         };
-        self.signal_connection.send(announce);
+        self.ws_handle.send(announce).expect("send to succeed");
     }
 
     fn leave_workspace(&mut self, workspace_id: String) {
-        let Some(workspace) = self.workspaces.get_mut(&workspace_id) else {
+        let Some(_workspace) = self.workspaces.get_mut(&workspace_id) else {
             return;
         };
         let unsubscribe = Message::Unsubscribe {
             topics: [workspace_id.clone()].to_vec(),
         };
-        self.signal_connection.send(unsubscribe);
-
-        workspace.close();
+        self.ws_handle.send(unsubscribe).expect("send to succeed");
     }
 
-    fn handle_peer_discovered(&mut self, workspace_id: String, from: String) {
+    fn handle_peer_discovered(&mut self, topic: String, from: String) {
         if from == self.peer_id.to_string() {
             return;
         }
-        self.join_workspace(workspace_id.clone());
 
-        let workspace = self
-            .workspaces
-            .get_mut(&workspace_id)
-            .expect("workspace not found");
-
-        // If we don't already have a peer connection, initiate one.
-        if let Entry::Vacant(entry) = workspace.peers.entry(from.clone()) {
-            entry.insert(PeerConnection::connect(NegotiationMode::Initiator));
-        }
+        self.join_topic(topic.clone());
     }
 
-    pub fn poll(&mut self, cx: &mut Context) -> Poll<Result<ClientEvent, ClientError>> {
+    pub fn run(&mut self) {
         loop {
-            // 1. Work on the signal connection
-            match self.signal_connection.poll(cx) {
-                Poll::Ready(Ok(SignalEvent::IncomingMessage(message))) => match message {
-                    Message::Publish { topic, data, .. } => match data {
-                        MessageData::Announce { from } => {
-                            self.handle_peer_discovered(topic, from);
-                            continue;
-                        }
-                        MessageData::Signal { from, to, signal } => {
-                            self.handle_incoming_signal(topic, from, to, signal);
-                            continue;
-                        }
-                    },
-                    message => {
-                        log::trace!("unhandled message {message:?}");
+            self.connections.retain(|conn| conn.is_alive());
+
+            match self.ws_handle.receiver().try_recv().ok() {
+                Some(Message::Publish {
+                    topic,
+                    data,
+                    identity,
+                    ..
+                }) => match data {
+                    MessageData::Announce { from } if identity.is_some() => {
+                        self.handle_peer_discovered(topic, from);
                         continue;
                     }
+                    MessageData::Signal { from, to, signal } if identity.is_some() => {
+                        self.handle_incoming_signal(
+                            topic,
+                            identity.expect("valid identity"),
+                            from,
+                            to,
+                            signal,
+                        );
+                        continue;
+                    }
+                    _ => {}
                 },
-                Poll::Ready(Ok(SignalEvent::Closed)) => {
-                    return Poll::Ready(Ok(ClientEvent::Closed));
-                }
-                Poll::Ready(event) => {
-                    log::trace!("unhandled event {event:?}");
-                    continue;
-                }
-                Poll::Pending => {}
+                _ => {}
             }
 
-            // 2. Handle SIGTERM TODO: should move to main
-            if self.sigterm.poll_recv(cx).is_ready() {
-                if self.shutting_down {
-                    // Received a repeated SIGTERM whilst shutting down
-                    return Poll::Ready(Err(ClientError::ForceShutdown));
-                }
-
-                log::info!("Received SIGTERM, initiating graceful shutdown");
-
-                self.shutting_down = true;
-
-                self.signal_connection.close().expect("issue with closing");
-
-                continue;
+            // Poll connections until they return timeout
+            let mut timeout = Instant::now() + Duration::from_millis(100);
+            for connection in self.connections.iter_mut() {
+                let t = poll_until_timeout(connection, &mut self.to_propagate, &self.socket);
+                timeout = timeout.min(t);
             }
 
-            // 3. Work on the workspace connections
-            let workspace_events = self
-                .workspaces
-                .iter_mut()
-                .map(|(id, workspace)| (id.clone(), workspace.poll_output(cx)))
-                .collect::<Vec<_>>();
+            // If we have an item to propagate, do that
+            if let Some(p) = self.to_propagate.pop_front() {
+                match p {
+                    (client_id, Propagated::Data(topic, data)) => {
+                        if let Some(workspace) = self.workspaces.get_mut(&topic) {
+                            let client = self
+                                .connections
+                                .iter_mut()
+                                .find(|c| c.client_id() == client_id)
+                                .expect("client to exist");
 
-            for (workspace_id, event) in workspace_events {
-                match event {
-                    Poll::Ready(Ok(WorkspaceEvent::OutboundSignal(from, signal))) => {
-                        self.handle_outgoing_signal(workspace_id, from, signal);
+                            workspace.handle_input(&data, client);
+                        }
+                    }
+                    (client_id, Propagated::Signal(topic, signal)) => {
+                        self.handle_outgoing_signal(
+                            topic,
+                            client_id,
+                            serde_json::to_value(signal).expect("Failed to serialize"),
+                        );
+                    }
+                    (client_id, Propagated::Connected(topic)) => {
+                        if let Some(workspace) = self.workspaces.get_mut(&topic) {
+                            let client = self
+                                .connections
+                                .iter_mut()
+                                .find(|c| c.client_id() == client_id)
+                                .expect("client to exist");
+
+                            workspace.handle_connection(client);
+                        }
                     }
                     _ => {}
                 }
+                // TODO: update workspace with data
+                continue;
             }
 
-            return Poll::Pending;
+            // The read timeout is not allowed to be 0. In case it is 0, we set 1 millisecond.
+            let duration = (timeout - Instant::now()).max(Duration::from_millis(1));
+            self.socket
+                .set_read_timeout(Some(duration))
+                .expect("setting socket read timeout");
+
+            if let Some(input) = read_socket_input(&self.socket, &mut self.buf) {
+                // The rtc.accepts() call is how we demultiplex the incoming packet to know which
+                // Rtc instance the traffic belongs to.
+                if let Some(client) = self.connections.iter_mut().find(|c| c.accepts(&input)) {
+                    // We found the client that accepts the input.
+                    client.handle_input(input);
+                } else {
+                    // This is quite common because we don't get the Rtc instance via the mpsc channel
+                    // quickly enough before the browser send the first STUN.
+                    log::debug!("No client accepts UDP input: {:?}", input);
+                }
+            }
+
+            // Drive time forward in all clients.
+            let now = Instant::now();
+            for connection in &mut self.connections {
+                connection.handle_input(Input::Timeout(now));
+            }
         }
+    }
+}
+
+fn read_socket_input<'a>(socket: &UdpSocket, buf: &'a mut Vec<u8>) -> Option<Input<'a>> {
+    buf.resize(2000, 0);
+
+    match socket.recv_from(buf) {
+        Ok((n, source)) => {
+            buf.truncate(n);
+
+            // Parse data to a DatagramRecv, which help preparse network data to
+            // figure out the multiplexing of all protocols on one UDP port.
+            let Ok(contents) = buf.as_slice().try_into() else {
+                return None;
+            };
+
+            Some(Input::Receive(
+                Instant::now(),
+                Receive {
+                    proto: Protocol::Udp,
+                    source,
+                    destination: socket.local_addr().unwrap(),
+                    contents,
+                },
+            ))
+        }
+
+        Err(e) => match e.kind() {
+            // Expected error for set_read_timeout(). One for windows, one for the rest.
+            ErrorKind::WouldBlock | ErrorKind::TimedOut => None,
+            _ => panic!("UdpSocket read failed: {e:?}"),
+        },
+    }
+}
+
+/// Poll all the output from the client until it returns a timeout.
+/// Collect any output in the queue, transmit data on the socket, return the timeout
+fn poll_until_timeout(
+    connection: &mut PeerConnection,
+    queue: &mut VecDeque<(String, Propagated)>,
+    socket: &UdpSocket,
+) -> Instant {
+    loop {
+        if !connection.is_alive() {
+            // This client will be cleaned up in the next run of the main loop.
+            return Instant::now();
+        }
+
+        let propagated = connection.poll_output(socket);
+
+        if let Propagated::Timeout(t) = propagated {
+            return t;
+        }
+
+        queue.push_back((connection.client_id().to_string(), propagated))
     }
 }
