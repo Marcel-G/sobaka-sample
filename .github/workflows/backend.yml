@@ -2,7 +2,7 @@ name: "Backend"
 
 on:
   push:
-    branches: [master, next, feat/yrs-signalling-reloaded]
+    branches: [master, next]
     paths:
       - 'backend/**'
   pull_request:
