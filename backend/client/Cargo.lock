@@ -1513,7 +1513,8 @@ dependencies = [
 
 [[package]]
 name = "yrs-kvstore"
-version = "0.3.0"
+version = "0.3.1"
+source = "git+https://github.com/Marcel-G/yrs-persistence#8283e057fc0a8900d0b4185b042f21c8f3ca7e3f"
 dependencies = [
  "smallvec",
  "thiserror",
@@ -1522,7 +1523,8 @@ dependencies = [
 
 [[package]]
 name = "yrs-lmdb"
-version = "0.3.0"
+version = "0.3.1"
+source = "git+https://github.com/Marcel-G/yrs-persistence#8283e057fc0a8900d0b4185b042f21c8f3ca7e3f"
 dependencies = [
  "lmdb-rs",
  "yrs-kvstore",

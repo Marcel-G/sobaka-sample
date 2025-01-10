@@ -64,6 +64,7 @@ module "security_groups" {
   description = "Security group for CloudFront chunk ${each.key}"
   vpc_id      = module.vpc.vpc_id
 
+  // TODO: can these be configured by task
   ingress_with_cidr_blocks = [
     {
       from_port   = 8000
@@ -71,6 +72,13 @@ module "security_groups" {
       protocol    = "tcp"
       description = "Allow HTTP/WebSocket inbound from CloudFront chunk ${each.key}"
       cidr_blocks = join(",", each.value)
+    },
+    {
+      from_port   = 3478
+      to_port     = 3478
+      protocol    = "udp"
+      description = "Allow UDP/STUN to WebRTC Worker",
+      cidr_blocks = "0.0.0.0/0"
     }
   ]
 

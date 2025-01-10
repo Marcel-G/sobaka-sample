@@ -17,6 +17,15 @@ on:
       signaling_ecr_url:
         description: "ECR repository for signaling"
         value: ${{ jobs.infrastructure.outputs.signaling_ecr_url }}
+      signaling_deploy_doc:
+        description: "Name of the ssm script to deploy signaling"
+        value: ${{ jobs.infrastructure.outputs.signaling_deploy_doc }}
+      worker_ecr_url:
+        description: "ECR repository for worker"
+        value: ${{ jobs.infrastructure.outputs.worker_ecr_url }}
+      worker_deploy_doc:
+        description: "Name of the ssm script to deploy worker"
+        value: ${{ jobs.infrastructure.outputs.worker_deploy_doc }}
       instance_id:
         description: "EC2 instance ID"
         value: ${{ jobs.infrastructure.outputs.instance_id }}
@@ -39,6 +48,9 @@ jobs:
       deploy_role: ${{ steps.collect-outputs.outputs.deploy_role }}
       cdn_distribution_id: ${{ steps.collect-outputs.outputs.cdn_distribution_id }}
       signaling_ecr_url: ${{ steps.collect-outputs.outputs.signaling_ecr_url }}
+      signaling_deploy_doc: ${{ steps.collect-outputs.outputs.signaling_deploy_doc }}
+      worker_ecr_url: ${{ steps.collect-outputs.outputs.worker_ecr_url }}
+      worker_deploy_doc: ${{ steps.collect-outputs.outputs.worker_deploy_doc }}
       instance_id: ${{ steps.collect-outputs.outputs.instance_id }}
     defaults:
       run:
@@ -78,4 +90,7 @@ jobs:
           echo "deploy_role=$(terraform output -raw deploy_role)" >> $GITHUB_OUTPUT
           echo "cdn_distribution_id=$(terraform output -raw cdn_distribution_id)" >> $GITHUB_OUTPUT
           echo "signaling_ecr_url=$(terraform output -raw signaling_ecr_url)" >> $GITHUB_OUTPUT
+          echo "worker_ecr_url=$(terraform output -raw worker_ecr_url)" >> $GITHUB_OUTPUT
+          echo "signaling_deploy_doc=$(terraform output -raw signaling_deploy_doc)" >> $GITHUB_OUTPUT
+          echo "worker_deploy_doc=$(terraform output -raw worker_deploy_doc)" >> $GITHUB_OUTPUT
           echo "instance_id=$(terraform output -raw instance_id)" >> $GITHUB_OUTPUT

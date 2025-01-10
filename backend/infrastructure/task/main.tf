@@ -23,6 +23,12 @@ variable "secrets" {
   default = {}
 }
 
+variable "env" {
+  description = "Map of environment variable names to values"
+  type        = map(string)
+  default = {}
+}
+
 variable "global_deploy_role" {
   description = "Deployment role name"
   type        = string
@@ -34,6 +40,8 @@ variable "instance" {
 }
 
 data "aws_iam_policy_document" "secret_access" {
+  count = length(var.secrets) > 0 ? 1 : 0
+  
   statement {
     effect = "Allow"
     actions = [
@@ -44,13 +52,15 @@ data "aws_iam_policy_document" "secret_access" {
 }
 
 resource "aws_iam_policy" "secret_access" {
+  count  = length(var.secrets) > 0 ? 1 : 0
   name   = "${var.name}-secret-access-policy"
-  policy = data.aws_iam_policy_document.secret_access.json
+  policy = data.aws_iam_policy_document.secret_access[0].json
 }
 
 resource "aws_iam_role_policy_attachment" "secret_access" {
+  count      = length(var.secrets) > 0 ? 1 : 0
   role       = var.instance.iam_role_name
-  policy_arn = aws_iam_policy.secret_access.arn
+  policy_arn = aws_iam_policy.secret_access[0].arn
 }
 
 locals {
@@ -85,6 +95,7 @@ locals {
       --name ${var.name} \
       --restart always \
       --detach \
+      ${join(" ", [for env_name, value in var.env : "-e ${env_name}=${value}"])} \
       ${join(" ", [for port in var.ports : "-p ${port}"])} \
       ${join(" ", [for env_name, _ in var.secrets : "-e ${env_name}"])} \
       ${var.repository_url}:latest
@@ -132,5 +143,9 @@ resource "aws_iam_policy" "deploy_ssm" {
 resource "aws_iam_role_policy_attachment" "deploy_ssm" {
   role       = data.aws_iam_role.deploy.name
   policy_arn = aws_iam_policy.deploy_ssm.arn
+}
+
+output "deploy_doc" {
+  value = resource.aws_ssm_document.deploy.name
 }
 

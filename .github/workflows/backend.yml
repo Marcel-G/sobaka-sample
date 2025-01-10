@@ -11,8 +11,8 @@ on:
       - 'backend/**'
 
 jobs:
-  build:
-    name: "🧦 Build"
+  build-signaling:
+    name: "🧦 Build Signaling"
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -33,9 +33,32 @@ jobs:
           name: signaling
           path: /tmp/signaling.tar
 
+  build-worker:
+    name: "🧦 Build Worker"
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend/client
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build and export
+        uses: docker/build-push-action@v5
+        with:
+          context: backend/client
+          tags: worker:latest
+          outputs: type=docker,dest=/tmp/worker.tar
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: worker
+          path: /tmp/worker.tar
+
   infrastructure:
     needs:
-      - build
+      - build-signaling
+      - build-worker
     uses: ./.github/workflows/infrastructure.yml
     secrets: inherit
 
@@ -44,7 +67,8 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'push'
     needs:
-      - build
+      - build-signaling
+      - build-worker
       - infrastructure
     permissions:
       id-token: write
@@ -76,7 +100,26 @@ jobs:
       - name: Deploy image to EC2
         run: |
           aws ssm send-command \
-            --document-name "sobaka-signaling-sobaka-next-deploy" \
+            --document-name "${{ needs.infrastructure.outputs.signaling_deploy_doc }}" \
+            --instance-id "${{ needs.infrastructure.outputs.instance_id }}" 
+      - name: Download artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: worker
+          path: /tmp
+      - name: Tag and upload image to ECR
+        env:
+          ECR_REPOSITORY: ${{ needs.infrastructure.outputs.worker_ecr_url }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker load --input /tmp/worker.tar
+          docker tag worker:latest $ECR_REPOSITORY:$IMAGE_TAG
+          docker tag worker:latest $ECR_REPOSITORY:latest
+          docker push $ECR_REPOSITORY --all-tags
+      - name: Deploy image to EC2
+        run: |
+          aws ssm send-command \
+            --document-name "${{ needs.infrastructure.outputs.worker_deploy_doc }}" \
             --instance-id "${{ needs.infrastructure.outputs.instance_id }}" 
 
 concurrency: 

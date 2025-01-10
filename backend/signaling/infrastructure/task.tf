@@ -25,3 +25,6 @@ module "task" {
   }
 }
 
+output "deploy_doc" {
+  value = module.task.deploy_doc
+}

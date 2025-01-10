@@ -53,9 +53,15 @@ module "signaling" {
   global_deploy_role = module.global.global_deploy_role.name
 
   instance = module.backend.instance
+}
 
-  subdomain   = "signaling.${var.subdomain}"
-  domain_name = var.domain_name
+module "worker" {
+  source = "../backend/client/infrastructure"
+
+  name               = "sobaka-worker-${terraform.workspace}"
+  global_deploy_role = module.global.global_deploy_role.name
+
+  instance = module.backend.instance
 }
 
 module "frontend" {

@@ -12,6 +12,7 @@ pub(crate) mod peer;
 mod signal;
 mod workspace;
 
+// Figure out some public IP address, since Firefox will not accept 127.0.0.1 for WebRTC traffic.
 fn select_host_address() -> IpAddr {
     let system = System::new();
     let networks = system.networks().unwrap();
@@ -29,22 +30,41 @@ fn select_host_address() -> IpAddr {
     panic!("Found no usable network interface");
 }
 
+fn get_public_ip() -> IpAddr {
+    // For local development, fall back to detecting interface
+    if let Ok(aws_ip) = std::env::var("PUBLIC_IP") {
+        aws_ip.parse().expect("Invalid PUBLIC_IP format")
+    } else {
+        select_host_address()
+    }
+}
+
+fn get_signal_server() -> Url {
+    let signal_server = std::env::var("SIGNAL_SERVER")
+        .unwrap_or_else(|_| "ws://localhost:8000/signaling".to_string());
+    Url::parse(&signal_server).expect("a valid URL for the signal server")
+}
+
 #[tokio::main]
 async fn main() {
     env_logger::init();
     dotenv().ok();
 
-    // Figure out some public IP address, since Firefox will not accept 127.0.0.1 for WebRTC traffic.
-    let host_addr = select_host_address();
+    let port = std::env::var("PORT")
+        .unwrap_or_else(|_| "3478".to_string()) // Standard STUN/TURN port
+        .parse::<u16>()
+        .expect("PORT must be a valid number");
 
-    // Spin up a UDP socket for the RTC. All WebRTC traffic is going to be multiplexed over this single
-    // server socket. Clients are identified via their respective remote (UDP) socket address.
-    let socket = UdpSocket::bind(format!("{host_addr}:0")).expect("binding a random UDP port");
-    let addr = socket.local_addr().expect("a local socket adddress");
+    let host_addr = get_public_ip();
+    
+    let socket = UdpSocket::bind(format!("{host_addr}:{port}"))
+        .expect("binding to specified UDP port");
+    
+    let addr = socket.local_addr().expect("a local socket address");
     log::info!("Bound UDP port: {}", addr);
 
     let handle = websocket_client(
-        Url::parse(&"ws://localhost:8000/signaling").expect("Failed to parse signal URL"),
+        get_signal_server(),
         std::env::var("JWT").ok(),
     );
 

@@ -15,11 +15,11 @@ tokio = { version = "1.34", features = ["rt", "sync", "time", "signal", "rt-mult
 tokio-tungstenite = "0.24.0"
 url = "2.5.2"
 yrs = "0.21"
-yrs-kvstore = { path = "../../../yrs-persistence/yrs-kvstore" }
-yrs-lmdb = { path = "../../../yrs-persistence/yrs-lmdb" }
-lmdb-rs = { version = "0.7" }
-cookie = "0.18.1"
-dotenv = "0.15.0"
+yrs-kvstore = { git = "https://github.com/Marcel-G/yrs-persistence" }
+yrs-lmdb = { git = "https://github.com/Marcel-G/yrs-persistence" }
+lmdb-rs = "0.7"
+cookie = "0.18"
+dotenv = "0.15"
 
 
 

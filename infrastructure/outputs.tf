@@ -17,6 +17,18 @@ output "signaling_ecr_url" {
   value = module.signaling.ecr_url
 }
 
+output "signaling_deploy_doc" {
+  value = module.worker.deploy_doc
+}
+
+output "worker_ecr_url" {
+  value = module.worker.ecr_url
+}
+
+output "worker_deploy_doc" {
+  value = module.worker.deploy_doc
+}
+
 output "instance_id" {
   value = module.backend.instance.id
 }
