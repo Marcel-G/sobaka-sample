@@ -8,7 +8,8 @@ use std::{
 
 use serde_json::Value;
 use str0m::{
-    net::{Protocol, Receive}, Candidate, Input
+    net::{Protocol, Receive},
+    Candidate, Input,
 };
 use yrs::{uuid_v4, Uuid};
 
@@ -77,8 +78,12 @@ impl Client {
         {
             connection.handle_signal(signal)
         } else {
-            let mut connection =
-                PeerConnection::new(self.candidate.clone(), identity.clone(), from.clone(), topic.clone());
+            let mut connection = PeerConnection::new(
+                self.candidate.clone(),
+                identity.clone(),
+                from.clone(),
+                topic.clone(),
+            );
             connection.handle_signal(signal);
             self.connections.push(connection);
         }

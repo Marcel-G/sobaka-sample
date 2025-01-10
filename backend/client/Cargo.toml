@@ -15,11 +15,18 @@ tokio = { version = "1.34", features = ["rt", "sync", "time", "signal", "rt-mult
 tokio-tungstenite = "0.24.0"
 url = "2.5.2"
 yrs = "0.21"
-yrs-kvstore = { git = "https://github.com/Marcel-G/yrs-persistence" }
-yrs-lmdb = { git = "https://github.com/Marcel-G/yrs-persistence" }
-lmdb-rs = "0.7"
+yrs-kvstore = "0.3.1"
+yrs-lmdb = "0.3.1"
+lmdb-rs = "0.8"
 cookie = "0.18"
 dotenv = "0.15"
 
+[profile.release]
+opt-level = 1 # TODO: lmdb-rs encounters a segfault when compiled with optimizations
 
+[patch.crates-io]
+yrs-kvstore = { git = "https://github.com/Marcel-G/yrs-persistence" }
+yrs-lmdb = { git = "https://github.com/Marcel-G/yrs-persistence" }
+liblmdb-sys = { git = "https://github.com/tari-project/lmdb-rs" }
+lmdb-rs = { git = "https://github.com/tari-project/lmdb-rs" }
 

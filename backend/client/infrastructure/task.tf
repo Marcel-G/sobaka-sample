@@ -19,7 +19,8 @@ module "task" {
   env = {
     "PUBLIC_IP" = var.instance.public_ip,
     "PORT" = "3478",
-    "SIGNAL_SERVER" = "ws://localhost:8000/signaling"
+    "SIGNAL_SERVER" = "ws://localhost:8000/signaling",
+    "RUST_LOG" = "sobaka_client=info"
   }
   secrets = {
     JWT = {

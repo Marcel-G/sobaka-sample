@@ -18,7 +18,7 @@ output "signaling_ecr_url" {
 }
 
 output "signaling_deploy_doc" {
-  value = module.worker.deploy_doc
+  value = module.signaling.deploy_doc
 }
 
 output "worker_ecr_url" {

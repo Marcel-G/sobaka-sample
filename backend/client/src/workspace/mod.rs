@@ -1,9 +1,7 @@
 use std::sync::Arc;
 
-use lmdb_rs::core::DbCreate;
-use lmdb_rs::{DbHandle, Environment};
+use lmdb_rs::{DbFlags, DbHandle, EnvBuilder, Environment};
 use yrs::sync::{Awareness, SyncMessage};
-use yrs::types::ToJson;
 use yrs::updates::encoder::{Encoder, EncoderV1};
 use yrs::{
     sync::{DefaultProtocol, Message, Protocol},
@@ -109,14 +107,9 @@ pub struct Db {
 
 impl Db {
     pub fn new() -> Self {
-        let env = Environment::new()
-            .autocreate_dir(true)
-            .map_size(256 * 1024 * 1024)
-            .max_dbs(1)
-            .open(".db", 0o777)
-            .unwrap();
+        let env = EnvBuilder::new().open(".db", 0o777).unwrap();
 
-        let handle = env.create_db("sobaka", DbCreate).unwrap();
+        let handle = env.get_default_db(DbFlags::empty()).unwrap();
 
         Self { env, handle }
     }
