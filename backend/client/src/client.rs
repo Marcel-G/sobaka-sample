@@ -222,7 +222,7 @@ impl Client {
                 .set_read_timeout(Some(duration))
                 .expect("setting socket read timeout");
 
-            if let Some(input) = read_socket_input(&self.socket, &mut self.buf) {
+            if let Some(input) = read_socket_input(&self.socket, &self.candidate, &mut self.buf) {
                 // The rtc.accepts() call is how we demultiplex the incoming packet to know which
                 // Rtc instance the traffic belongs to.
                 if let Some(client) = self.connections.iter_mut().find(|c| c.accepts(&input)) {
@@ -244,7 +244,11 @@ impl Client {
     }
 }
 
-fn read_socket_input<'a>(socket: &UdpSocket, buf: &'a mut Vec<u8>) -> Option<Input<'a>> {
+fn read_socket_input<'a>(
+    socket: &UdpSocket,
+    candidate: &Candidate,
+    buf: &'a mut Vec<u8>,
+) -> Option<Input<'a>> {
     buf.resize(2000, 0);
 
     match socket.recv_from(buf) {
@@ -262,7 +266,7 @@ fn read_socket_input<'a>(socket: &UdpSocket, buf: &'a mut Vec<u8>) -> Option<Inp
                 Receive {
                     proto: Protocol::Udp,
                     source,
-                    destination: socket.local_addr().unwrap(),
+                    destination: candidate.addr(),
                     contents,
                 },
             ))

@@ -94,6 +94,7 @@ locals {
     docker run \
       --name ${var.name} \
       --restart always \
+      --network host \
       --detach \
       ${join(" ", [for env_name, value in var.env : "-e ${env_name}=${value}"])} \
       ${join(" ", [for port in var.ports : "-p ${port}"])} \

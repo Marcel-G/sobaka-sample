@@ -1,6 +1,6 @@
 use core::panic;
 use signal::connection::websocket_client;
-use std::net::{IpAddr, SocketAddr, UdpSocket};
+use std::net::{IpAddr, Ipv4Addr, SocketAddr, UdpSocket};
 use str0m::Candidate;
 use systemstat::{Platform, System};
 use url::Url;
@@ -57,7 +57,7 @@ async fn main() {
         .expect("PORT must be a valid number");
 
     let socket =
-        UdpSocket::bind((select_host_address(), port)).expect("binding to specified UDP port");
+        UdpSocket::bind((Ipv4Addr::UNSPECIFIED, port)).expect("binding to specified UDP port");
 
     let addr = socket.local_addr().expect("a local socket address");
     log::info!("Bound UDP port: {}", addr);
