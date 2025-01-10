@@ -8,8 +8,7 @@ use std::{
 
 use serde_json::Value;
 use str0m::{
-    net::{Protocol, Receive},
-    Input,
+    net::{Protocol, Receive}, Candidate, Input
 };
 use yrs::{uuid_v4, Uuid};
 
@@ -24,6 +23,7 @@ use crate::{
 
 pub struct Client {
     buf: Vec<u8>,
+    candidate: Candidate,
     connections: Vec<PeerConnection>,
     db: Arc<Db>,
     peer_id: Uuid,
@@ -34,8 +34,9 @@ pub struct Client {
 }
 
 impl Client {
-    pub fn new(socket: UdpSocket, ws_handle: WebSocketHandle) -> Self {
+    pub fn new(socket: UdpSocket, candidate: Candidate, ws_handle: WebSocketHandle) -> Self {
         Self {
+            candidate,
             buf: vec![0; 2000],
             connections: Vec::new(),
             db: Arc::new(Db::new()),
@@ -77,7 +78,7 @@ impl Client {
             connection.handle_signal(signal)
         } else {
             let mut connection =
-                PeerConnection::new(&self.socket, identity.clone(), from.clone(), topic.clone());
+                PeerConnection::new(self.candidate.clone(), identity.clone(), from.clone(), topic.clone());
             connection.handle_signal(signal);
             self.connections.push(connection);
         }

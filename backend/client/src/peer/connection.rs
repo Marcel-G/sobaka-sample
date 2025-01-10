@@ -39,17 +39,14 @@ impl Deref for ConnId {
 }
 
 impl PeerConnection {
-    pub fn new(socket: &UdpSocket, identity: String, client_id: String, topic: String) -> Self {
+    pub fn new(candidate: Candidate, identity: String, client_id: String, topic: String) -> Self {
         static ID_COUNTER: AtomicU64 = AtomicU64::new(0);
         let next_id = ID_COUNTER.fetch_add(1, Ordering::SeqCst);
         let mut rtc = Rtc::new();
 
         // Add the shared UDP socket as a host candidate
-        let addr = socket.local_addr().expect("a local socket adddress");
-        let candidate = Candidate::host(addr, "udp").expect("a host candidate");
-        rtc.add_local_candidate(candidate);
-
         log::debug!("Client ({}) created", client_id);
+        rtc.add_local_candidate(candidate);
 
         PeerConnection {
             _id: ConnId(next_id),

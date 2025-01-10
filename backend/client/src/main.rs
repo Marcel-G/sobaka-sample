@@ -1,6 +1,7 @@
 use core::panic;
 use signal::connection::websocket_client;
-use std::net::{IpAddr, UdpSocket};
+use str0m::Candidate;
+use std::net::{IpAddr, Ipv4Addr, SocketAddr, UdpSocket};
 use systemstat::{Platform, System};
 use url::Url;
 
@@ -55,9 +56,7 @@ async fn main() {
         .parse::<u16>()
         .expect("PORT must be a valid number");
 
-    let host_addr = get_public_ip();
-    
-    let socket = UdpSocket::bind(format!("{host_addr}:{port}"))
+    let socket = UdpSocket::bind((select_host_address(), port))
         .expect("binding to specified UDP port");
     
     let addr = socket.local_addr().expect("a local socket address");
@@ -68,7 +67,13 @@ async fn main() {
         std::env::var("JWT").ok(),
     );
 
-    let mut client = Client::new(socket, handle);
+    // Add the shared UDP socket as a host candidate
+    let candidate_addr: SocketAddr = (get_public_ip(), addr.port()).into();
+
+    log::info!("Local Candidate: {}", candidate_addr);
+    let candidate = Candidate::host(candidate_addr, "udp").expect("a host candidate");
+
+    let mut client = Client::new(socket, candidate, handle);
 
     client.run()
 }
