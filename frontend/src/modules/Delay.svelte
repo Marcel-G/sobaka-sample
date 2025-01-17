@@ -18,10 +18,10 @@
   import { into_style } from '../components/Theme.svelte'
   import Knob from '../components/Knob/Knob.svelte'
   import { PlugType } from '../context/plugs'
-  import { get_context as get_audio_context } from '../audio'
   import Layout from '../components/Layout.svelte'
   import RingSpinner from '../components/RingSpinner.svelte'
   import { create_time_range } from '../range/range_creators'
+  import { getGlobalCtx } from '../context/global'
 
   export let state: State
   export let disabled = false
@@ -31,11 +31,11 @@
   let delay_time_param: AudioParam
   let loading = true
 
-  const context = get_audio_context()
+  const context = getGlobalCtx()
 
   onMount(async () => {
     const { Delay } = await import('sobaka-dsp')
-    delay = await Delay.create($context)
+    delay = await Delay.create(context.audio)
     node = delay.node()
     delay_time_param = delay.get_param('DelayTime')
     loading = false
@@ -43,7 +43,7 @@
 
   // Update the sobaka node when the state changes
   $: time = state.time
-  $: delay_time_param?.setValueAtTime(time, $context.currentTime)
+  $: delay_time_param?.setValueAtTime(time, context.audio.currentTime)
 
   const delay_range = create_time_range(0, 10)
 

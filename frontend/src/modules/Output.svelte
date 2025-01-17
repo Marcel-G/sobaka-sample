@@ -15,7 +15,7 @@
   import { into_style } from '../components/Theme.svelte'
   import Oscilloscope from '../components/Oscilloscope.svelte'
   import { PlugType } from '../context/plugs'
-  import { get_context as get_audio_context } from '../audio'
+  import { getGlobalCtx } from '../context/global'
   import Layout from '../components/Layout.svelte'
   import RingSpinner from '../components/RingSpinner.svelte'
 
@@ -23,13 +23,13 @@
   let output: AudioNode
   let loading = true
 
-  const context = get_audio_context()
+  const context = getGlobalCtx()
 
   onMount(async () => {
-    output = $context.createChannelMerger(2)
+    output = context.audio.createChannelMerger(2)
     loading = false
 
-    output.connect($context.destination)
+    output.connect(context.audio.destination)
   })
 </script>
 

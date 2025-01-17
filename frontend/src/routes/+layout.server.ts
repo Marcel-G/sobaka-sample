@@ -12,7 +12,13 @@ export interface IceServer {
 export interface Config {
   iceServers: IceServer[]
   signaling: string[]
+  globalLists: string[]
 }
+
+const globalLists = [
+  // TODO configure somehow
+  'a26f099c-1eaf-4aa7-b012-edfa06aa1cbe'
+]
 
 const fetchIceServers = async (fetch: typeof globalThis.fetch): Promise<IceServer[]> => {
   try {
@@ -42,7 +48,8 @@ export const load: LayoutServerLoad = async ({ fetch }): Promise<{ config: Confi
   return {
     config: {
       iceServers: await fetchIceServers(fetch),
-      signaling: [PUBLIC_SIGNALING_URL]
+      signaling: [PUBLIC_SIGNALING_URL],
+      globalLists
     }
   }
 }

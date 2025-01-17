@@ -1,41 +1,43 @@
 <script lang="ts">
-  import type { PageData } from './$types'
   import Navigation from '../components/Navigation.svelte'
   import WorkspaceList from '../components/WorkspaceList.svelte'
-  import { Root } from '../models/root'
+  import { getGlobalCtx } from '../context/global'
 
-  export let data: PageData
-  const root = Root.init()
+  const global = getGlobalCtx()
 
-  const lists = root.workspaceLists()
+  const isOnline = global.isOnline
+
+  const list_refs = global.root.workspaceLists()
+  $: lists = $list_refs.map(ref => global.lists.get(ref))
 </script>
 
 <Navigation />
 <div class="page">
-  {#await root.load()}
-    <!-- TODO: skeleton loading UI -->
-  {:then}
-    <h1>
-      Sobaka Sample 🥁🐕 - <a href="https://github.com/Marcel-G/sobaka-sample">Github</a>
-    </h1>
+  {#if $isOnline}
+    online
+  {:else}
+    offline
+  {/if}
+  <h1>
+    Sobaka Sample 🥁🐕 - <a href="https://github.com/Marcel-G/sobaka-sample">Github</a>
+  </h1>
 
-    <p>Press new in the top right to begin!</p>
+  <p>Press new in the top right to begin!</p>
 
-    <h2>Lists:</h2>
-    {#if $lists.length}
-      <ul>
-        {#each $lists as workspaceList (workspaceList.id)}
-          {#await workspaceList.load()}
-            <!-- TODO: skeleton loading UI -->
-          {:then}
-            <h2>Workspaces ({workspaceList.id}):</h2>
-            <button on:click={() => workspaceList.new()}>Add workspace</button>
-            <WorkspaceList config={data.config} {workspaceList} />
-          {/await}
-        {/each}
-      </ul>
-    {/if}
-  {/await}
+  <h2>Lists:</h2>
+  {#if $list_refs.length}
+    <ul>
+      {#each lists as list (list.id)}
+        {#await list.load()}
+          <!-- TODO: skeleton loading UI -->
+        {:then}
+          <h2>Workspaces ({list.id}):</h2>
+          <button on:click={() => global.createWorkspace()}>Add workspace</button>
+          <WorkspaceList workspaceList={list} />
+        {/await}
+      {/each}
+    </ul>
+  {/if}
 </div>
 
 <style>

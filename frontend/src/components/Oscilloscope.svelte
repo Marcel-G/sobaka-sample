@@ -1,9 +1,8 @@
 <script lang="ts">
   import { onMount } from 'svelte'
-  import { get, type Writable } from 'svelte/store'
-  import { get_context as get_audio_context } from '../audio'
+  import { getGlobalCtx } from '../context/global'
   export let module: AudioNode
-  const context: Writable<AudioContext> = get_audio_context()
+  const context = getGlobalCtx()
 
   let canvas: HTMLCanvasElement
 
@@ -15,7 +14,7 @@
     return getComputedStyle(canvas).getPropertyValue(name)
   }
 
-  const ctx = get(context)
+  const ctx = context.audio
 
   let analyserNode = new AnalyserNode(ctx, { fftSize })
 

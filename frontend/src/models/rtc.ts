@@ -30,10 +30,6 @@ export class VerifiedRTCProvider extends WebrtcProvider {
       signal.on('message', (message: SignalingMessage) =>
         this.handle_signal_message(message)
       )
-
-      signal.on('disconnect', () => {
-        console.log('disconnect')
-      })
     }
 
     this.on('peers', () => {
@@ -86,6 +82,7 @@ export class VerifiedRTCProvider extends WebrtcProvider {
           this.verifiedPeerIdentities.has(this.room.peerId)
         ) {
           this.currentUser = this.verifiedPeerIdentities.get(this.room.peerId) || null
+          // @ts-expect-error - TODO: user event isn't part of type definition
           this.emit('user', [this.currentUser])
 
           // TODO: assign user as owner before sharing

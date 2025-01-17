@@ -21,7 +21,7 @@
   import { into_style } from '../components/Theme.svelte'
   import { PlugType } from '../context/plugs'
   import { onDestroy, onMount } from 'svelte'
-  import { get_context as get_audio_context } from '../audio'
+  import { getGlobalCtx } from '../context/global'
   import Knob from '../components/Knob/Knob.svelte'
   import Led from '../components/Led.svelte'
   import { type Tuple } from '../@types'
@@ -29,7 +29,7 @@
   import RingSpinner from '../components/RingSpinner.svelte'
   import { type Range, RangeType } from '../range/range'
 
-  const context = get_audio_context()
+  const context = getGlobalCtx()
 
   export let state: State
   export let disabled = false
@@ -40,7 +40,7 @@
 
   onMount(async () => {
     const { Sequencer } = await import('sobaka-dsp')
-    sequencer = await Sequencer.create($context)
+    sequencer = await Sequencer.create(context.audio)
     node = sequencer.node()
     loading = false
 

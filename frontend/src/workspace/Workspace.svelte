@@ -20,8 +20,8 @@
   let workspace_element: Element
 
   const { workspace, plugs } = get_workspace()
-  const meta = workspace.meta
   const modules = workspace.modules
+  const info = workspace.info
   const isEditable = workspace.isEditable
 
   const handle_double_click = (event: MouseEvent) => {
@@ -61,7 +61,7 @@
     </a>
   </svelte:fragment>
   <svelte:fragment slot="mid">
-    <TitleInput bind:value={$meta.title} />
+    <TitleInput bind:value={$info.title} />
   </svelte:fragment>
   <svelte:fragment slot="right">
     <span>

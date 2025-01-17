@@ -24,13 +24,13 @@
   import { into_style } from '../components/Theme.svelte'
   import { PlugType } from '../context/plugs'
   import Knob from '../components/Knob/Knob.svelte'
-  import { get_context as get_audio_context } from '../audio'
   import Layout from '../components/Layout.svelte'
   import RingSpinner from '../components/RingSpinner.svelte'
   import {
     create_scale_range,
     create_volt_per_octave_range
   } from '../range/range_creators'
+  import { getGlobalCtx } from '../context/global'
 
   export let state: State
   export let disabled = false
@@ -41,11 +41,11 @@
   let q_param: AudioParam
   let loading = true
 
-  const context = get_audio_context()
+  const context = getGlobalCtx()
 
   onMount(async () => {
     const { Filter } = await import('sobaka-dsp')
-    filter = await Filter.create($context)
+    filter = await Filter.create(context.audio)
     node = filter.node()
     frequency_param = filter.get_param('Frequency')
     q_param = filter.get_param('Q')
@@ -54,9 +54,9 @@
 
   // Update the sobaka node when the state changes
   $: frequency = state.frequency
-  $: frequency_param?.setValueAtTime(frequency, $context.currentTime)
+  $: frequency_param?.setValueAtTime(frequency, context.audio.currentTime)
   $: q = state.q
-  $: q_param?.setValueAtTime(q, $context.currentTime)
+  $: q_param?.setValueAtTime(q, context.audio.currentTime)
 
   const freq_range = create_volt_per_octave_range()
   const scalar = create_scale_range()

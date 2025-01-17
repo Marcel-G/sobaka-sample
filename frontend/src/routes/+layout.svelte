@@ -4,30 +4,27 @@
   import { navigating } from '$app/stores'
   import Loading from '../components/Loading.svelte'
   import { onDestroy, onMount } from 'svelte'
-  import { init_audio } from '../audio'
   import { browser } from '$app/environment'
+  import { type PageData } from './$types'
+  import { createGlobalCtx, type Global } from '../context/global'
 
-  let loading = true
-  const audio = init_audio()
-  // const media = init_media()
-  // setContext(MEDIA_CONTEXT, media)
+  export let data: PageData
+  let context: Global | null = null
 
   if (browser) {
     onMount(async () => {
-      await audio.load()
-      // await media.load()
-      loading = false
+      context = await createGlobalCtx(data.config)
     })
 
     onDestroy(() => {
-      audio.cleanup()
+      context?.cleanup()
     })
   }
 </script>
 
 <Theme />
 <main>
-  {#if $navigating || loading}
+  {#if $navigating || !context}
     <Loading />
   {:else}
     <slot />

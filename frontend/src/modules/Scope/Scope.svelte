@@ -24,7 +24,7 @@
   import { into_style } from '../../components/Theme.svelte'
   import { PlugType } from '../../context/plugs'
   import { onDestroy, onMount } from 'svelte'
-  import { get_context as get_audio_context } from '../../audio'
+  import { getGlobalCtx } from '../../context/global'
   import Layout from '../../components/Layout.svelte'
   import RingSpinner from '../../components/RingSpinner.svelte'
   import { type PointBufferData, ScopeController } from 'sobaka-dsp'
@@ -43,7 +43,7 @@
   let frame: PointBufferData = []
   let next_frame: number
 
-  const context = get_audio_context()
+  const context = getGlobalCtx()
 
   const update_frame = () => {
     frame = scope.frame() || frame
@@ -52,7 +52,7 @@
 
   onMount(async () => {
     const { ScopeController } = await import('sobaka-dsp')
-    scope = await ScopeController.create($context)
+    scope = await ScopeController.create(context.audio)
     node = scope.node()
 
     requestAnimationFrame(update_frame)

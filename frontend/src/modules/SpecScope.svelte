@@ -13,7 +13,7 @@
   import Plug from './shared/Plug.svelte'
   import { into_style } from '../components/Theme.svelte'
   import { onDestroy, onMount } from 'svelte'
-  import { get_context as get_audio_context } from '../audio'
+  import { getGlobalCtx } from '../context/global'
   import Layout from '../components/Layout.svelte'
   import RingSpinner from '../components/RingSpinner.svelte'
   import { PlugType } from '../context/plugs'
@@ -29,7 +29,7 @@
 
   let next_frame: number
 
-  const context = get_audio_context()
+  const context = getGlobalCtx()
 
   const get_css_var = (name: string): string => {
     return getComputedStyle(canvas).getPropertyValue(name)
@@ -49,7 +49,7 @@
 
     // Logarithmic frequency scale conversion
     const frequencyToIndex = (frequency: number) => {
-      const nyquist = $context.sampleRate / 2
+      const nyquist = context.audio.sampleRate / 2
       const index = Math.round((frequency / nyquist) * frequencyData.length)
       return index
     }
@@ -78,7 +78,7 @@
     ctx.moveTo(0, height)
 
     for (let i = frequencyToIndex(minFreq); i < frequencyToIndex(maxFreq); i++) {
-      const frequency = i * ($context.sampleRate / node.fftSize)
+      const frequency = i * (context.audio.sampleRate / node.fftSize)
 
       const amplitude = frequencyData[i]
 
@@ -99,7 +99,7 @@
     ctx.fill()
 
     // Draw line at the tallest peak (fundamental frequency)
-    const fundamentalFreq = maxAmplitudeIndex * ($context.sampleRate / node.fftSize)
+    const fundamentalFreq = maxAmplitudeIndex * (context.audio.sampleRate / node.fftSize)
     const fundamentalX = frequencyToX(fundamentalFreq)
     if (fundamentalFreq >= minFreq && fundamentalFreq <= maxFreq) {
       ctx.strokeStyle = get_css_var('--module-highlight')
@@ -141,7 +141,7 @@
   }
 
   onMount(async () => {
-    node = new AnalyserNode($context, { fftSize: 8192 })
+    node = new AnalyserNode(context.audio, { fftSize: 8192 })
     spec = new Float32Array(node.frequencyBinCount)
 
     requestAnimationFrame(update_frame)

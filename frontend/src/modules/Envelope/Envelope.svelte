@@ -27,7 +27,7 @@
   import Plug from '../shared/Plug.svelte'
   import { into_style } from '../../components/Theme.svelte'
   import { PlugType } from '../../context/plugs'
-  import { get_context as get_audio_context } from '../../audio'
+  import { getGlobalCtx } from '../../context/global'
   import Layout from '../../components/Layout.svelte'
   import RingSpinner from '../../components/RingSpinner.svelte'
   import Graph from './Graph.svelte'
@@ -49,14 +49,14 @@
   let trigger_on: () => void
   let trigger_off: () => void
 
-  const context = get_audio_context()
+  const context = getGlobalCtx()
 
   const duration = create_time_range()
   const scalar = create_scale_range()
 
   onMount(async () => {
     const { Envelope } = await import('sobaka-dsp')
-    envelope = await Envelope.create($context)
+    envelope = await Envelope.create(context.audio)
     node = envelope.node()
     attack_param = envelope.get_param('Attack')
     decay_param = envelope.get_param('Decay')
@@ -75,10 +75,10 @@
   })
 
   // Update the sobaka node when the state changes
-  $: attack_param?.setValueAtTime(state.attack, $context.currentTime)
-  $: decay_param?.setValueAtTime(state.decay, $context.currentTime)
-  $: sustain_param?.setValueAtTime(state.sustain, $context.currentTime)
-  $: release_param?.setValueAtTime(state.release, $context.currentTime)
+  $: attack_param?.setValueAtTime(state.attack, context.audio.currentTime)
+  $: decay_param?.setValueAtTime(state.decay, context.audio.currentTime)
+  $: sustain_param?.setValueAtTime(state.sustain, context.audio.currentTime)
+  $: release_param?.setValueAtTime(state.release, context.audio.currentTime)
 
   onDestroy(() => {
     envelope?.destroy()

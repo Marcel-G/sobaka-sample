@@ -23,7 +23,7 @@
   import Plug from '../shared/Plug.svelte'
   import { into_style } from '../../components/Theme.svelte'
   import Knob from '../../components/Knob/Knob.svelte'
-  import { get_context as get_audio_context } from '../../audio'
+  import { getGlobalCtx } from '../../context/global'
   import Layout from '../../components/Layout.svelte'
   import RingSpinner from '../../components/RingSpinner.svelte'
   import { create_volt_per_octave_range } from '../../range/range_creators'
@@ -43,13 +43,13 @@
   let pitch_param: AudioParam
   let loading = true
 
-  const context = get_audio_context()
+  const context = getGlobalCtx()
 
   const shapes: OscillatorShape[] = ['Sine', 'Square', 'Triangle', 'Saw']
 
   onMount(async () => {
     const { Oscillator } = await import('sobaka-dsp')
-    oscillator = await Oscillator.create($context)
+    oscillator = await Oscillator.create(context.audio)
     node = oscillator.node()
     pitch_param = oscillator.get_param('Pitch')
     loading = false
@@ -57,7 +57,7 @@
 
   // Update the sobaka node when the state changes
   $: pitch = state.pitch
-  $: pitch_param?.setValueAtTime(pitch, 0)
+  $: pitch_param?.setValueAtTime(pitch, context.audio.currentTime)
 
   $: oscillator?.command({ SetShape: shapes[state.shape] })
 

@@ -1,108 +1,74 @@
 import syncedStore from '@syncedstore/core'
-import { derived, type Readable } from 'svelte/store'
+import { type Readable } from 'svelte/store'
 import * as Y from 'yjs'
 import { WorkspaceList } from './workspaceList'
 import { type SubDocReference } from '../util/subdoc'
 import { intoReadable } from '../util/store'
-import { IndexeddbPersistence } from 'y-indexeddb'
-import { Workspace } from './workspace'
-import type { MappedTypeDescription } from '@syncedstore/core/types/doc'
+import { SyncedDoc, type Config } from './syncedDoc'
+import type { GlobalContext } from '../context/global'
 
 type RootStore = {
-  workspaceLists: SubDocReference[]
-  user: SubDocReference
+  workspaceLists: SubDocReference<WorkspaceList>[]
 }
 
 const ROOT_STORE_SHAPE = {
-  workspaceLists: [],
-  user: {}
+  workspaceLists: []
 }
-
-const ROOT_DOC_GUID = 'sobaka-root'
-const USER_LIST_GUID = 'sobaka-user-list'
 
 /**
  * Top level document storage
  */
-export class Root {
-  private store: MappedTypeDescription<RootStore>
-  private cache: WeakMap<SubDocReference, WorkspaceList> = new WeakMap()
+export class Root extends SyncedDoc<'root'> {
+  private store: ReturnType<typeof syncedStore<RootStore>>
 
-  constructor(private doc: Y.Doc) {
+  constructor(doc: Y.Doc, config: Config) {
+    super('root', doc, config)
     this.store = syncedStore(ROOT_STORE_SHAPE, doc)
+  }
 
-    this.doc.on('synced', () => {
-      this.populate()
+  static fromRef(ref: SubDocReference<Root>, config: Config) {
+    return new Root(new Y.Doc(ref), config)
+  }
+
+  migrate(ctx: GlobalContext) {
+    // Add user list if missing
+    if (!this.store.workspaceLists.at(0)) {
+      const list = ctx.lists.get()
+      list.create(this.config.currentUser)
+      this.store.workspaceLists.push(list.intoRef())
+    }
+    // Add or update globally shared lists
+    this.config.globalLists.forEach((guid, index) => {
+      const targetIndex = index + 1
+      const ref = { guid } as SubDocReference<WorkspaceList>
+      const current = this.store.workspaceLists.at(targetIndex)
+
+      if (this.store.workspaceLists.at(0)?.guid === guid) {
+        if (current) {
+          this.store.workspaceLists.splice(targetIndex, 1)
+        }
+      } else if (!current) {
+        this.store.workspaceLists.push(ref)
+      } else if (current.guid !== guid) {
+        // Replace or insert at correct position
+        this.store.workspaceLists.splice(targetIndex, 1, ref)
+      }
     })
   }
 
-  static init() {
-    return new Root(new Y.Doc({ guid: ROOT_DOC_GUID }))
-  }
-
-  /**
-   * Loads entity from local storage
-   */
-  async load() {
-    this.storageSynced()
-    this.doc.load()
-    return new Promise(resolve => this.doc.on('synced', resolve))
-  }
-
-  storageSynced(): Root {
-    const provider = new IndexeddbPersistence(this.doc.guid, this.doc)
-    provider.on('synced', () => {
-      this.doc.emit('synced', [this])
-    })
-    return this
-  }
-
-  populate() {
-    if (
-      !this.store.workspaceLists
-        .map(WorkspaceList.fromRef)
-        .some(workspace => workspace.id === USER_LIST_GUID)
-    ) {
-      this.store.workspaceLists.push(
-        WorkspaceList.create(new Y.Doc({ guid: USER_LIST_GUID })).intoRef()
-      )
+  userList() {
+    const userList = this.store.workspaceLists.at(0)
+    if (!userList) {
+      throw new Error('User list not found')
     }
+    return userList
   }
 
-  async addToUserList(workspace: Workspace) {
-    await this.load()
-    const userList = this.getCachedWorkspaceList({ guid: USER_LIST_GUID })
-    await userList.storageSynced().load()
-    userList.add(workspace)
+  addList(list: WorkspaceList) {
+    this.store.workspaceLists.push(list.intoRef())
   }
 
-  user() {
-    return this.doc.getMap('user')
-  }
-
-  private getCachedWorkspaceList(ref: SubDocReference): WorkspaceList {
-    let list = this.cache.get(ref)
-    if (!list) {
-      list = WorkspaceList.fromRef(ref)
-      this.cache.set(ref, list)
-    }
-    return list
-  }
-
-  // TODO: What do do about readable vs non readable methods.
-  _workspaceLists(): WorkspaceList[] {
-    return this.store.workspaceLists.map(ref => this.getCachedWorkspaceList(ref))
-  }
-
-  workspaceLists(): Readable<WorkspaceList[]> {
-    return derived(intoReadable(this.store.workspaceLists), workspaceLists =>
-      workspaceLists.map(ref => this.getCachedWorkspaceList(ref))
-    )
-  }
-
-  find_workspace(workspaceId: string) {
-    return this._workspaceLists()
-      .flatMap(workspaceList => workspaceList._workspaces())
-      .find(workspace => workspace.id === workspaceId)
+  workspaceLists(): Readable<SubDocReference<WorkspaceList>[]> {
+    return intoReadable(this.store.workspaceLists)
   }
 }

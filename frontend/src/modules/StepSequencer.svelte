@@ -23,7 +23,7 @@
   import { onDestroy, onMount } from 'svelte'
   import Button from '../components/Button.svelte'
   import Led from '../components/Led.svelte'
-  import { get_context as get_audio_context } from '../audio'
+  import { getGlobalCtx } from '../context/global'
   import { type Tuple } from '../@types'
   import Layout from '../components/Layout.svelte'
   import RingSpinner from '../components/RingSpinner.svelte'
@@ -35,11 +35,11 @@
   let node: AudioNode
   let loading = true
 
-  const context = get_audio_context()
+  const context = getGlobalCtx()
 
   onMount(async () => {
     const { StepSequencer } = await import('sobaka-dsp')
-    step_sequencer = await StepSequencer.create($context)
+    step_sequencer = await StepSequencer.create(context.audio)
     node = step_sequencer.node()
     loading = false
 

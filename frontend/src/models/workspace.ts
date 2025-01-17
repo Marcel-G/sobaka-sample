@@ -1,31 +1,17 @@
 import * as Y from 'yjs'
 
 import syncedStore from '@syncedstore/core'
-import type {
-  DocTypeDescription,
-  MappedTypeDescription
-} from '@syncedstore/core/types/doc'
-import { derived, get, type Readable, writable } from 'svelte/store'
+import { derived, writable, type Readable } from 'svelte/store'
 
 import cloneDeep from 'lodash/cloneDeep'
 import { INITIAL_STATE, type ModuleUI } from '../modules'
 import { intoReadable } from '../util/store'
 import { type SubDocReference } from '../util/subdoc'
 import { type Position } from '../@types'
-import { IndexeddbPersistence } from 'y-indexeddb'
-import { VerifiedRTCProvider } from './rtc'
-import { get_user, update_user, type User } from './user'
-import type { Config } from '../routes/+layout.server'
+import { SyncedDoc, type Config } from './syncedDoc'
+import type { User } from '../context/global'
 
-export type WorkspaceMeta = {
-  title: string
-  createdAt: string
-  updatedAt: string
-  collaborators: string[]
-}
-
-export interface WorkspaceDoc extends DocTypeDescription {
-  meta: WorkspaceMeta
+export interface WorkspaceDoc {
   modules: Array<Module>
   links: Array<Required<Link>>
 }
@@ -48,189 +34,65 @@ export interface Link {
   to: string
 }
 
+type WorkspaceInfo = {
+  title: string
+}
+
 type WorkspaceStore = {
-  meta: WorkspaceMeta
+  info: WorkspaceInfo
   modules: Array<Module>
   links: Array<Required<Link>>
+}
+
+const WORKSPACE_STORE_SHAPE = {
+  info: {} as WorkspaceInfo,
+  modules: [],
+  links: []
 }
 
 type UserAwareness = {
   user: User
 }
 
-const WORKSPACE_STORE_SHAPE = {
-  meta: {} as WorkspaceMeta,
-  modules: [],
-  links: []
-}
-
-export class Workspace {
-  private store: MappedTypeDescription<WorkspaceStore>
-  private currentUser = writable<User | null>(get_user())
+export class Workspace extends SyncedDoc<'workspace'> {
+  private store: ReturnType<typeof syncedStore<WorkspaceStore>>
   user_store = writable<Record<string, UserAwareness>>({})
 
-  private storage: IndexeddbPersistence | null = null
-  private rtc: VerifiedRTCProvider | null = null
-
-  constructor(private doc: Y.Doc) {
+  constructor(doc: Y.Doc, config: Config) {
+    super('workspace', doc, config)
     this.store = syncedStore(WORKSPACE_STORE_SHAPE, doc)
 
-    this.doc.on('update', (_, origin) => {
-      if (origin != null) return
-      this.doc.transact(() => {
-        this.handleDocumentUpdated()
-      }, this)
+    this.synced(() => {
+      this.migrate()
+    })
+
+    const user = { uuid: config.currentUser }
+    this.rtc.awareness.setLocalStateField('user', user)
+    this.rtc.awareness.on('change', () => {
+      this.handleAwarenessChange()
     })
   }
 
-  static create(doc: Y.Doc = new Y.Doc()) {
-    const workspace = new Workspace(doc)
-    workspace.populate()
+  static create(doc: Y.Doc = new Y.Doc(), config: Config) {
+    const workspace = new Workspace(doc, config)
+    workspace.create(config.currentUser)
     return workspace
   }
 
-  static fromId(id: string) {
-    return new Workspace(new Y.Doc({ guid: id }))
+  static fromRef(config: Config, ref?: SubDocReference<Workspace>) {
+    return new Workspace(new Y.Doc(ref), config)
   }
 
-  static fromRef(ref: SubDocReference) {
-    return new Workspace(new Y.Doc(ref))
-  }
-
-  intoRef(): SubDocReference {
-    return { guid: this.doc.guid }
-  }
-
-  get id() {
-    return this.doc.guid
-  }
-
-  private isCollaborator(identity: string) {
-    const collaborators = this.store.meta.collaborators || []
-    if (!collaborators.length) return true
-    return collaborators.includes(identity)
-  }
-
-  async save() {
-    if (!this.storage) {
-      // First try load from local storage
-      this.storage = new IndexeddbPersistence(this.doc.guid, this.doc)
-    }
-
-    await new Promise(resolve => this.storage?.once('synced', resolve))
-  }
-
-  /**
-   * Loads entity from local storage
-   */
-  async load(config: Config) {
-    const signal = AbortSignal.timeout(2000)
-
-    if (!this.storage) {
-      // First try load from local storage
-      this.storage = new IndexeddbPersistence(this.doc.guid, this.doc)
-    }
-
-    this.doc.load()
-
-    if (!this.rtc) {
-      this.rtc = new VerifiedRTCProvider(this.doc.guid, this.doc, {
-        signaling: config.signaling,
-        // Ignore updates from non-collaborators
-        filterIncomingMessage: from => this.isCollaborator(from),
-        peerOpts: {
-          config: { iceServers: config.iceServers }
-        }
-      })
-
-      // get verified uuid from provider
-      this.rtc.once('user', (uuid: string) => {
-        const user = { uuid }
-        this.currentUser.set(user)
-        this.rtc?.awareness.setLocalStateField('user', user)
-        update_user(user)
-      })
-
-      this.rtc.awareness.on('change', () => {
-        if (!this.rtc) return
-        const awareness = this.rtc.awareness
-        const newState: Record<string, UserAwareness> = {}
-        awareness.getStates().forEach((_state, cid: number) => {
-          if (cid === awareness.clientID) return
-
-          const state = _state as UserAwareness
-          newState[state.user.uuid] = state
-        })
-
-        this.user_store.update(() => newState)
-      })
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    function warnReadOnlyEdit(_: Uint8Array, origin: any) {
-      if (origin != null) return
-      // TODO: state has been corrupted
-      // re-sync somehow?
-      throw new Error('Document is read-only')
-    }
-
-    this.isEditable.subscribe(editable => {
-      if (!editable) {
-        this.doc.on('update', warnReadOnlyEdit)
-      } else {
-        this.doc.off('update', warnReadOnlyEdit)
-      }
-    })
-
-    await new Promise((resolve, reject) => {
-      signal.addEventListener('abort', () => reject(new Error('Not found')))
-      intoReadable(this.store.meta).subscribe(meta => {
-        if (meta.createdAt) {
-          resolve(void 0)
-        }
-      })
-    })
-
-    return this
-  }
-
-  private handleDocumentUpdated() {
-    const { meta } = this.store
-
-    meta.updatedAt ??= new Date().toISOString()
-  }
-
-  private populate() {
-    const { meta } = this.store
-
-    meta.title ??= 'Untitled Workspace'
-    meta.createdAt ??= new Date().toISOString()
-    meta.updatedAt ??= new Date().toISOString()
-    const currentUser = get(this.currentUser)
-    if (currentUser) {
-      meta.collaborators ??= [currentUser.uuid]
-    } else {
-      meta.collaborators ??= []
-    }
+  migrate() {
+    this.store.info.title ??= 'Untitled Workspace'
   }
 
   private get storeReactive() {
     return intoReadable(this.store)
   }
 
-  get isEditable(): Readable<boolean> {
-    return derived(
-      [intoReadable(this.store.meta), this.currentUser],
-      ([meta, currentUser]) => {
-        if (!meta.collaborators?.length || !currentUser) return false
-        return meta.collaborators.includes(currentUser.uuid)
-      }
-    )
-  }
-
-  get meta(): Readable<WorkspaceMeta> {
-    // TODO: meta may be empty until synced
-    return derived(this.storeReactive, store => store.meta as WorkspaceMeta)
+  get info(): Readable<WorkspaceInfo> {
+    return intoReadable(this.store.info as WorkspaceInfo)
   }
 
   get links(): Readable<Required<Link>[]> {
@@ -239,6 +101,26 @@ export class Workspace {
 
   get modules(): Readable<Module[]> {
     return derived(this.storeReactive, store => store.modules)
+  }
+
+  // TODO: this is a bit messy
+  private handleAwarenessChange() {
+    const awareness = this.rtc.awareness
+    const newState: Record<string, UserAwareness> = {}
+    awareness.getStates().forEach((_state, cid: number) => {
+      if (cid === awareness.clientID) return
+      // TODO: cleaner validation
+      if (
+        'user' in _state &&
+        typeof _state.user === 'object' &&
+        'uuid' in _state.user &&
+        typeof _state.user.uuid === 'string'
+      ) {
+        newState[_state.user.uuid] = _state as UserAwareness
+      }
+    })
+
+    this.user_store.update(() => newState)
   }
 
   // Module actions
@@ -264,7 +146,7 @@ export class Workspace {
   move_module(id: string, x: number, y: number): boolean {
     const { modules } = this.store
 
-    const module = modules.find(module => module.id === id)
+    const module = modules.find(byModuleId(id))
     if (module) {
       module.position.x = x
       module.position.y = y
@@ -287,7 +169,7 @@ export class Workspace {
   remove_module(id: string) {
     const { modules } = this.store
 
-    const index = modules.findIndex(module => module.id === id)
+    const index = modules.findIndex(byModuleId(id))
     if (index >= 0) {
       modules.splice(index, 1)
     }
@@ -296,7 +178,7 @@ export class Workspace {
   clone_module(id: string) {
     const { modules } = this.store
 
-    const module = modules.find(module => module.id === id)
+    const module = modules.find(byModuleId(id))
 
     if (module) {
       modules.push({
@@ -313,7 +195,7 @@ export class Workspace {
   // Module selectors
   module_position(id: string): Readable<Position> {
     return derived(intoReadable(this.store.modules), modules => {
-      const mod = modules.find(module => module.id === id)
+      const mod = modules.find(byModuleId(id))
       if (mod) {
         return mod.position
       } else {
@@ -334,14 +216,12 @@ export class Workspace {
 
   remove_link(link_id: string) {
     const { links } = this.store
-    const index = links.findIndex(link => link.id === link_id)
+    const index = links.findIndex(byLinkId(link_id))
     if (index >= 0) {
       links.splice(index, 1)
     }
   }
-
-  cleanup() {
-    // TODO: do I really want to do this?
-    this.doc.destroy()
-  }
 }
+
+const byModuleId = (id: string) => (module: Module) => module.id === id
+const byLinkId = (id: string) => (link: Required<Link>) => link.id === id

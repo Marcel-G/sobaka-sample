@@ -19,7 +19,7 @@
   import { into_style } from '../components/Theme.svelte'
   import Knob from '../components/Knob/Knob.svelte'
   import { PlugType } from '../context/plugs'
-  import { get_context as get_audio_context } from '../audio'
+  import { getGlobalCtx } from '../context/global'
   import Layout from '../components/Layout.svelte'
   import RingSpinner from '../components/RingSpinner.svelte'
   import { create_bipolar_scale_range } from '../range/range_creators'
@@ -31,18 +31,18 @@
   let gain_param: AudioParam
   let loading = true
 
-  const context = get_audio_context()
+  const context = getGlobalCtx()
 
   const attenuverter = create_bipolar_scale_range()
 
   onMount(async () => {
-    vca = new GainNode($context)
+    vca = new GainNode(context.audio)
     gain_param = vca.gain
     loading = false
   })
 
   $: gain = state.value
-  $: gain_param?.setValueAtTime(gain || 0, $context.currentTime)
+  $: gain_param?.setValueAtTime(gain || 0, context.audio.currentTime)
 </script>
 
 <Panel {name} height={6} width={5} {disabled} custom_style={into_style(theme)}>

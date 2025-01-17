@@ -24,7 +24,7 @@
   import { into_style } from '../components/Theme.svelte'
   import { PlugType } from '../context/plugs'
   import Knob from '../components/Knob/Knob.svelte'
-  import { get_context as get_audio_context } from '../audio'
+  import { getGlobalCtx } from '../context/global'
   import Layout from '../components/Layout.svelte'
   import RingSpinner from '../components/RingSpinner.svelte'
   import { type Range, RangeType } from '../range/range'
@@ -38,11 +38,11 @@
   let wet_param: AudioParam
   let delay_param: AudioParam
   let loading = true
-  const context = get_audio_context()
+  const context = getGlobalCtx()
 
   onMount(async () => {
     const { Reverb } = await import('sobaka-dsp')
-    reverb = await Reverb.create($context)
+    reverb = await Reverb.create(context.audio)
     node = reverb.node()
     wet_param = reverb.get_param('Wet')
     delay_param = reverb.get_param('Delay')
@@ -52,10 +52,10 @@
 
   // Update the sobaka node when the state changes
   $: wet = state.wet
-  $: wet_param?.setValueAtTime(wet, $context.currentTime)
+  $: wet_param?.setValueAtTime(wet, context.audio.currentTime)
 
   $: delay = state.length
-  $: delay_param?.setValueAtTime(delay, $context.currentTime)
+  $: delay_param?.setValueAtTime(delay, context.audio.currentTime)
 
   const scalar = create_scale_range()
 

@@ -35,7 +35,7 @@
   import Plug from './shared/Plug.svelte'
   import { into_style } from '../components/Theme.svelte'
   import { PlugType } from '../context/plugs'
-  import { get_context as get_audio_context } from '../audio'
+  import { getGlobalCtx } from '../context/global'
   import { type Tuple } from '../@types'
   import Layout from '../components/Layout.svelte'
   import RingSpinner from '../components/RingSpinner.svelte'
@@ -47,11 +47,11 @@
   let node: AudioNode
   let loading = true
 
-  const context = get_audio_context()
+  const context = getGlobalCtx()
 
   onMount(async () => {
     const { Quantiser } = await import('sobaka-dsp')
-    quantiser = await Quantiser.create($context)
+    quantiser = await Quantiser.create(context.audio)
     node = quantiser.node()
     loading = false
   })

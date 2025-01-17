@@ -17,11 +17,11 @@
   import { into_style } from '../components/Theme.svelte'
   import { PlugType } from '../context/plugs'
   import Knob from '../components/Knob/Knob.svelte'
-  import { get_context as get_audio_context } from '../audio'
   import Layout from '../components/Layout.svelte'
   import RingSpinner from '../components/RingSpinner.svelte'
   import { create_bpm_range } from '../range/range_creators'
   import { Clock } from 'sobaka-dsp'
+  import { getGlobalCtx } from '../context/global'
 
   export let state: State
   export let disabled = false
@@ -31,20 +31,20 @@
   let node: AudioNode
   let loading = true
 
-  const context = get_audio_context()
+  const context = getGlobalCtx()
 
   // @todo -- make this work with volt per octave
   const bpm = create_bpm_range()
 
   onMount(async () => {
-    clock = await Clock.create($context)
+    clock = await Clock.create(context.audio)
     node = clock.node()
     bpm_param = clock.get_param('Bpm')
 
     loading = false
   })
 
-  $: bpm_param?.setValueAtTime(state.bpm, $context.currentTime)
+  $: bpm_param?.setValueAtTime(state.bpm, context.audio.currentTime)
 </script>
 
 <Panel {name} height={8} width={5} {disabled} custom_style={into_style(theme)}>

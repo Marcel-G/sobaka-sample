@@ -30,7 +30,7 @@
   import { into_style } from '../../components/Theme.svelte'
   import { PlugType } from '../../context/plugs'
   import Knob from '../../components/Knob/Knob.svelte'
-  import { get_context as get_audio_context } from '../../audio'
+  import { getGlobalCtx } from '../../context/global'
   import AudioPreview from './AudioPreview.svelte'
   import AudioDetail from './AudioDetail.svelte'
   import Button from '../../components/Button.svelte'
@@ -47,7 +47,7 @@
   let rate_param: AudioParam
   let files: string[] = []
 
-  const context = get_audio_context()
+  const context = getGlobalCtx()
 
   let trigger_segment: (segment_index: number) => void
   let audio_data: SharedAudio | null
@@ -55,7 +55,7 @@
 
   onMount(async () => {
     const { SamplerController } = await import('sobaka-dsp')
-    sampler = await SamplerController.create($context)
+    sampler = await SamplerController.create(context.audio)
 
     node = sampler.node()
     loading = false
@@ -129,7 +129,7 @@
 
   // Update the sobaka node when the state changes
   $: playback_rate = state.playback_rate
-  $: rate_param?.setValueAtTime(playback_rate, $context.currentTime)
+  $: rate_param?.setValueAtTime(playback_rate, context.audio.currentTime)
 
   $: active_segment = state.active_segment
   $: sampler?.command({ SetSample: active_segment })
