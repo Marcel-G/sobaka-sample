@@ -1,4 +1,15 @@
 <script lang="ts">
+  import type { SVGAttributes } from 'svelte/elements'
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  type $$Props = SVGAttributes<SVGSVGElement> & {
+    x: number
+    y: number
+    radius: number
+    startAngle: number
+    endAngle: number
+    strokeWidth?: string | number | null
+  }
   /**
    * The X coordinate of the arc's center.
    */
@@ -23,8 +34,6 @@
    * The end angle of the arc in degrees.
    */
   export let endAngle: number
-
-  export let stroke: string | null | undefined = '#ccc'
 
   export let strokeWidth: string | number | null | undefined = 10
 
@@ -83,7 +92,7 @@
 <path
   d={describeArc(x, y, radius, startAngle, endAngle)}
   fill="none"
-  {stroke}
   stroke-linecap="round"
   stroke-width={strokeWidth}
+  {...$$restProps}
 />

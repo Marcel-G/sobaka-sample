@@ -5,6 +5,7 @@
   import Tooltip from '../../components/Tooltip.svelte'
   import { get_workspace } from '../../context/workspace'
   import { get_module_context } from '../context'
+  import { twMerge } from 'tailwind-merge'
 
   const { workspace, plugs } = get_workspace()
   const { id: module_id } = get_module_context()
@@ -52,40 +53,22 @@
   onDestroy(() => {
     plugs.remove(plug_id)
   })
+
+  const classes = {
+    plug: 'cursor-pointer w-3 h-3 pointer-events-auto transition-colors duration-200 rounded-full bg-white border-2 border-zinc-200 dark:border-zinc-900',
+    disabled: 'pointer-events-auto cursor-crosshair',
+    hover: 'hover:border-zinc-900 dark:hover:border-zinc-100'
+  }
 </script>
 
 <Tooltip {label} position={ctx.type !== PlugType.Output ? 'left' : 'right'}>
   <!-- svelte-ignore a11y-click-events-have-key-events -->
   <div
     role="button"
+    tabindex="0"
     aria-label={label}
-    class:disabled
-    class="plug"
+    class={twMerge(classes.plug, disabled && classes.disabled, classes.hover)}
     on:click={() => handle_click()}
     bind:this={$node}
-  />
+  ></div>
 </Tooltip>
-
-<style>
-  .plug {
-    cursor: pointer;
-    width: 0.8rem;
-    height: 0.8rem;
-    background-color: var(--background);
-    border: 2px solid var(--module-highlight);
-    pointer-events: all;
-
-    transition: border-color 0.25s;
-
-    border-radius: 50%;
-  }
-
-  .disabled.plug {
-    pointer-events: auto;
-    cursor: crosshair;
-  }
-
-  .plug:hover {
-    border-color: var(--foreground);
-  }
-</style>

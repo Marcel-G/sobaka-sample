@@ -1,6 +1,5 @@
 <script lang="ts">
-  import 'ress/dist/ress.min.css'
-  import Theme from '../components/Theme.svelte'
+  import '../app.css'
   import { navigating } from '$app/stores'
   import Loading from '../components/Loading.svelte'
   import { onDestroy, onMount } from 'svelte'
@@ -22,7 +21,6 @@
   }
 </script>
 
-<Theme />
 <main>
   {#if $navigating || !context}
     <Loading />
@@ -31,10 +29,10 @@
   {/if}
 </main>
 
-<style>
+<style lang="postcss">
   :global(html) {
-    background-color: var(--background, initial);
-    color: var(--foreground, initial);
+    /* background-color: theme(colors.darker.950); */
+    /* color: theme(colors.light.50); */
   }
   :global(body),
   :global(html) {

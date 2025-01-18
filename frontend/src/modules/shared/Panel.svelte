@@ -17,8 +17,10 @@
   import type { OnDrag } from '../../actions/drag'
   import { get_workspace } from '../../context/workspace'
   import { get_module_context } from '../context'
+  import ThemeProvider, { type ModuleTheme } from '../ThemeProvider.svelte'
+  import { twMerge } from 'tailwind-merge'
 
-  export let custom_style = ''
+  export let theme: Partial<ModuleTheme> = {}
   export let name: string
   export let disabled = false
   export let height = 0
@@ -26,11 +28,26 @@
 
   const { workspace } = get_workspace()
   const { id } = get_module_context()
+  // const { primary } = theme
 
   const position = workspace.module_position(id)
 
   $: col = `${$position.x + 1} / span ${width}`
   $: row = `${$position.y + 1} / span ${height}`
+
+  const classes = {
+    panel:
+      'shadow-lg rounded-lg p-2 cursor-move border-box select-none relative z-5 border-2 border-t-[18px] border-zinc-200 dark:border-zinc-900',
+    disabled:
+      'filter grayscale-65 contrast-130 pointer-events-none select-none cursor-none',
+    bar: 'absolute left-0 top-0 right-0 text-xs pl-1 transform -translate-y-full flex justify-between items-end pointer-events-none',
+    barButton: `font-mono border-0 bg-white text-zinc-900 w-6 transition-opacity duration-125 pointer-events-auto`,
+    barButtonHover: 'hover:opacity-75',
+    barButtonActive: `active:opacity-0 active:text-zinc-700 dark:active:text-zinc-300`,
+    name: 'uppercase font-mono font-bold text-zinc-900 dark:text-zinc-200 mix-blend-difference overflow-hidden text-ellipsis',
+    inputs: 'absolute top-2 left-0 transform -translate-x-1/2 flex flex-col',
+    outputs: 'absolute top-2 right-0 transform translate-x-1/2 flex flex-col'
+  }
 
   const handle_drag: OnDrag = (event, origin, element) => {
     if (disabled) return true
@@ -47,139 +64,42 @@
   }
 </script>
 
-<div
-  use:useDrag={{ onDrag: handle_drag }}
-  class="panel"
-  class:disabled
-  style={`grid-column: ${col}; grid-row: ${row}; ${custom_style}`}
->
-  <div class="bar">
-    <span class="name">{name}</span>
-    {#if !disabled}
-      <span class="actions">
-        <button class="clone" on:click={() => workspace.clone_module(id)}>+</button>
-        <button class="close" on:click={() => workspace.remove_module(id)}>x</button>
-      </span>
-    {/if}
+<ThemeProvider {theme}>
+  <div
+    use:useDrag={{ onDrag: handle_drag }}
+    class={twMerge(classes.panel, disabled && classes.disabled)}
+    style={`grid-column: ${col}; grid-row: ${row};`}
+  >
+    <div class={classes.bar}>
+      <span class={classes.name}>{name}</span>
+      {#if !disabled}
+        <span class="actions flex">
+          <button
+            class={twMerge(
+              classes.barButton,
+              classes.barButtonHover,
+              classes.barButtonActive
+            )}
+            on:click={() => workspace.clone_module(id)}>+</button
+          >
+          <button
+            class={twMerge(
+              classes.barButton,
+              classes.barButtonHover,
+              classes.barButtonActive,
+              'rounded-tr-lg'
+            )}
+            on:click={() => workspace.remove_module(id)}>x</button
+          >
+        </span>
+      {/if}
+    </div>
+    <slot />
+    <div class={classes.inputs}>
+      <slot class="vertical" name="inputs" />
+    </div>
+    <div class={classes.outputs}>
+      <slot class="vertical" name="outputs" />
+    </div>
   </div>
-  <slot />
-  <div class="inputs">
-    <slot class="vertical" name="inputs" />
-  </div>
-  <div class="outputs">
-    <slot class="vertical" name="outputs" />
-  </div>
-</div>
-
-<style>
-  .panel {
-    box-shadow:
-      0 10px 15px -3px rgb(0 0 0 / 10%),
-      0 4px 6px -2px rgb(0 0 0 / 5%);
-    border-radius: 0.5rem;
-    background-color: var(--module-background);
-    border: 2px solid var(--module-highlight);
-    border-top-width: 1rem;
-    padding: 0.5rem;
-
-    cursor: move;
-
-    user-select: none;
-
-    touch-action: none;
-
-    position: relative;
-    z-index: 5;
-  }
-
-  .disabled {
-    filter: grayscale(65%) contrast(130%);
-    pointer-events: none;
-    user-select: none;
-    cursor: none;
-  }
-
-  .bar .actions {
-    display: flex;
-  }
-
-  .bar {
-    position: absolute;
-    left: 0;
-    top: 0;
-    right: 0;
-
-    font-size: 0.75rem;
-
-    padding-left: 0.25rem;
-
-    height: 1rem;
-    transform: translateY(-100%);
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-    pointer-events: none;
-  }
-
-  button.close {
-    border-top-right-radius: 0.5rem;
-  }
-
-  .bar button {
-    font-family: monospace;
-    border: 0;
-    /* border-radius: 0.25rem; */
-    background: var(--module-background);
-    color: var(--module-foreground);
-    line-height: 0;
-    white-space: nowrap;
-    text-decoration: none;
-    cursor: pointer;
-
-    height: calc(1rem - 2px);
-    width: 1.5rem;
-
-    /* margin-right: -2px; */
-    transition: opacity 0.125s;
-
-    pointer-events: all;
-  }
-
-  .bar button:hover {
-    opacity: 0.75;
-  }
-
-  .bar button:active {
-    opacity: 0;
-    color: var(--module-background);
-  }
-
-  .name {
-    text-transform: uppercase;
-    font-family: monospace;
-    font-weight: bold;
-    color: var(--background);
-    mix-blend-mode: difference;
-
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .inputs,
-  .outputs {
-    position: absolute;
-    top: 0.5rem;
-  }
-  .inputs {
-    left: 0;
-    transform: translateX(-50%);
-  }
-
-  .outputs {
-    right: 0;
-    transform: translateX(50%);
-  }
-  .vertical {
-    display: flex;
-    flex-direction: column;
-  }
-</style>
+</ThemeProvider>

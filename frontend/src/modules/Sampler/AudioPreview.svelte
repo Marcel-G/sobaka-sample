@@ -45,7 +45,7 @@
     <AudioWaveCanvas {audio_data} />
   {:else}
     <Layout type="center">
-      <RingSpinner />
+      <RingSpinner color="blue" size="sm" />
     </Layout>
   {/if}
 </div>

@@ -1,8 +1,7 @@
 <script context="module" lang="ts">
-  import { type ModuleTheme } from '../components/Theme.svelte'
+  import type { ModuleTheme } from './ThemeProvider.svelte'
   export const theme: Partial<ModuleTheme> = {
-    highlight: 'var(--cyan)',
-    background: 'var(--cyan-dark)'
+    primary: 'var(--cyan)'
   }
 
   type State = {
@@ -18,7 +17,6 @@
   import type { Sequencer } from 'sobaka-dsp'
   import Panel from './shared/Panel.svelte'
   import Plug from './shared/Plug.svelte'
-  import { into_style } from '../components/Theme.svelte'
   import { PlugType } from '../context/plugs'
   import { onDestroy, onMount } from 'svelte'
   import { getGlobalCtx } from '../context/global'
@@ -72,10 +70,10 @@
   })
 </script>
 
-<Panel {name} height={8} width={26} {disabled} custom_style={into_style(theme)}>
+<Panel {name} height={8} width={26} {disabled} {theme}>
   {#if loading}
     <Layout type="center">
-      <RingSpinner />
+      <RingSpinner color="blue" size="sm" />
     </Layout>
   {:else}
     <div class="controls">
@@ -85,7 +83,6 @@
           bind:value={step.value}
           range={knob_range}
           label={`step_${i + 1}`}
-          orientation="ns"
         >
           <div slot="knob-inputs">
             <Led on={i === active_step} />

@@ -1,8 +1,7 @@
 <script context="module" lang="ts">
-  import { type ModuleTheme } from '../components/Theme.svelte'
+  import type { ModuleTheme } from './ThemeProvider.svelte'
   export const theme: Partial<ModuleTheme> = {
-    highlight: 'var(--pink)',
-    background: 'var(--pink-dark)'
+    primary: 'var(--pink)'
   }
 
   type State = { bpm: number }
@@ -14,7 +13,6 @@
   import { onMount } from 'svelte'
   import Panel from './shared/Panel.svelte'
   import Plug from './shared/Plug.svelte'
-  import { into_style } from '../components/Theme.svelte'
   import { PlugType } from '../context/plugs'
   import Knob from '../components/Knob/Knob.svelte'
   import Layout from '../components/Layout.svelte'
@@ -45,10 +43,10 @@
   $: lfo?.frequency.setValueAtTime((state.bpm || 0) / 60, context.audio.currentTime)
 </script>
 
-<Panel {name} height={6} width={5} {disabled} custom_style={into_style(theme)}>
+<Panel {name} height={6} width={5} {disabled} {theme}>
   {#if loading}
     <Layout type="center">
-      <RingSpinner />
+      <RingSpinner color="blue" size="sm" />
     </Layout>
   {:else}
     <Knob {disabled} bind:value={state.bpm} range={lfo_range} label="bpm">

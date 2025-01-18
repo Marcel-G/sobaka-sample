@@ -1,8 +1,7 @@
 <script context="module" lang="ts">
-  import { type ModuleTheme } from '../components/Theme.svelte'
+  import type { ModuleTheme } from './ThemeProvider.svelte'
   export const theme: Partial<ModuleTheme> = {
-    highlight: 'var(--cyan)',
-    background: 'var(--cyan-dark)'
+    primary: 'var(--cyan)'
   }
 
   type State = {
@@ -18,7 +17,6 @@
   import type { StepSequencer } from 'sobaka-dsp'
   import Panel from './shared/Panel.svelte'
   import Plug from './shared/Plug.svelte'
-  import { into_style } from '../components/Theme.svelte'
   import { PlugType } from '../context/plugs'
   import { onDestroy, onMount } from 'svelte'
   import Button from '../components/Button.svelte'
@@ -72,25 +70,28 @@
   })
 </script>
 
-<Panel {name} height={11} width={17} {disabled} custom_style={into_style(theme)}>
+<Panel {name} height={11} width={17} {disabled} {theme}>
   {#if loading}
     <Layout type="center">
-      <RingSpinner />
+      <RingSpinner color="blue" size="sm" />
     </Layout>
   {:else}
-    <div class="controls">
+    <div class="flex flex-col justify-between h-full">
       {#each steps as step, x}
-        <div class="branch">
+        <div class="flex justify-around">
           {#each step as s, y}
             <Button
+              class="m-1 px-2 py-2"
               {disabled}
-              pressed={s.value}
-              onClick={() => update_step(x, y, !s.value)}
-            />
+              color="primary"
+              size="xs"
+              checked={s.value}
+              on:click={() => update_step(x, y, !s.value)}
+            ></Button>
           {/each}
         </div>
       {/each}
-      <div class="branch">
+      <div class="flex justify-around">
         {#each new Array(8).fill(0) as _, y}
           <Led on={active_step === y} />
         {/each}
@@ -139,10 +140,3 @@
     />
   </div>
 </Panel>
-
-<style>
-  .branch {
-    display: flex;
-    justify-content: space-around;
-  }
-</style>

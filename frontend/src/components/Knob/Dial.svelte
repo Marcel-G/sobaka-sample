@@ -16,16 +16,16 @@
   $: normalised_value = to_normalised(range, value)
 </script>
 
-<div class="dial">
+<div class="row-start-1 col-start-2">
   <Tooltip {label}>
-    <svg viewBox="0 0 100 100">
+    <svg viewBox="0 0 100 100" class="h-12">
       <Arc
         x={50}
         y={50}
         radius={40}
         startAngle={-baseAngle}
         endAngle={baseAngle}
-        stroke="var(--current-line)"
+        class="stroke-zinc-500 dark:stroke-zinc-200"
       />
       <Arc
         x={50}
@@ -33,19 +33,8 @@
         radius={40}
         startAngle={range.type === RangeType.Continuous && range.bipolar ? 0 : -baseAngle}
         endAngle={-baseAngle + baseAngle * 2 * normalised_value}
-        stroke="var(--module-highlight)"
+        class="stroke-zinc-200 dark:stroke-zinc-900"
       />
     </svg>
   </Tooltip>
 </div>
-
-<style>
-  .dial {
-    grid-row: 1;
-    grid-column: 2;
-  }
-
-  svg {
-    height: 3rem;
-  }
-</style>

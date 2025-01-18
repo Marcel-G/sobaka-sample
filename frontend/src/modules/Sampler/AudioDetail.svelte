@@ -47,7 +47,7 @@
     </div>
   {:else}
     <Layout type="center">
-      <RingSpinner />
+      <RingSpinner color="blue" size="sm" />
     </Layout>
   {/if}
 </div>

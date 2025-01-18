@@ -1,8 +1,7 @@
 <script context="module" lang="ts">
-  import { type ModuleTheme } from '../../components/Theme.svelte'
+  import type { ModuleTheme } from '../ThemeProvider.svelte'
   export const theme: Partial<ModuleTheme> = {
-    highlight: 'var(--yellow)',
-    background: 'var(--yellow-dark)'
+    primary: 'var(--yellow)'
   }
 
   type State = {
@@ -25,7 +24,6 @@
   import { onDestroy, onMount } from 'svelte'
   import Panel from '../shared/Panel.svelte'
   import Plug from '../shared/Plug.svelte'
-  import { into_style } from '../../components/Theme.svelte'
   import { PlugType } from '../../context/plugs'
   import { getGlobalCtx } from '../../context/global'
   import Layout from '../../components/Layout.svelte'
@@ -86,10 +84,10 @@
   })
 </script>
 
-<Panel {name} height={10} width={16} {disabled} custom_style={into_style(theme)}>
+<Panel {name} height={10} width={16} {disabled} {theme}>
   {#if loading}
     <Layout type="center">
-      <RingSpinner />
+      <RingSpinner color="blue" size="sm" />
     </Layout>
   {:else}
     <div class="controls">

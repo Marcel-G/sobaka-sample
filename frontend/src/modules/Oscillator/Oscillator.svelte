@@ -1,8 +1,7 @@
 <script context="module" lang="ts">
-  import { type ModuleTheme } from '../../components/Theme.svelte'
+  import type { ModuleTheme } from '../ThemeProvider.svelte'
   export const theme: Partial<ModuleTheme> = {
-    highlight: 'var(--pink)',
-    background: 'var(--pink-dark)'
+    primary: 'pink'
   }
 
   type State = {
@@ -21,7 +20,6 @@
   import { onDestroy, onMount } from 'svelte'
   import Panel from '../shared/Panel.svelte'
   import Plug from '../shared/Plug.svelte'
-  import { into_style } from '../../components/Theme.svelte'
   import Knob from '../../components/Knob/Knob.svelte'
   import { getGlobalCtx } from '../../context/global'
   import Layout from '../../components/Layout.svelte'
@@ -74,10 +72,10 @@
   })
 </script>
 
-<Panel {name} height={8} width={8} {disabled} custom_style={into_style(theme)}>
+<Panel {name} height={8} width={8} {disabled} {theme}>
   {#if loading}
     <Layout type="center">
-      <RingSpinner />
+      <RingSpinner color="blue" size="sm" />
     </Layout>
   {:else}
     <div class="controls">
@@ -94,13 +92,7 @@
           {/if}
         </div>
       </Switch>
-      <Knob
-        {disabled}
-        bind:value={state.pitch}
-        range={freq_range}
-        label="pitch"
-        orientation="ns"
-      >
+      <Knob {disabled} bind:value={state.pitch} range={freq_range} label="pitch">
         <div slot="knob-inputs">
           <Plug
             id={0}

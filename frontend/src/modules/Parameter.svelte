@@ -1,8 +1,7 @@
 <script context="module" lang="ts">
-  import { type ModuleTheme } from '../components/Theme.svelte'
+  import type { ModuleTheme } from './ThemeProvider.svelte'
   export const theme: Partial<ModuleTheme> = {
-    highlight: 'var(--cyan)',
-    background: 'var(--cyan-dark)'
+    primary: 'var(--cyan)'
   }
 
   type State = { min: number; max: number; value: number }
@@ -19,7 +18,6 @@
   import Knob from '../components/Knob/Knob.svelte'
   import Plug from './shared/Plug.svelte'
   import Panel from './shared/Panel.svelte'
-  import { into_style } from '../components/Theme.svelte'
   import { PlugType } from '../context/plugs'
   import { getGlobalCtx } from '../context/global'
   import Layout from '../components/Layout.svelte'
@@ -47,10 +45,10 @@
   $: parameter?.offset.setValueAtTime(value, context.audio.currentTime)
 </script>
 
-<Panel {name} height={6} width={5} {disabled} custom_style={into_style(theme)}>
+<Panel {name} height={6} width={5} {disabled} {theme}>
   {#if loading}
     <Layout type="center">
-      <RingSpinner />
+      <RingSpinner color="blue" size="sm" />
     </Layout>
   {:else}
     <span>

@@ -13,7 +13,6 @@
   export let range: Range
   export let label: string
   export let disabled = false
-  export let orientation: 'ns' | 'ew' = 'ew'
 
   let focus_input: () => void
 
@@ -38,95 +37,42 @@
   const handle_double_click = () => {
     focus_input()
   }
+
+  const classes = {
+    group: 'flex flex-col items-center',
+    input: 'text-xs font-mono mt-[-0.5rem]',
+    divider: 'border-l border-zinc-200 dark:border-zinc-900 h-2 m-1'
+  }
 </script>
 
 {#if disabled}
-  <div
-    class="knob"
-    class:disabled
-    class:ns={orientation === 'ns'}
-    class:ew={orientation === 'ew'}
-  >
-    <slot name="knob-inputs" />
+  <div class={classes.group}>
     <Dial {value} {range} {label} />
-    <div class="input">
+    <div class={classes.input}>
       <Input disabled bind:value {range} />
     </div>
+    {#if $$slots['knob-inputs']}
+      <div class={classes.divider}></div>
+    {/if}
+    <slot name="knob-inputs" />
   </div>
 {:else}
   <div
-    class="knob"
-    class:disabled
-    class:ns={orientation === 'ns'}
-    class:ew={orientation === 'ew'}
+    role="slider"
+    aria-valuenow={value}
+    tabindex="0"
+    class={classes.group}
     on:dblclick={handle_double_click}
     use:useDrag={{ onDrag: handle_drag, onDragStart: capture_start_value }}
     use:useWheel={{ onWheel: handle_wheel, onWheelStart: capture_start_value }}
   >
-    <slot name="knob-inputs" />
     <Dial {value} {range} {label} />
-    <div class="input">
+    <div class={classes.input}>
       <Input bind:value bind:focus={focus_input} {range} />
     </div>
+    {#if $$slots['knob-inputs']}
+      <div class={classes.divider}></div>
+    {/if}
+    <slot name="knob-inputs" />
   </div>
 {/if}
-
-<style>
-  .knob {
-    display: grid;
-    grid-template-columns: min-content min-content;
-
-    position: relative;
-    cursor: pointer;
-  }
-
-  .disabled.knob {
-    pointer-events: none;
-    cursor: initial;
-  }
-
-  .input {
-    font-size: 0.75rem;
-    font-family: monospace;
-    margin-top: -0.5rem;
-    grid-row: 2;
-    grid-column: 2;
-  }
-
-  :global(.ns [slot='knob-inputs']) {
-    grid-row: 3;
-    grid-column: 2;
-  }
-
-  :global(.ns [slot='knob-inputs']::before) {
-    content: '';
-    border-left: 1px solid var(--foreground);
-    display: block;
-    height: 0.5rem;
-    justify-self: center;
-    margin: 0.25rem;
-  }
-
-  :global(.ns [slot='knob-inputs']) {
-    align-self: center;
-    display: grid;
-    grid-template-columns: auto;
-    justify-content: center;
-  }
-
-  :global(.ew [slot='knob-inputs']::after) {
-    content: '';
-    border-top: 1px solid var(--foreground);
-    display: block;
-    width: 0.5rem;
-    align-self: center;
-    margin: 0.25rem;
-  }
-
-  :global(.ew [slot='knob-inputs']) {
-    align-self: center;
-    display: grid;
-    grid-template-columns: auto auto;
-    justify-content: center;
-  }
-</style>

@@ -1,23 +1,12 @@
 <script lang="ts">
+  import { twMerge } from 'tailwind-merge'
+
   export let on = false
 </script>
 
-<div class="led" class:on />
-
-<style>
-  .led {
-    height: 0.5rem;
-    width: 0.5rem;
-    margin: 0.25rem;
-    border-radius: 50%;
-
-    background-color: brown;
-
-    transition: background-color 200ms ease-out;
-  }
-
-  .led.on {
-    background-color: red;
-    transition-duration: 0ms;
-  }
-</style>
+<div
+  class={twMerge(
+    'h-2 w-2 m-1 rounded-full bg-red-900 transition-colors duration-200 ease-out',
+    on && 'bg-red-500 duration-0'
+  )}
+></div>

@@ -1,8 +1,7 @@
 <script context="module" lang="ts">
-  import { type ModuleTheme } from '../components/Theme.svelte'
+  import type { ModuleTheme } from './ThemeProvider.svelte'
   export const theme: Partial<ModuleTheme> = {
-    highlight: 'var(--pink)',
-    background: 'var(--pink-dark)'
+    primary: 'var(--pink)'
   }
 
   export const initialState: Record<string, never> = {}
@@ -12,7 +11,6 @@
   import { onMount } from 'svelte'
   import Panel from './shared/Panel.svelte'
   import Plug from './shared/Plug.svelte'
-  import { into_style } from '../components/Theme.svelte'
   import Oscilloscope from '../components/Oscilloscope.svelte'
   import { PlugType } from '../context/plugs'
   import { getGlobalCtx } from '../context/global'
@@ -33,10 +31,10 @@
   })
 </script>
 
-<Panel name="output" height={7} width={20} {disabled} custom_style={into_style(theme)}>
+<Panel name="output" height={7} width={20} {disabled} {theme}>
   {#if loading}
     <Layout type="center">
-      <RingSpinner />
+      <RingSpinner color="blue" size="sm" />
     </Layout>
   {:else}
     <div class="oscilloscope-wrapper">

@@ -1,8 +1,7 @@
 <script context="module" lang="ts">
-  import { type ModuleTheme } from '../components/Theme.svelte'
+  import type { ModuleTheme } from './ThemeProvider.svelte'
   export const theme: Partial<ModuleTheme> = {
-    highlight: 'var(--pink)',
-    background: 'var(--pink-dark)'
+    primary: 'pink'
   }
 
   type State = { bpm: number }
@@ -14,7 +13,6 @@
   import { onMount } from 'svelte'
   import Panel from './shared/Panel.svelte'
   import Plug from './shared/Plug.svelte'
-  import { into_style } from '../components/Theme.svelte'
   import { PlugType } from '../context/plugs'
   import Knob from '../components/Knob/Knob.svelte'
   import Layout from '../components/Layout.svelte'
@@ -47,12 +45,12 @@
   $: bpm_param?.setValueAtTime(state.bpm, context.audio.currentTime)
 </script>
 
-<Panel {name} height={8} width={5} {disabled} custom_style={into_style(theme)}>
+<Panel {name} height={8} width={5} {disabled} {theme}>
   <Layout type="center">
     {#if loading}
-      <RingSpinner />
+      <RingSpinner color="blue" size="sm" />
     {:else}
-      <Knob {disabled} bind:value={state.bpm} range={bpm} label="bpm" orientation="ns">
+      <Knob {disabled} bind:value={state.bpm} range={bpm} label="bpm">
         <div slot="knob-inputs">
           <Plug
             id={0}

@@ -1,8 +1,7 @@
 <script context="module" lang="ts">
-  import { type ModuleTheme } from '../components/Theme.svelte'
+  import type { ModuleTheme } from './ThemeProvider.svelte'
   export const theme: Partial<ModuleTheme> = {
-    highlight: 'var(--pink)',
-    background: 'var(--pink-dark)'
+    primary: 'var(--pink)'
   }
 
   export const initialState: Record<string, never> = {}
@@ -13,7 +12,6 @@
   import { onDestroy, onMount } from 'svelte'
   import Panel from './shared/Panel.svelte'
   import Plug from './shared/Plug.svelte'
-  import { into_style } from '../components/Theme.svelte'
   import { PlugType } from '../context/plugs'
   import { getGlobalCtx } from '../context/global'
   import Layout from '../components/Layout.svelte'
@@ -39,10 +37,10 @@
   })
 </script>
 
-<Panel name="noise" height={5} width={5} {disabled} custom_style={into_style(theme)}>
+<Panel name="noise" height={5} width={5} {disabled} {theme}>
   {#if loading}
     <Layout type="center">
-      <RingSpinner />
+      <RingSpinner color="blue" size="sm" />
     </Layout>
   {:else}
     <Layout type="center">💥</Layout>
