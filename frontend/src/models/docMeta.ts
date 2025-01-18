@@ -117,6 +117,11 @@ export class DocMeta<K extends string> {
     collaborators.push([identity])
   }
 
+  takeOwnership(identity: string) {
+    this.doc.set('collaborators', Y.Array.from([]))
+    this.addCollaborator(identity)
+  }
+
   removeCollaborator(identity: string) {
     const collaborators = this.collaborators
     const index = collaborators.toArray().indexOf(identity)

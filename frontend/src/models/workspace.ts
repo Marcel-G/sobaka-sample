@@ -73,9 +73,14 @@ export class Workspace extends SyncedDoc<'workspace'> {
     })
   }
 
-  static create(doc: Y.Doc = new Y.Doc(), config: Config) {
-    const workspace = new Workspace(doc, config)
-    workspace.create(config.currentUser)
+  fork() {
+    const workspace = new Workspace(this.forkDoc(this.config.currentUser), this.config)
+
+    if (!workspace.store.info.title?.endsWith('(fork)')) {
+      workspace.store.info.title += ' (fork)'
+    }
+    workspace.rtc.destroy()
+
     return workspace
   }
 

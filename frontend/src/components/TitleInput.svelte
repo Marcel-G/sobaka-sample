@@ -7,6 +7,7 @@
     event.stopPropagation()
   }}
   bind:value
+  {...$$restProps}
 />
 
 <style>

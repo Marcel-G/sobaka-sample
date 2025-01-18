@@ -1,4 +1,4 @@
-<button>
+<button {...$$restProps}>
   <slot />
 </button>
 

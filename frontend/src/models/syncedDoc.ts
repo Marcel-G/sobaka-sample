@@ -22,8 +22,8 @@ export class SyncedDoc<K extends string> {
   meta: DocMeta<K>
   rtc: VerifiedRTCProvider
 
-  private storage: IndexeddbPersistence
   private doc: Y.Doc
+  private storage: IndexeddbPersistence
   private _isEditable = writable(false)
 
   constructor(
@@ -77,6 +77,15 @@ export class SyncedDoc<K extends string> {
         this.meta.handleUpdate()
       }, this)
     })
+  }
+
+  public forkDoc(owner: string) {
+    const doc = new Y.Doc()
+    Y.applyUpdate(doc, Y.encodeStateAsUpdate(this.doc))
+    const meta = new DocMeta(this.meta.kind, doc.getMap('meta'))
+    meta.takeOwnership(owner)
+
+    return doc
   }
 
   public destroy() {

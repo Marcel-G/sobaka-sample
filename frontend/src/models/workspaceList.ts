@@ -22,12 +22,6 @@ export class WorkspaceList extends SyncedDoc<'workspaceList'> {
     this.store = syncedStore(WORKSPACE_LIST_STORE_SHAPE, doc)
   }
 
-  static create(doc: Y.Doc = new Y.Doc(), config: Config) {
-    const list = new WorkspaceList(doc, config)
-    list.create(config.currentUser)
-    return list
-  }
-
   static fromRef(config: Config, ref?: SubDocReference<WorkspaceList>) {
     return new WorkspaceList(new Y.Doc(ref), config)
   }

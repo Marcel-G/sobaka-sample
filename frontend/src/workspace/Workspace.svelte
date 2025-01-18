@@ -14,11 +14,14 @@
   import NavigationButton from '../components/NavigationButton.svelte'
   import { get_workspace } from '../context/workspace'
   import AvatarList from '../components/collaborative/AvatarList.svelte'
+  import { goto } from '$app/navigation'
+  import { getGlobalCtx } from '../context/global'
 
   let toolbox_visible = false
   let toolbox_position: Position = { x: 0, y: 0 }
   let workspace_element: Element
 
+  const context = getGlobalCtx()
   const { workspace, plugs } = get_workspace()
   const modules = workspace.modules
   const info = workspace.info
@@ -61,13 +64,17 @@
     </a>
   </svelte:fragment>
   <svelte:fragment slot="mid">
-    <TitleInput bind:value={$info.title} />
+    <TitleInput bind:value={$info.title} disabled={!$isEditable} />
   </svelte:fragment>
   <svelte:fragment slot="right">
-    <span>
-      {$isEditable ? 'editable' : 'read-only'}
-    </span>
     <AvatarList />
+    <NavigationButton
+      onclick={() => {
+        const forked = workspace.fork()
+        // TODO: add to user list
+        goto(`/workspace/${forked.id}`)
+      }}>Fork</NavigationButton
+    >
     <a href="/workspace/new">
       <NavigationButton>New</NavigationButton>
     </a>
@@ -81,6 +88,8 @@
 />
 <!-- svelte-ignore a11y-click-events-have-key-events -->
 <div
+  role="menu"
+  tabindex="0"
   class="workspace"
   class:editable={$isEditable}
   on:click|self={handle_close}
