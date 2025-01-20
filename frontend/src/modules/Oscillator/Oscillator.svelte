@@ -31,7 +31,7 @@
   import Saw from './Saw.svelte'
   import Square from './Square.svelte'
   import Triangle from './Triangle.svelte'
-  import { PlugType } from '../../context/plugs'
+  import { PlugType } from '../../models/workspace'
 
   export let state: State
   export let disabled = false

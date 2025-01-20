@@ -1,28 +1,112 @@
 <script lang="ts">
   import { get_workspace } from '../context/workspace'
-  import Wire from './Wire.svelte'
-  const { workspace, plugs } = get_workspace()
-  const link_positions = plugs.get_link_positions()
-  const active_link = plugs.get_active_link_position()
+  import { roundCorners } from 'svg-round-corners'
+  import { linker } from '../context/linker'
+  import { derived, get, type Readable } from 'svelte/store'
+  import { twMerge } from 'tailwind-merge'
+  import type { Point } from '../context/positions'
+  import { linkFinder } from '../context/linkFinder'
+  import type { Position } from '../@types'
+  import { is_fully_linked } from '../models/workspace'
 
-  const isEditable = workspace.isEditable
+  export let mouse_position: Readable<Position>
 
-  $: [active_to, active_from] = $active_link
+  const { workspace } = get_workspace()
+
+  export const frameThrottle = <T,>(store: Readable<T>) => {
+    let frame: number | null = null
+    let lastValue: T = get(store)
+
+    return derived(
+      store,
+      ($value, set) => {
+        lastValue = $value
+
+        if (frame === null) {
+          frame = requestAnimationFrame(() => {
+            set(lastValue)
+            frame = null
+          })
+        }
+
+        return () => {
+          if (frame !== null) {
+            cancelAnimationFrame(frame)
+            frame = null
+          }
+        }
+      },
+      get(store)
+    )
+  }
+
+  const intoPath = (points: Point[]): string => {
+    return points.reduce((acc, point, i) => {
+      if (i === 0) {
+        return `M ${point.x} ${point.y}`
+      }
+      return `${acc} L ${point.x} ${point.y}`
+    }, '')
+  }
+
+  const plugPositions = workspace.positions.plugPositions
+  const modulePositions = workspace.positions.modulePositions
+  const partialLink = workspace.pending_link_store
+  const links = workspace.links
+
+  const activeLink = derived([partialLink, plugPositions, mouse_position], ([l, p, mp]) =>
+    linkFinder(l, p, mp)
+  )
+
+  // TODO: Store positions still updated too frequently
+  const inputs = frameThrottle(
+    derived([activeLink, links, plugPositions, modulePositions], stores => stores)
+  )
+  const paths = derived(inputs, ([a, l, p, m]) => linker(a.concat(l), p, m))
+
+  function handle_click() {
+    const [link] = $activeLink
+    if ($partialLink && is_fully_linked(link)) {
+      workspace.add_link(link)
+      partialLink.set(null)
+    }
+  }
 </script>
 
+<svelte:window on:click={handle_click} />
+
 <svg class="wires">
-  {#if active_to || active_from}
-    <Wire to={active_to} from={active_from} />
-  {/if}
-  {#each $link_positions as [from, to, link] (link.id)}
-    <Wire
-      disabled={!$isEditable}
-      on_click={() => {
-        workspace.remove_link(link.id)
-      }}
-      {from}
-      {to}
-    />
+  {#each $paths as line (line.id)}
+    <g>
+      <!-- TODO: a11y, pointer events etc -->
+      <!-- svelte-ignore a11y_click_events_have_key_events -->
+      <!-- svelte-ignore a11y_no_static_element_interactions -->
+      <path
+        on:click={() => {
+          workspace.remove_link(line.id!)
+        }}
+        class={twMerge(
+          'pointer-events-auto',
+          'cursor-pointer',
+          'fill-none stroke-2',
+          line.id === 'active-link' ? 'stroke-zinc-200' : 'stroke-black'
+        )}
+        stroke-linecap="round"
+        d={roundCorners(intoPath(line.path), 8).path}
+      />
+      <circle
+        class={line.id === 'active-link' ? 'fill-zinc-200' : 'fill-black'}
+        cx={line.path.at(0)!.x}
+        cy={line.path.at(0)!.y}
+        r="3"
+      />
+      <circle
+        class={line.id === 'active-link' ? 'fill-zinc-200' : 'fill-black'}
+        cx={line.path.at(-1)!.x}
+        cy={line.path.at(-1)!.y}
+        r="3"
+      />
+    </g>
   {/each}
 </svg>
 

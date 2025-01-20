@@ -13,13 +13,13 @@
   import { onMount } from 'svelte'
   import Panel from './shared/Panel.svelte'
   import Plug from './shared/Plug.svelte'
-  import { PlugType } from '../context/plugs'
   import Knob from '../components/Knob/Knob.svelte'
   import Layout from '../components/Layout.svelte'
   import RingSpinner from '../components/RingSpinner.svelte'
   import { create_bpm_range } from '../range/range_creators'
   import { Clock } from 'sobaka-dsp'
   import { getGlobalCtx } from '../context/global'
+  import { PlugType } from '../models/workspace'
 
   export let state: State
   export let disabled = false

@@ -15,14 +15,12 @@
   import { get_workspace } from '../context/workspace'
   import AvatarList from '../components/collaborative/AvatarList.svelte'
   import { goto } from '$app/navigation'
-  import { getGlobalCtx } from '../context/global'
 
   let toolbox_visible = false
   let toolbox_position: Position = { x: 0, y: 0 }
   let workspace_element: Element
 
-  const context = getGlobalCtx()
-  const { workspace, plugs } = get_workspace()
+  const { workspace } = get_workspace()
   const modules = workspace.modules
   const info = workspace.info
   const isEditable = workspace.isEditable
@@ -40,8 +38,7 @@
       toolbox_visible = true
       toolbox_position = $mouse_position
     } else if (event.code === 'Escape') {
-      const active_link = plugs.active_link_store
-      active_link.update(() => null)
+      workspace.pending_link_store.update(() => null)
     }
   }
 
@@ -90,6 +87,7 @@
 <div
   role="menu"
   tabindex="0"
+  data-kind="workspace"
   class="workspace"
   class:editable={$isEditable}
   on:click|self={handle_close}
@@ -103,7 +101,7 @@
   {#each $modules as module (module.id)}
     <ModuleWrapper {module} disabled={!$isEditable} />
   {/each}
-  <Wires />
+  <Wires {mouse_position} />
 </div>
 
 <style>

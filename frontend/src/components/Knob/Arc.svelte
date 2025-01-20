@@ -35,8 +35,6 @@
    */
   export let endAngle: number
 
-  export let strokeWidth: string | number | null | undefined = 10
-
   // @todo -- how to do rest props for SVGPathElement
 
   // from: https://stackoverflow.com/a/18473154
@@ -93,6 +91,5 @@
   d={describeArc(x, y, radius, startAngle, endAngle)}
   fill="none"
   stroke-linecap="round"
-  stroke-width={strokeWidth}
   {...$$restProps}
 />

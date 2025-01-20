@@ -15,11 +15,11 @@
   import Panel from './shared/Panel.svelte'
   import Plug from './shared/Plug.svelte'
   import Knob from '../components/Knob/Knob.svelte'
-  import { PlugType } from '../context/plugs'
   import Layout from '../components/Layout.svelte'
   import RingSpinner from '../components/RingSpinner.svelte'
   import { create_time_range } from '../range/range_creators'
   import { getGlobalCtx } from '../context/global'
+  import { PlugType } from '../models/workspace'
 
   export let state: State
   export let disabled = false

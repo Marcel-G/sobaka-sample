@@ -25,12 +25,14 @@
         radius={40}
         startAngle={-baseAngle}
         endAngle={baseAngle}
+        stroke-width="10"
         class="stroke-zinc-500 dark:stroke-zinc-200"
       />
       <Arc
         x={50}
         y={50}
         radius={40}
+        stroke-width="12"
         startAngle={range.type === RangeType.Continuous && range.bipolar ? 0 : -baseAngle}
         endAngle={-baseAngle + baseAngle * 2 * normalised_value}
         class="stroke-zinc-200 dark:stroke-zinc-900"

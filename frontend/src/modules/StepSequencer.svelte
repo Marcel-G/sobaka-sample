@@ -17,7 +17,6 @@
   import type { StepSequencer } from 'sobaka-dsp'
   import Panel from './shared/Panel.svelte'
   import Plug from './shared/Plug.svelte'
-  import { PlugType } from '../context/plugs'
   import { onDestroy, onMount } from 'svelte'
   import Button from '../components/Button.svelte'
   import Led from '../components/Led.svelte'
@@ -25,6 +24,7 @@
   import { type Tuple } from '../@types'
   import Layout from '../components/Layout.svelte'
   import RingSpinner from '../components/RingSpinner.svelte'
+  import { PlugType } from '../models/workspace'
 
   export let state: State
   export let disabled = false

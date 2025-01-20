@@ -11,7 +11,7 @@
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-check --tsconfig ./tsconfig.json --watch",
     "test:run": "node --import tsx --test",
-    "test": "glob -c \"npm run test:run\" src/*.test.ts src/**/*.test.ts",
+    "test": "glob -c \"npm run test:run -- --watch\" src/*.test.ts src/**/*.test.ts",
     "lint": "prettier --check --plugin-search-dir=. . && eslint .",
     "format": "prettier --write --plugin-search-dir=. .",
     "prebuild": "cd ../sobaka-dsp && npm run build",
@@ -48,6 +48,7 @@
     "vite": "^5.4.11"
   },
   "dependencies": {
+    "@datastructures-js/priority-queue": "^6.3.2",
     "@syncedstore/core": "^0.6.0",
     "@syncedstore/svelte": "^0.6.0",
     "date-fns": "^2.29.2",
@@ -55,6 +56,7 @@
     "lodash": "^4.17.21",
     "sobaka-dsp": "file:../sobaka-dsp",
     "svelte-boring-avatars": "^1.2.2",
+    "svg-round-corners": "^0.4.3",
     "tailwind-merge": "^2.6.0",
     "webmidi": "^3.0.21",
     "y-indexeddb": "^9.0.9",

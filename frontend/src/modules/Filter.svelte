@@ -20,7 +20,6 @@
   import { onDestroy, onMount } from 'svelte'
   import Panel from './shared/Panel.svelte'
   import Plug from './shared/Plug.svelte'
-  import { PlugType } from '../context/plugs'
   import Knob from '../components/Knob/Knob.svelte'
   import Layout from '../components/Layout.svelte'
   import RingSpinner from '../components/RingSpinner.svelte'
@@ -29,6 +28,7 @@
     create_volt_per_octave_range
   } from '../range/range_creators'
   import { getGlobalCtx } from '../context/global'
+  import { PlugType } from '../models/workspace'
 
   export let state: State
   export let disabled = false

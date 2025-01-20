@@ -1,13 +1,13 @@
 <script lang="ts">
   import { onDestroy } from 'svelte'
-  import { writable, type Writable } from 'svelte/store'
-  import { type NodeContext, type ParamContext, PlugType } from '../../context/plugs'
+  import { type NodeContext, type ParamContext } from '../../context/plugs'
   import Tooltip from '../../components/Tooltip.svelte'
   import { get_workspace } from '../../context/workspace'
   import { get_module_context } from '../context'
   import { twMerge } from 'tailwind-merge'
+  import { createPlugId, PlugType } from '../../models/workspace'
 
-  const { workspace, plugs } = get_workspace()
+  const { workspace } = get_workspace()
   const { id: module_id } = get_module_context()
   const position = workspace.module_position(module_id)
 
@@ -16,42 +16,41 @@
   export let label: string
   export let disabled = false
 
-  let plug_id: string
+  const plug_id = createPlugId(module_id, ctx.type, id)
 
-  const node: Writable<Element | null> = writable(null)
+  let element: HTMLElement
 
   // @todo - make this type-safe
   if ([PlugType.Input, PlugType.Output].includes(ctx.type) && id === undefined) {
     throw new Error('Input & Output plug types must have id')
   }
 
-  $: if (
-    // @todo -- annoying null check
-    (ctx.type === PlugType.Param && ctx.param) ||
-    (ctx.type !== PlugType.Param && ctx.module)
-  ) {
-    // Register once module is defined
-    plug_id = plugs.register(module_id, { index: id, node, ctx })
-  }
-
-  function handle_click() {
+  function handle_click(event: MouseEvent) {
     if (disabled) return
-    plugs.make(plug_id)
+    event.stopPropagation()
+    workspace.try_make_link(plug_id)
   }
 
+  // TODO: do something with ctx, so that Links can be connected...
   $: {
+    // TODO: only register plugs initially, and on move.
+
     // position values must be subscribed to in here to trigger reactivity
     // even if we don't really need the values of x and y
-    if ($position.x !== 0 || $position.y !== 0) {
+    if (element && ($position.x !== 0 || $position.y !== 0)) {
       requestAnimationFrame(() => {
-        // Trigger a state update so that dependencies re-calculate the new position
-        node.update(plug_element => plug_element)
+        workspace.positions.registerPlug(plug_id, element)
       })
     }
   }
 
+  $: {
+    workspace.register_plug(plug_id, ctx)
+  }
+
   onDestroy(() => {
-    plugs.remove(plug_id)
+    workspace.remove_plug(plug_id)
+    workspace.positions.removePlug(plug_id)
   })
 
   const classes = {
@@ -65,10 +64,11 @@
   <!-- svelte-ignore a11y-click-events-have-key-events -->
   <div
     role="button"
+    data-kind="plug"
     tabindex="0"
+    on:click={handle_click}
     aria-label={label}
     class={twMerge(classes.plug, disabled && classes.disabled, classes.hover)}
-    on:click={() => handle_click()}
-    bind:this={$node}
+    bind:this={element}
   ></div>
 </Tooltip>

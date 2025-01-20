@@ -25,8 +25,8 @@
   let draw_fn: () => void // @todo this is wird
 
   function init(ctx: CanvasRenderingContext2D) {
-    ctx.fillStyle = get_css_var('--module-background')
-    ctx.strokeStyle = get_css_var('--module-foreground')
+    ctx.fillStyle = 'white'
+    ctx.strokeStyle = 'currentColor'
     ctx.lineWidth = 2
   }
   function primer(ctx: CanvasRenderingContext2D, width: number, height: number) {

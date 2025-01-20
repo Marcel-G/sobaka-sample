@@ -20,7 +20,6 @@
 <script lang="ts">
   import Panel from '../shared/Panel.svelte'
   import Plug from '../shared/Plug.svelte'
-  import { PlugType } from '../../context/plugs'
   import { onDestroy, onMount } from 'svelte'
   import { getGlobalCtx } from '../../context/global'
   import Layout from '../../components/Layout.svelte'
@@ -30,6 +29,7 @@
   import ScopeChannel from './ScopeChannel.svelte'
   import Tooltip from '../../components/Tooltip.svelte'
   import Input from '../../components/Input.svelte'
+  import { PlugType } from '../../models/workspace'
 
   export let state: State
   export let disabled = false

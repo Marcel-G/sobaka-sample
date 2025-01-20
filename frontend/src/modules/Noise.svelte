@@ -12,10 +12,10 @@
   import { onDestroy, onMount } from 'svelte'
   import Panel from './shared/Panel.svelte'
   import Plug from './shared/Plug.svelte'
-  import { PlugType } from '../context/plugs'
   import { getGlobalCtx } from '../context/global'
   import Layout from '../components/Layout.svelte'
   import RingSpinner from '../components/RingSpinner.svelte'
+  import { PlugType } from '../models/workspace'
 
   export let disabled = false
   let noise: Noise

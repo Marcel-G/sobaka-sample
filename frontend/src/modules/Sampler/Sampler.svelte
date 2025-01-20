@@ -26,7 +26,6 @@
   import { onDestroy, onMount } from 'svelte'
   import Panel from '../shared/Panel.svelte'
   import Plug from '../shared/Plug.svelte'
-  import { PlugType } from '../../context/plugs'
   import Knob from '../../components/Knob/Knob.svelte'
   import { getGlobalCtx } from '../../context/global'
   import AudioPreview from './AudioPreview.svelte'
@@ -35,6 +34,7 @@
   import Layout from '../../components/Layout.svelte'
   import RingSpinner from '../../components/RingSpinner.svelte'
   import { type Range, RangeType } from '../../range/range'
+  import { PlugType } from '../../models/workspace'
 
   export let state: State
   export let disabled = false

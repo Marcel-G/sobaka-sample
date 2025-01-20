@@ -10,6 +10,8 @@ import { type SubDocReference } from '../util/subdoc'
 import { type Position } from '../@types'
 import { SyncedDoc, type Config } from './syncedDoc'
 import type { User } from '../context/global'
+import { createPositionStores } from '../context/positions'
+import type { NodeContext, ParamContext } from '../context/plugs'
 
 export interface WorkspaceDoc {
   modules: Array<Module>
@@ -34,6 +36,41 @@ export interface Link {
   to: string
 }
 
+const In = (n: number) => `in-${n}`
+const Out = (n: number) => `out-${n}`
+const Param = (n: number) => `param-${n}`
+
+export enum PlugType {
+  Input,
+  Output,
+  Param
+}
+
+export const is_fully_linked = (link: Partial<Link> | null): link is Link => {
+  return Boolean(link?.from && link?.to)
+}
+
+const to_string = (type: PlugType, n: number) => {
+  switch (type) {
+    case PlugType.Input:
+      return In(n)
+    case PlugType.Output:
+      return Out(n)
+    case PlugType.Param:
+      return Param(n)
+  }
+}
+
+export const plug_type = (id: string) => {
+  if (id.includes('in-')) return PlugType.Input
+  if (id.includes('out-')) return PlugType.Output
+  if (id.includes('param-')) return PlugType.Param
+  throw new Error('Invalid plug id')
+}
+
+export const createPlugId = (moduleId: string, type: PlugType, n: number) =>
+  moduleId + '/' + to_string(type, n)
+
 type WorkspaceInfo = {
   title: string
 }
@@ -56,7 +93,10 @@ type UserAwareness = {
 
 export class Workspace extends SyncedDoc<'workspace'> {
   private store: ReturnType<typeof syncedStore<WorkspaceStore>>
+  positions = createPositionStores()
   user_store = writable<Record<string, UserAwareness>>({})
+  pending_link_store = writable<Partial<Link> | null>(null)
+  private plug_context = writable<Record<string, ParamContext | NodeContext>>({})
 
   constructor(doc: Y.Doc, config: Config) {
     super('workspace', doc, config)
@@ -71,6 +111,8 @@ export class Workspace extends SyncedDoc<'workspace'> {
     this.rtc.awareness.on('change', () => {
       this.handleAwarenessChange()
     })
+
+    audioConnector(this.plug_context, this.links)
   }
 
   fork() {
@@ -128,6 +170,20 @@ export class Workspace extends SyncedDoc<'workspace'> {
     this.user_store.update(() => newState)
   }
 
+  register_plug(id: string, context: ParamContext | NodeContext) {
+    this.plug_context.update(contexts => {
+      contexts[id] = context
+      return contexts
+    })
+  }
+
+  remove_plug(id: string) {
+    this.plug_context.update(contexts => {
+      delete contexts[id]
+      return contexts
+    })
+  }
+
   // Module actions
   create_module(type: ModuleUI, position: { x: number; y: number }): string {
     const id = crypto.randomUUID()
@@ -172,12 +228,17 @@ export class Workspace extends SyncedDoc<'workspace'> {
   }
 
   remove_module(id: string) {
-    const { modules } = this.store
+    const { modules, links } = this.store
 
     const index = modules.findIndex(byModuleId(id))
     if (index >= 0) {
       modules.splice(index, 1)
     }
+
+    links
+      .filter(link => link.from.startsWith(id) || link.to.startsWith(id))
+      .map(link => link.id)
+      .forEach(id => this.remove_link(id))
   }
 
   clone_module(id: string) {
@@ -209,12 +270,32 @@ export class Workspace extends SyncedDoc<'workspace'> {
     })
   }
 
+  try_make_link(plugId: string) {
+    const type = plug_type(plugId)
+
+    this.pending_link_store.update(link => {
+      const next = link ? { ...link } : {}
+      if ([PlugType.Input, PlugType.Param].includes(type)) {
+        next.to = plugId
+      } else {
+        next.from = plugId
+      }
+
+      if (is_fully_linked(next)) {
+        this.add_link(next)
+        return null
+      }
+
+      return next
+    })
+  }
+
   // Link actions
   add_link(link: Link): string {
     const id = crypto.randomUUID()
     const { links } = this.store
 
-    links.push({ id, ...link })
+    links.push({ ...link, id })
 
     return id
   }
@@ -226,6 +307,55 @@ export class Workspace extends SyncedDoc<'workspace'> {
       links.splice(index, 1)
     }
   }
+}
+
+const audioConnector = (
+  plugs: Readable<Record<string, ParamContext | NodeContext>>,
+  links: Readable<Required<Link>[]>
+) => {
+  const currentConnections = new Map<string, () => void>()
+
+  derived([plugs, links], ([$plugs, $links]) => [$plugs, $links] as const).subscribe(
+    ([$plugs, $links]) => {
+      // Remove stale connections
+      for (const [linkId, dispose] of currentConnections) {
+        if (!$links.find(l => l.id === linkId)) {
+          dispose()
+          currentConnections.delete(linkId)
+        }
+      }
+
+      // Update/create connections
+      for (const link of $links) {
+        // Skip if connection already exists
+        if (currentConnections.has(link.id)) continue
+
+        const from = $plugs[link.from]
+        const to = $plugs[link.to]
+
+        if (!from || !to) continue
+
+        try {
+          if (to.type === PlugType.Param && from.type === PlugType.Output) {
+            if (!to.param || !from.module) continue
+            from.module.connect(to.param, from.connectIndex)
+            const dispose = () => from.module?.disconnect(to.param, from.connectIndex)
+            currentConnections.set(link.id, dispose)
+          } else if (to.type === PlugType.Input && from.type === PlugType.Output) {
+            if (!to.module || !from.module) continue
+            from.module.connect(to.module, from.connectIndex, to.connectIndex)
+            const dispose = () =>
+              from.module.disconnect(to.module, from.connectIndex, to.connectIndex)
+            currentConnections.set(link.id, dispose)
+          } else {
+            throw new Error('Invalid connection')
+          }
+        } catch (err) {
+          console.warn('Failed to create audio connection:', err)
+        }
+      }
+    }
+  )
 }
 
 const byModuleId = (id: string) => (module: Module) => module.id === id

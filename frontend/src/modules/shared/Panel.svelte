@@ -13,6 +13,8 @@
 </script>
 
 <script lang="ts">
+  import { onDestroy } from 'svelte'
+
   import { relative_to_element, useDrag } from '../../actions/drag'
   import type { OnDrag } from '../../actions/drag'
   import { get_workspace } from '../../context/workspace'
@@ -32,8 +34,24 @@
 
   const position = workspace.module_position(id)
 
+  let element: HTMLElement
+
   $: col = `${$position.x + 1} / span ${width}`
   $: row = `${$position.y + 1} / span ${height}`
+
+  $: {
+    // position values must be subscribed to in here to trigger reactivity
+    // even if we don't really need the values of x and y
+    if (element && ($position.x !== 0 || $position.y !== 0)) {
+      requestAnimationFrame(() => {
+        workspace.positions.registerModule(id, element)
+      })
+    }
+  }
+
+  onDestroy(() => {
+    workspace.positions.removeModule(id)
+  })
 
   const classes = {
     panel:
@@ -67,8 +85,11 @@
 <ThemeProvider {theme}>
   <div
     use:useDrag={{ onDrag: handle_drag }}
+    bind:this={element}
     class={twMerge(classes.panel, disabled && classes.disabled)}
     style={`grid-column: ${col}; grid-row: ${row};`}
+    data-kind="module"
+    data-module-id={id}
   >
     <div class={classes.bar}>
       <span class={classes.name}>{name}</span>

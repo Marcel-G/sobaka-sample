@@ -17,7 +17,6 @@
   import type { Sequencer } from 'sobaka-dsp'
   import Panel from './shared/Panel.svelte'
   import Plug from './shared/Plug.svelte'
-  import { PlugType } from '../context/plugs'
   import { onDestroy, onMount } from 'svelte'
   import { getGlobalCtx } from '../context/global'
   import Knob from '../components/Knob/Knob.svelte'
@@ -26,6 +25,7 @@
   import Layout from '../components/Layout.svelte'
   import RingSpinner from '../components/RingSpinner.svelte'
   import { type Range, RangeType } from '../range/range'
+  import { PlugType } from '../models/workspace'
 
   const context = getGlobalCtx()
 
