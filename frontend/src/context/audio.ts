@@ -4,7 +4,9 @@ import worker_js_url from 'sobaka-dsp/pkg/sobaka-worklet.worker.js?url&worker'
 
 export const load = async (ctx: AudioContext) => {
   const handle_interaction = () => {
-    void ctx?.resume()
+    if (ctx.state === 'suspended') {
+      void ctx?.resume()
+    }
   }
   document?.addEventListener('click', handle_interaction, { once: true })
   await init()

@@ -19,10 +19,8 @@
   import type { OnDrag } from '../../actions/drag'
   import { get_workspace } from '../../context/workspace'
   import { get_module_context } from '../context'
-  import ThemeProvider, { type ModuleTheme } from '../ThemeProvider.svelte'
   import { twMerge } from 'tailwind-merge'
 
-  export let theme: Partial<ModuleTheme> = {}
   export let name: string
   export let disabled = false
   export let height = 0
@@ -30,7 +28,6 @@
 
   const { workspace } = get_workspace()
   const { id } = get_module_context()
-  // const { primary } = theme
 
   const position = workspace.module_position(id)
 
@@ -55,23 +52,36 @@
 
   const classes = {
     panel:
-      'shadow-lg rounded-lg p-2 cursor-move border-box select-none relative z-5 border-2 border-t-[18px] border-zinc-200 dark:border-zinc-900',
+      'bg-module-background shadow-lg rounded-lg p-2 cursor-move border-box select-none relative z-5 border-2 border-t-18 border-module-accent',
     disabled:
       'filter grayscale-65 contrast-130 pointer-events-none select-none cursor-none',
     bar: 'absolute left-0 top-0 right-0 text-xs pl-1 transform -translate-y-full flex justify-between items-end pointer-events-none',
-    barButton: `font-mono border-0 bg-white text-zinc-900 w-6 transition-opacity duration-125 pointer-events-auto`,
+    barButton: `font-mono border-0 bg-module-background text-light w-6 transition-opacity duration-125 pointer-events-auto`,
     barButtonHover: 'hover:opacity-75',
-    barButtonActive: `active:opacity-0 active:text-zinc-700 dark:active:text-zinc-300`,
-    name: 'uppercase font-mono font-bold text-zinc-900 dark:text-zinc-200 mix-blend-difference overflow-hidden text-ellipsis',
+    barButtonActive: `active:opacity-0`,
+    name: 'uppercase font-mono font-bold text-dark mix-blend-difference overflow-hidden text-ellipsis',
     inputs: 'absolute top-2 left-0 transform -translate-x-1/2 flex flex-col',
     outputs: 'absolute top-2 right-0 transform translate-x-1/2 flex flex-col'
   }
 
   const handle_drag: OnDrag = (event, origin, element) => {
     if (disabled) return true
-    const parent = element.parentElement
-    if (parent instanceof Element) {
-      const { x: x_in, y: y_in } = relative_to_element(event, origin, parent)
+
+    // Find the first parent with data-kind="workspace"
+    let workspaceElement = element
+    while (
+      workspaceElement &&
+      workspaceElement.getAttribute('data-kind') !== 'workspace'
+    ) {
+      if (workspaceElement.parentElement) {
+        workspaceElement = workspaceElement.parentElement
+      } else {
+        break
+      }
+    }
+
+    if (workspaceElement instanceof Element) {
+      const { x: x_in, y: y_in } = relative_to_element(event, origin, workspaceElement)
 
       let { x, y } = into_grid_coords({ x: x_in, y: y_in })
       if (x < 0 || y < 0) {
@@ -82,45 +92,43 @@
   }
 </script>
 
-<ThemeProvider {theme}>
-  <div
-    use:useDrag={{ onDrag: handle_drag }}
-    bind:this={element}
-    class={twMerge(classes.panel, disabled && classes.disabled)}
-    style={`grid-column: ${col}; grid-row: ${row};`}
-    data-kind="module"
-    data-module-id={id}
-  >
-    <div class={classes.bar}>
-      <span class={classes.name}>{name}</span>
-      {#if !disabled}
-        <span class="actions flex">
-          <button
-            class={twMerge(
-              classes.barButton,
-              classes.barButtonHover,
-              classes.barButtonActive
-            )}
-            on:click={() => workspace.clone_module(id)}>+</button
-          >
-          <button
-            class={twMerge(
-              classes.barButton,
-              classes.barButtonHover,
-              classes.barButtonActive,
-              'rounded-tr-lg'
-            )}
-            on:click={() => workspace.remove_module(id)}>x</button
-          >
-        </span>
-      {/if}
-    </div>
-    <slot />
-    <div class={classes.inputs}>
-      <slot class="vertical" name="inputs" />
-    </div>
-    <div class={classes.outputs}>
-      <slot class="vertical" name="outputs" />
-    </div>
+<div
+  use:useDrag={{ onDrag: handle_drag }}
+  bind:this={element}
+  class={twMerge('panel', classes.panel, disabled && classes.disabled)}
+  style={`grid-column: ${col}; grid-row: ${row};`}
+  data-kind="module"
+  data-module-id={id}
+>
+  <div class={classes.bar}>
+    <span class={classes.name}>{name}</span>
+    {#if !disabled}
+      <span class="actions flex">
+        <button
+          class={twMerge(
+            classes.barButton,
+            classes.barButtonHover,
+            classes.barButtonActive
+          )}
+          on:click={() => workspace.clone_module(id)}>+</button
+        >
+        <button
+          class={twMerge(
+            classes.barButton,
+            classes.barButtonHover,
+            classes.barButtonActive,
+            'rounded-tr-[calc(var(--radius-lg)-2px)]'
+          )}
+          on:click={() => workspace.remove_module(id)}>x</button
+        >
+      </span>
+    {/if}
   </div>
-</ThemeProvider>
+  <slot />
+  <div class={classes.inputs}>
+    <slot class="vertical" name="inputs" />
+  </div>
+  <div class={classes.outputs}>
+    <slot class="vertical" name="outputs" />
+  </div>
+</div>

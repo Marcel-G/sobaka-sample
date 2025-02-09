@@ -8,7 +8,7 @@ export const create_volume_range = (start = 0, end = 1): ContinuousRange => ({
     type: Scale.Exponential,
     exp: 1.5
   },
-  stringToValue: (value: number, unit: string) => {
+  stringToValue: (value: number, _unit: string) => {
     return Math.pow(10, value / 20)
   },
   valueToString: (value: number) => {

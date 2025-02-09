@@ -1,16 +1,20 @@
-import type { Link } from '../models/workspace'
+import { plug_type, PlugType, type Link } from '../models/workspace'
 import { MinPriorityQueue as PriorityQueue } from '@datastructures-js/priority-queue'
 import type { ModulePosition, PlugPosition, Point, Rectangle } from './positions'
 
 export interface PathRequest {
   id?: string
   start: Point
+  startId: string
   end: Point
+  endId: string
 }
 
 export interface PathResponse {
   id?: string
   path: Point[]
+  startId: string
+  endId: string
 }
 
 // Add this interface to store direction information with points
@@ -89,11 +93,16 @@ export const findPath = (
       const key = `${point.x},${point.y}`
       occupiedPoints.set(key, (occupiedPoints.get(key) ?? 0) + 1)
     }
-    paths.push({ id: request.id, path })
+    paths.push({
+      id: request.id,
+      path,
+      startId: request.startId,
+      endId: request.endId
+    })
   }
 
   return paths
-    .map(({ id, path }) => ({ id, path: simplifyPath(path) }))
+    .map(({ path, ...rest }) => ({ ...rest, path: simplifyPath(path) }))
     .filter(({ path }) => path.length > 0)
 }
 
@@ -273,6 +282,8 @@ const calculateBoundary = (
   return { xMax: xMax + 10, yMax: yMax + 10 }
 }
 
+const GRID_STEP = 8
+
 export const linker = (
   links: Link[],
   plugPositions: Map<string, PlugPosition>,
@@ -281,15 +292,38 @@ export const linker = (
   const obstacles = Array.from(modulePositions.values().map(module => module.position))
 
   const requests: PathRequest[] = links.flatMap(link => {
-    const start = plugPositions.get(link.to)?.position
     const end = plugPositions.get(link.from)?.position
+    const start = plugPositions.get(link.to)?.position
+
+    // Add special case for the output mixer.
+    // We don't want to have a wire going all the way there because
+    // it would cause clutter.
+    if (end && plug_type(link.to) === PlugType.Mixer) {
+      return [
+        {
+          id: link.id,
+          startId: link.to,
+          end,
+          endId: link.to,
+          start: { x: end.x + GRID_STEP * 3, y: end.y }
+        }
+      ]
+    }
 
     if (!start || !end) {
       return []
     }
 
-    return [{ id: link.id, start, end }]
+    return [
+      {
+        id: link.id,
+        startId: link.to,
+        start,
+        endId: link.from,
+        end
+      }
+    ]
   })
 
-  return findPath(requests, obstacles, { gridStep: 8 })
+  return findPath(requests, obstacles, { gridStep: GRID_STEP })
 }

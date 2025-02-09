@@ -8,7 +8,7 @@ export interface ParamContext {
 }
 
 export interface NodeContext {
-  type: PlugType.Input | PlugType.Output
+  type: PlugType.Input | PlugType.Output | PlugType.Mixer
   connectIndex: number
   module: AudioNode
 }

@@ -1,9 +1,4 @@
 <script context="module" lang="ts">
-  import type { ModuleTheme } from '../ThemeProvider.svelte'
-  export const theme: Partial<ModuleTheme> = {
-    primary: 'pink'
-  }
-
   type State = {
     pitch: number
     shape: number
@@ -72,7 +67,14 @@
   })
 </script>
 
-<Panel {name} height={8} width={8} {disabled} {theme}>
+<Panel
+  {name}
+  height={8}
+  width={8}
+  {disabled}
+  --color-module-accent="var(--color-pink)"
+  --color-module-background="var(--color-pink-dark)"
+>
   {#if loading}
     <Layout type="center">
       <RingSpinner color="blue" size="sm" />
@@ -132,8 +134,8 @@
     height: 0.75rem;
     display: flex;
     justify-content: center;
-    fill: var(--module-foreground);
-    stroke: var(--module-foreground);
+    fill: var(--color-light);
+    stroke: var(--color-light);
     margin-bottom: 0.25rem;
   }
 </style>

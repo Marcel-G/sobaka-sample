@@ -39,10 +39,14 @@ export interface Link {
 const In = (n: number) => `in-${n}`
 const Out = (n: number) => `out-${n}`
 const Param = (n: number) => `param-${n}`
+const Mixer = (n: number) => `mixer-${n}`
 
 export enum PlugType {
   Input,
   Output,
+  // TODO: mixer represents a link to the master mixer
+  //       These should have as special wire treatment that indicates
+  Mixer,
   Param
 }
 
@@ -58,6 +62,8 @@ const to_string = (type: PlugType, n: number) => {
       return Out(n)
     case PlugType.Param:
       return Param(n)
+    case PlugType.Mixer:
+      return Mixer(n)
   }
 }
 
@@ -65,6 +71,7 @@ export const plug_type = (id: string) => {
   if (id.includes('in-')) return PlugType.Input
   if (id.includes('out-')) return PlugType.Output
   if (id.includes('param-')) return PlugType.Param
+  if (id.includes('mixer-')) return PlugType.Mixer
   throw new Error('Invalid plug id')
 }
 
@@ -290,6 +297,19 @@ export class Workspace extends SyncedDoc<'workspace'> {
     })
   }
 
+  try_make_link_to_mixer(chan = 0) {
+    this.pending_link_store.update(link => {
+      if (link?.from) {
+        this.add_link({
+          from: link.from,
+          to: createPlugId('global', PlugType.Mixer, chan)
+        })
+        return null
+      }
+      return link
+    })
+  }
+
   // Link actions
   add_link(link: Link): string {
     const id = crypto.randomUUID()
@@ -309,6 +329,8 @@ export class Workspace extends SyncedDoc<'workspace'> {
   }
 }
 
+// TODO: audio nodes should probably not live within the UI components
+//       but it's a bit too much work to change right now.
 const audioConnector = (
   plugs: Readable<Record<string, ParamContext | NodeContext>>,
   links: Readable<Required<Link>[]>
@@ -341,7 +363,10 @@ const audioConnector = (
             from.module.connect(to.param, from.connectIndex)
             const dispose = () => from.module?.disconnect(to.param, from.connectIndex)
             currentConnections.set(link.id, dispose)
-          } else if (to.type === PlugType.Input && from.type === PlugType.Output) {
+          } else if (
+            (to.type === PlugType.Input || to.type === PlugType.Mixer) &&
+            from.type === PlugType.Output
+          ) {
             if (!to.module || !from.module) continue
             from.module.connect(to.module, from.connectIndex, to.connectIndex)
             const dispose = () =>

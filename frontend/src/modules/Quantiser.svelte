@@ -1,9 +1,4 @@
 <script context="module" lang="ts">
-  import type { ModuleTheme } from './ThemeProvider.svelte'
-  export const theme: Partial<ModuleTheme> = {
-    primary: 'var(--cyan)'
-  }
-
   const NOTE_LABELS = [
     'C',
     'Cs',
@@ -70,7 +65,14 @@
   })
 </script>
 
-<Panel {name} height={8} width={15} {disabled} {theme}>
+<Panel
+  {name}
+  height={8}
+  width={15}
+  {disabled}
+  --color-module-accent="var(--color-cyan)"
+  --color-module-background="var(--color-cyan-dark)"
+>
   {#if loading}
     <Layout type="center">
       <RingSpinner color="blue" size="sm" />
@@ -78,14 +80,19 @@
   {:else}
     <ul class="board">
       {#each NOTE_LABELS as label, i}
-        <!-- svelte-ignore a11y-click-events-have-key-events -->
-        <li
-          class="key {label}"
-          class:pressed={state.notes[i].value}
-          on:click={() => {
-            if (!disabled) on_toggle(i)
-          }}
-        />
+        <li>
+          <button
+            type="button"
+            class="key {label}"
+            class:pressed={state.notes[i].value}
+            on:click={() => {
+              if (!disabled) on_toggle(i)
+            }}
+            {disabled}
+            aria-pressed={state.notes[i].value}
+            aria-label="{label} note"
+          ></button>
+        </li>
       {/each}
     </ul>
   {/if}
@@ -146,14 +153,10 @@
   }
 
   .key.pressed {
-    background-color: var(--module-highlight);
+    background-color: var(--color-module-accent);
   }
 
   li {
-    margin: 0;
-    padding: 0;
-    list-style: none;
-    position: relative;
-    float: left;
+    display: contents;
   }
 </style>

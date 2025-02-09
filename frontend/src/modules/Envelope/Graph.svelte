@@ -70,9 +70,9 @@
       fill="none"
       stroke-width="0.03"
       stroke-linecap="round"
-      stroke="var(--module-highlight)"
+      stroke="var(--color-module-accent)"
     />
-    <circle r="0.05" fill="var(--module-highlight)">
+    <circle r="0.05" fill="var(--color-module-accent)">
       <animateMotion
         bind:this={anim_a_ref}
         begin="indefinite"

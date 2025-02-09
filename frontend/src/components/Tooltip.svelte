@@ -5,7 +5,7 @@
   export let label: string
 
   const classes = {
-    base: 'invisible absolute z-[1000] top-1/2 max-w-[120px] bg-zinc-900 text-zinc-200 text-center rounded-lg p-2 pointer-events-none group-hover:visible',
+    base: 'invisible absolute z-1000 top-1/2 max-w-[120px] bg-zinc-900 text-zinc-200 text-center rounded-lg p-2 pointer-events-none group-hover:visible',
     arrow:
       "before:content-[''] before:absolute before:top-1/2 before:-mt-[5px] before:border-[5px] before:border-solid"
   }

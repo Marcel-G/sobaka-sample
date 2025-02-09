@@ -1,9 +1,4 @@
 <script context="module" lang="ts">
-  import type { ModuleTheme } from './ThemeProvider.svelte'
-  export const theme: Partial<ModuleTheme> = {
-    primary: 'var(--cyan)'
-  }
-
   type State = {
     steps: { value: number }[]
   }
@@ -70,7 +65,14 @@
   })
 </script>
 
-<Panel {name} height={8} width={26} {disabled} {theme}>
+<Panel
+  {name}
+  height={8}
+  width={26}
+  {disabled}
+  --color-module-accent="var(--color-cyan)"
+  --color-module-background="var(--color-cyan-dark)"
+>
   {#if loading}
     <Layout type="center">
       <RingSpinner color="blue" size="sm" />

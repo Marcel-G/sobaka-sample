@@ -1,9 +1,4 @@
 <script context="module" lang="ts">
-  import type { ModuleTheme } from './ThemeProvider.svelte'
-  export const theme: Partial<ModuleTheme> = {
-    primary: 'var(--pink)'
-  }
-
   type State = { bpm: number }
 
   export const initialState: State = { bpm: 120 }
@@ -43,7 +38,14 @@
   $: lfo?.frequency.setValueAtTime((state.bpm || 0) / 60, context.audio.currentTime)
 </script>
 
-<Panel {name} height={6} width={5} {disabled} {theme}>
+<Panel
+  {name}
+  {disabled}
+  height={6}
+  width={5}
+  --color-module-accent="var(--color-pink)"
+  --color-module-background="var(--color-pink-dark)"
+>
   {#if loading}
     <Layout type="center">
       <RingSpinner color="blue" size="sm" />

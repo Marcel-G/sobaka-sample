@@ -1,9 +1,4 @@
 <script context="module" lang="ts">
-  import type { ModuleTheme } from '../ThemeProvider.svelte'
-  export const theme: Partial<ModuleTheme> = {
-    primary: 'var(--cyan)'
-  }
-
   type State = {
     threshold: number
     time: number
@@ -74,7 +69,14 @@
   })
 </script>
 
-<Panel {name} height={15} width={13} {disabled} {theme}>
+<Panel
+  {name}
+  height={15}
+  width={13}
+  {disabled}
+  --color-module-accent="var(--color-cyan)"
+  --color-module-background="var(--color-cyan-dark)"
+>
   {#if loading}
     <Layout type="center">
       <RingSpinner color="blue" size="sm" />
@@ -134,8 +136,8 @@
   .screen {
     position: relative;
     overflow: hidden;
-    background-color: var(--module-knob-background);
-    box-shadow: inset 0 0 0.25rem var(--background);
+    background-color: var(--color-dark);
+    box-shadow: inset 0 0 0.25rem var(--color-darker);
     border-radius: 5px;
     flex: 1 1 auto;
 

@@ -1,9 +1,4 @@
 <script context="module" lang="ts">
-  import type { ModuleTheme } from '../ThemeProvider.svelte'
-  export const theme: Partial<ModuleTheme> = {
-    primary: 'var(--yellow)'
-  }
-
   type State = {
     attack: number
     decay: number
@@ -84,7 +79,14 @@
   })
 </script>
 
-<Panel {name} height={10} width={16} {disabled} {theme}>
+<Panel
+  {name}
+  height={10}
+  width={16}
+  {disabled}
+  --color-module-accent="var(--color-yellow)"
+  --color-module-background="var(--color-yellow-dark)"
+>
   {#if loading}
     <Layout type="center">
       <RingSpinner color="blue" size="sm" />

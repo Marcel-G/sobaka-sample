@@ -12,7 +12,6 @@ import Sequencer, { initialState as sequencerInitialState } from './Sequencer.sv
 import StepSequencer, {
   initialState as stepSequencerInitialState
 } from './StepSequencer.svelte'
-import Output, { initialState as outputInitialState } from './Output.svelte'
 import Vca, { initialState as vcaInitialState } from './Vca.svelte'
 import Noise, { initialState as noiseInitialState } from './Noise.svelte'
 import Delay, { initialState as delayInitialState } from './Delay.svelte'
@@ -23,7 +22,6 @@ import Quantiser, { initialState as quantiserInitialState } from './Quantiser.sv
 import SampleAndHold, {
   initialState as sampleAndHoldInitialState
 } from './SampleAndHold.svelte'
-import Sampler, { initialState as samplerInitialState } from './Sampler/Sampler.svelte'
 import type { Module } from '../models/workspace'
 
 export const MODULES = {
@@ -35,7 +33,6 @@ export const MODULES = {
   Reverb,
   Sequencer,
   StepSequencer,
-  Output,
   Vca,
   Noise,
   Delay,
@@ -43,8 +40,7 @@ export const MODULES = {
   SpecScope,
   Lfo,
   Quantiser,
-  SampleAndHold,
-  Sampler
+  SampleAndHold
 } as const
 
 export type ModuleUI = keyof typeof MODULES
@@ -60,7 +56,6 @@ export const INITIAL_STATE = {
   Reverb: reverbInitialState,
   Sequencer: sequencerInitialState,
   StepSequencer: stepSequencerInitialState,
-  Output: outputInitialState,
   Vca: vcaInitialState,
   Noise: noiseInitialState,
   Delay: delayInitialState,
@@ -68,8 +63,7 @@ export const INITIAL_STATE = {
   SpecScope: specScopeInitialState,
   Lfo: lfoInitialState,
   Quantiser: quantiserInitialState,
-  SampleAndHold: sampleAndHoldInitialState,
-  Sampler: samplerInitialState
+  SampleAndHold: sampleAndHoldInitialState
 } as const
 
 // Maybe it's better to use props somehow?

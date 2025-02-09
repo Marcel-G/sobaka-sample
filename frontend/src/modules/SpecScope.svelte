@@ -1,9 +1,4 @@
 <script context="module" lang="ts">
-  import type { ModuleTheme } from './ThemeProvider.svelte'
-  export const theme: Partial<ModuleTheme> = {
-    primary: 'var(--cyan)'
-  }
-
   export const initialState: Record<string, never> = {}
 </script>
 
@@ -93,14 +88,14 @@
 
     ctx.lineTo(width, height)
     ctx.closePath()
-    ctx.fillStyle = get_css_var('--foreground')
+    ctx.fillStyle = get_css_var('--color-light')
     ctx.fill()
 
     // Draw line at the tallest peak (fundamental frequency)
     const fundamentalFreq = maxAmplitudeIndex * (context.audio.sampleRate / node.fftSize)
     const fundamentalX = frequencyToX(fundamentalFreq)
     if (fundamentalFreq >= minFreq && fundamentalFreq <= maxFreq) {
-      ctx.strokeStyle = get_css_var('--module-highlight')
+      ctx.strokeStyle = get_css_var('--color-module-accent')
       ctx.lineWidth = 2
       ctx.beginPath()
       ctx.moveTo(fundamentalX, 0)
@@ -108,7 +103,7 @@
       ctx.stroke()
 
       // Render fundamental frequency in the bottom left corner
-      ctx.fillStyle = get_css_var('--foreground')
+      ctx.fillStyle = get_css_var('--color-light')
       ctx.font = '12px monospace'
       ctx.fillText(`${fundamentalFreq.toFixed(2)}Hz`, 10, 15)
     }
@@ -152,7 +147,14 @@
   })
 </script>
 
-<Panel {name} height={15} width={13} {disabled} {theme}>
+<Panel
+  {name}
+  height={15}
+  width={13}
+  {disabled}
+  --color-module-accent="var(--color-cyan)"
+  --color-module-background="var(--color-cyan-dark)"
+>
   {#if loading}
     <Layout type="center">
       <RingSpinner color="blue" size="sm" />
@@ -160,7 +162,7 @@
   {:else}
     <div class="scope-controls">
       <div class="screen">
-        <canvas class="canvas" bind:this={canvas} />
+        <canvas class="canvas" bind:this={canvas}></canvas>
       </div>
     </div>
   {/if}
@@ -178,8 +180,8 @@
   .screen {
     position: relative;
     overflow: hidden;
-    background-color: var(--module-knob-background);
-    box-shadow: inset 0 0 0.25rem var(--background);
+    background-color: var(--color-dark);
+    box-shadow: inset 0 0 0.25rem var(--color-darker);
     border-radius: 5px;
     flex: 1 1 auto;
 
@@ -191,11 +193,6 @@
     display: flex;
     flex-direction: column;
     height: 100%;
-  }
-  .controls {
-    display: flex;
-    flex-direction: row;
-    padding-top: 0.5rem;
   }
   .canvas {
     position: absolute;

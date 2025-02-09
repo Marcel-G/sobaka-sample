@@ -13,7 +13,7 @@
   let input_ref: HTMLInputElement
   let isMouseDown = false
 
-  const handleMouseDown = (event: MouseEvent) => {
+  const handleMouseDown = (_event: MouseEvent) => {
     isMouseDown = true
   }
   const handleMouseUp = (event: MouseEvent) => {

@@ -1,4 +1,5 @@
 import { sveltekit } from '@sveltejs/kit/vite'
+import tailwindcss from '@tailwindcss/vite'
 
 function crossOriginIsolationMiddleware(_, response, next) {
   response.setHeader('Cross-Origin-Opener-Policy', 'same-origin')
@@ -25,7 +26,7 @@ const config = {
   define: {
     global: 'globalThis'
   },
-  plugins: [crossOriginIsolation, sveltekit()],
+  plugins: [crossOriginIsolation, tailwindcss(), sveltekit()],
   server: {
     fs: {
       // Allow serving files from one level up to the project root

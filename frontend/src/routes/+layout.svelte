@@ -1,38 +1,35 @@
 <script lang="ts">
   import '../app.css'
-  import { navigating } from '$app/stores'
-  import Loading from '../components/Loading.svelte'
   import { onDestroy, onMount } from 'svelte'
   import { browser } from '$app/environment'
-  import { type PageData } from './$types'
   import { createGlobalCtx, type Global } from '../context/global'
+  import { type PageData } from './$types'
+  import Loading from '../components/Loading.svelte'
 
   export let data: PageData
-  let context: Global | null = null
+  let global: Global | null = null
 
   if (browser) {
     onMount(async () => {
-      context = await createGlobalCtx(data.config)
+      global = await createGlobalCtx(data.config)
     })
 
     onDestroy(() => {
-      context?.cleanup()
+      global?.cleanup()
     })
   }
 </script>
 
-<main>
-  {#if $navigating || !context}
-    <Loading />
-  {:else}
-    <slot />
-  {/if}
-</main>
+{#if !global}
+  <Loading />
+{:else}
+  <slot />
+{/if}
 
 <style lang="postcss">
   :global(html) {
-    /* background-color: theme(colors.darker.950); */
-    /* color: theme(colors.light.50); */
+    background-color: var(--color-darker);
+    color: var(--color-light);
   }
   :global(body),
   :global(html) {

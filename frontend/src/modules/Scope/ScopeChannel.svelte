@@ -65,7 +65,7 @@
 </script>
 
 <div class="oscilloscope-wrapper">
-  <canvas class="canvas" bind:this={canvas} />
+  <canvas class="canvas" bind:this={canvas}></canvas>
 </div>
 
 <style>

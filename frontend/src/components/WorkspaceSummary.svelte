@@ -10,27 +10,17 @@
   const href = `/workspace/${workspace.id}`
 </script>
 
-<li>
-  <a {href}>{$info.title}</a>
-  <span class="updated-at">
-    Updated
-    <time>
-      {formatDistanceToNow(new Date(meta.updatedAt))}
-    </time> ago
-  </span>
-  <slot />
+<li class="group py-2 px-3 hover:bg-dark rounded-md transition-colors">
+  <a {href} class="block text-cyan font-medium mb-1">{$info.title}</a>
+  <div class="flex justify-between items-center">
+    <span class="text-gray-400 text-xs">
+      Updated
+      <time>
+        {formatDistanceToNow(new Date(meta.updatedAt))}
+      </time> ago
+    </span>
+    <div class="opacity-0 group-hover:opacity-100 transition-opacity">
+      <slot />
+    </div>
+  </div>
 </li>
-
-<style>
-  .updated-at {
-    font-size: 0.8em;
-  }
-
-  li {
-    padding: 0.125rem;
-  }
-
-  a {
-    color: var(--cyan);
-  }
-</style>

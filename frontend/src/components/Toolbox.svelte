@@ -3,6 +3,7 @@
   import { get_workspace } from '../context/workspace'
   import { MODULES, type ModuleUI } from '../modules'
   import { into_grid_coords } from '../modules/shared/Panel.svelte'
+  import { onMount } from 'svelte'
 
   export let position = { x: 0, y: 0 }
   export let onClose: () => void
@@ -12,6 +13,7 @@
   let search = ''
   let selected_index = 0
   let selection_refs: HTMLButtonElement[] = []
+  let input_ref: HTMLInputElement;
 
   const dumb_fuzzy =
     (query: string) =>
@@ -28,6 +30,10 @@
   $: selection_refs[selected_index]?.scrollIntoView({
     block: 'nearest',
     inline: 'nearest'
+  })
+
+  onMount(() => {
+    input_ref.focus()
   })
 
   function handle_create(type: ModuleUI) {
@@ -57,107 +63,52 @@
   }
 </script>
 
-<div class="toolbox" style={`left: ${position.x}px; top: ${position.y}px`}>
-  <!-- svelte-ignore a11y-autofocus -->
-  <input autofocus bind:value={search} on:keydown={handle_key_down} />
-  <div class="list-wrapper">
-    <div class="list">
-      {#each list as module, index}
-        <button
-          bind:this={selection_refs[index]}
-          class:selected={index === selected_index}
-          on:click={() => handle_create(module)}
-        >
-          {module}
-        </button>
-      {/each}
+<div
+  aria-hidden="true"
+  on:click={onClose}
+  class="fixed inset-0 bg-black/30 z-300 animate-in fade-in duration-1000"></div>
+
+<div class="absolute inset-0 p-4 flex z-310 items-center justify-center pointer-events-none">
+  <div
+    class="bg-white dark:bg-darker w-full max-w-[500px] rounded-lg shadow-xl overflow-hidden"
+  >
+    <div class="p-4 border-b border-zinc-200 dark:border-zinc-800">
+      <input
+        bind:this={input_ref}
+        bind:value={search}
+        on:blur={() => input_ref?.focus()}
+        on:keydown={handle_key_down}
+        class="w-full px-4 py-2 rounded-lg border-2 border-zinc-200 dark:border-zinc-800
+               bg-white dark:bg-darker text-zinc-900 dark:text-zinc-100
+               focus:outline-none focus:border-cyan-500 dark:focus:border-cyan-400
+               font-mono"
+        placeholder="Search modules..."
+      />
+    </div>
+
+    <div class="relative">
+      <div
+        class="absolute top-0 left-0 right-0 h-4 bg-linear-to-b from-white dark:from-darker to-transparent pointer-events-none z-10"
+      ></div>
+      <div class="max-h-[400px] overflow-y-auto p-2">
+        {#each list as module, index}
+          <button
+            bind:this={selection_refs[index]}
+            class:selected={index === selected_index}
+            on:click={() => handle_create(module)}
+            class="w-full px-4 py-2 rounded-lg text-left font-mono mb-1
+                   bg-zinc-100 dark:bg-dark hover:bg-zinc-200 dark:hover:bg-blue-900/20
+                   text-zinc-900 dark:text-zinc-100 transition-colors
+                   {index === selected_index ? 'bg-zinc-200 dark:bg-blue-900/30' : ''}"
+          >
+            {module}
+          </button>
+        {/each}
+      </div>
+
+      <div
+        class="absolute bottom-0 left-0 right-0 h-4 bg-linear-to-t from-white dark:from-darker to-transparent pointer-events-none z-10"
+      ></div>
     </div>
   </div>
 </div>
-
-<style>
-  .toolbox {
-    z-index: 100;
-    position: absolute;
-
-    border-radius: 0.5rem;
-
-    width: 200px;
-
-    font-family: monospace;
-
-    background-color: var(--background);
-
-    box-shadow:
-      0 10px 15px -3px rgb(0 0 0 / 10%),
-      0 4px 6px -2px rgb(0 0 0 / 5%);
-
-    overflow: hidden;
-  }
-  .list-wrapper {
-    position: relative;
-    z-index: -1;
-  }
-
-  .list-wrapper::before {
-    pointer-events: none;
-    content: '';
-    position: absolute;
-    top: -0.5rem;
-    left: 0;
-    right: 0;
-    height: 1.25rem;
-    background: linear-gradient(var(--background), transparent);
-  }
-  .list-wrapper::after {
-    pointer-events: none;
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 0.75rem;
-    background: linear-gradient(transparent, var(--background));
-  }
-
-  .list {
-    max-height: 200px;
-    overflow-y: scroll;
-    padding: 0.25rem 0;
-  }
-
-  button.selected {
-    background-color: var(--comment);
-  }
-
-  button {
-    display: block;
-    color: var(--foreground);
-    background-color: var(--current-line);
-    /* border: 1px solid var(--foreground); */
-    border-radius: 0.5rem;
-    margin: 0.25rem 0;
-    width: 100%;
-    padding: 0.5rem;
-
-    text-align: left;
-  }
-
-  button:hover {
-    background-color: var(--comment);
-  }
-
-  input {
-    display: block;
-    color: var(--foreground);
-    border: 2px solid var(--foreground);
-    background-color: var(--background);
-    border-radius: 0.5rem;
-    width: 100%;
-    padding: 0.5rem;
-  }
-
-  input:focus {
-    border-color: var(--cyan);
-  }
-</style>

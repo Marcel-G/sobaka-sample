@@ -1,9 +1,4 @@
 <script context="module" lang="ts">
-  import type { ModuleTheme } from './ThemeProvider.svelte'
-  export const theme: Partial<ModuleTheme> = {
-    primary: 'pink'
-  }
-
   type State = { bpm: number }
 
   export const initialState: State = { bpm: 120 }
@@ -45,7 +40,14 @@
   $: bpm_param?.setValueAtTime(state.bpm, context.audio.currentTime)
 </script>
 
-<Panel {name} height={8} width={5} {disabled} {theme}>
+<Panel
+  {name}
+  {disabled}
+  height={8}
+  width={5}
+  --color-module-accent="var(--color-pink)"
+  --color-module-background="var(--color-pink-dark)"
+>
   <Layout type="center">
     {#if loading}
       <RingSpinner color="blue" size="sm" />

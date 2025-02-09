@@ -1,9 +1,4 @@
 <script context="module" lang="ts">
-  import type { ModuleTheme } from './ThemeProvider.svelte'
-  export const theme: Partial<ModuleTheme> = {
-    primary: 'var(--pink)'
-  }
-
   export const initialState: Record<string, never> = {}
 </script>
 
@@ -37,7 +32,14 @@
   })
 </script>
 
-<Panel name="noise" height={5} width={5} {disabled} {theme}>
+<Panel
+  name="noise"
+  {disabled}
+  height={5}
+  width={5}
+  --color-module-accent="var(--color-pink)"
+  --color-module-background="var(--color-pink-dark)"
+>
   {#if loading}
     <Layout type="center">
       <RingSpinner color="blue" size="sm" />

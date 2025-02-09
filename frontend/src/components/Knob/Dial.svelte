@@ -26,7 +26,7 @@
         startAngle={-baseAngle}
         endAngle={baseAngle}
         stroke-width="10"
-        class="stroke-zinc-500 dark:stroke-zinc-200"
+        class="stroke-dark"
       />
       <Arc
         x={50}
@@ -35,7 +35,7 @@
         stroke-width="12"
         startAngle={range.type === RangeType.Continuous && range.bipolar ? 0 : -baseAngle}
         endAngle={-baseAngle + baseAngle * 2 * normalised_value}
-        class="stroke-zinc-200 dark:stroke-zinc-900"
+        class="stroke-module-accent"
       />
     </svg>
   </Tooltip>

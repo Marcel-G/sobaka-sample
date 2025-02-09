@@ -1,62 +1,47 @@
 <script lang="ts">
-  import Navigation from '../components/Navigation.svelte'
-  import WorkspaceList from '../components/WorkspaceList.svelte'
-  import { getGlobalCtx } from '../context/global'
-
-  const global = getGlobalCtx()
-
-  const isOnline = global.isOnline
-
-  const list_refs = global.root.workspaceLists()
-  $: lists = $list_refs.map(ref => global.lists.get(ref))
+  import AppLayout from '../components/AppLayout.svelte'
 </script>
 
-<Navigation />
-<div class="page">
-  {#if $isOnline}
-    online
-  {:else}
-    offline
-  {/if}
-  <h1>
-    Sobaka Sample 🥁🐕 - <a href="https://github.com/Marcel-G/sobaka-sample">Github</a>
-  </h1>
+<AppLayout>
+  <div class="min-h-screen flex flex-col items-center justify-center p-8 bg-grid">
+    <div class="max-w-2xl text-center space-y-8">
+      <div class="space-y-4">
+        <h1 class="text-5xl font-bold text-light mb-4">Sobaka Sample 🥁🐕</h1>
+        <p class="text-xl text-gray-300 leading-relaxed">
+          A collaborative modular synthesizer playground in your browser. Create, share,
+          and experiment with sound in real-time.
+        </p>
+      </div>
 
-  <p>Press new in the top right to begin!</p>
+      <div class="space-y-4">
+        <a href="/workspace/new">
+          <button
+            class="bg-blue text-light px-8 py-4 rounded-lg cursor-pointer
+            font-semibold text-lg transition-colors duration-200 shadow-lg"
+          >
+            Create New Workspace
+          </button>
+        </a>
+      </div>
 
-  <h2>Lists:</h2>
-  {#if $list_refs.length}
-    <ul>
-      {#each lists as list (list.id)}
-        {#await list.load()}
-          <!-- TODO: skeleton loading UI -->
-        {:then}
-          <h2>Workspaces ({list.id}):</h2>
-          <button on:click={() => global.createWorkspace()}>Add workspace</button>
-          <WorkspaceList workspaceList={list} />
-        {/await}
-      {/each}
-    </ul>
-  {/if}
-</div>
+      <!-- Footer -->
+      <div class="pt-8">
+        <a
+          href="https://github.com/Marcel-G/sobaka-sample"
+          class="text-light transition-colors duration-200"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          View on GitHub →
+        </a>
+      </div>
+    </div>
+  </div>
+</AppLayout>
 
-<style>
-  .page {
-    margin: 1rem;
-    font-family: monospace;
-  }
-
-  h1,
-  h2,
-  p {
-    margin: 1rem 0;
-  }
-
-  ul {
-    margin-left: 2rem;
-  }
-
-  a {
-    color: var(--cyan);
+<style lang="postcss">
+  .bg-grid {
+    background: conic-gradient(from 90deg at 1px 1px, #0000 90deg, var(--color-dark) 0) 0
+      0 / 1rem 1rem;
   }
 </style>

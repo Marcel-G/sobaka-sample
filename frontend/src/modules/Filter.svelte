@@ -1,9 +1,4 @@
 <script context="module" lang="ts">
-  import type { ModuleTheme } from './ThemeProvider.svelte'
-  export const theme: Partial<ModuleTheme> = {
-    primary: 'purple'
-  }
-
   type State = {
     frequency: number
     q: number
@@ -65,7 +60,14 @@
   })
 </script>
 
-<Panel {name} height={8} width={8} {disabled} {theme}>
+<Panel
+  {name}
+  {disabled}
+  height={8}
+  width={8}
+  --color-module-accent="var(--color-purple)"
+  --color-module-background="var(--color-purple-dark)"
+>
   {#if loading}
     <Layout type="center">
       <RingSpinner color="blue" size="sm" />

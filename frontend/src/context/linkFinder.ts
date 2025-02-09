@@ -1,3 +1,4 @@
+import { derived, get, type Readable } from 'svelte/store'
 import type { Position } from '../@types'
 import { plug_type, PlugType, type Link } from '../models/workspace'
 import { type PlugPosition } from './positions'
@@ -55,4 +56,60 @@ export const linkFinder = (
     return [{ id: 'active-link', from: link.from, to: end.id }]
   }
   return [{ id: 'active-link', from: end.id, to: link.to! }]
+}
+
+export const memoizeLast = <T>(
+  store: Readable<T>,
+  cmp: (previous: T, next: T) => boolean
+): Readable<T> => {
+  let lastValue: T = get(store)
+
+  return derived(
+    store,
+    (value, set) => {
+      if (!cmp(lastValue, value)) {
+        lastValue = value
+        set(value)
+      }
+    },
+    get(store)
+  )
+}
+
+export const throttled = <T>(store: Readable<T>) => {
+  let frame: number | null = null
+  let lastValue: T = get(store)
+
+  return derived(
+    store,
+    ($value, set) => {
+      lastValue = $value
+
+      if (frame === null) {
+        frame = requestAnimationFrame(() => {
+          set(lastValue)
+          frame = null
+        })
+      }
+
+      return () => {
+        if (frame !== null) {
+          cancelAnimationFrame(frame)
+          frame = null
+        }
+      }
+    },
+    get(store)
+  )
+}
+
+export const linkFinderCmp = (
+  a: ReturnType<typeof linkFinder>,
+  b: ReturnType<typeof linkFinder>
+) => {
+  if (a.length !== b.length) return false
+  return a.every((_a, i) => {
+    const _b = b[i]
+    return _b.from === _a.from && _b.to === _a.to
+  })
 }

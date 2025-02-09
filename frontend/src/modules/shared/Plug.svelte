@@ -54,7 +54,7 @@
   })
 
   const classes = {
-    plug: 'cursor-pointer w-3 h-3 pointer-events-auto transition-colors duration-200 rounded-full bg-white border-2 border-zinc-200 dark:border-zinc-900',
+    plug: 'cursor-pointer w-3 h-3 pointer-events-auto transition-colors duration-200 rounded-full bg-darker border-2 border-module-accent',
     disabled: 'pointer-events-auto cursor-crosshair',
     hover: 'hover:border-zinc-900 dark:hover:border-zinc-100'
   }

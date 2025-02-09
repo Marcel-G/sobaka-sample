@@ -11,12 +11,19 @@
   $: workspaces = $workspace_refs.map(ref => global.workspaces.get(ref))
 </script>
 
-{#each workspaces as workspace (workspace.id)}
-  {#await workspace.load()}
-    <!-- TODO: skeleton loading UI -->
-  {:then}
-    <WorkspaceSummary {workspace}>
-      <button on:click={() => workspaceList.remove(workspace.intoRef())}>Remove</button>
-    </WorkspaceSummary>
-  {/await}
-{/each}
+<ul class="space-y-1">
+  {#each workspaces as workspace (workspace.id)}
+    {#await workspace.load()}
+      <li class="animate-pulse bg-dark h-16 rounded-md"></li>
+    {:then}
+      <WorkspaceSummary {workspace}>
+        <button
+          class="text-light cursor-pointer text-sm px-2 py-1 rounded-md transition-colors"
+          on:click={() => workspaceList.remove(workspace.intoRef())}
+        >
+          Remove
+        </button>
+      </WorkspaceSummary>
+    {/await}
+  {/each}
+</ul>

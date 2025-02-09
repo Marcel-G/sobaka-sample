@@ -39,8 +39,8 @@
   }
 
   const classes = {
-    group: 'flex flex-col items-center',
-    input: 'text-xs font-mono mt-[-0.5rem]',
+    group: 'flex flex-col items-center pointer-events-auto cursor-pointer',
+    input: 'text-xs font-mono -mt-2',
     divider: 'border-l border-zinc-200 dark:border-zinc-900 h-2 m-1'
   }
 </script>

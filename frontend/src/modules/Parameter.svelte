@@ -1,9 +1,4 @@
 <script context="module" lang="ts">
-  import type { ModuleTheme } from './ThemeProvider.svelte'
-  export const theme: Partial<ModuleTheme> = {
-    primary: 'var(--cyan)'
-  }
-
   type State = { min: number; max: number; value: number }
 
   export const initialState: State = {
@@ -45,7 +40,14 @@
   $: parameter?.offset.setValueAtTime(value, context.audio.currentTime)
 </script>
 
-<Panel {name} height={6} width={5} {disabled} {theme}>
+<Panel
+  {name}
+  height={6}
+  width={5}
+  {disabled}
+  --color-module-accent="var(--color-cyan)"
+  --color-module-background="var(--color-cyan-dark)"
+>
   {#if loading}
     <Layout type="center">
       <RingSpinner color="blue" size="sm" />
