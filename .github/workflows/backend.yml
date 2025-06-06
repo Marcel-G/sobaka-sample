@@ -4,10 +4,12 @@ on:
   push:
     branches: [master, next]
     paths:
+      - '.github/workflows/backend.yml'
       - 'backend/**'
   pull_request:
     branches: [master, next]
     paths:
+      - '.github/workflows/backend.yml'
       - 'backend/**'
 
 jobs:
@@ -28,7 +30,7 @@ jobs:
           tags: signaling:latest
           outputs: type=docker,dest=/tmp/signaling.tar
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: signaling
           path: /tmp/signaling.tar
@@ -50,7 +52,7 @@ jobs:
           tags: worker:latest
           outputs: type=docker,dest=/tmp/worker.tar
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: worker
           path: /tmp/worker.tar
@@ -84,7 +86,7 @@ jobs:
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v1
       - name: Download artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: signaling
           path: /tmp
@@ -103,7 +105,7 @@ jobs:
             --document-name "${{ needs.infrastructure.outputs.signaling_deploy_doc }}" \
             --instance-id "${{ needs.infrastructure.outputs.instance_id }}" 
       - name: Download artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: worker
           path: /tmp

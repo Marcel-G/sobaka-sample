@@ -4,11 +4,13 @@ on:
   push:
     branches: [master, next]
     paths:
+      - '.github/workflows/frontend.yml'
       - 'frontend/**'
       - 'sobaka-dsp/**'
   pull_request:
     branches: [master, next]
     paths:
+      - '.github/workflows/frontend.yml'
       - 'frontend/**'
       - 'sobaka-dsp/**'
 
@@ -45,7 +47,7 @@ jobs:
         env:
           PUBLIC_SIGNALING_URL: ${{ vars.PUBLIC_SIGNALING_URL }}
           METERED_API_KEY: ${{ secrets.METERED_API_KEY }}
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: frontend-build-output
           path: frontend/build
@@ -73,7 +75,7 @@ jobs:
           aws-region: us-east-1
           role-to-assume: ${{ needs.infrastructure.outputs.deploy_role }}
           role-session-name: DeploySession
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: frontend-build-output
           path: frontend/build
