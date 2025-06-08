@@ -12,24 +12,29 @@
 
   export let data: PageData
 
-  const global = getGlobalCtx()
+  const context = getGlobalCtx()
 
-  const workspace = global.workspaces.get({
+  $: workspace = context.workspaces.get({
     guid: data.workspace.id
   } as SubDocReference<Workspace>)
 
-  init_workspace(workspace)
+  $: init_workspace(workspace)
+
+  $: loading = workspace.load()
 </script>
 
 <AppLayout>
   <svelte:fragment slot="sidebar-top">
-    <div class="mb-6 border-b border-dark pb-4">
-      <h2 class="text-lg font-semibold mb-3">Current Workspace</h2>
-      <CurrentWorkspaceSummary {workspace} />
-    </div>
+    {#await loading}
+      <Loading />
+    {:then}
+      <div class="mb-6 border-b border-dark pb-4">
+        <CurrentWorkspaceSummary {workspace} />
+      </div>
+    {/await}
   </svelte:fragment>
 
-  {#await workspace.load()}
+  {#await loading}
     <Loading />
   {:then}
     <WorkspaceView />

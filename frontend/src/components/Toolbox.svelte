@@ -13,7 +13,7 @@
   let search = ''
   let selected_index = 0
   let selection_refs: HTMLButtonElement[] = []
-  let input_ref: HTMLInputElement;
+  let input_ref: HTMLInputElement
 
   const dumb_fuzzy =
     (query: string) =>
@@ -66,11 +66,14 @@
 <div
   aria-hidden="true"
   on:click={onClose}
-  class="fixed inset-0 bg-black/30 z-300 animate-in fade-in duration-1000"></div>
+  class="fixed inset-0 bg-black/30 z-300 animate-in fade-in duration-1000"
+></div>
 
-<div class="absolute inset-0 p-4 flex z-310 items-center justify-center pointer-events-none">
+<div
+  class="absolute inset-0 p-4 flex z-310 items-center justify-center pointer-events-none"
+>
   <div
-    class="bg-white dark:bg-darker w-full max-w-[500px] rounded-lg shadow-xl overflow-hidden"
+    class="bg-darker pointer-events-auto w-full max-w-[500px] rounded-lg shadow-xl overflow-hidden"
   >
     <div class="p-4 border-b border-zinc-200 dark:border-zinc-800">
       <input

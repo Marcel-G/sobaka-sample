@@ -143,6 +143,16 @@ export class Global {
     }
   }
 
+  public createFork(workspace: Workspace) {
+    const fork = workspace.fork()
+    const userList = this.lists.get(this.root.userList())
+    userList.synced(() => {
+      userList.add(fork)
+    })
+
+    return fork
+  }
+
   public createWorkspace() {
     const workspace = this.workspaces.get()
     workspace.create(this.config.currentUser)

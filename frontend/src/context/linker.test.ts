@@ -67,12 +67,14 @@ describe('findPath', () => {
       const requestA: PathRequest = {
         start: { x: 0, y: 0 },
         end: { x: 50, y: 0 },
-        startId: 'A', endId: 'B'
+        startId: 'A',
+        endId: 'B'
       }
       const requestB: PathRequest = {
         start: { x: 20, y: 0 },
         end: { x: 100, y: 0 },
-        startId: 'C', endId: 'D'
+        startId: 'C',
+        endId: 'D'
       }
 
       const obstacles: Rectangle[] = [
@@ -110,12 +112,14 @@ describe('findPath', () => {
         {
           start: { x: 217, y: 199 },
           end: { x: 319, y: 167 },
-          startId: 'A', endId: 'B'
+          startId: 'A',
+          endId: 'B'
         },
         {
           start: { x: 217, y: 211 },
           end: { x: 319, y: 179 },
-          startId: 'C', endId: 'D'
+          startId: 'C',
+          endId: 'D'
         }
       ]
 

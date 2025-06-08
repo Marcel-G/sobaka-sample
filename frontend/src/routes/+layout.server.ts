@@ -15,9 +15,9 @@ export interface Config {
   globalLists: string[]
 }
 
-const globalLists = [
+const globalLists: Array<string> = [
   // TODO configure somehow
-  'a26f099c-1eaf-4aa7-b012-edfa06aa1cbe'
+  'a4984ea9-27e2-4475-a727-6e6c69cf84b7'
 ]
 
 const fetchIceServers = async (fetch: typeof globalThis.fetch): Promise<IceServer[]> => {

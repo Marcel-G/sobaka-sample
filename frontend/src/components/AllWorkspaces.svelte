@@ -9,7 +9,6 @@
 </script>
 
 <div>
-  <h2 class="text-gray-200 text-lg font-semibold mb-3">Recent Workspaces</h2>
   {#if $list_refs.length}
     {#each lists as list (list.id)}
       {#await list.load()}

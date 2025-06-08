@@ -6,7 +6,6 @@
   onMount(async () => {
     const context = getGlobalCtx()
     const workspace = context.createWorkspace()
-    // TODO add to user list
-    await goto(`/workspace/${workspace.id}`)
+    await goto(`/workspace/${workspace.id}`, { replaceState: true })
   })
 </script>
