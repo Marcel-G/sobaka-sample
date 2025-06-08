@@ -1,5 +1,5 @@
 import { METERED_API_KEY } from '$env/static/private'
-import { PUBLIC_SIGNALING_URL } from '$env/static/public'
+import { PUBLIC_SIGNALING_URL, PUBLIC_GLOBAL_LISTS } from '$env/static/public'
 
 import type { LayoutServerLoad } from './$types'
 
@@ -15,10 +15,7 @@ export interface Config {
   globalLists: string[]
 }
 
-const globalLists: Array<string> = [
-  // TODO configure somehow
-  'a4984ea9-27e2-4475-a727-6e6c69cf84b7'
-]
+const globalLists: Array<string> = PUBLIC_GLOBAL_LISTS?.split(',') ?? []
 
 const fetchIceServers = async (fetch: typeof globalThis.fetch): Promise<IceServer[]> => {
   try {

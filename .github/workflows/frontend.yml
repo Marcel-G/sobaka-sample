@@ -46,6 +46,7 @@ jobs:
       - run: npm run build
         env:
           PUBLIC_SIGNALING_URL: ${{ vars.PUBLIC_SIGNALING_URL }}
+          PUBLIC_GLOBAL_LISTS: ${{ vars.PUBLIC_GLOBAL_LISTS }}
           METERED_API_KEY: ${{ secrets.METERED_API_KEY }}
       - uses: actions/upload-artifact@v4
         with:
