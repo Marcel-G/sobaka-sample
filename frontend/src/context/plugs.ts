@@ -1,6 +1,4 @@
-import type { PlugType } from '../models/workspace'
-
-// TODO: how to handle these??
+import type { PlugType } from '../models/links'
 
 export interface ParamContext {
   type: PlugType.Param

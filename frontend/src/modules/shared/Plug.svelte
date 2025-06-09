@@ -5,7 +5,7 @@
   import { get_workspace } from '../../context/workspace'
   import { get_module_context } from '../context'
   import { twMerge } from 'tailwind-merge'
-  import { createPlugId, PlugType } from '../../models/workspace'
+  import { createPlugId, PlugType } from '../../models/links'
 
   const { workspace } = get_workspace()
   const { id: module_id } = get_module_context()

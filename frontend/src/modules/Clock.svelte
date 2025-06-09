@@ -14,7 +14,7 @@
   import { create_bpm_range } from '../range/range_creators'
   import { Clock } from 'sobaka-dsp'
   import { getGlobalCtx } from '../context/global'
-  import { PlugType } from '../models/workspace'
+  import { PlugType } from '../models/links'
 
   export let state: State
   export let disabled = false

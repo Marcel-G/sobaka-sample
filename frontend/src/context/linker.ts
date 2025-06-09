@@ -1,6 +1,6 @@
-import { plug_type, PlugType, type Link } from '../models/workspace'
 import { MinPriorityQueue as PriorityQueue } from '@datastructures-js/priority-queue'
 import type { ModulePosition, PlugPosition, Point, Rectangle } from './positions'
+import { plug_type, PlugType, type Link } from '../models/links'
 
 export interface PathRequest {
   id?: string

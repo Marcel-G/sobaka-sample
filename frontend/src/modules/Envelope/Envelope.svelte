@@ -26,7 +26,7 @@
   import Input from '../../components/Input.svelte'
   import { create_scale_range, create_time_range } from '../../range/range_creators'
   import Tooltip from '../../components/Tooltip.svelte'
-  import { PlugType } from '../../models/workspace'
+  import { PlugType } from '../../models/links'
 
   export let state: State
   export let disabled = false

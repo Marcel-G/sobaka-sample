@@ -9,7 +9,7 @@
   import { getGlobalCtx } from '../context/global'
   import Layout from '../components/Layout.svelte'
   import RingSpinner from '../components/RingSpinner.svelte'
-  import { PlugType } from '../models/workspace'
+  import { PlugType } from '../models/links'
 
   export let disabled = false
   let name = 'spec_scope'

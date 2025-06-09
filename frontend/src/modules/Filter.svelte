@@ -23,7 +23,7 @@
     create_volt_per_octave_range
   } from '../range/range_creators'
   import { getGlobalCtx } from '../context/global'
-  import { PlugType } from '../models/workspace'
+  import { PlugType } from '../models/links'
 
   export let state: State
   export let disabled = false
