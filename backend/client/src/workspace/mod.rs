@@ -109,7 +109,8 @@ impl Db {
     pub fn new() -> Self {
         let env = EnvBuilder::new()
             .map_size(4 * 1024 * 1024 * 1024) // 4 GiB
-            .open(".db", 0o777).unwrap();
+            .open(".db", 0o777)
+            .unwrap();
 
         let handle = env.get_default_db(DbFlags::empty()).unwrap();
 

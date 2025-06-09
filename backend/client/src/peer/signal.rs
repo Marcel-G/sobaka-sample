@@ -128,7 +128,7 @@ mod tests {
 
         assert_eq!(
             serde_json::to_string(&candidate).unwrap(),
-            r#"{"type":"candidate","candidate":{"candidate":"candidate:1295449297610810878 1 udp 2130706175 1.2.3.4 9876 typ host","sdpMid":null,"sdpMLineIndex":0,"usernameFragment":null}}"#
+            r#"{"type":"candidate","candidate":{"candidate":"candidate:fffeff7e11fa5c45c89f25fe 1 udp 2130706175 1.2.3.4 9876 typ host","sdpMid":null,"sdpMLineIndex":0,"usernameFragment":null}}"#
         );
     }
 }

@@ -12,7 +12,10 @@ use str0m::{
     Candidate, Event, IceConnectionState, Input, Output, Rtc, RtcError,
 };
 
-use super::signal::Signal;
+use super::{
+    encoder::{decode_packet, encode_packet, packet_array, PacketReassembler, CHUNK_SIZE},
+    signal::Signal,
+};
 
 #[derive(Debug)]
 pub struct PeerConnection {
@@ -20,6 +23,8 @@ pub struct PeerConnection {
     identity: String,
     client_id: String,
     rtc: Rtc,
+    tx_ordinal: u64,
+    packet_queue: PacketReassembler,
     pending: Option<SdpPendingOffer>,
     signals_to_propagate: VecDeque<Signal>,
     // TODO: Accept a data-channel per topic, and let the channel name determine the topic
@@ -51,6 +56,8 @@ impl PeerConnection {
         PeerConnection {
             _id: ConnId(next_id),
             identity,
+            tx_ordinal: 0,
+            packet_queue: PacketReassembler::new(),
             signals_to_propagate: VecDeque::default(),
             client_id,
             topic,
@@ -88,10 +95,21 @@ impl PeerConnection {
 
     pub fn send(&mut self, _topic: String, data: Vec<u8>) -> Result<usize, RtcError> {
         log::debug!("Client ({}) sending {} bytes", self.client_id, data.len());
-        self.rtc
-            .channel(self.cid.expect("channel to exist"))
-            .expect("channel to exist")
-            .write(true, &data)
+
+        self.tx_ordinal += 1;
+        let packets = packet_array(&data, self.tx_ordinal, CHUNK_SIZE);
+
+        let mut sent = 0;
+        for packet in packets.iter() {
+            let data = encode_packet(packet);
+            sent += self
+                .rtc
+                .channel(self.cid.expect("channel to exist"))
+                .expect("channel to exist")
+                .write(true, &data)?;
+        }
+
+        Ok(sent)
     }
 
     pub fn handle_signal(&mut self, signal: Signal) {
@@ -183,8 +201,15 @@ impl PeerConnection {
             self.client_id,
             d.data.len()
         );
-        // TODO: Accept a data-channel per topic, and let the channel name determine the topic
-        Propagated::Data(self.topic.clone(), d.data)
+        let packet = decode_packet(&d.data).expect("failed to parse packet");
+
+        if let Some(data) = self.packet_queue.process_packet(packet) {
+            // TODO: Accept a data-channel per topic, and let the channel name determine the topic
+            Propagated::Data(self.topic.clone(), data)
+        } else {
+            // TODO: setup timer to cleanup_old_packets
+            Propagated::Noop
+        }
     }
 
     fn negotiate_if_needed(&mut self) -> bool {

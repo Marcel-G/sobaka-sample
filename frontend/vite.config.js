@@ -1,3 +1,4 @@
+import path from 'node:path'
 import { sveltekit } from '@sveltejs/kit/vite'
 import tailwindcss from '@tailwindcss/vite'
 
@@ -25,6 +26,13 @@ const config = {
   },
   define: {
     global: 'globalThis'
+  },
+  resolve: {
+    alias: {
+      // Path for max message length issue: https://github.com/yjs/y-webrtc/issues/20
+      '@simple-peer': 'simple-peer/simplepeer.min.js',
+      'simple-peer/simplepeer.min.js': path.resolve(__dirname, './src/util/peer.ts')
+    }
   },
   plugins: [crossOriginIsolation, tailwindcss(), sveltekit()],
   server: {
