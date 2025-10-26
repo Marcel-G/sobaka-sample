@@ -8,8 +8,8 @@
     "pkg"
   ],
   "scripts": {
-    "build": "cargo xtask dist --optimize",
-    "build:debug": "cargo xtask dist"
+    "build": "wasm-pack build --target web",
+    "build:debug": "wasm-pack build --debug --target web"
   },
   "author": "",
   "license": "ISC"

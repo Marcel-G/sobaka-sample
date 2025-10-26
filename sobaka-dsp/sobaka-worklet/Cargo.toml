@@ -15,14 +15,14 @@ futures-channel = "0.3.26"
 rustfft = { version = "6.0.1" }
 fundsp = "0.13.0"
 
-waw = { git = "https://github.com/Marcel-G/waw-rs", features = ["shared-memory"] }
-wasm-bindgen = { version = "0.2.91" }
-wasm-bindgen-futures = { version = "0.4.43" }
+waw = { git = "https://github.com/Marcel-G/waw-rs", rev="fcf61fd0e814f750ef0c7276c1e3e05d43edd894" }
+wasm-bindgen = { version = "0.2.98" }
+wasm-bindgen-futures = { version = "0.4.48" }
 
 serde_bytes = "0.11"
 bytemuck = "1.12.3"
 
-js-sys = "0.3.59"
+js-sys = "0.3.80"
 
 # @todo remove this dependency - https://gitlab.com/KonradBorowski/enum-map/-/issues/22
 enum-map = "2.4.1"
@@ -57,9 +57,12 @@ features = [
 
 
 [dev-dependencies]
-wasm-bindgen-test = "0.3.13"
 anyhow = "1.0.56"
 
-[build]
-target = "wasm32-unknown-unknown"
-rustflags = '-Ctarget-feature=+atomics,+bulk-memory'
+[profile.release]
+# TODO setting opt-level = 1+ causes build failure: wasm_bindgen::__rt::wbg_cast::breaks_if_inlined::hdd77fa1f6c243ef3: unknown instruction Block(Block { seq: Id { idx: 1 } })
+#       https://github.com/wasm-bindgen/wasm-bindgen/blob/4d43146fc6b179c3e66809a4cf08c9858b38e4bf/CHANGELOG.md?plain=1#L37-L41
+opt-level = 0
+# TODO: look into why this needs to be enabled. 
+#       https://github.com/daxpedda/wasm-worker/blob/ce376d95dbdd9e7b59ac7de9c6f14090076f7865/src/thread/atomics/memory.rs#L26
+debug-assertions = true
