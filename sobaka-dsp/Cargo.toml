@@ -13,9 +13,9 @@ async-std = { version = "1.12.0" }
 futures-channel = "0.3.26"
 
 rustfft = { version = "6.0.1" }
-fundsp = "0.13.0"
+fundsp = "0.20.0"
 
-waw = { git = "https://github.com/Marcel-G/waw-rs", rev="fcf61fd0e814f750ef0c7276c1e3e05d43edd894" }
+waw = { git = "https://github.com/Marcel-G/waw-rs", rev="8aa1ed76deccafe3d9b169c773b0f6bacc466738" }
 wasm-bindgen = { version = "0.2.98" }
 wasm-bindgen-futures = { version = "0.4.48" }
 

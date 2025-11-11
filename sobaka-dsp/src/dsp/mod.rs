@@ -1,11 +1,11 @@
 use fundsp::Float;
 
-pub mod envelope;
-pub mod hold;
-pub mod onset;
-pub mod oscillator;
-pub mod quantiser;
-pub mod trigger;
+// pub mod envelope;
+// pub mod hold;
+// pub mod onset;
+// pub mod oscillator;
+// pub mod quantiser;
+// pub mod trigger;
 
 /// Convert 1v per octave to hz
 pub fn volt_hz<T: Float>(voltage: T) -> T {

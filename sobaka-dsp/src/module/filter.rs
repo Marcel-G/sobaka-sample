@@ -1,63 +1,73 @@
-use crate::{dsp::volt_hz, fundsp_worklet::FundspWorklet};
 use fundsp::prelude::*;
-use waw::{
-    buffer::{AudioBuffer, ParamBuffer},
-    worklet::{AudioModule, Emitter},
-};
+use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
+use waw::{register, AutomationRate, ParameterDescriptor, ParameterValues, Processor};
 
-#[waw::derive::derive_param]
-pub enum FilterParams {
-    #[param(
-        automation_rate = "a-rate",
-        min_value = 0.,
-        max_value = 1.0,
-        default_value = 0.1
-    )]
-    Q,
-    #[param(
-        automation_rate = "a-rate",
-        min_value = 0.,
-        max_value = 8.0,
-        default_value = 0.1
-    )]
-    Frequency,
+pub struct FilterProcessor {
+    inner: BigBlockAdapter,
 }
 
-pub struct Filter {
-    inner: FundspWorklet<FilterParams>,
-}
+impl Processor for FilterProcessor {
+    type Data = ();
 
-impl AudioModule for Filter {
-    type Param = FilterParams;
+    fn new(_data: Self::Data) -> Self {
+        let module = lowpass::<f32>() ^ highpass::<f32>() ^ bandpass::<f32>() ^ moog::<f32>();
 
-    const INPUTS: u32 = 1;
-    const OUTPUTS: u32 = 4;
-
-    fn create(_init: Option<Self::InitialState>, _emitter: Emitter<Self::Event>) -> Self {
-        let param_storage = FundspWorklet::create_param_storage();
-
-        let module = {
-            let input = pass()
-                | ((var(&param_storage[FilterParams::Frequency]))
-                    >> map(|f| volt_hz(f[0]))
-                    >> clip_to(2e1, 2e4))
-                | (var(&param_storage[FilterParams::Q])) >> clip_to(0.0, 10.0);
-
-            input
-                >> (lowpass::<f32, f32>()
-                    ^ highpass::<f32, f32>()
-                    ^ bandpass::<f32, f32>()
-                    ^ moog::<f32, f32>())
-        };
-
-        Filter {
-            inner: FundspWorklet::create(module, param_storage),
+        Self {
+            inner: BigBlockAdapter::new(Box::new(module)),
         }
     }
 
-    fn process(&mut self, audio: &mut AudioBuffer, params: &ParamBuffer<Self::Param>) {
-        self.inner.process(audio, params);
+    fn process(
+        &mut self,
+        inputs: &[&[f32]],
+        outputs: &mut [&mut [f32]],
+        sample_rate: f32,
+        params: &ParameterValues,
+    ) {
+        let q = params.get("q", 0.1);
+        let frequency = params.get("frequency", 0.1); // TODO: Audio-rate frequency.
+        self.inner.set(Setting::center_q(frequency, q));
+        self.inner.set_sample_rate(sample_rate.into());
+        self.inner.process_big(128, inputs, outputs);
+    }
+
+    fn parameter_descriptors() -> Vec<ParameterDescriptor> {
+        vec![
+            ParameterDescriptor {
+                name: "q".to_string(),
+                default_value: 0.1,
+                min_value: 0.0,
+                max_value: 1.0,
+                automation_rate: AutomationRate::KRate,
+            },
+            ParameterDescriptor {
+                name: "frequency".to_string(),
+                default_value: 0.1,
+                min_value: 0.0,
+                max_value: 1.0,
+                automation_rate: AutomationRate::ARate,
+            },
+        ]
     }
 }
 
-waw::main!(Filter);
+#[wasm_bindgen]
+pub struct FilterNode {
+    node: web_sys::AudioWorkletNode,
+}
+
+#[wasm_bindgen]
+impl FilterNode {
+    #[wasm_bindgen(constructor)]
+    pub fn new(ctx: &web_sys::AudioContext) -> Result<FilterNode, JsValue> {
+        let node = FilterProcessor::create_node(ctx, ())?;
+        Ok(FilterNode { node })
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn node(&self) -> web_sys::AudioWorkletNode {
+        self.node.clone()
+    }
+}
+
+register!(FilterProcessor, "filter");

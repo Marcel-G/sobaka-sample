@@ -1,80 +1,73 @@
-use crate::{
-    dsp::{envelope::sobaka_adsr, trigger::trigger_listener},
-    fundsp_worklet::FundspWorklet,
-};
-use waw::{
-    buffer::{AudioBuffer, ParamBuffer},
-    worklet::{AudioModule, Emitter},
-};
+use fundsp::prelude::*;
+use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
+use waw::{register, AutomationRate, ParameterDescriptor, ParameterValues, Processor};
 
-#[waw::derive::derive_param]
-pub enum EnvelopeParams {
-    #[param(
-        automation_rate = "a-rate",
-        min_value = 0.,
-        max_value = 1.0,
-        default_value = 0.1
-    )]
-    Attack,
-    #[param(
-        automation_rate = "a-rate",
-        min_value = 0.,
-        max_value = 1.0,
-        default_value = 0.1
-    )]
-    Decay,
-    #[param(
-        automation_rate = "a-rate",
-        min_value = 0.,
-        max_value = 1.0,
-        default_value = 0.1
-    )]
-    Sustain,
-    #[param(
-        automation_rate = "a-rate",
-        min_value = 0.,
-        max_value = 1.0,
-        default_value = 0.1
-    )]
-    Release,
+pub struct EnvelopeProcessor {
+    inner: BigBlockAdapter,
 }
 
-#[waw::derive::derive_event]
-#[derive(Clone)]
-pub enum EnvelopeEvent {
-    NoteOn,
-    NoteOff,
-}
+impl Processor for EnvelopeProcessor {
+    type Data = ();
 
-pub struct Envelope {
-    inner: FundspWorklet<EnvelopeParams>,
-}
+    fn new(_data: Self::Data) -> Self {
+        let module = afollow(0.1, 1.0);
 
-impl AudioModule for Envelope {
-    type Param = EnvelopeParams;
-    type Event = EnvelopeEvent;
-
-    fn create(_init: Option<Self::InitialState>, emitter: Emitter<Self::Event>) -> Self {
-        let param_storage = FundspWorklet::create_param_storage();
-
-        let module = trigger_listener(move |is_high| match is_high {
-            true => emitter.send(EnvelopeEvent::NoteOn),
-            false => emitter.send(EnvelopeEvent::NoteOff),
-        }) >> sobaka_adsr(
-            param_storage[EnvelopeParams::Attack].clone(),
-            param_storage[EnvelopeParams::Decay].clone(),
-            param_storage[EnvelopeParams::Sustain].clone(),
-            param_storage[EnvelopeParams::Release].clone(),
-        );
-
-        Envelope {
-            inner: FundspWorklet::create(module, param_storage),
+        Self {
+            inner: BigBlockAdapter::new(Box::new(module)),
         }
     }
 
-    fn process(&mut self, audio: &mut AudioBuffer, params: &ParamBuffer<Self::Param>) {
-        self.inner.process(audio, params);
+    fn process(
+        &mut self,
+        inputs: &[&[f32]],
+        outputs: &mut [&mut [f32]],
+        sample_rate: f32,
+        params: &ParameterValues,
+    ) {
+        let attack = params.get("attack", 0.1);
+        let release = params.get("release", 0.1);
+        self.inner.set(Setting::attack_release(attack, release));
+        self.inner.set_sample_rate(sample_rate.into());
+        self.inner.process_big(128, inputs, outputs);
+    }
+
+    fn parameter_descriptors() -> Vec<ParameterDescriptor> {
+        vec![
+            ParameterDescriptor {
+                name: "attack".to_string(),
+                default_value: 0.1,
+                min_value: 0.0,
+                max_value: 1.0,
+                automation_rate: AutomationRate::KRate,
+            },
+            ParameterDescriptor {
+                name: "release".to_string(),
+                default_value: 0.1,
+                min_value: 0.0,
+                max_value: 1.0,
+                automation_rate: AutomationRate::KRate,
+            },
+        ]
     }
 }
 
-waw::main!(Envelope);
+#[wasm_bindgen]
+pub struct EnvelopeNode {
+    node: web_sys::AudioWorkletNode,
+}
+
+#[wasm_bindgen]
+impl EnvelopeNode {
+    #[wasm_bindgen(constructor)]
+    pub fn new(ctx: &web_sys::AudioContext) -> Result<EnvelopeNode, JsValue> {
+        let node = EnvelopeProcessor::create_node(ctx, ())?;
+        Ok(EnvelopeNode { node })
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn node(&self) -> web_sys::AudioWorkletNode {
+        self.node.clone()
+    }
+}
+
+register!(EnvelopeProcessor, "delay");

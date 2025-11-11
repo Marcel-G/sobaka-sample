@@ -1,29 +1,14 @@
-use crate::{
-    dsp::{
-        oscillator::{sobaka_saw, sobaka_sine, sobaka_square, sobaka_triangle},
-        trigger::reset_trigger,
-        volt_hz,
-    },
-    fundsp_worklet::FundspWorklet,
+use fundsp::{
+    prelude::*,
+    thingbuf::mpsc::{channel, Receiver, Sender},
 };
-use fundsp::prelude::*;
-use waw::{
-    buffer::{AudioBuffer, ParamBuffer},
-    worklet::{AudioModule, Emitter},
-};
+use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
+use waw::{register, AutomationRate, ParameterDescriptor, ParameterValues, Processor};
 
-#[waw::derive::derive_param]
-pub enum OscillatorParams {
-    #[param(
-        automation_rate = "a-rate",
-        min_value = 0.,
-        max_value = 600.,
-        default_value = 120.
-    )]
-    Pitch,
-}
+use crate::dsp::volt_hz;
 
-#[waw::derive::derive_initial_state]
+#[wasm_bindgen]
+#[derive(Clone)]
 pub enum OscillatorShape {
     Sine,
     Square,
@@ -31,97 +16,122 @@ pub enum OscillatorShape {
     Saw,
 }
 
-#[waw::derive::derive_command]
-pub enum OscillatorCommand {
-    /// Selects the oscillator shape.
+pub struct OscillatorData {
+    shape: OscillatorShape,
+    receiver: Receiver<Message>,
+}
+
+#[derive(Default, Clone)]
+enum Message {
+    #[default]
+    None,
     SetShape(OscillatorShape),
 }
 
-pub struct Oscillator {
+pub struct OscillatorProcessor {
     current_shape: OscillatorShape,
-    sine: FundspWorklet<OscillatorParams>,
-    square: FundspWorklet<OscillatorParams>,
-    triangle: FundspWorklet<OscillatorParams>,
-    saw: FundspWorklet<OscillatorParams>,
+    frequency: Shared,
+    sine: BigBlockAdapter,
+    triangle: BigBlockAdapter,
+    saw: BigBlockAdapter,
+    square: BigBlockAdapter,
+    receiver: Receiver<Message>,
 }
 
-impl AudioModule for Oscillator {
-    type Param = OscillatorParams;
-    type Command = OscillatorCommand;
-
-    const INPUTS: u32 = 1;
-    const OUTPUTS: u32 = 1;
-
-    fn create(_init: Option<Self::InitialState>, _emitter: Emitter<Self::Event>) -> Self {
-        let sine = {
-            let param_storage = FundspWorklet::create_param_storage();
-            let osc = reset_trigger({
-                var(&param_storage[OscillatorParams::Pitch])
-                    >> map::<_, _, U1, _>(|pitch| volt_hz(pitch[0]))
-                    >> sobaka_sine()
-                    >> shape(Shape::Tanh(0.8))
-            });
-            FundspWorklet::create(osc, param_storage)
-        };
-
-        let triangle = {
-            let param_storage = FundspWorklet::create_param_storage();
-            let osc = reset_trigger({
-                var(&param_storage[OscillatorParams::Pitch])
-                    >> map::<_, _, U1, _>(|pitch| volt_hz(pitch[0]))
-                    >> sobaka_triangle()
-                    >> shape(Shape::Tanh(0.8))
-            });
-            FundspWorklet::create(osc, param_storage)
-        };
-
-        let saw = {
-            let param_storage = FundspWorklet::create_param_storage();
-            let osc = reset_trigger({
-                var(&param_storage[OscillatorParams::Pitch])
-                    >> map::<_, _, U1, _>(|pitch| volt_hz(pitch[0]))
-                    >> sobaka_saw()
-                    >> shape(Shape::Tanh(0.8))
-            });
-            FundspWorklet::create(osc, param_storage)
-        };
-
-        let square = {
-            let param_storage = FundspWorklet::create_param_storage();
-            let osc = reset_trigger({
-                var(&param_storage[OscillatorParams::Pitch])
-                    >> map::<_, _, U1, _>(|pitch| volt_hz(pitch[0]))
-                    >> sobaka_square()
-                    >> shape(Shape::Tanh(0.8))
-            });
-            FundspWorklet::create(osc, param_storage)
-        };
-
-        Oscillator {
-            current_shape: OscillatorShape::Sine,
-            sine,
-            saw,
-            square,
-            triangle,
-        }
-    }
-
-    fn on_command(&mut self, command: Self::Command) {
-        match command {
-            OscillatorCommand::SetShape(shape) => {
-                self.current_shape = shape;
+impl OscillatorProcessor {
+    fn handle_messages(&mut self) {
+        while let Ok(message) = self.receiver.try_recv() {
+            match message {
+                Message::SetShape(shape) => self.current_shape = shape,
+                Message::None => {}
             }
         }
     }
+}
 
-    fn process(&mut self, audio: &mut AudioBuffer, params: &ParamBuffer<Self::Param>) {
-        match self.current_shape {
-            OscillatorShape::Sine => self.sine.process(audio, params),
-            OscillatorShape::Square => self.square.process(audio, params),
-            OscillatorShape::Triangle => self.triangle.process(audio, params),
-            OscillatorShape::Saw => self.saw.process(audio, params),
+impl Processor for OscillatorProcessor {
+    type Data = OscillatorData;
+
+    fn new(data: Self::Data) -> Self {
+        let frequency = shared(220.0);
+        let sine = var(&frequency) >> sine::<f32>() >> shape(Tanh(0.8));
+
+        let triangle = var(&frequency) >> triangle() >> shape(Tanh(0.8));
+
+        let saw = var(&frequency) >> saw() >> shape(Tanh(0.8));
+
+        let square = var(&frequency) >> square() >> shape(Tanh(0.8));
+
+        Self {
+            current_shape: data.shape,
+            frequency,
+            receiver: data.receiver,
+            sine: BigBlockAdapter::new(Box::new(sine)),
+            saw: BigBlockAdapter::new(Box::new(saw)),
+            square: BigBlockAdapter::new(Box::new(square)),
+            triangle: BigBlockAdapter::new(Box::new(triangle)),
         }
+    }
+
+    fn process(
+        &mut self,
+        inputs: &[&[f32]],
+        outputs: &mut [&mut [f32]],
+        sample_rate: f32,
+        params: &ParameterValues,
+    ) {
+        self.handle_messages();
+        let pitch = params.get("pitch", 1.0); // TODO: Audio-rate frequency.
+        self.frequency.set_value(volt_hz(pitch));
+
+        let module = match self.current_shape {
+            OscillatorShape::Sine => &mut self.sine,
+            OscillatorShape::Square => &mut self.square,
+            OscillatorShape::Triangle => &mut self.triangle,
+            OscillatorShape::Saw => &mut self.saw,
+        };
+        module.set_sample_rate(sample_rate.into());
+        module.process_big(128, inputs, outputs);
+    }
+
+    fn parameter_descriptors() -> Vec<ParameterDescriptor> {
+        vec![ParameterDescriptor {
+            name: "pitch".to_string(),
+            default_value: 1.0,
+            min_value: 0.0,
+            max_value: 8.0,
+            automation_rate: AutomationRate::ARate,
+        }]
     }
 }
 
-waw::main!(Oscillator);
+#[wasm_bindgen]
+pub struct OscillatorNode {
+    node: web_sys::AudioWorkletNode,
+    sender: Sender<Message>,
+}
+
+#[wasm_bindgen]
+impl OscillatorNode {
+    #[wasm_bindgen(constructor)]
+    pub fn new(ctx: &web_sys::AudioContext) -> Result<OscillatorNode, JsValue> {
+        let (sender, receiver) = channel(1);
+        let data = OscillatorData {
+            shape: OscillatorShape::Saw,
+            receiver,
+        };
+        let node = OscillatorProcessor::create_node(ctx, data)?;
+        Ok(OscillatorNode { node, sender })
+    }
+
+    pub fn set_shape(&self, shape: OscillatorShape) {
+        if self.sender.try_send(Message::SetShape(shape)).is_ok() {};
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn node(&self) -> web_sys::AudioWorkletNode {
+        self.node.clone()
+    }
+}
+
+register!(OscillatorProcessor, "oscillator");

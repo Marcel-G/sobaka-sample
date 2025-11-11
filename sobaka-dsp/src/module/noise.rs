@@ -1,28 +1,55 @@
 use fundsp::prelude::*;
-use waw::{
-    buffer::{AudioBuffer, ParamBuffer},
-    worklet::{AudioModule, Emitter},
-};
+use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
+use waw::{register, ParameterDescriptor, ParameterValues, Processor};
 
-use crate::fundsp_worklet::FundspWorklet;
-pub struct Noise {
-    inner: FundspWorklet,
+pub struct NoiseProcessor {
+    inner: BigBlockAdapter,
 }
 
-impl AudioModule for Noise {
-    const INPUTS: u32 = 0;
+impl Processor for NoiseProcessor {
+    type Data = ();
 
-    fn create(_init: Option<Self::InitialState>, _emitter: Emitter<Self::Event>) -> Self {
+    fn new(_data: Self::Data) -> Self {
         let module = white();
 
-        Noise {
-            inner: FundspWorklet::create(module, Default::default()),
+        Self {
+            inner: BigBlockAdapter::new(Box::new(module)),
         }
     }
 
-    fn process(&mut self, audio: &mut AudioBuffer, params: &ParamBuffer<Self::Param>) {
-        self.inner.process(audio, params);
+    fn process(
+        &mut self,
+        inputs: &[&[f32]],
+        outputs: &mut [&mut [f32]],
+        sample_rate: f32,
+        _params: &ParameterValues,
+    ) {
+        self.inner.set_sample_rate(sample_rate.into());
+        self.inner.process_big(128, inputs, outputs);
+    }
+
+    fn parameter_descriptors() -> Vec<ParameterDescriptor> {
+        Default::default()
     }
 }
 
-waw::main!(Noise);
+#[wasm_bindgen]
+pub struct NoiseNode {
+    node: web_sys::AudioWorkletNode,
+}
+
+#[wasm_bindgen]
+impl NoiseNode {
+    #[wasm_bindgen(constructor)]
+    pub fn new(ctx: &web_sys::AudioContext) -> Result<NoiseNode, JsValue> {
+        let node = NoiseProcessor::create_node(ctx, ())?;
+        Ok(NoiseNode { node })
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn node(&self) -> web_sys::AudioWorkletNode {
+        self.node.clone()
+    }
+}
+
+register!(NoiseProcessor, "noise");

@@ -4,8 +4,8 @@ use utils::panic_hook::set_panic_hook;
 use wasm_bindgen::prelude::wasm_bindgen;
 
 pub mod dsp;
-mod fundsp_worklet;
-mod media_manager;
+// mod fundsp_worklet;
+// mod media_manager;
 pub mod module;
 mod utils;
 

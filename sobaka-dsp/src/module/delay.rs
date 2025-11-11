@@ -1,46 +1,66 @@
-use crate::{dsp::trigger::reset_trigger, fundsp_worklet::FundspWorklet};
 use fundsp::prelude::*;
-use waw::{
-    buffer::{AudioBuffer, ParamBuffer},
-    worklet::{AudioModule, Emitter},
-};
+use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
+use waw::{register, AutomationRate, ParameterDescriptor, ParameterValues, Processor};
 
-#[waw::derive::derive_param]
-pub enum DelayParams {
-    #[param(
-        automation_rate = "a-rate",
-        min_value = 0.,
-        max_value = 10.,
-        default_value = 1.
-    )]
-    DelayTime,
+pub struct DelayProcessor {
+    inner: BigBlockAdapter,
+    delay: Shared,
 }
 
-pub struct Delay {
-    inner: FundspWorklet<DelayParams>,
-}
+impl Processor for DelayProcessor {
+    type Data = ();
 
-impl AudioModule for Delay {
-    type Param = DelayParams;
+    fn new(_data: Self::Data) -> Self {
+        let delay = shared(1.0);
 
-    const INPUTS: u32 = 2;
+        let module = (pass() | var(&delay)) >> tap(0.0, 10.0);
 
-    fn create(_init: Option<Self::InitialState>, _emitter: Emitter<Self::Event>) -> Self {
-        let param_storage = FundspWorklet::create_param_storage();
-
-        let module = {
-            let inputs = pass() | var(&param_storage[DelayParams::DelayTime]);
-            reset_trigger(inputs >> tap(0.0, 10.0))
-        };
-
-        Delay {
-            inner: FundspWorklet::create(module, param_storage),
+        Self {
+            inner: BigBlockAdapter::new(Box::new(module)),
+            delay,
         }
     }
 
-    fn process(&mut self, audio: &mut AudioBuffer, params: &ParamBuffer<Self::Param>) {
-        self.inner.process(audio, params);
+    fn process(
+        &mut self,
+        inputs: &[&[f32]],
+        outputs: &mut [&mut [f32]],
+        sample_rate: f32,
+        params: &ParameterValues,
+    ) {
+        self.delay.set_value(params.get("delay", 1.0));
+        self.inner.set_sample_rate(sample_rate.into());
+        self.inner.process_big(128, inputs, outputs);
+    }
+
+    fn parameter_descriptors() -> Vec<ParameterDescriptor> {
+        vec![ParameterDescriptor {
+            name: "delay".to_string(),
+            default_value: 1.0,
+            min_value: 0.0,
+            max_value: 10.0,
+            automation_rate: AutomationRate::KRate,
+        }]
     }
 }
 
-waw::main!(Delay);
+#[wasm_bindgen]
+pub struct DelayNode {
+    node: web_sys::AudioWorkletNode,
+}
+
+#[wasm_bindgen]
+impl DelayNode {
+    #[wasm_bindgen(constructor)]
+    pub fn new(ctx: &web_sys::AudioContext) -> Result<DelayNode, JsValue> {
+        let node = DelayProcessor::create_node(ctx, ())?;
+        Ok(DelayNode { node })
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn node(&self) -> web_sys::AudioWorkletNode {
+        self.node.clone()
+    }
+}
+
+register!(DelayProcessor, "delay");
