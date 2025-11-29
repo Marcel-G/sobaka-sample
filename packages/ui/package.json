@@ -4,6 +4,7 @@
   "type": "module",
   "exports": {
     "./modules": "./src/modules/index.ts",
+    "./modules/registry": "./src/modules/registry.ts",
     "./modules/*": "./src/modules/*.svelte",
     "./modules/ModuleWrapper.svelte": "./src/modules/ModuleWrapper.svelte",
     "./modules/shared/Panel.svelte": "./src/modules/shared/Panel.svelte",

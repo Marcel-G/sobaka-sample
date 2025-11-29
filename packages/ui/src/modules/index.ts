@@ -25,6 +25,7 @@ import SampleAndHold, {
 } from './SampleAndHold.svelte'
 import type { Module, ModuleUI } from '@sobaka/state/models/workspace'
 import { INITIAL_STATE } from '@sobaka/state/models/workspace'
+import { getModuleComponent } from './registry'
 
 export const MODULES = {
   Clock,
@@ -71,9 +72,28 @@ Object.assign(INITIAL_STATE, {
 // https://github.com/sveltejs/language-tools/issues/442#issuecomment-1145948441
 // type Props = Clock['$$prop_def']['pricing']
 
+/**
+ * Get the component for a module. First checks the registry, then falls back to MODULES.
+ * This allows applications to override or extend the default module set.
+ */
 export const get_component = (module: Module) => {
+  const registeredComponent = getModuleComponent(module.type)
+  if (registeredComponent) {
+    return registeredComponent
+  }
   return MODULES[module.type as keyof typeof MODULES]
 }
+
+// Re-export registry functions
+export {
+  registerModule,
+  registerModules,
+  getModuleComponent,
+  getRegisteredModuleTypes,
+  getModuleInitialState,
+  isModuleRegistered,
+  clearRegistry
+} from './registry'
 
 // Re-export ModuleUI for backwards compatibility
 export type { ModuleUI } from '@sobaka/state/models/workspace'
