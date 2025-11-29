@@ -1,1 +1,0 @@
-import{L as s}from"../chunks/layout.BMhO69xd.js";const e=async o=>({workspace:{id:o.params.slug}}),r=Object.freeze(Object.defineProperty({__proto__:null,load:e},Symbol.toStringTag,{value:"Module"}));export{s as component,r as universal};

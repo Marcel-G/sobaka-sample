@@ -1,1 +1,0 @@
-{"type":"data","nodes":[{"type":"data","data":[{"config":1},{"iceServers":2,"signaling":7,"globalLists":9},[3],{"urls":4},[5,6],"stun:stun.l.google.com:19302","stun:global.stun.twilio.com:3478",[8],"ws://localhost:8000/signaling",[10],"a4984ea9-27e2-4475-a727-6e6c69cf84b7"],"uses":{}},null]}

@@ -1,28 +1,40 @@
 # Monorepo Structure
 
-This project uses npm workspaces to organize code into focused packages.
+This project uses npm workspaces to organize code into focused packages and applications.
 
-## Package Structure
-
-```
-packages/
-├── state/          @sobaka/state    - State management (Yjs, documents, sync)
-├── dsp/            @sobaka/dsp      - Audio processing layer
-├── ui/             @sobaka/ui       - Module UI components + Storybook
-└── app/            @sobaka/app      - Main SvelteKit application
-```
-
-## Package Dependencies
+## Repository Structure
 
 ```
-@sobaka/state (foundation)
+sobaka-sample/
+├── apps/               # Runnable applications
+│   ├── web/           # SvelteKit web app (npm workspace)
+│   ├── signaling/     # WebRTC signaling server (Rust)
+│   └── persistence/   # Document storage server (Rust)
+└── packages/          # Reusable libraries (npm workspaces)
+    ├── state/         # @sobaka/state - State management
+    ├── dsp/           # @sobaka/dsp - Audio processing
+    └── ui/            # @sobaka/ui - UI components
+```
+
+## Dependency Graph
+
+### Packages
+
+```
+@sobaka/state (foundation - no dependencies)
     ↓
 @sobaka/dsp (depends on state)
     ↓
 @sobaka/ui (depends on state)
     ↓
-@sobaka/app (depends on state, dsp, ui)
+apps/web (depends on state, dsp, ui)
 ```
+
+### Applications
+
+- **apps/web** - Depends on all packages
+- **apps/signaling** - Standalone Rust server
+- **apps/persistence** - Standalone Rust server (uses Yjs in Rust)
 
 ## Packages
 
@@ -83,47 +95,75 @@ cd packages/ui
 npm run storybook
 ```
 
-### @sobaka/app
+### apps/web
 
-**Purpose**: Main application - SvelteKit app
+**Purpose**: Main web application (SvelteKit)
 
 **Contents**:
 - Routes and pages
 - App-level components (Workspace, Toolbox, etc.)
 - Context providers (global, workspace, audio)
-- Infrastructure code for deployment
+- Infrastructure code for deployment (Terraform)
 
-**Dependencies**: All other packages
+**Dependencies**: All packages (@sobaka/state, @sobaka/dsp, @sobaka/ui)
+
+**Note**: This is an application, not a published package.
+
+### apps/signaling
+
+**Purpose**: WebRTC signaling server
+
+**Tech**: Rust, WebSocket, Docker
+**Deployment**: AWS ECS Fargate
+
+Facilitates WebRTC peer connections. Stateless and horizontally scalable.
+
+### apps/persistence
+
+**Purpose**: Document storage and sync server
+
+**Tech**: Rust, Yjs, LMDB, WebRTC, Docker
+**Deployment**: AWS ECS with EBS volume
+
+Acts as a persistent peer to prevent data loss. Stores Yjs documents in LMDB.
 
 ## Development
 
 ### Prerequisites
 
+**Required**:
 - Node.js 18+
-- Rust toolchain (rustup)
+
+**Optional** (for building WASM or running servers):
+- Rust toolchain: `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`
 - wasm-pack: `cargo install wasm-pack`
 
 ### Install Dependencies
 
 ```bash
-# From root
+# From root - installs all packages and web app
 npm install
 ```
 
-This installs all dependencies for all packages using npm workspaces.
+This uses npm workspaces to link local packages.
 
 ### Run Development
 
 ```bash
-# Run main app
-npm run dev
+# Web app
+npm run dev              # or npm run dev:web
 
-# Or run specific package
-npm run dev --workspace=@sobaka/app
-npm run storybook --workspace=@sobaka/ui
+# UI component development
+npm run storybook --workspace=packages/ui
 
 # DSP development (WASM + TypeScript watch)
-npm run dev --workspace=@sobaka/dsp
+npm run dev --workspace=packages/dsp
+
+# Signaling server
+cd apps/signaling && cargo run
+
+# Persistence server
+cd apps/persistence && cargo run
 ```
 
 ### Build All Packages
@@ -132,13 +172,29 @@ npm run dev --workspace=@sobaka/dsp
 npm run build
 ```
 
-Builds packages in dependency order:
+Builds all packages in dependency order:
 1. @sobaka/state (TypeScript)
-2. @sobaka/dsp (Rust → WASM → TypeScript)
+2. @sobaka/dsp (Rust → WASM → TypeScript) 
 3. @sobaka/ui (Svelte components)
-4. @sobaka/app (SvelteKit)
+4. apps/web (SvelteKit)
 
 **Note**: First build of @sobaka/dsp takes ~30-60s due to WASM compilation
+
+### Build Individual Components
+
+```bash
+# Just packages (state, dsp, ui)
+npm run build:packages
+
+# Just web app
+npm run build:web
+
+# Signaling server
+cd apps/signaling && cargo build --release
+
+# Persistence server
+cd apps/persistence && cargo build --release
+```
 
 ### Clean
 
@@ -150,30 +206,37 @@ Removes all `node_modules` and `dist` folders.
 
 ## Benefits
 
-### 1. **Separation of Concerns**
-- State logic isolated from UI
-- DSP logic separated from presentation
-- Clear dependency boundaries
+### 1. **Clear Separation**
+- **Packages**: Reusable libraries (state, dsp, ui)
+- **Apps**: Runnable applications (web, signaling, persistence)
+- No confusion about what's a library vs application
 
-### 2. **Reusability**
-- Packages can be used independently
-- UI components can be developed in isolation
-- State logic can be tested without UI
+### 2. **Focused Development**
+- Develop UI components in Storybook without running full app
+- Test DSP layer independently
+- Run servers independently for testing
 
 ### 3. **Scalability**
-- Easy to add new packages
-- Clear import boundaries prevent circular dependencies
-- Smaller, focused packages are easier to understand
+- Easy to add new packages or apps
+- Clear dependency boundaries
+- Type safety across all TypeScript packages
+- Rust servers are standalone
 
-### 4. **Developer Experience**
-- Storybook for UI component development
-- Type safety across package boundaries
-- Fast rebuilds (only changed packages rebuild)
+### 4. **Build Efficiency**
+- Only rebuild changed packages
+- Packages can be built in parallel
+- Apps/web uses pre-built packages
 
-### 5. **Testing**
-- Test state logic independently
-- Test DSP logic without UI
-- Visual testing with Storybook
+### 5. **Deployment Flexibility**
+- Static web app → CDN (S3/CloudFront)
+- Signaling → Stateless containers (ECS)
+- Persistence → Stateful containers with volumes
+
+### 6. **Testing**
+- Unit test each package independently
+- Integration test web app with all packages
+- Load test servers independently
+- Visual regression test UI with Storybook + Chromatic
 
 ## Adding a New Package
 

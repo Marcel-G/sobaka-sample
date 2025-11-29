@@ -1,1 +1,0 @@
-import{c as o,a as i}from"./disclose-version.EdNISAWf.js";import{b as f,E as p,c,n as d,g as h,h as m,d as u,e as l,i as v,f as _}from"./runtime.DvaLbMP9.js";function y(t,a,...n){var r=t,s=d,e;f(()=>{s!==(s=a())&&(e&&(h(e),e=null),e=c(()=>s(r,...n)))},p),m&&(r=u)}function g(t,a){l(a,!0);var n=o(),r=v(n);y(r,()=>a.children),i(t,n),_()}export{g as L};

@@ -3,15 +3,19 @@
   "version": "0.1.0",
   "private": true,
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "apps/web"
   ],
   "scripts": {
-    "dev": "npm run dev --workspace=@sobaka/app",
+    "dev": "npm run dev --workspace=apps/web",
+    "dev:web": "npm run dev --workspace=apps/web",
     "build": "npm run build --workspaces --if-present",
+    "build:packages": "npm run build --workspace=packages/state && npm run build --workspace=packages/dsp && npm run build --workspace=packages/ui",
+    "build:web": "npm run build --workspace=apps/web",
     "lint": "npm run lint --workspaces --if-present",
     "format": "npm run format --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
-    "clean": "rm -rf packages/*/node_modules packages/*/dist node_modules"
+    "clean": "rm -rf packages/*/node_modules packages/*/dist apps/web/node_modules node_modules"
   },
   "devDependencies": {
     "typescript": "^5.0.0"
