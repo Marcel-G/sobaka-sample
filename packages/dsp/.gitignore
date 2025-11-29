@@ -1,0 +1,16 @@
+# TypeScript build output
+dist/
+
+# Rust build output
+target/
+Cargo.lock
+
+# WASM build output
+pkg/
+
+# Dependencies
+node_modules/
+
+# Debug
+*.log
+.DS_Store

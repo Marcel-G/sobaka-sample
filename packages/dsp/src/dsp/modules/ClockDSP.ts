@@ -1,8 +1,14 @@
-import { ClockDividerNode } from 'sobaka-dsp'
+import { ClockDividerNode } from '../../../pkg/sobaka_dsp'
 import type { ModuleDSP, ModuleDSPFactory } from '../types'
 import { registerDSPFactory } from '../types'
-import { createPlugId, PlugType } from '../../models/links'
-import type { NodeContext, ParamContext } from '../../context/plugs'
+import type { PlugType } from '@sobaka/state'
+
+// These will come from @sobaka/state after migration
+type NodeContext = any
+type ParamContext = any
+function createPlugId(id: string, type: PlugType, n: number): string {
+  return `${id}/${type}-${n}`
+}
 
 interface ClockState {
   bpm: number

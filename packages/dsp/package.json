@@ -8,19 +8,29 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./wasm": {
+      "types": "./pkg/sobaka_dsp.d.ts",
+      "default": "./pkg/sobaka_dsp.js"
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "pkg"
   ],
   "scripts": {
-    "build": "tsc",
-    "dev": "tsc --watch",
-    "clean": "rm -rf dist"
+    "build:wasm": "wasm-pack build --target web --out-dir pkg",
+    "build:wasm:debug": "wasm-pack build --debug --target web --out-dir pkg",
+    "build:ts": "tsc",
+    "build": "npm run build:wasm && npm run build:ts",
+    "dev:wasm": "wasm-pack build --debug --target web --out-dir pkg -- --watch",
+    "dev:ts": "tsc --watch",
+    "dev": "npm run build:wasm:debug && npm run dev:ts",
+    "clean": "rm -rf dist pkg target",
+    "test:rust": "cargo test"
   },
   "dependencies": {
-    "@sobaka/state": "workspace:*",
-    "sobaka-dsp": "file:../../sobaka-dsp"
+    "@sobaka/state": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.0.0"
