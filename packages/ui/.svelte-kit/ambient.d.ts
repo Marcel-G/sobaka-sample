@@ -27,8 +27,8 @@
  */
 declare module '$env/static/private' {
 	export const SHELL: string;
-	export const npm_command: string;
 	export const LSCOLORS: string;
+	export const npm_command: string;
 	export const WINDOWID: string;
 	export const npm_config_userconfig: string;
 	export const NIX_CC_WRAPPER_TARGET_BUILD_arm64_apple_darwin: string;
@@ -51,6 +51,7 @@ declare module '$env/static/private' {
 	export const __CFBundleIdentifier: string;
 	export const SSH_AUTH_SOCK: string;
 	export const DIRENV_DIR: string;
+	export const npm_package_engines_npm: string;
 	export const STRINGS: string;
 	export const LD_FOR_BUILD: string;
 	export const COLOR: string;
@@ -73,8 +74,8 @@ declare module '$env/static/private' {
 	export const npm_config_init_module: string;
 	export const NIX_CC_WRAPPER_TARGET_HOST_arm64_apple_darwin: string;
 	export const __NIX_DARWIN_SET_ENVIRONMENT_DONE: string;
-	export const AS_FOR_BUILD: string;
 	export const CXX: string;
+	export const AS_FOR_BUILD: string;
 	export const NIX_APPLE_SDK_VERSION: string;
 	export const _: string;
 	export const FZF_TMUX: string;
@@ -95,11 +96,9 @@ declare module '$env/static/private' {
 	export const CXX_FOR_BUILD: string;
 	export const NIX_SSL_CERT_FILE: string;
 	export const NIX_PKG_CONFIG_WRAPPER_TARGET_HOST_arm64_apple_darwin: string;
-	export const KITTY_SHELL_INTEGRATION: string;
 	export const LD_DYLD_PATH: string;
 	export const VIRTUAL_ENV_DISABLE_PROMPT: string;
 	export const KITTY_WINDOW_ID: string;
-	export const FORCE_COLOR: string;
 	export const NIX_STORE: string;
 	export const TMPDIR: string;
 	export const DEVENV_ROOT: string;
@@ -112,7 +111,6 @@ declare module '$env/static/private' {
 	export const STRIP_FOR_BUILD: string;
 	export const NIX_USER_PROFILE_DIR: string;
 	export const npm_lifecycle_script: string;
-	export const CURSOR_AGENT: string;
 	export const NIX_DONT_SET_RPATH_FOR_BUILD: string;
 	export const npm_config_npm_version: string;
 	export const __propagatedImpureHostDeps: string;
@@ -133,8 +131,8 @@ declare module '$env/static/private' {
 	export const VISUAL: string;
 	export const PROMPT_EOL_MARK: string;
 	export const OBJDUMP_FOR_BUILD: string;
-	export const npm_lifecycle_event: string;
 	export const DEVENV_TASKS: string;
+	export const npm_lifecycle_event: string;
 	export const SHLVL: string;
 	export const DEVENV_RUNTIME: string;
 	export const AR_FOR_BUILD: string;
@@ -142,13 +140,12 @@ declare module '$env/static/private' {
 	export const NIX_LDFLAGS_FOR_BUILD: string;
 	export const PAGER: string;
 	export const __HM_ZSH_SESS_VARS_SOURCED: string;
-	export const __impureHostDeps: string;
 	export const NIX_CFLAGS_COMPILE: string;
+	export const __impureHostDeps: string;
 	export const ZERO_AR_DATE: string;
 	export const NIX_IGNORE_LD_THROUGH_GCC: string;
 	export const XPC_SERVICE_NAME: string;
 	export const npm_config_user_agent: string;
-	export const NO_COLOR: string;
 	export const TERMINFO_DIRS: string;
 	export const npm_execpath: string;
 	export const DEVENV_PROFILE: string;
@@ -179,9 +176,10 @@ declare module '$env/static/private' {
 	export const NIX_LDFLAGS: string;
 	export const __CF_USER_TEXT_ENCODING: string;
 	export const name: string;
+	export const npm_package_engines_node: string;
 	export const TERM_PROGRAM: string;
-	export const PKG_CONFIG: string;
 	export const NIX_CC_FOR_BUILD: string;
+	export const PKG_CONFIG: string;
 	export const NODE_ENV: string;
 }
 
@@ -213,8 +211,8 @@ declare module '$env/static/public' {
 declare module '$env/dynamic/private' {
 	export const env: {
 		SHELL: string;
-		npm_command: string;
 		LSCOLORS: string;
+		npm_command: string;
 		WINDOWID: string;
 		npm_config_userconfig: string;
 		NIX_CC_WRAPPER_TARGET_BUILD_arm64_apple_darwin: string;
@@ -237,6 +235,7 @@ declare module '$env/dynamic/private' {
 		__CFBundleIdentifier: string;
 		SSH_AUTH_SOCK: string;
 		DIRENV_DIR: string;
+		npm_package_engines_npm: string;
 		STRINGS: string;
 		LD_FOR_BUILD: string;
 		COLOR: string;
@@ -259,8 +258,8 @@ declare module '$env/dynamic/private' {
 		npm_config_init_module: string;
 		NIX_CC_WRAPPER_TARGET_HOST_arm64_apple_darwin: string;
 		__NIX_DARWIN_SET_ENVIRONMENT_DONE: string;
-		AS_FOR_BUILD: string;
 		CXX: string;
+		AS_FOR_BUILD: string;
 		NIX_APPLE_SDK_VERSION: string;
 		_: string;
 		FZF_TMUX: string;
@@ -281,11 +280,9 @@ declare module '$env/dynamic/private' {
 		CXX_FOR_BUILD: string;
 		NIX_SSL_CERT_FILE: string;
 		NIX_PKG_CONFIG_WRAPPER_TARGET_HOST_arm64_apple_darwin: string;
-		KITTY_SHELL_INTEGRATION: string;
 		LD_DYLD_PATH: string;
 		VIRTUAL_ENV_DISABLE_PROMPT: string;
 		KITTY_WINDOW_ID: string;
-		FORCE_COLOR: string;
 		NIX_STORE: string;
 		TMPDIR: string;
 		DEVENV_ROOT: string;
@@ -298,7 +295,6 @@ declare module '$env/dynamic/private' {
 		STRIP_FOR_BUILD: string;
 		NIX_USER_PROFILE_DIR: string;
 		npm_lifecycle_script: string;
-		CURSOR_AGENT: string;
 		NIX_DONT_SET_RPATH_FOR_BUILD: string;
 		npm_config_npm_version: string;
 		__propagatedImpureHostDeps: string;
@@ -319,8 +315,8 @@ declare module '$env/dynamic/private' {
 		VISUAL: string;
 		PROMPT_EOL_MARK: string;
 		OBJDUMP_FOR_BUILD: string;
-		npm_lifecycle_event: string;
 		DEVENV_TASKS: string;
+		npm_lifecycle_event: string;
 		SHLVL: string;
 		DEVENV_RUNTIME: string;
 		AR_FOR_BUILD: string;
@@ -328,13 +324,12 @@ declare module '$env/dynamic/private' {
 		NIX_LDFLAGS_FOR_BUILD: string;
 		PAGER: string;
 		__HM_ZSH_SESS_VARS_SOURCED: string;
-		__impureHostDeps: string;
 		NIX_CFLAGS_COMPILE: string;
+		__impureHostDeps: string;
 		ZERO_AR_DATE: string;
 		NIX_IGNORE_LD_THROUGH_GCC: string;
 		XPC_SERVICE_NAME: string;
 		npm_config_user_agent: string;
-		NO_COLOR: string;
 		TERMINFO_DIRS: string;
 		npm_execpath: string;
 		DEVENV_PROFILE: string;
@@ -365,9 +360,10 @@ declare module '$env/dynamic/private' {
 		NIX_LDFLAGS: string;
 		__CF_USER_TEXT_ENCODING: string;
 		name: string;
+		npm_package_engines_node: string;
 		TERM_PROGRAM: string;
-		PKG_CONFIG: string;
 		NIX_CC_FOR_BUILD: string;
+		PKG_CONFIG: string;
 		NODE_ENV: string;
 		[key: `PUBLIC_${string}`]: undefined;
 		[key: `${string}`]: string | undefined;
