@@ -13,6 +13,7 @@ import type { User } from '../context/global'
 import { createPositionStores } from '../context/positions'
 import type { NodeContext, ParamContext } from '../context/plugs'
 import { createPlugId, is_fully_linked, plug_type, PlugType, type Link } from './links'
+import { ModuleDSPManager } from '../dsp'
 
 export interface WorkspaceDoc {
   modules: Array<Module>
@@ -54,8 +55,9 @@ export class Workspace extends SyncedDoc<'workspace'> {
   user_store = writable<Record<string, UserAwareness>>({})
   pending_link_store = writable<Partial<Link> | null>(null)
   private plug_context = writable<Record<string, ParamContext | NodeContext>>({})
+  private dspManager: ModuleDSPManager | null = null
 
-  constructor(doc: Y.Doc, config: Config) {
+  constructor(doc: Y.Doc, config: Config, audioContext: AudioContext) {
     super('workspace', doc, config)
     this.store = syncedStore(WORKSPACE_STORE_SHAPE, doc)
 
@@ -69,11 +71,19 @@ export class Workspace extends SyncedDoc<'workspace'> {
       this.handleAwarenessChange()
     })
 
-    audioConnector(this.plug_context, this.links)
+    // Initialize DSP manager to handle all audio node creation and management
+    this.dspManager = new ModuleDSPManager(audioContext, this.modules)
+    
+    // Connect DSP manager's plug contexts to audio routing
+    audioConnector(this.dspManager.getPlugContextsStore(), this.links)
   }
 
-  fork() {
-    const workspace = new Workspace(this.forkDoc(this.config.currentUser), this.config)
+  fork(audioContext: AudioContext) {
+    const workspace = new Workspace(
+      this.forkDoc(this.config.currentUser),
+      this.config,
+      audioContext
+    )
 
     if (!workspace.store.info.title?.endsWith('(fork)')) {
       workspace.store.info.title += ' (fork)'
@@ -83,8 +93,12 @@ export class Workspace extends SyncedDoc<'workspace'> {
     return workspace
   }
 
-  static fromRef(config: Config, ref?: SubDocReference<Workspace>) {
-    return new Workspace(new Y.Doc(ref), config)
+  static fromRef(
+    config: Config,
+    audioContext: AudioContext,
+    ref?: SubDocReference<Workspace>
+  ) {
+    return new Workspace(new Y.Doc(ref), config, audioContext)
   }
 
   migrate() {
@@ -127,18 +141,14 @@ export class Workspace extends SyncedDoc<'workspace'> {
     this.user_store.update(() => newState)
   }
 
-  register_plug(id: string, context: ParamContext | NodeContext) {
-    this.plug_context.update(contexts => {
-      contexts[id] = context
-      return contexts
-    })
+  // Note: Plug registration is now handled automatically by the DSP manager
+  // These methods are kept for backwards compatibility but are no-ops
+  register_plug(_id: string, _context: ParamContext | NodeContext) {
+    // Plugs are now managed by DSP layer
   }
 
-  remove_plug(id: string) {
-    this.plug_context.update(contexts => {
-      delete contexts[id]
-      return contexts
-    })
+  remove_plug(_id: string) {
+    // Plugs are now managed by DSP layer
   }
 
   // Module actions
@@ -213,6 +223,14 @@ export class Workspace extends SyncedDoc<'workspace'> {
         }
       })
     }
+  }
+
+  override destroy() {
+    // Cleanup DSP manager first
+    this.dspManager?.destroy()
+    
+    // Call parent destroy
+    super.destroy()
   }
 
   // Module selectors

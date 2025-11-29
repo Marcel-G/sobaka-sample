@@ -1,5 +1,7 @@
 <script lang="ts">
   import '../app.css'
+  // Import DSP layer to register all module factories
+  import '../dsp'
   import { onDestroy, onMount } from 'svelte'
   import { browser } from '$app/environment'
   import { createGlobalCtx, type Global } from '../context/global'
