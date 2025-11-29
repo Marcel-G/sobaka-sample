@@ -6,7 +6,7 @@
   import Panel from './shared/Panel.svelte'
   import Plug from './shared/Plug.svelte'
   import Layout from '../components/Layout.svelte'
-  import { PlugType } from '../models/links'
+  import { PlugType } from '@sobaka/state/models/links'
 
   export let disabled = false
   const name = 'S & H'

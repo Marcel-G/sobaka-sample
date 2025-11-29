@@ -19,7 +19,7 @@
   import { create_volume_range } from '../range/range_creators'
   import LevelIndicator from '../components/LevelIndicator.svelte'
   import { get_workspace } from '../context/workspace'
-  import { createPlugId, PlugType } from '../models/links'
+  import { createPlugId, PlugType } from '@sobaka/state/models/links'
 
   export let state: State = initialState
   export let disabled = false

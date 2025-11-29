@@ -23,7 +23,7 @@ import Quantiser, { initialState as quantiserInitialState } from './Quantiser.sv
 import SampleAndHold, {
   initialState as sampleAndHoldInitialState
 } from './SampleAndHold.svelte'
-import type { Module } from '../models/workspace'
+import type { Module } from '@sobaka/state/models/workspace'
 
 export const MODULES = {
   Clock,

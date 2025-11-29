@@ -20,7 +20,7 @@
   import Layout from '../components/Layout.svelte'
   import RingSpinner from '../components/RingSpinner.svelte'
   import { type Range, RangeType } from '../range/range'
-  import { PlugType } from '../models/links'
+  import { PlugType } from '@sobaka/state/models/links'
 
   const context = getGlobalCtx()
 

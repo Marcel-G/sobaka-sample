@@ -25,7 +25,7 @@
 <script lang="ts">
   import Panel from './shared/Panel.svelte'
   import Plug from './shared/Plug.svelte'
-  import { PlugType } from '../models/links'
+  import { PlugType } from '@sobaka/state/models/links'
 
   export let state: State
   export let disabled = false

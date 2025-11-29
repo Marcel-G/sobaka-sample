@@ -24,7 +24,7 @@
   import ScopeChannel from './ScopeChannel.svelte'
   import Tooltip from '../../components/Tooltip.svelte'
   import Input from '../../components/Input.svelte'
-  import { PlugType } from '../../models/links'
+  import { PlugType } from '@sobaka/state/models/links'
 
   export let state: State
   export let disabled = false

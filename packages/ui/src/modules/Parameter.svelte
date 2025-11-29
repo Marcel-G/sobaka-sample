@@ -13,7 +13,7 @@
   import Plug from './shared/Plug.svelte'
   import Panel from './shared/Panel.svelte'
   import { create_scale_range } from '../range/range_creators'
-  import { PlugType } from '../models/links'
+  import { PlugType } from '@sobaka/state/models/links'
 
   export let state: State
   export let disabled = false

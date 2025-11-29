@@ -9,7 +9,7 @@
   import Plug from './shared/Plug.svelte'
   import Knob from '../components/Knob/Knob.svelte'
   import { create_bpm_range } from '../range/range_creators'
-  import { PlugType } from '../models/links'
+  import { PlugType } from '@sobaka/state/models/links'
 
   export let state: State
   export let disabled = false

@@ -16,7 +16,7 @@
   import Knob from '../components/Knob/Knob.svelte'
   import { type Range, RangeType } from '../range/range'
   import { create_scale_range } from '../range/range_creators'
-  import { PlugType } from '../models/links'
+  import { PlugType } from '@sobaka/state/models/links'
 
   export let state: State
   export let disabled = false
