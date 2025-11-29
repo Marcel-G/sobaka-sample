@@ -16,7 +16,7 @@
     "build-storybook": "storybook build"
   },
   "dependencies": {
-    "@sobaka/state": "workspace:*",
+    "@sobaka/state": "*",
     "lodash": "^4.17.21",
     "svg-round-corners": "^0.4.3",
     "tailwind-merge": "^2.6.0"

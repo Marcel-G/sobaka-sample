@@ -30,7 +30,7 @@
     "test:rust": "cargo test"
   },
   "dependencies": {
-    "@sobaka/state": "workspace:*"
+    "@sobaka/state": "*"
   },
   "devDependencies": {
     "typescript": "^5.0.0"
