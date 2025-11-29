@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { type Point } from 'sobaka-dsp'
+  import { type Point } from '@sobaka/dsp'
 
   export let data: Point[]
 

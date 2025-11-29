@@ -11,7 +11,7 @@
 </script>
 
 <script lang="ts">
-  import type { OscillatorShape } from 'sobaka-dsp'
+  import type { OscillatorShape } from '@sobaka/dsp'
   import Panel from '../shared/Panel.svelte'
   import Plug from '../shared/Plug.svelte'
   import Knob from '../../components/Knob/Knob.svelte'

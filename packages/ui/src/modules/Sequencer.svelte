@@ -9,7 +9,7 @@
 </script>
 
 <script lang="ts">
-  import type { Sequencer } from 'sobaka-dsp'
+  import type { Sequencer } from '@sobaka/dsp'
   import Panel from './shared/Panel.svelte'
   import Plug from './shared/Plug.svelte'
   import { onDestroy, onMount } from 'svelte'
@@ -32,7 +32,7 @@
   let loading = true
 
   onMount(async () => {
-    const { Sequencer } = await import('sobaka-dsp')
+    const { Sequencer } = await import('@sobaka/dsp')
     sequencer = await Sequencer.create(context.audio)
     node = sequencer.node()
     loading = false

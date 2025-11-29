@@ -9,7 +9,7 @@
 </script>
 
 <script lang="ts">
-  import type { StepSequencer } from 'sobaka-dsp'
+  import type { StepSequencer } from '@sobaka/dsp'
   import Panel from './shared/Panel.svelte'
   import Plug from './shared/Plug.svelte'
   import { onDestroy, onMount } from 'svelte'
@@ -31,7 +31,7 @@
   const context = getGlobalCtx()
 
   onMount(async () => {
-    const { StepSequencer } = await import('sobaka-dsp')
+    const { StepSequencer } = await import('@sobaka/dsp')
     step_sequencer = await StepSequencer.create(context.audio)
     node = step_sequencer.node()
     loading = false
