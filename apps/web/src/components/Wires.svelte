@@ -34,7 +34,7 @@
 
   const activeLink = memoizeLast(
     derived([partialLink, plugPositions, mouse_position], ([l, p, mp]) =>
-      linkFinder(l, p, mp)
+      linkFinder(l, p as Map<string, import('../context/positions').PlugPosition>, mp)
     ),
     linkFinderCmp
   )
@@ -44,7 +44,7 @@
       derived([activeLink, links, plugPositions, modulePositions], stores => stores)
     ),
     ([activeLink, links, plugs, modules]) =>
-      linker([...activeLink, ...links], plugs, modules)
+      linker([...activeLink, ...links], plugs as Map<string, import('../context/positions').PlugPosition>, modules as Map<string, import('../context/positions').ModulePosition>)
   )
 
   function handle_click() {

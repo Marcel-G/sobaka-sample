@@ -13,3 +13,6 @@ import '../module/quantiser/node'
 import '../module/sample_and_hold/node'
 
 export { INVENTORY, register } from './types'
+
+// Re-export types from WASM package
+export type { OscillatorShape } from 'sobaka-dsp'

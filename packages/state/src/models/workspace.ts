@@ -4,7 +4,6 @@ import syncedStore from '@syncedstore/core'
 import { derived, writable, type Readable } from 'svelte/store'
 
 import cloneDeep from 'lodash/cloneDeep'
-import { INITIAL_STATE, type ModuleUI } from '../modules'
 import { intoReadable } from '../util/store'
 import { type SubDocReference } from '../util/subdoc'
 import { type Position } from '../@types'
@@ -14,6 +13,28 @@ import { createPositionStores } from '../context/positions'
 import type { NodeContext, ParamContext } from '../context/plugs'
 import { createPlugId, is_fully_linked, plug_type, PlugType, type Link } from './links'
 import { ModuleDSPManager } from '../dsp'
+
+// Module types - these should match the UI module types
+export type ModuleUI = 
+  | 'Clock'
+  | 'Envelope'
+  | 'Filter'
+  | 'Oscillator'
+  | 'Parameter'
+  | 'Reverb'
+  | 'Sequencer'
+  | 'StepSequencer'
+  | 'Vca'
+  | 'Noise'
+  | 'Delay'
+  | 'Scope'
+  | 'SpecScope'
+  | 'Lfo'
+  | 'Quantiser'
+  | 'SampleAndHold'
+
+// Initial state registry - can be populated by UI layer
+export const INITIAL_STATE: Record<ModuleUI, any> = {} as any
 
 export interface WorkspaceDoc {
   modules: Array<Module>

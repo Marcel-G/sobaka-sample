@@ -26,8 +26,8 @@
   export let width = 0
 
   // Get context if available (in app), otherwise use defaults (in Storybook)
-  const workspace: any = hasContext('workspace') ? getContext('workspace')?.workspace : null
-  const id: string = hasContext('module') ? getContext('module')?.id : 'storybook-module'
+  const workspace: any = hasContext('workspace') ? (getContext('workspace') as any)?.workspace : null
+  const id: string = hasContext('module') ? (getContext('module') as any)?.id : 'storybook-module'
 
   const position = workspace?.module_position?.(id) ?? writable({ x: 0, y: 0 })
 

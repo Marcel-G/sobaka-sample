@@ -23,7 +23,8 @@ import Quantiser, { initialState as quantiserInitialState } from './Quantiser.sv
 import SampleAndHold, {
   initialState as sampleAndHoldInitialState
 } from './SampleAndHold.svelte'
-import type { Module } from '@sobaka/state/models/workspace'
+import type { Module, ModuleUI } from '@sobaka/state/models/workspace'
+import { INITIAL_STATE } from '@sobaka/state/models/workspace'
 
 export const MODULES = {
   Clock,
@@ -44,11 +45,10 @@ export const MODULES = {
   SampleAndHold
 } as const
 
-export type ModuleUI = keyof typeof MODULES
-
 // TS doesn't know about svelte module imports - https://github.com/sveltejs/svelte/issues/5817
 
-export const INITIAL_STATE = {
+// Populate the INITIAL_STATE registry from @sobaka/state
+Object.assign(INITIAL_STATE, {
   Clock: clockInitialState,
   Envelope: envelopeInitialState,
   Filter: filterInitialState,
@@ -65,12 +65,12 @@ export const INITIAL_STATE = {
   Lfo: lfoInitialState,
   Quantiser: quantiserInitialState,
   SampleAndHold: sampleAndHoldInitialState
-} as const
+})
 
 // Maybe it's better to use props somehow?
 // https://github.com/sveltejs/language-tools/issues/442#issuecomment-1145948441
 // type Props = Clock['$$prop_def']['pricing']
 
 export const get_component = (module: Module) => {
-  return MODULES[module.type]
+  return MODULES[module.type as keyof typeof MODULES]
 }

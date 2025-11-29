@@ -6,8 +6,8 @@
   import { createPlugId, PlugType } from '@sobaka/state/models/links'
 
   // Get context if available (in app), otherwise use defaults (in Storybook)
-  const workspace: any = hasContext('workspace') ? getContext('workspace')?.workspace : null
-  const module_id: string = hasContext('module') ? getContext('module')?.id : 'storybook-module'
+  const workspace: any = hasContext('workspace') ? (getContext('workspace') as any)?.workspace : null
+  const module_id: string = hasContext('module') ? (getContext('module') as any)?.id : 'storybook-module'
   const position = workspace?.module_position?.(module_id) ?? writable({ x: 0, y: 0 })
 
   // ctx is now optional - if not provided, only type is needed for plug ID generation
