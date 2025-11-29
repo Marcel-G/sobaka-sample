@@ -2,8 +2,8 @@
   "name": "sobaka-dsp",
   "version": "1.0.0",
   "description": "",
-  "main": "./pkg/sobaka-worklet.js",
-  "types": "./pkg/sobaka-worklet.d.ts",
+  "main": "./pkg/sobaka_dsp.js",
+  "types": "./pkg/sobaka_dsp.d.ts",
   "files": [
     "pkg"
   ],

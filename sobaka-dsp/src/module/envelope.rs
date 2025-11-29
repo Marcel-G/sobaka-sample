@@ -70,4 +70,4 @@ impl EnvelopeNode {
     }
 }
 
-register!(EnvelopeProcessor, "delay");
+register!(EnvelopeProcessor, "envelope");

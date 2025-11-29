@@ -12,13 +12,13 @@
   import Layout from '../components/Layout.svelte'
   import RingSpinner from '../components/RingSpinner.svelte'
   import { create_bpm_range } from '../range/range_creators'
-  import { Clock } from 'sobaka-dsp'
+  import { ClockDividerNode } from 'sobaka-dsp'
   import { getGlobalCtx } from '../context/global'
   import { PlugType } from '../models/links'
 
   export let state: State
   export let disabled = false
-  let clock: Clock
+  let clock: ClockDividerNode
   let name = 'clock'
   let bpm_param: AudioParam
   let node: AudioNode
@@ -29,10 +29,10 @@
   // @todo -- make this work with volt per octave
   const bpm = create_bpm_range()
 
-  onMount(async () => {
-    clock = await Clock.create(context.audio)
-    node = clock.node()
-    bpm_param = clock.get_param('Bpm')
+  onMount(() => {
+    clock = new ClockDividerNode(context.audio)
+    node = clock.node
+    bpm_param = clock.node.parameters.get('bpm')!
 
     loading = false
   })
