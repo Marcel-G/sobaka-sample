@@ -1,5 +1,5 @@
 import { getContext, setContext } from 'svelte'
-import { Workspace } from '/state/models/workspace'
+import { Workspace } from '@sobaka/state/models/workspace'
 
 const WORKSPACE_CONTEXT = 'WORKSPACE_CONTEXT'
 

@@ -3,8 +3,8 @@
   import { onMount } from 'svelte'
   import { getGlobalCtx } from '../../../../context/global'
   import { goto } from '$app/navigation'
-  import type { SubDocReference } from '../../../../util/subdoc'
-  import type { Workspace } from '../../../../models/workspace'
+  import type { SubDocReference } from '@sobaka/state/util/subdoc'
+  import type { Workspace } from '@sobaka/state/models/workspace'
 
   export let data: PageData
 

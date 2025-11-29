@@ -4,11 +4,11 @@
   import WorkspaceView from '../../../workspace/Workspace.svelte'
   import { init_workspace } from '../../../context/workspace'
   import { getGlobalCtx } from '../../../context/global'
-  import { type SubDocReference } from '../../../util/subdoc'
-  import type { Workspace } from '../../../models/workspace'
+  import { type SubDocReference } from '@sobaka/state/util/subdoc'
+  import type { Workspace } from '@sobaka/state/models/workspace'
   import CurrentWorkspaceSummary from '../../../components/CurrentWorkspaceSummary.svelte'
   import AppLayout from '../../../components/AppLayout.svelte'
-  import Loading from '../../../components/Loading.svelte'
+  import Loading from '@sobaka/ui/components/Loading.svelte'
 
   export let data: PageData
 

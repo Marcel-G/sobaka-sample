@@ -1,6 +1,6 @@
 import { derived, get, type Readable } from 'svelte/store'
 import type { Position } from '../@types'
-import { plug_type, PlugType, type Link } from '/state/models/links'
+import { plug_type, PlugType, type Link } from '@sobaka/state/models/links'
 import { type PlugPosition } from './positions'
 
 const distance = (a: PlugPosition, b: PlugPosition): number => {

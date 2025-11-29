@@ -1,6 +1,6 @@
 <script lang="ts">
   import { formatDistanceToNow } from 'date-fns'
-  import type { Workspace } from '/state/models/workspace'
+  import type { Workspace } from '@sobaka/state/models/workspace'
 
   export let workspace: Workspace
 

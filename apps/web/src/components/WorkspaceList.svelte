@@ -1,6 +1,6 @@
 <script lang="ts">
   import { getGlobalCtx } from '../context/global'
-  import { WorkspaceList } from '/state/models/workspaceList'
+  import { WorkspaceList } from '@sobaka/state/models/workspaceList'
   import WorkspaceSummary from './WorkspaceSummary.svelte'
 
   const global = getGlobalCtx()

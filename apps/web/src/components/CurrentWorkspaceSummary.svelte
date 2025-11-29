@@ -1,8 +1,8 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
   import { formatDistanceToNow } from 'date-fns'
-  import type { Workspace } from '/state/models/workspace'
-  import TitleInput from './TitleInput.svelte'
+  import type { Workspace } from '@sobaka/state/models/workspace'
+  import TitleInput from '@sobaka/ui/components/TitleInput.svelte'
 
   export let workspace: Workspace
 

@@ -5,7 +5,11 @@
   "exports": {
     "./modules": "./src/modules/index.ts",
     "./modules/*": "./src/modules/*.svelte",
+    "./modules/ModuleWrapper.svelte": "./src/modules/ModuleWrapper.svelte",
+    "./modules/Mixer.svelte": "./src/modules/Mixer.svelte",
+    "./modules/shared/Panel.svelte": "./src/modules/shared/Panel.svelte",
     "./components/*": "./src/components/*.svelte",
+    "./components/Knob/*": "./src/components/Knob/*.svelte",
     "./actions/*": "./src/actions/*.ts",
     "./range": "./src/range/index.ts",
     "./range/range": "./src/range/range.ts",
