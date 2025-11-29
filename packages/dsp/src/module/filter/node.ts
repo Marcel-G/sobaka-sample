@@ -1,8 +1,8 @@
-import type { Filter } from 'sobaka-dsp'
-import type { ModuleDSP, ModuleDSPFactory } from '../types'
-import { registerDSPFactory } from '../types'
-import { createPlugId, PlugType } from '@sobaka/state/models/links'
-import type { NodeContext, ParamContext } from '@sobaka/state/models/plugs'
+import { createPlugId, PlugType } from '@sobaka/state'
+
+import { FilterNode as _FilterNode} from '@sobaka/dsp/wasm'
+import { ModuleDSP } from '../../shared/types'
+import { NodeContext, ParamContext } from '@sobaka/state/models/plugs'
 
 interface FilterState {
   frequency: number
@@ -14,8 +14,7 @@ interface FilterState {
  * Manages Filter WASM node and its parameters
  */
 export class FilterDSP implements ModuleDSP {
-  private filter: Filter
-  private node: AudioNode
+  private filter: _FilterNode
   private frequencyParam: AudioParam
   private qParam: AudioParam
 
@@ -23,12 +22,11 @@ export class FilterDSP implements ModuleDSP {
     public readonly id: string,
     private audioContext: AudioContext,
     initialState: FilterState,
-    filter: Filter
+    filter: _FilterNode
   ) {
     this.filter = filter
-    this.node = filter.node()
-    this.frequencyParam = filter.get_param('Frequency')
-    this.qParam = filter.get_param('Q')
+    this.frequencyParam = filter.node.parameters.get('frequency')
+    this.qParam = filter.node.parameters.get('q')
     
     // Set initial state
     this.updateState(initialState)
@@ -49,7 +47,7 @@ export class FilterDSP implements ModuleDSP {
       // Signal input
       [createPlugId(this.id, PlugType.Input, 0)]: {
         type: PlugType.Input,
-        module: this.node,
+        module: this.filter.node,
         connectIndex: 0
       },
       // Cutoff CV input
@@ -65,47 +63,32 @@ export class FilterDSP implements ModuleDSP {
       // Lowpass output
       [createPlugId(this.id, PlugType.Output, 0)]: {
         type: PlugType.Output,
-        module: this.node,
+        module: this.filter.node,
         connectIndex: 0
       },
       // Highpass output
       [createPlugId(this.id, PlugType.Output, 1)]: {
         type: PlugType.Output,
-        module: this.node,
+        module: this.filter.node,
         connectIndex: 1
       },
       // Bandpass output
       [createPlugId(this.id, PlugType.Output, 2)]: {
         type: PlugType.Output,
-        module: this.node,
+        module: this.filter.node,
         connectIndex: 2
       },
       // Moog output
       [createPlugId(this.id, PlugType.Output, 3)]: {
         type: PlugType.Output,
-        module: this.node,
+        module: this.filter.node,
         connectIndex: 3
       }
     }
   }
 
   destroy(): void {
-    this.filter?.destroy()
     this.filter?.free()
   }
 }
 
-/**
- * Factory function for creating Filter DSP instances
- */
-const createFilterDSP: ModuleDSPFactory = async (id, audioContext, initialState) => {
-  const { Filter } = await import('sobaka-dsp')
-  const filter = await Filter.create(audioContext)
-  
-  return new FilterDSP(id, audioContext, initialState as FilterState, filter)
-}
-
-// Register the factory
-registerDSPFactory('Filter', createFilterDSP)
-
-export default createFilterDSP

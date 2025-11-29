@@ -11,8 +11,8 @@
     memoizeLast,
     throttled
   } from '../context/linkFinder'
-  import type { Position } from '../@types'
   import { is_fully_linked, plug_type, PlugType } from '@sobaka/state/models/links'
+    import type { Position } from '@sobaka/state/models/workspace'
 
   export let mouse_position: Readable<Position>
 

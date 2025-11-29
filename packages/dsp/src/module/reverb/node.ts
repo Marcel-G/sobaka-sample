@@ -1,8 +1,8 @@
-import type { Reverb } from 'sobaka-dsp'
-import type { ModuleDSP, ModuleDSPFactory } from '../types'
-import { registerDSPFactory } from '../types'
-import { createPlugId, PlugType } from '@sobaka/state/models/links'
-import type { NodeContext, ParamContext } from '@sobaka/state/models/plugs'
+import { createPlugId, PlugType } from '@sobaka/state'
+
+import { ReverbNode as _ReverbNode} from '@sobaka/dsp/wasm'
+import { ModuleDSP } from '../../shared/types'
+import { NodeContext, ParamContext } from '@sobaka/state/models/plugs'
 
 interface ReverbState {
   wet: number
@@ -14,8 +14,7 @@ interface ReverbState {
  * Manages Reverb WASM node and its parameters
  */
 export class ReverbDSP implements ModuleDSP {
-  private reverb: Reverb
-  private node: AudioNode
+  private reverb: _ReverbNode
   private wetParam: AudioParam
   private delayParam: AudioParam
 
@@ -23,12 +22,11 @@ export class ReverbDSP implements ModuleDSP {
     public readonly id: string,
     private audioContext: AudioContext,
     initialState: ReverbState,
-    reverb: Reverb
+    reverb: _ReverbNode
   ) {
     this.reverb = reverb
-    this.node = reverb.node()
-    this.wetParam = reverb.get_param('Wet')
-    this.delayParam = reverb.get_param('Delay')
+    this.wetParam = reverb.node.parameters.get('Wet')
+    this.delayParam = reverb.node.parameters.get('Delay')
     
     // Set initial state
     this.updateState(initialState)
@@ -46,47 +44,31 @@ export class ReverbDSP implements ModuleDSP {
       // Left input
       [createPlugId(this.id, PlugType.Input, 0)]: {
         type: PlugType.Input,
-        module: this.node,
+        module: this.reverb.node,
         connectIndex: 0
       },
       // Right input
       [createPlugId(this.id, PlugType.Input, 1)]: {
         type: PlugType.Input,
-        module: this.node,
+        module: this.reverb.node,
         connectIndex: 1
       },
       // Left output
       [createPlugId(this.id, PlugType.Output, 0)]: {
         type: PlugType.Output,
-        module: this.node,
+        module: this.reverb.node,
         connectIndex: 0
       },
       // Right output
       [createPlugId(this.id, PlugType.Output, 1)]: {
         type: PlugType.Output,
-        module: this.node,
+        module: this.reverb.node,
         connectIndex: 1
       }
     }
   }
 
   destroy(): void {
-    this.reverb?.destroy()
     this.reverb?.free()
   }
 }
-
-/**
- * Factory function for creating Reverb DSP instances
- */
-const createReverbDSP: ModuleDSPFactory = async (id, audioContext, initialState) => {
-  const { Reverb } = await import('sobaka-dsp')
-  const reverb = await Reverb.create(audioContext)
-  
-  return new ReverbDSP(id, audioContext, initialState as ReverbState, reverb)
-}
-
-// Register the factory
-registerDSPFactory('Reverb', createReverbDSP)
-
-export default createReverbDSP

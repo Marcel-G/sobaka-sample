@@ -1,3 +1,5 @@
+import { NodeContext, ParamContext } from "@sobaka/state/models/plugs"
+
 /**
  * Base interface for all module DSP instances
  * Each module type (Clock, Oscillator, etc.) implements this interface
@@ -16,23 +18,3 @@ export interface ModuleDSP {
   destroy(): void
 }
 
-/**
- * Factory function type for creating module DSP instances
- */
-export type ModuleDSPFactory = (
-  id: string,
-  audioContext: AudioContext,
-  initialState: Record<string, unknown>
-) => Promise<ModuleDSP>
-
-/**
- * Registry of DSP factories by module type
- */
-export const INVENTORY: Record<string, ModuleDSPFactory | undefined> = {}
-
-/**
- * Register a DSP factory for a module type
- */
-export function register(factory: ModuleDSPFactory, moduleType: string) {
-  INVENTORY[moduleType] = factory
-}

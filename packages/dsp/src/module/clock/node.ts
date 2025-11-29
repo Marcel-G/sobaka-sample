@@ -1,6 +1,8 @@
-import { ClockDividerNode as _ClockDividerNode } from '../../../pkg/sobaka_dsp'
 import { createPlugId, PlugType } from '@sobaka/state'
-import { ModuleDSP, ModuleDSPFactory, register } from '../../shared/types'
+
+import { ClockDividerNode as _ClockDividerNode } from '@sobaka/dsp/wasm'
+import { ModuleDSP } from '../../shared/types'
+import { NodeContext, ParamContext } from '@sobaka/state/models/plugs'
 
 interface ClockState {
   bpm: number
@@ -26,7 +28,7 @@ export class ClockNode implements ModuleDSP {
     this.updateState(initialState)
   }
 
-  updateState(state: ClockState): void {
+  updateState(state: Record<string, unknown>): void {
     this.bpmParam.setValueAtTime(state.bpm, this.audioContext.currentTime)
   }
 
@@ -74,14 +76,3 @@ export class ClockNode implements ModuleDSP {
   }
 }
 
-/**
- * Factory function for creating Clock DSP instances
- */
-const createClockDSP: ModuleDSPFactory = async (id, audioContext, initialState) => {
-  return new ClockNode(id, audioContext, initialState)
-}
-
-// Register the factory
-register(createClockDSP, 'clock')
-
-export default createClockDSP

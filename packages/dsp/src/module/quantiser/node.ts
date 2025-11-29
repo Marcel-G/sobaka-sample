@@ -1,9 +1,8 @@
-import type { Quantiser } from 'sobaka-dsp'
-import type { ModuleDSP, ModuleDSPFactory } from '../types'
-import { registerDSPFactory } from '../types'
-import { createPlugId, PlugType } from '@sobaka/state/models/links'
-import type { NodeContext, ParamContext } from '@sobaka/state/models/plugs'
-import type { Tuple } from '@sobaka/ui/@types'
+import { createPlugId, PlugType } from '@sobaka/state'
+
+import { QuantiserNode as _QuantiserNode} from '@sobaka/dsp/wasm'
+import { ModuleDSP } from '../../shared/types'
+import { NodeContext, ParamContext } from '@sobaka/state/models/plugs'
 
 interface QuantiserState {
   notes: { value: boolean }[]
@@ -14,17 +13,15 @@ interface QuantiserState {
  * Manages Quantiser WASM node
  */
 export class QuantiserDSP implements ModuleDSP {
-  private quantiser: Quantiser
-  private node: AudioNode
+  private quantiser: _QuantiserNode
 
   constructor(
     public readonly id: string,
     private audioContext: AudioContext,
     initialState: QuantiserState,
-    quantiser: Quantiser
+    quantiser: _QuantiserNode
   ) {
     this.quantiser = quantiser
-    this.node = quantiser.node()
     
     // Set initial state
     this.updateState(initialState)
@@ -33,8 +30,8 @@ export class QuantiserDSP implements ModuleDSP {
   updateState(state: Record<string, unknown>): void {
     const quantiserState = state as QuantiserState
     
-    const notes = quantiserState.notes.map(({ value }) => value) as Tuple<boolean, 12>
-    this.quantiser.command({ UpdateNotes: notes })
+    const notes = quantiserState.notes.map(({ value }) => value)
+    this.quantiser.update_notes(notes)
   }
 
   getPlugContexts(): Record<string, ParamContext | NodeContext> {
@@ -42,35 +39,20 @@ export class QuantiserDSP implements ModuleDSP {
       // Signal input
       [createPlugId(this.id, PlugType.Input, 0)]: {
         type: PlugType.Input,
-        module: this.node,
+        module: this.quantiser.node,
         connectIndex: 0
       },
       // Output
       [createPlugId(this.id, PlugType.Output, 0)]: {
         type: PlugType.Output,
-        module: this.node,
+        module: this.quantiser.node,
         connectIndex: 0
       }
     }
   }
 
   destroy(): void {
-    this.quantiser?.destroy()
     this.quantiser?.free()
   }
 }
 
-/**
- * Factory function for creating Quantiser DSP instances
- */
-const createQuantiserDSP: ModuleDSPFactory = async (id, audioContext, initialState) => {
-  const { Quantiser } = await import('sobaka-dsp')
-  const quantiser = await Quantiser.create(audioContext)
-  
-  return new QuantiserDSP(id, audioContext, initialState as QuantiserState, quantiser)
-}
-
-// Register the factory
-registerDSPFactory('Quantiser', createQuantiserDSP)
-
-export default createQuantiserDSP

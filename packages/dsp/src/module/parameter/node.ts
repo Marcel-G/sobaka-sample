@@ -1,7 +1,6 @@
-import type { ModuleDSP, ModuleDSPFactory } from '../types'
-import { registerDSPFactory } from '../types'
 import { createPlugId, PlugType } from '@sobaka/state/models/links'
 import type { NodeContext, ParamContext } from '@sobaka/state/models/plugs'
+import { ModuleDSP } from '../../shared/types'
 
 interface ParameterState {
   min: number
@@ -52,15 +51,3 @@ export class ParameterDSP implements ModuleDSP {
     }
   }
 }
-
-/**
- * Factory function for creating Parameter DSP instances
- */
-const createParameterDSP: ModuleDSPFactory = async (id, audioContext, initialState) => {
-  return new ParameterDSP(id, audioContext, initialState as ParameterState)
-}
-
-// Register the factory
-registerDSPFactory('Parameter', createParameterDSP)
-
-export default createParameterDSP

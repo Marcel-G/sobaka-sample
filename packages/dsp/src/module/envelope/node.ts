@@ -1,8 +1,8 @@
-import type { Envelope } from 'sobaka-dsp'
-import type { ModuleDSP, ModuleDSPFactory } from '../types'
-import { registerDSPFactory } from '../types'
-import { createPlugId, PlugType } from '@sobaka/state/models/links'
-import type { NodeContext, ParamContext } from '@sobaka/state/models/plugs'
+import { createPlugId, PlugType } from '@sobaka/state'
+
+import { EnvelopeNode as _EnvelopeNode } from '@sobaka/dsp/wasm'
+import { ModuleDSP } from '../../shared/types'
+import { NodeContext, ParamContext } from '@sobaka/state/models/plugs'
 
 interface EnvelopeState {
   attack: number
@@ -16,8 +16,7 @@ interface EnvelopeState {
  * Manages Envelope WASM node and its ADSR parameters
  */
 export class EnvelopeDSP implements ModuleDSP {
-  private envelope: Envelope
-  private node: AudioNode
+  private envelope: _EnvelopeNode
   private attackParam: AudioParam
   private decayParam: AudioParam
   private sustainParam: AudioParam
@@ -27,14 +26,13 @@ export class EnvelopeDSP implements ModuleDSP {
     public readonly id: string,
     private audioContext: AudioContext,
     initialState: EnvelopeState,
-    envelope: Envelope
+    envelope: _EnvelopeNode
   ) {
     this.envelope = envelope
-    this.node = envelope.node()
-    this.attackParam = envelope.get_param('Attack')
-    this.decayParam = envelope.get_param('Decay')
-    this.sustainParam = envelope.get_param('Sustain')
-    this.releaseParam = envelope.get_param('Release')
+    this.attackParam = this.envelope.node.parameters.get('Attack')
+    this.decayParam = this.envelope.node.parameters.get('Decay')
+    this.sustainParam = this.envelope.node.parameters.get('Sustain')
+    this.releaseParam = this.envelope.node.parameters.get('Release')
     
     // Set initial state
     this.updateState(initialState)
@@ -54,35 +52,20 @@ export class EnvelopeDSP implements ModuleDSP {
       // Gate input
       [createPlugId(this.id, PlugType.Input, 0)]: {
         type: PlugType.Input,
-        module: this.node,
+        module: this.envelope.node,
         connectIndex: 0
       },
       // Envelope output
       [createPlugId(this.id, PlugType.Output, 0)]: {
         type: PlugType.Output,
-        module: this.node,
+        module: this.envelope.node,
         connectIndex: 0
       }
     }
   }
 
   destroy(): void {
-    this.envelope?.destroy()
     this.envelope?.free()
   }
 }
 
-/**
- * Factory function for creating Envelope DSP instances
- */
-const createEnvelopeDSP: ModuleDSPFactory = async (id, audioContext, initialState) => {
-  const { Envelope } = await import('sobaka-dsp')
-  const envelope = await Envelope.create(audioContext)
-  
-  return new EnvelopeDSP(id, audioContext, initialState as EnvelopeState, envelope)
-}
-
-// Register the factory
-registerDSPFactory('Envelope', createEnvelopeDSP)
-
-export default createEnvelopeDSP

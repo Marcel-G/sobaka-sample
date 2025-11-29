@@ -6,13 +6,14 @@ import { derived, writable, type Readable } from 'svelte/store'
 import cloneDeep from 'lodash/cloneDeep'
 import { intoReadable } from '../util/store'
 import { type SubDocReference } from '../util/subdoc'
-import { type Position } from '../@types'
 import { SyncedDoc, type Config } from './syncedDoc'
-import type { User } from '../context/global'
-import { createPositionStores } from '../context/positions'
-import type { NodeContext, ParamContext } from '../context/plugs'
 import { createPlugId, is_fully_linked, plug_type, PlugType, type Link } from './links'
-import { ModuleDSPManager } from '../dsp'
+import { NodeContext, ParamContext } from './plugs'
+
+export interface Position {
+  x: number
+  y: number
+}
 
 // Module types - these should match the UI module types
 export type ModuleUI = 
@@ -66,17 +67,17 @@ const WORKSPACE_STORE_SHAPE = {
   links: []
 }
 
+type User = unknown
+
 type UserAwareness = {
   user: User
 }
 
 export class Workspace extends SyncedDoc<'workspace'> {
   private store: ReturnType<typeof syncedStore<WorkspaceStore>>
-  positions = createPositionStores()
   user_store = writable<Record<string, UserAwareness>>({})
   pending_link_store = writable<Partial<Link> | null>(null)
   private plug_context = writable<Record<string, ParamContext | NodeContext>>({})
-  private dspManager: ModuleDSPManager | null = null
 
   constructor(doc: Y.Doc, config: Config, audioContext: AudioContext) {
     super('workspace', doc, config)
@@ -91,12 +92,6 @@ export class Workspace extends SyncedDoc<'workspace'> {
     this.rtc.awareness.on('change', () => {
       this.handleAwarenessChange()
     })
-
-    // Initialize DSP manager to handle all audio node creation and management
-    this.dspManager = new ModuleDSPManager(audioContext, this.modules)
-    
-    // Connect DSP manager's plug contexts to audio routing
-    audioConnector(this.dspManager.getPlugContextsStore(), this.links)
   }
 
   fork(audioContext: AudioContext) {
@@ -247,9 +242,6 @@ export class Workspace extends SyncedDoc<'workspace'> {
   }
 
   override destroy() {
-    // Cleanup DSP manager first
-    this.dspManager?.destroy()
-    
     // Call parent destroy
     super.destroy()
   }
@@ -316,60 +308,6 @@ export class Workspace extends SyncedDoc<'workspace'> {
       links.splice(index, 1)
     }
   }
-}
-
-// TODO: audio nodes should probably not live within the UI components
-//       but it's a bit too much work to change right now.
-const audioConnector = (
-  plugs: Readable<Record<string, ParamContext | NodeContext>>,
-  links: Readable<Required<Link>[]>
-) => {
-  const currentConnections = new Map<string, () => void>()
-
-  derived([plugs, links], ([$plugs, $links]) => [$plugs, $links] as const).subscribe(
-    ([$plugs, $links]) => {
-      // Remove stale connections
-      for (const [linkId, dispose] of currentConnections) {
-        if (!$links.find(l => l.id === linkId)) {
-          dispose()
-          currentConnections.delete(linkId)
-        }
-      }
-
-      // Update/create connections
-      for (const link of $links) {
-        // Skip if connection already exists
-        if (currentConnections.has(link.id)) continue
-
-        const from = $plugs[link.from]
-        const to = $plugs[link.to]
-
-        if (!from || !to) continue
-
-        try {
-          if (to.type === PlugType.Param && from.type === PlugType.Output) {
-            if (!to.param || !from.module) continue
-            from.module.connect(to.param, from.connectIndex)
-            const dispose = () => from.module?.disconnect(to.param, from.connectIndex)
-            currentConnections.set(link.id, dispose)
-          } else if (
-            (to.type === PlugType.Input || to.type === PlugType.Mixer) &&
-            from.type === PlugType.Output
-          ) {
-            if (!to.module || !from.module) continue
-            from.module.connect(to.module, from.connectIndex, to.connectIndex)
-            const dispose = () =>
-              from.module.disconnect(to.module, from.connectIndex, to.connectIndex)
-            currentConnections.set(link.id, dispose)
-          } else {
-            throw new Error('Invalid connection')
-          }
-        } catch (err) {
-          console.warn('Failed to create audio connection:', err)
-        }
-      }
-    }
-  )
 }
 
 const byModuleId = (id: string) => (module: Module) => module.id === id

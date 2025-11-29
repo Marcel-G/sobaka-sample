@@ -1,7 +1,8 @@
-import type { ModuleDSP, ModuleDSPFactory } from '../types'
-import { registerDSPFactory } from '../types'
-import { createPlugId, PlugType } from '@sobaka/state/models/links'
-import type { NodeContext, ParamContext } from '@sobaka/state/models/plugs'
+import { createPlugId, PlugType } from '@sobaka/state'
+
+import { SampleAndHoldNode as _SampleAndHoldNode} from '@sobaka/dsp/wasm'
+import { ModuleDSP } from '../../shared/types'
+import { NodeContext, ParamContext } from '@sobaka/state/models/plugs'
 
 interface VcaState {
   value: number
@@ -58,15 +59,3 @@ export class VcaDSP implements ModuleDSP {
     // GainNode cleanup - will be garbage collected
   }
 }
-
-/**
- * Factory function for creating VCA DSP instances
- */
-const createVcaDSP: ModuleDSPFactory = async (id, audioContext, initialState) => {
-  return new VcaDSP(id, audioContext, initialState as VcaState)
-}
-
-// Register the factory
-registerDSPFactory('Vca', createVcaDSP)
-
-export default createVcaDSP

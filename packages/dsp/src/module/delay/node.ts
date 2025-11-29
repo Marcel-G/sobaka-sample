@@ -1,4 +1,4 @@
-import type { Delay } from 'sobaka-dsp'
+import type { DelayNode as _DelayNode } from '@sobaka/dsp/wasm'
 import type { ModuleDSP, ModuleDSPFactory } from '../types'
 import { registerDSPFactory } from '../types'
 import { createPlugId, PlugType } from '@sobaka/state/models/links'
@@ -13,19 +13,17 @@ interface DelayState {
  * Manages Delay WASM node and its parameters
  */
 export class DelayDSP implements ModuleDSP {
-  private delay: Delay
-  private node: AudioNode
+  private delay: _DelayNode
   private delayTimeParam: AudioParam
 
   constructor(
     public readonly id: string,
     private audioContext: AudioContext,
     initialState: DelayState,
-    delay: Delay
+    delay: _DelayNode
   ) {
     this.delay = delay
-    this.node = delay.node()
-    this.delayTimeParam = delay.get_param('DelayTime')
+    this.delayTimeParam = this.delay.node.parameters.get('delay')
     
     // Set initial state
     this.updateState(initialState)
@@ -46,41 +44,25 @@ export class DelayDSP implements ModuleDSP {
       // Signal input
       [createPlugId(this.id, PlugType.Input, 0)]: {
         type: PlugType.Input,
-        module: this.node,
+        module: this.delay.node,
         connectIndex: 1
       },
       // Reset input
       [createPlugId(this.id, PlugType.Input, 1)]: {
         type: PlugType.Input,
-        module: this.node,
+        module: this.delay.node,
         connectIndex: 0
       },
       // Output
       [createPlugId(this.id, PlugType.Output, 0)]: {
         type: PlugType.Output,
-        module: this.node,
+        module: this.delay.node,
         connectIndex: 0
       }
     }
   }
 
   destroy(): void {
-    this.delay?.destroy()
     this.delay?.free()
   }
 }
-
-/**
- * Factory function for creating Delay DSP instances
- */
-const createDelayDSP: ModuleDSPFactory = async (id, audioContext, initialState) => {
-  const { Delay } = await import('sobaka-dsp')
-  const delay = await Delay.create(audioContext)
-  
-  return new DelayDSP(id, audioContext, initialState as DelayState, delay)
-}
-
-// Register the factory
-registerDSPFactory('Delay', createDelayDSP)
-
-export default createDelayDSP

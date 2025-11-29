@@ -1,25 +1,24 @@
-import type { Noise } from 'sobaka-dsp'
-import type { ModuleDSP, ModuleDSPFactory } from '../types'
-import { registerDSPFactory } from '../types'
-import { createPlugId, PlugType } from '@sobaka/state/models/links'
-import type { NodeContext, ParamContext } from '@sobaka/state/models/plugs'
+import { createPlugId, PlugType } from '@sobaka/state'
+
+import { NoiseNode as _NoiseNode} from '@sobaka/dsp/wasm'
+import { ModuleDSP } from '../../shared/types'
+import { NodeContext, ParamContext } from '@sobaka/state/models/plugs'
+
 
 /**
  * DSP implementation for Noise module
  * Manages Noise WASM node (no parameters needed)
  */
 export class NoiseDSP implements ModuleDSP {
-  private noise: Noise
-  private node: AudioNode
+  private noise: _NoiseNode
 
   constructor(
     public readonly id: string,
     private audioContext: AudioContext,
     initialState: Record<string, never>,
-    noise: Noise
+    noise: _NoiseNode
   ) {
     this.noise = noise
-    this.node = noise.node()
   }
 
   updateState(_state: Record<string, unknown>): void {
@@ -31,29 +30,14 @@ export class NoiseDSP implements ModuleDSP {
       // Noise output
       [createPlugId(this.id, PlugType.Output, 0)]: {
         type: PlugType.Output,
-        module: this.node,
+        module: this.noise.node,
         connectIndex: 0
       }
     }
   }
 
   destroy(): void {
-    this.noise?.destroy()
     this.noise?.free()
   }
 }
 
-/**
- * Factory function for creating Noise DSP instances
- */
-const createNoiseDSP: ModuleDSPFactory = async (id, audioContext, initialState) => {
-  const { Noise } = await import('sobaka-dsp')
-  const noise = await Noise.create(audioContext)
-  
-  return new NoiseDSP(id, audioContext, initialState as Record<string, never>, noise)
-}
-
-// Register the factory
-registerDSPFactory('Noise', createNoiseDSP)
-
-export default createNoiseDSP
