@@ -17,9 +17,16 @@
   import { type Range, RangeType } from '../range/range'
   import { create_scale_range } from '../range/range_creators'
   import { PlugType } from '@sobaka/state/models/links'
+  import { writable, type Readable } from 'svelte/store'
 
   export let state: State
   export let disabled = false
+  
+  // Workspace props (passed from ModuleWrapper)
+  export let moduleId: string = 'storybook-module'
+  export let position: Readable<{ x: number; y: number }> = writable({ x: 0, y: 0 })
+  export let workspace: any = null
+
   let name = 'reverb'
 
   const scalar = create_scale_range()
@@ -33,6 +40,9 @@
 
 <Panel
   {name}
+  {moduleId}
+  {position}
+  {workspace}
   height={6}
   width={8}
   {disabled}
@@ -45,13 +55,13 @@
   </div>
 
   <div slot="inputs">
-    <Plug id={0} {disabled} label="l" ctx={{ type: PlugType.Input }} />
-    <Plug id={1} {disabled} label="r" ctx={{ type: PlugType.Input }} />
+    <Plug {moduleId} {position} {workspace} id={0} {disabled} label="l" ctx={{ type: PlugType.Input }} />
+    <Plug {moduleId} {position} {workspace} id={1} {disabled} label="r" ctx={{ type: PlugType.Input }} />
   </div>
 
   <div slot="outputs">
-    <Plug id={0} {disabled} label="l" ctx={{ type: PlugType.Output }} />
-    <Plug id={1} {disabled} label="r" ctx={{ type: PlugType.Output }} />
+    <Plug {moduleId} {position} {workspace} id={0} {disabled} label="l" ctx={{ type: PlugType.Output }} />
+    <Plug {moduleId} {position} {workspace} id={1} {disabled} label="r" ctx={{ type: PlugType.Output }} />
   </div>
 </Panel>
 

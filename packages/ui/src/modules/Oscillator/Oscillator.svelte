@@ -24,9 +24,16 @@
   import Square from './Square.svelte'
   import Triangle from './Triangle.svelte'
   import { PlugType } from '@sobaka/state/models/links'
+  import { writable, type Readable } from 'svelte/store'
 
   export let state: State
   export let disabled = false
+  
+  // Workspace props (passed from ModuleWrapper)
+  export let moduleId: string = 'storybook-module'
+  export let position: Readable<{ x: number; y: number }> = writable({ x: 0, y: 0 })
+  export let workspace: any = null
+
   let name = 'oscillator'
 
   const shapes: OscillatorShape[] = ['Sine', 'Square', 'Triangle', 'Saw']
@@ -41,6 +48,9 @@
 
 <Panel
   {name}
+  {moduleId}
+  {position}
+  {workspace}
   height={8}
   width={8}
   {disabled}
@@ -63,15 +73,15 @@
     </Switch>
     <Knob {disabled} bind:value={state.pitch} range={freq_range} label="pitch">
       <div slot="knob-inputs">
-        <Plug id={0} {disabled} label="pitch cv" ctx={{ type: PlugType.Param }} />
+        <Plug {moduleId} {position} {workspace} id={0} {disabled} label="pitch cv" ctx={{ type: PlugType.Param }} />
       </div>
     </Knob>
   </div>
   <div slot="inputs">
-    <Plug id={1} {disabled} label="reset" ctx={{ type: PlugType.Input }} />
+    <Plug {moduleId} {position} {workspace} id={1} {disabled} label="reset" ctx={{ type: PlugType.Input }} />
   </div>
   <div slot="outputs">
-    <Plug id={0} {disabled} label="output" ctx={{ type: PlugType.Output }} />
+    <Plug {moduleId} {position} {workspace} id={0} {disabled} label="output" ctx={{ type: PlugType.Output }} />
   </div>
 </Panel>
 

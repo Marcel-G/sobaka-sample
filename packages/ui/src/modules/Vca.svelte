@@ -12,9 +12,16 @@
   import Knob from '../components/Knob/Knob.svelte'
   import { create_bipolar_scale_range } from '../range/range_creators'
   import { PlugType } from '@sobaka/state/models/links'
+  import { writable, type Readable } from 'svelte/store'
 
   export let state: State
   export let disabled = false
+  
+  // Workspace props (passed from ModuleWrapper)
+  export let moduleId: string = 'storybook-module'
+  export let position: Readable<{ x: number; y: number }> = writable({ x: 0, y: 0 })
+  export let workspace: any = null
+
   let name = 'vca'
 
   const attenuverter = create_bipolar_scale_range()
@@ -22,6 +29,9 @@
 
 <Panel
   {name}
+  {moduleId}
+  {position}
+  {workspace}
   height={6}
   width={5}
   {disabled}
@@ -33,11 +43,11 @@
   </span>
 
   <div slot="inputs">
-    <Plug id={0} {disabled} label="Signal" ctx={{ type: PlugType.Input }} />
-    <Plug id={1} {disabled} label="Cv" ctx={{ type: PlugType.Param }} />
+    <Plug {moduleId} {position} {workspace} id={0} {disabled} label="Signal" ctx={{ type: PlugType.Input }} />
+    <Plug {moduleId} {position} {workspace} id={1} {disabled} label="Cv" ctx={{ type: PlugType.Param }} />
   </div>
 
   <div slot="outputs">
-    <Plug id={0} {disabled} label="Output" ctx={{ type: PlugType.Output }} />
+    <Plug {moduleId} {position} {workspace} id={0} {disabled} label="Output" ctx={{ type: PlugType.Output }} />
   </div>
 </Panel>

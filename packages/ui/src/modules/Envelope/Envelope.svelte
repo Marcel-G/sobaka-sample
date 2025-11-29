@@ -22,9 +22,16 @@
   import { create_scale_range, create_time_range } from '../../range/range_creators'
   import Tooltip from '../../components/Tooltip.svelte'
   import { PlugType } from '@sobaka/state/models/links'
+  import { writable, type Readable } from 'svelte/store'
 
   export let state: State
   export let disabled = false
+  
+  // Workspace props (passed from ModuleWrapper)
+  export let moduleId: string = 'storybook-module'
+  export let position: Readable<{ x: number; y: number }> = writable({ x: 0, y: 0 })
+  export let workspace: any = null
+
   let name = 'envelope'
 
   let trigger_on: () => void
@@ -39,6 +46,9 @@
 
 <Panel
   {name}
+  {moduleId}
+  {position}
+  {workspace}
   height={10}
   width={16}
   {disabled}
@@ -78,10 +88,10 @@
     </div>
   </div>
   <div slot="inputs">
-    <Plug id={0} {disabled} label="gate" ctx={{ type: PlugType.Input }} />
+    <Plug {moduleId} {position} {workspace} id={0} {disabled} label="gate" ctx={{ type: PlugType.Input }} />
   </div>
   <div slot="outputs">
-    <Plug id={0} {disabled} label="envelope" ctx={{ type: PlugType.Output }} />
+    <Plug {moduleId} {position} {workspace} id={0} {disabled} label="envelope" ctx={{ type: PlugType.Output }} />
   </div>
 </Panel>
 

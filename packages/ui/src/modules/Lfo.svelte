@@ -10,9 +10,16 @@
   import Knob from '../components/Knob/Knob.svelte'
   import { create_bpm_range } from '../range/range_creators'
   import { PlugType } from '@sobaka/state/models/links'
+  import { writable, type Readable } from 'svelte/store'
 
   export let state: State
   export let disabled = false
+  
+  // Workspace props (passed from ModuleWrapper)
+  export let moduleId: string = 'storybook-module'
+  export let position: Readable<{ x: number; y: number }> = writable({ x: 0, y: 0 })
+  export let workspace: any = null
+
   let name = 'lfo'
 
   // @todo -- make this work with volt per octave
@@ -22,6 +29,9 @@
 <Panel
   {name}
   {disabled}
+  {moduleId}
+  {position}
+  {workspace}
   height={6}
   width={5}
   --color-module-accent="var(--color-pink)"
@@ -38,6 +48,6 @@
   </div> -->
 
   <div slot="outputs">
-    <Plug id={0} {disabled} label="signal" ctx={{ type: PlugType.Output }} />
+    <Plug {moduleId} {position} {workspace} id={0} {disabled} label="signal" ctx={{ type: PlugType.Output }} />
   </div>
 </Panel>

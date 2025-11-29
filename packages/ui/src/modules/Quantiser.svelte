@@ -26,9 +26,16 @@
   import Panel from './shared/Panel.svelte'
   import Plug from './shared/Plug.svelte'
   import { PlugType } from '@sobaka/state/models/links'
+  import { writable, type Readable } from 'svelte/store'
 
   export let state: State
   export let disabled = false
+  
+  // Workspace props (passed from ModuleWrapper)
+  export let moduleId: string = 'storybook-module'
+  export let position: Readable<{ x: number; y: number }> = writable({ x: 0, y: 0 })
+  export let workspace: any = null
+
   let name = 'quantiser'
 
   function on_toggle(index: number) {
@@ -38,6 +45,9 @@
 
 <Panel
   {name}
+  {moduleId}
+  {position}
+  {workspace}
   height={8}
   width={15}
   {disabled}
@@ -63,11 +73,11 @@
   </ul>
 
   <div slot="inputs">
-    <Plug id={0} {disabled} label="Signal_1" ctx={{ type: PlugType.Input }} />
+    <Plug {moduleId} {position} {workspace} id={0} {disabled} label="Signal_1" ctx={{ type: PlugType.Input }} />
   </div>
 
   <div slot="outputs">
-    <Plug id={0} {disabled} label="Output_1" ctx={{ type: PlugType.Output }} />
+    <Plug {moduleId} {position} {workspace} id={0} {disabled} label="Output_1" ctx={{ type: PlugType.Output }} />
   </div>
 </Panel>
 
