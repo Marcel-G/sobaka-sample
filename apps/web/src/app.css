@@ -3,6 +3,30 @@
 /* Tell Tailwind to scan @sobaka/ui package for classes */
 @source "../../packages/ui/src";
 
+/* Define CSS custom properties for runtime use */
+:root {
+  --color-darker: #282a36;
+  --color-dark: #44475a;
+  --color-light: #f8f8f2;
+  --color-blue: #6272a4;
+  --color-pink: #ff79c6;
+  --color-pink-dark: #7a73a9;
+  --color-purple: #bd93f9;
+  --color-purple-dark: #7077b1;
+  --color-yellow: #f1fa8c;
+  --color-yellow-dark: #7786a0;
+  --color-cyan: #8be9fd;
+  --color-cyan-dark: #6884b1;
+  --color-green: #50fa7b;
+  --color-orange: #ffb86c;
+  --color-red: #ff5555;
+
+  /* Default module theme variables */
+  --color-module-accent: var(--color-darker);
+  --color-module-background: var(--color-light);
+}
+
+/* Register colors as Tailwind utilities */
 @theme {
   --color-darker: #282a36;
   --color-dark: #44475a;
@@ -20,7 +44,7 @@
   --color-orange: #ffb86c;
   --color-red: #ff5555;
 
-  /* Default Module Theme Variables */
+  /* Module theme colors for Tailwind utilities */
   --color-module-accent: var(--color-darker);
   --color-module-background: var(--color-light);
 }
