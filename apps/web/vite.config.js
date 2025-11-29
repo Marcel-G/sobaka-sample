@@ -38,8 +38,8 @@ const config = {
   plugins: [crossOriginIsolation, tailwindcss(), sveltekit()],
   server: {
     fs: {
-      // Allow serving files from one level up to the project root
-      allow: ['../../packages/dsp']
+      // Allow serving files from workspace packages
+      allow: ['../../packages/dsp', '../../packages/ui', '../../packages/state']
     }
   },
   ssr: {
