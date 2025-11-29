@@ -4,11 +4,11 @@ import syncedStore from '@syncedstore/core'
 import { derived, writable, type Readable } from 'svelte/store'
 
 import cloneDeep from 'lodash/cloneDeep'
-import { intoReadable } from '../util/store.ts'
-import { type SubDocReference } from '../util/subdoc.ts'
-import { SyncedDoc, type Config } from './syncedDoc.ts'
-import { createPlugId, is_fully_linked, plug_type, PlugType, type Link } from './links.ts'
-import { NodeContext, ParamContext } from './plugs.ts'
+import { intoReadable } from '../util/store'
+import { type SubDocReference } from '../util/subdoc'
+import { SyncedDoc, type Config } from './syncedDoc'
+import { createPlugId, is_fully_linked, plug_type, PlugType, type Link } from './links'
+import { NodeContext, ParamContext } from './plugs'
 
 export interface Position {
   x: number
@@ -67,17 +67,22 @@ const WORKSPACE_STORE_SHAPE = {
   links: []
 }
 
-type User = unknown
-
 type UserAwareness = {
   user: User
+}
+
+const createAudioGraph = (
+  state: ReturnType<typeof syncedStore<WorkspaceStore>>
+) => {
+  // TODO:
+  //  1. Turn modules into audio nodes
+  //  2. link audio modules via links
 }
 
 export class Workspace extends SyncedDoc<'workspace'> {
   private store: ReturnType<typeof syncedStore<WorkspaceStore>>
   user_store = writable<Record<string, UserAwareness>>({})
   pending_link_store = writable<Partial<Link> | null>(null)
-  private plug_context = writable<Record<string, ParamContext | NodeContext>>({})
 
   constructor(doc: Y.Doc, config: Config, audioContext: AudioContext) {
     super('workspace', doc, config)

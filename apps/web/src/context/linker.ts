@@ -1,7 +1,6 @@
 import { MinPriorityQueue as PriorityQueue } from '@datastructures-js/priority-queue'
 import type { ModulePosition, PlugPosition, Point, Rectangle } from './positions'
 import { plug_type, PlugType, type Link } from '@sobaka/state/models/links'
-
 export interface PathRequest {
   id?: string
   start: Point

@@ -4,7 +4,7 @@
   import { linker } from '../context/linker'
   import { derived, type Readable } from 'svelte/store'
   import { twMerge } from 'tailwind-merge'
-  import type { Point } from '../context/positions'
+  import type { ModulePosition, PlugPosition, Point } from '../context/positions'
   import {
     linkFinder,
     linkFinderCmp,
@@ -16,7 +16,7 @@
 
   export let mouse_position: Readable<Position>
 
-  const { workspace } = get_workspace()
+  const { workspace, positions } = get_workspace()
 
   const intoPath = (points: Point[]): string => {
     return points.reduce((acc, point, i) => {
@@ -27,14 +27,14 @@
     }, '')
   }
 
-  const plugPositions = workspace.positions.plugPositions
-  const modulePositions = workspace.positions.modulePositions
+  const plugPositions = positions.plugPositions
+  const modulePositions = positions.modulePositions
   const partialLink = workspace.pending_link_store
   const links = workspace.links
 
   const activeLink = memoizeLast(
     derived([partialLink, plugPositions, mouse_position], ([l, p, mp]) =>
-      linkFinder(l, p as Map<string, import('../context/positions').PlugPosition>, mp)
+      linkFinder(l, p as Map<string, PlugPosition>, mp)
     ),
     linkFinderCmp
   )
@@ -44,7 +44,7 @@
       derived([activeLink, links, plugPositions, modulePositions], stores => stores)
     ),
     ([activeLink, links, plugs, modules]) =>
-      linker([...activeLink, ...links], plugs as Map<string, import('../context/positions').PlugPosition>, modules as Map<string, import('../context/positions').ModulePosition>)
+      linker([...activeLink, ...links], plugs as Map<string, PlugPosition>, modules as Map<string, ModulePosition>)
   )
 
   function handle_click() {

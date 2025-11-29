@@ -1,5 +1,4 @@
 <script context="module" lang="ts">
-  import { type Position } from '../@types'
   export const mouse_position = writable<Position>({ x: 0, y: 0 })
 </script>
 
@@ -12,6 +11,7 @@
   import { get_workspace } from '../context/workspace'
   import AvatarList from '../components/collaborative/AvatarList.svelte'
   import Mixer from '../modules/Mixer.svelte'
+    import type { Position } from '@sobaka/state'
 
   let toolbox_visible = false
   let toolbox_position: Position = { x: 0, y: 0 }

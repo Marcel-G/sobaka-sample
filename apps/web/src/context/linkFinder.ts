@@ -1,7 +1,7 @@
 import { derived, get, type Readable } from 'svelte/store'
-import type { Position } from '../@types'
 import { plug_type, PlugType, type Link } from '@sobaka/state/models/links'
 import { type PlugPosition } from './positions'
+import type { Position } from '@sobaka/state'
 
 const distance = (a: PlugPosition, b: PlugPosition): number => {
   return Math.abs(a.position.x - b.position.x) + Math.abs(a.position.y - b.position.y)
