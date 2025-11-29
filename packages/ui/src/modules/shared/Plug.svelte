@@ -1,14 +1,14 @@
 <script lang="ts">
-  import { onDestroy, getContext, hasContext } from 'svelte'
-  import { writable } from 'svelte/store'
+  import { onDestroy } from 'svelte'
+  import { writable, type Readable } from 'svelte/store'
   import Tooltip from '../../components/Tooltip.svelte'
   import { twMerge } from 'tailwind-merge'
   import { createPlugId, PlugType } from '@sobaka/state/models/links'
 
-  // Get context if available (in app), otherwise use defaults (in Storybook)
-  const workspace: any = hasContext('workspace') ? (getContext('workspace') as any)?.workspace : null
-  const module_id: string = hasContext('module') ? (getContext('module') as any)?.id : 'storybook-module'
-  const position = workspace?.module_position?.(module_id) ?? writable({ x: 0, y: 0 })
+  // Workspace props - optional for standalone/storybook use
+  export let moduleId: string = 'storybook-module'
+  export let position: Readable<{ x: number; y: number }> = writable({ x: 0, y: 0 })
+  export let workspace: any = null
 
   // ctx is now optional - if not provided, only type is needed for plug ID generation
   // The actual audio node context is managed by DSP layer
@@ -17,6 +17,8 @@
   export let label: string
   export let disabled = false
 
+  // For backwards compatibility
+  const module_id = moduleId
   const plug_id = createPlugId(module_id, ctx.type, id)
 
   let element: HTMLElement

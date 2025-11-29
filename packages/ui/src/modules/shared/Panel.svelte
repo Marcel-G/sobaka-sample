@@ -13,8 +13,8 @@
 </script>
 
 <script lang="ts">
-  import { onDestroy, getContext, hasContext } from 'svelte'
-  import { writable } from 'svelte/store'
+  import { onDestroy } from 'svelte'
+  import { writable, type Readable } from 'svelte/store'
 
   import { relative_to_element, useDrag } from '../../actions/drag'
   import type { OnDrag } from '../../actions/drag'
@@ -24,12 +24,14 @@
   export let disabled = false
   export let height = 0
   export let width = 0
+  
+  // Workspace props - optional for standalone/storybook use
+  export let moduleId: string = 'storybook-module'
+  export let position: Readable<{ x: number; y: number }> = writable({ x: 0, y: 0 })
+  export let workspace: any = null
 
-  // Get context if available (in app), otherwise use defaults (in Storybook)
-  const workspace: any = hasContext('workspace') ? (getContext('workspace') as any)?.workspace : null
-  const id: string = hasContext('module') ? (getContext('module') as any)?.id : 'storybook-module'
-
-  const position = workspace?.module_position?.(id) ?? writable({ x: 0, y: 0 })
+  // For backwards compatibility with context-based usage
+  const id = moduleId
 
   let element: HTMLElement
 
