@@ -1,13 +1,13 @@
 // Export all state-related modules
-export * from './models/workspace'
-export * from './models/workspaceList'
-export * from './models/root'
-export * from './models/links'
-export * from './models/rtc'
-export * from './models/syncedDoc'
-export * from './models/docMeta'
+export * from './models/workspace.ts'
+export * from './models/workspaceList.ts'
+export * from './models/root.ts'
+export * from './models/links.ts'
+export * from './models/rtc.ts'
+export * from './models/syncedDoc.ts'
+export * from './models/docMeta.ts'
 
 // Export utilities
-export * from './util/subdoc'
-export * from './util/encoder'
-export * from './util/peer'
+export * from './util/subdoc.ts'
+export * from './util/encoder.ts'
+export * from './util/peer.ts'

@@ -1,10 +1,10 @@
 import syncedStore from '@syncedstore/core'
 import { type Readable } from 'svelte/store'
 import * as Y from 'yjs'
-import { intoReadable } from '../util/store'
-import { type SubDocReference } from '../util/subdoc'
-import { Workspace } from './workspace'
-import { SyncedDoc, type Config } from './syncedDoc'
+import { intoReadable } from '../util/store.ts'
+import { type SubDocReference } from '../util/subdoc.ts'
+import { Workspace } from './workspace.ts'
+import { SyncedDoc, type Config } from './syncedDoc.ts'
 
 type WorkspaceListStore = {
   workspaces: SubDocReference<Workspace>[]

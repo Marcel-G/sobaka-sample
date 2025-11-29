@@ -1,9 +1,9 @@
 import * as Y from 'yjs'
 import { IndexeddbPersistence } from 'y-indexeddb'
-import { VerifiedRTCProvider } from './rtc'
-import { DocMeta } from './docMeta'
+import { VerifiedRTCProvider } from './rtc.ts'
+import { DocMeta } from './docMeta.ts'
 import { writable, type Readable } from 'svelte/store'
-import type { SubDocReference } from '../util/subdoc'
+import type { SubDocReference } from '../util/subdoc.ts'
 
 export interface Config {
   currentUser: string

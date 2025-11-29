@@ -4,11 +4,11 @@ import syncedStore from '@syncedstore/core'
 import { derived, writable, type Readable } from 'svelte/store'
 
 import cloneDeep from 'lodash/cloneDeep'
-import { intoReadable } from '../util/store'
-import { type SubDocReference } from '../util/subdoc'
-import { SyncedDoc, type Config } from './syncedDoc'
-import { createPlugId, is_fully_linked, plug_type, PlugType, type Link } from './links'
-import { NodeContext, ParamContext } from './plugs'
+import { intoReadable } from '../util/store.ts'
+import { type SubDocReference } from '../util/subdoc.ts'
+import { SyncedDoc, type Config } from './syncedDoc.ts'
+import { createPlugId, is_fully_linked, plug_type, PlugType, type Link } from './links.ts'
+import { NodeContext, ParamContext } from './plugs.ts'
 
 export interface Position {
   x: number
