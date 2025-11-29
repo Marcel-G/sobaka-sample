@@ -1,4 +1,4 @@
-import init, { registerContext } from 'sobaka-dsp'
+import init, { registerContext } from '@sobaka/dsp/wasm'
 
 export const load = async (ctx: AudioContext) => {
   const handle_interaction = () => {

@@ -1,8 +1,8 @@
 <script lang="ts">
   import clamp from 'lodash/clamp'
   import { get_workspace } from '../context/workspace'
-  import { MODULES, type ModuleUI } from '../modules'
-  import { into_grid_coords } from '../modules/shared/Panel.svelte'
+  import { MODULES, type ModuleUI } from '@sobaka/ui/modules'
+  import { into_grid_coords } from '@sobaka/ui/modules/shared/Panel.svelte'
   import { onMount } from 'svelte'
 
   export let position = { x: 0, y: 0 }

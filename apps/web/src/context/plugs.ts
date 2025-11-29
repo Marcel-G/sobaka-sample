@@ -1,4 +1,4 @@
-import type { PlugType } from '../models/links'
+import type { PlugType } from '@sobaka/state/models/links'
 
 export interface ParamContext {
   type: PlugType.Param

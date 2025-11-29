@@ -1,9 +1,9 @@
 <script context="module" lang="ts">
-  import { type ChoiceRange } from '../range/range'
+  import { type ChoiceRange } from '@sobaka/ui/range'
 </script>
 
 <script lang="ts">
-  import { from_normalised, to_normalised } from '../range/range_functions'
+  import { from_normalised, to_normalised } from '@sobaka/ui/range/range_functions'
   import useDrag, { type OnDrag, relative_to_element } from '../actions/drag'
   import useWheel, { type OnWheel } from '../actions/wheel'
   import Dial from './Knob/Dial.svelte'

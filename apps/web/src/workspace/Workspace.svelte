@@ -6,12 +6,12 @@
 <script lang="ts">
   import { writable } from 'svelte/store'
 
-  import ModuleWrapper from '../modules/ModuleWrapper.svelte'
+  import ModuleWrapper from '@sobaka/ui/modules/ModuleWrapper.svelte'
   import Toolbox from '../components/Toolbox.svelte'
   import Wires from '../components/Wires.svelte'
   import { get_workspace } from '../context/workspace'
   import AvatarList from '../components/collaborative/AvatarList.svelte'
-  import Mixer from '../modules/Mixer.svelte'
+  import Mixer from '@sobaka/ui/modules/Mixer.svelte'
 
   let toolbox_visible = false
   let toolbox_position: Position = { x: 0, y: 0 }
