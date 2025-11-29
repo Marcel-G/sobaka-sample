@@ -41,6 +41,10 @@ const config = {
       // Allow serving files from one level up to the project root
       allow: ['../sobaka-dsp']
     }
+  },
+  ssr: {
+    // Don't externalize workspace packages - let Vite handle them
+    noExternal: ['@sobaka/state', '@sobaka/dsp', '@sobaka/ui']
   }
 }
 
