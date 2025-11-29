@@ -4,6 +4,16 @@
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./wasm": {
+      "types": "./pkg/sobaka_dsp.d.ts",
+      "default": "./pkg/sobaka_dsp.js"
+    }
+  },
   "files": [
     "dist",
     "pkg"
