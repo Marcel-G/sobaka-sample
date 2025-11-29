@@ -11,7 +11,9 @@
   const { id: module_id } = get_module_context()
   const position = workspace.module_position(module_id)
 
-  export let ctx: ParamContext | NodeContext
+  // ctx is now optional - if not provided, only type is needed for plug ID generation
+  // The actual audio node context is managed by DSP layer
+  export let ctx: (ParamContext | NodeContext) | { type: PlugType } = { type: PlugType.Output }
   export let id: number
   export let label: string
   export let disabled = false
@@ -31,10 +33,8 @@
     workspace.try_make_link(plug_id)
   }
 
-  // TODO: do something with ctx, so that Links can be connected...
   $: {
-    // TODO: only register plugs initially, and on move.
-
+    // Register plug position for wire rendering
     // position values must be subscribed to in here to trigger reactivity
     // even if we don't really need the values of x and y
     if (element && ($position.x !== 0 || $position.y !== 0)) {
@@ -45,7 +45,10 @@
   }
 
   $: {
-    workspace.register_plug(plug_id, ctx)
+    // Register plug context with workspace (now handled by DSP layer, but kept for backwards compat)
+    if ('param' in ctx || 'module' in ctx) {
+      workspace.register_plug(plug_id, ctx as ParamContext | NodeContext)
+    }
   }
 
   onDestroy(() => {
