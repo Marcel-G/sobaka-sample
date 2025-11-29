@@ -11,8 +11,3 @@ import '../module/parameter/node'
 import '../module/reverb/node'
 import '../module/quantiser/node'
 import '../module/sample_and_hold/node'
-
-export { INVENTORY, register } from './types'
-
-// Re-export stub types for UI components
-export type { OscillatorShape, Sequencer, StepSequencer, Point, PointBufferData, ScopeController } from './stubs'

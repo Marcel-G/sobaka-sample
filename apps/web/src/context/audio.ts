@@ -7,7 +7,7 @@ export const load = async (ctx: AudioContext) => {
     }
   }
   document?.addEventListener('click', handle_interaction, { once: true })
-  await init()
 
+  await init()
   await registerContext(ctx)
 }
