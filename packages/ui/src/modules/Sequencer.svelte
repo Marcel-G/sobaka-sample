@@ -38,7 +38,7 @@
     loading = false
 
     // Subscribe to step change
-    sequencer.subscribe(step => {
+    sequencer.subscribe((step: any) => {
       if ('StepChange' in step) {
         active_step = step.StepChange
       }

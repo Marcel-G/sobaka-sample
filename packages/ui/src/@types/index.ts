@@ -1,0 +1,16 @@
+// Type stubs for UI components that depend on app context
+// These modules are designed to be used within the web app context
+
+export interface Position {
+  x: number
+  y: number
+}
+
+export type Tuple<T, N extends number> = N extends N
+  ? number extends N
+    ? T[]
+    : _TupleOf<T, N, []>
+  : never
+type _TupleOf<T, N extends number, R extends unknown[]> = R['length'] extends N
+  ? R
+  : _TupleOf<T, N, [T, ...R]>

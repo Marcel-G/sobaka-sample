@@ -128,7 +128,7 @@
   }
 
   const update_frame = () => {
-    node?.getFloatFrequencyData(spec)
+    node?.getFloatFrequencyData(spec as Float32Array<ArrayBuffer>)
     next_frame = requestAnimationFrame(update_frame)
     draw(spec)
   }
