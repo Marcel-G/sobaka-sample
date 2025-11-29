@@ -1,5 +1,7 @@
 import type { PlugType } from '../models/links'
-import type { NodeContext, ParamContext } from '../context/plugs'
+// These types will come from @sobaka/state once it's properly exported
+type NodeContext = any
+type ParamContext = any
 
 /**
  * Base interface for all module DSP instances

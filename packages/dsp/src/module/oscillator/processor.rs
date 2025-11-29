@@ -5,8 +5,6 @@ use fundsp::{
 use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
 use waw::{register, AutomationRate, ParameterDescriptor, ParameterValues, Processor};
 
-use crate::shared::oscillator::volt_hz;
-
 #[wasm_bindgen]
 #[derive(Clone)]
 pub enum OscillatorShape {
@@ -26,6 +24,11 @@ enum Message {
     #[default]
     None,
     SetShape(OscillatorShape),
+}
+
+/// Convert 1v per octave to hz
+pub fn volt_hz<T: Float>(voltage: T) -> T {
+    T::from_f64(16.35 * 2.0_f64.powf(voltage.to_f64()))
 }
 
 pub struct OscillatorProcessor {
