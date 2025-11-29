@@ -1,9 +1,9 @@
 import type { Quantiser } from 'sobaka-dsp'
 import type { ModuleDSP, ModuleDSPFactory } from '../types'
 import { registerDSPFactory } from '../types'
-import { createPlugId, PlugType } from '../../models/links'
-import type { NodeContext, ParamContext } from '../../context/plugs'
-import type { Tuple } from '../../@types'
+import { createPlugId, PlugType } from '@sobaka/state/models/links'
+import type { NodeContext, ParamContext } from '@sobaka/state/models/plugs'
+import type { Tuple } from '@sobaka/ui/@types'
 
 interface QuantiserState {
   notes: { value: boolean }[]

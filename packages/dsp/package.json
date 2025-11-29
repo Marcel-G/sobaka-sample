@@ -2,32 +2,26 @@
   "name": "@sobaka/dsp",
   "version": "0.1.0",
   "type": "module",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
-    },
+    ".": "./src/index.ts",
     "./wasm": {
       "types": "./pkg/sobaka_dsp.d.ts",
       "default": "./pkg/sobaka_dsp.js"
     }
   },
   "files": [
-    "dist",
+    "src",
     "pkg"
   ],
   "scripts": {
     "build:wasm": "wasm-pack build --target web --out-dir pkg",
     "build:wasm:debug": "wasm-pack build --debug --target web --out-dir pkg",
-    "build:ts": "tsc",
-    "build": "npm run build:wasm && npm run build:ts",
-    "dev:wasm": "wasm-pack build --debug --target web --out-dir pkg -- --watch",
-    "dev:ts": "tsc --watch",
-    "dev": "npm run build:wasm:debug && npm run dev:ts",
+    "build": "npm run build:wasm",
+    "dev": "wasm-pack build --debug --target web --out-dir pkg -- --watch",
     "check": "tsc --noEmit",
-    "clean": "rm -rf dist pkg target",
+    "clean": "rm -rf pkg target",
     "test:rust": "cargo test"
   },
   "devDependencies": {

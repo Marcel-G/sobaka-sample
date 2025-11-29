@@ -10,13 +10,13 @@
     "dev": "npm run dev --workspace=apps/web",
     "dev:web": "npm run dev --workspace=apps/web",
     "build": "npm run build --workspaces --if-present",
-    "build:packages": "npm run build --workspace=packages/state && npm run build --workspace=packages/dsp && npm run build --workspace=packages/ui",
+    "build:wasm": "npm run build:wasm --workspace=packages/dsp",
     "build:web": "npm run build --workspace=apps/web",
     "check": "npm run check --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
     "format": "npm run format --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
-    "clean": "rm -rf packages/*/node_modules packages/*/dist apps/web/node_modules node_modules"
+    "clean": "rm -rf packages/*/node_modules apps/web/node_modules node_modules"
   },
   "devDependencies": {
     "typescript": "^5.0.0"

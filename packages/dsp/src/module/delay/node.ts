@@ -1,8 +1,8 @@
 import type { Delay } from 'sobaka-dsp'
 import type { ModuleDSP, ModuleDSPFactory } from '../types'
 import { registerDSPFactory } from '../types'
-import { createPlugId, PlugType } from '../../models/links'
-import type { NodeContext, ParamContext } from '../../context/plugs'
+import { createPlugId, PlugType } from '@sobaka/state/models/links'
+import type { NodeContext, ParamContext } from '@sobaka/state/models/plugs'
 
 interface DelayState {
   time: number

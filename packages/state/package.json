@@ -2,28 +2,17 @@
   "name": "@sobaka/state",
   "version": "0.1.0",
   "type": "module",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
-    },
-    "./models/*": {
-      "types": "./dist/models/*.d.ts",
-      "default": "./dist/models/*.js"
-    },
-    "./util/*": {
-      "types": "./dist/util/*.d.ts",
-      "default": "./dist/util/*.js"
-    }
+    ".": "./src/index.ts",
+    "./models/*": "./src/models/*.ts",
+    "./util/*": "./src/util/*.ts"
   },
   "files": [
-    "dist"
+    "src"
   ],
   "scripts": {
-    "build": "tsc",
-    "dev": "tsc --watch",
     "check": "tsc --noEmit",
     "clean": "rm -rf dist"
   },
