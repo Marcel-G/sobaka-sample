@@ -1,0 +1,17 @@
+// Export all DSP modules to register their factories
+import '../module/clock/node'
+import '../module/oscillator/node'
+import '../module/filter/node'
+import '../module/envelope/node'
+import '../module/vca/node'
+import '../module/lfo/node'
+import '../module/delay/node'
+import '../module/noise/node'
+import '../module/parameter/node'
+import '../module/reverb/node'
+import '../module/quantiser/node'
+import '../module/sample_and_hold/node'
+
+export { ModuleDSPManager } from './ModuleDSPManager'
+export type { ModuleDSP, ModuleDSPFactory } from './types'
+export { DSP_FACTORIES, registerDSPFactory } from './types'

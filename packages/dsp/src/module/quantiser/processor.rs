@@ -6,7 +6,7 @@ use js_sys::Array;
 use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
 use waw::{register, ParameterDescriptor, ParameterValues, Processor};
 
-use crate::dsp::quantiser::{dsp_quantiser, Message};
+use crate::shared::quantiser::{dsp_quantiser, Message};
 
 pub struct QuantiserData {
     notes: [bool; 12],

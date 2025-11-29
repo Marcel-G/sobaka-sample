@@ -2,7 +2,7 @@ use fundsp::prelude::*;
 use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
 use waw::{register, ParameterDescriptor, ParameterValues, Processor};
 
-use crate::dsp::trigger::SchmittTrigger;
+use crate::util::trigger::SchmittTrigger;
 
 pub struct SampleAndHoldProcessor {
     inner: BigBlockAdapter,

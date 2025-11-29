@@ -5,7 +5,7 @@ use fundsp::{
 use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
 use waw::{register, AutomationRate, ParameterDescriptor, ParameterValues, Processor};
 
-use crate::dsp::volt_hz;
+use crate::shared::oscillator::volt_hz;
 
 #[wasm_bindgen]
 #[derive(Clone)]

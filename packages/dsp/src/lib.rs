@@ -1,12 +1,12 @@
-use utils::panic_hook::set_panic_hook;
+use util::panic_hook::set_panic_hook;
 use wasm_bindgen::prelude::wasm_bindgen;
 
 use wasm_bindgen_futures::JsFuture;
 use web_sys::AudioContext;
 
-pub mod dsp;
 pub mod module;
-mod utils;
+pub mod shared;
+pub mod util;
 
 
 async fn polyfill(ctx: &AudioContext) {
