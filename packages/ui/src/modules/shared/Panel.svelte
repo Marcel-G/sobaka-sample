@@ -13,12 +13,11 @@
 </script>
 
 <script lang="ts">
-  import { onDestroy } from 'svelte'
+  import { onDestroy, getContext, hasContext } from 'svelte'
+  import { writable } from 'svelte/store'
 
   import { relative_to_element, useDrag } from '../../actions/drag'
   import type { OnDrag } from '../../actions/drag'
-  import { get_workspace } from '../../context/workspace'
-  import { get_module_context } from '../context'
   import { twMerge } from 'tailwind-merge'
 
   export let name: string
@@ -26,10 +25,11 @@
   export let height = 0
   export let width = 0
 
-  const { workspace } = get_workspace()
-  const { id } = get_module_context()
+  // Get context if available (in app), otherwise use defaults (in Storybook)
+  const workspace: any = hasContext('workspace') ? getContext('workspace')?.workspace : null
+  const id: string = hasContext('module') ? getContext('module')?.id : 'storybook-module'
 
-  const position = workspace.module_position(id)
+  const position = workspace?.module_position?.(id) ?? writable({ x: 0, y: 0 })
 
   let element: HTMLElement
 
@@ -39,15 +39,15 @@
   $: {
     // position values must be subscribed to in here to trigger reactivity
     // even if we don't really need the values of x and y
-    if (element && ($position.x !== 0 || $position.y !== 0)) {
+    if (workspace && element && ($position.x !== 0 || $position.y !== 0)) {
       requestAnimationFrame(() => {
-        workspace.positions.registerModule(id, element)
+        workspace.positions?.registerModule?.(id, element)
       })
     }
   }
 
   onDestroy(() => {
-    workspace.positions.removeModule(id)
+    workspace?.positions?.removeModule?.(id)
   })
 
   const classes = {
@@ -65,7 +65,7 @@
   }
 
   const handle_drag: OnDrag = (event, origin, element) => {
-    if (disabled) return true
+    if (disabled || !workspace) return true
 
     // Find the first parent with data-kind="workspace"
     let workspaceElement = element
@@ -87,7 +87,7 @@
       if (x < 0 || y < 0) {
         return
       }
-      workspace.move_module(id, x, y)
+      workspace?.move_module?.(id, x, y)
     }
   }
 </script>
@@ -102,7 +102,7 @@
 >
   <div class={classes.bar}>
     <span class={classes.name}>{name}</span>
-    {#if !disabled}
+    {#if !disabled && workspace}
       <span class="actions flex">
         <button
           class={twMerge(
@@ -110,7 +110,7 @@
             classes.barButtonHover,
             classes.barButtonActive
           )}
-          on:click={() => workspace.clone_module(id)}>+</button
+          on:click={() => workspace?.clone_module?.(id)}>+</button
         >
         <button
           class={twMerge(
@@ -119,7 +119,7 @@
             classes.barButtonActive,
             'rounded-tr-[calc(var(--radius-lg)-2px)]'
           )}
-          on:click={() => workspace.remove_module(id)}>x</button
+          on:click={() => workspace?.remove_module?.(id)}>x</button
         >
       </span>
     {/if}
