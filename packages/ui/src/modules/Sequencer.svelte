@@ -32,7 +32,7 @@
   let loading = true
 
   onMount(async () => {
-    const { Sequencer } = await import('@sobaka/dsp')
+    const { Sequencer } = (await import('@sobaka/dsp')) as any
     sequencer = await Sequencer.create(context.audio)
     node = sequencer.node()
     loading = false

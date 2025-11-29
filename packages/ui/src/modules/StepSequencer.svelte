@@ -31,7 +31,7 @@
   const context = getGlobalCtx()
 
   onMount(async () => {
-    const { StepSequencer } = await import('@sobaka/dsp')
+    const { StepSequencer } = (await import('@sobaka/dsp')) as any
     step_sequencer = await StepSequencer.create(context.audio)
     node = step_sequencer.node()
     loading = false

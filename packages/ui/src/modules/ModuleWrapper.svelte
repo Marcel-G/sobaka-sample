@@ -9,4 +9,4 @@
   init_module_context(module.id)
 </script>
 
-<svelte:component this={get_component(module)} state={module.state} {disabled} />
+<svelte:component this={get_component(module)} state={module.state as any} {disabled} />
