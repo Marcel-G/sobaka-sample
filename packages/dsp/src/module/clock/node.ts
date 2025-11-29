@@ -1,14 +1,6 @@
-import { ClockDividerNode } from '../../../pkg/sobaka_dsp'
-import type { ModuleDSP, ModuleDSPFactory } from '../types'
-import { registerDSPFactory } from '../types'
-import type { PlugType } from '@sobaka/state'
-
-// These will come from @sobaka/state after migration
-type NodeContext = any
-type ParamContext = any
-function createPlugId(id: string, type: PlugType, n: number): string {
-  return `${id}/${type}-${n}`
-}
+import { ClockDividerNode as _ClockDividerNode } from '../../../pkg/sobaka_dsp'
+import { createPlugId, PlugType } from '@sobaka/state'
+import { ModuleDSP, ModuleDSPFactory, register } from '../../shared/types'
 
 interface ClockState {
   bpm: number
@@ -18,8 +10,8 @@ interface ClockState {
  * DSP implementation for Clock module
  * Manages ClockDividerNode and its parameters
  */
-export class ClockDSP implements ModuleDSP {
-  private clock: ClockDividerNode
+export class ClockNode implements ModuleDSP {
+  private clock: _ClockDividerNode
   private bpmParam: AudioParam
 
   constructor(
@@ -27,16 +19,15 @@ export class ClockDSP implements ModuleDSP {
     private audioContext: AudioContext,
     initialState: ClockState
   ) {
-    this.clock = new ClockDividerNode(audioContext)
+    this.clock = new _ClockDividerNode(audioContext)
     this.bpmParam = this.clock.node.parameters.get('bpm')!
     
     // Set initial state
     this.updateState(initialState)
   }
 
-  updateState(state: Record<string, unknown>): void {
-    const clockState = state as ClockState
-    this.bpmParam.setValueAtTime(clockState.bpm, this.audioContext.currentTime)
+  updateState(state: ClockState): void {
+    this.bpmParam.setValueAtTime(state.bpm, this.audioContext.currentTime)
   }
 
   getPlugContexts(): Record<string, ParamContext | NodeContext> {
@@ -87,10 +78,10 @@ export class ClockDSP implements ModuleDSP {
  * Factory function for creating Clock DSP instances
  */
 const createClockDSP: ModuleDSPFactory = async (id, audioContext, initialState) => {
-  return new ClockDSP(id, audioContext, initialState as ClockState)
+  return new ClockNode(id, audioContext, initialState)
 }
 
 // Register the factory
-registerDSPFactory('Clock', createClockDSP)
+register(createClockDSP, 'clock')
 
 export default createClockDSP

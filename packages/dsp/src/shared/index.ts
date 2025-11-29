@@ -12,6 +12,4 @@ import '../module/reverb/node'
 import '../module/quantiser/node'
 import '../module/sample_and_hold/node'
 
-export { ModuleDSPManager } from './ModuleDSPManager'
-export type { ModuleDSP, ModuleDSPFactory } from './types'
-export { DSP_FACTORIES, registerDSPFactory } from './types'
+export { INVENTORY, register } from './types'

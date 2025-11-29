@@ -1,8 +1,3 @@
-import type { PlugType } from '../models/links'
-// These types will come from @sobaka/state once it's properly exported
-type NodeContext = any
-type ParamContext = any
-
 /**
  * Base interface for all module DSP instances
  * Each module type (Clock, Oscillator, etc.) implements this interface
@@ -33,11 +28,11 @@ export type ModuleDSPFactory = (
 /**
  * Registry of DSP factories by module type
  */
-export const DSP_FACTORIES: Record<string, ModuleDSPFactory | undefined> = {}
+export const INVENTORY: Record<string, ModuleDSPFactory | undefined> = {}
 
 /**
  * Register a DSP factory for a module type
  */
-export function registerDSPFactory(moduleType: string, factory: ModuleDSPFactory) {
-  DSP_FACTORIES[moduleType] = factory
+export function register(factory: ModuleDSPFactory, moduleType: string) {
+  INVENTORY[moduleType] = factory
 }
