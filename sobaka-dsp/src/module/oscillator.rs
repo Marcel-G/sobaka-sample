@@ -54,20 +54,18 @@ impl Processor for OscillatorProcessor {
 
     fn new(data: Self::Data) -> Self {
         let frequency = shared(220.0);
-        let sine = var(&frequency) >> sine::<f32>() >> shape(Tanh(0.8));
-
-        let triangle = var(&frequency) >> triangle() >> shape(Tanh(0.8));
 
         let saw = var(&frequency) >> saw() >> shape(Tanh(0.8));
-
+        let sine = var(&frequency) >> sine::<f32>() >> shape(Tanh(0.8));
         let square = var(&frequency) >> square() >> shape(Tanh(0.8));
+        let triangle = var(&frequency) >> triangle() >> shape(Tanh(0.8));
 
         Self {
             current_shape: data.shape,
             frequency,
             receiver: data.receiver,
-            sine: BigBlockAdapter::new(Box::new(sine)),
             saw: BigBlockAdapter::new(Box::new(saw)),
+            sine: BigBlockAdapter::new(Box::new(sine)),
             square: BigBlockAdapter::new(Box::new(square)),
             triangle: BigBlockAdapter::new(Box::new(triangle)),
         }

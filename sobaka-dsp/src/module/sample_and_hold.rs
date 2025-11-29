@@ -1,27 +1,100 @@
-use waw::buffer::{AudioBuffer, ParamBuffer};
-use waw::worklet::{AudioModule, Emitter};
+use fundsp::prelude::*;
+use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
+use waw::{register, ParameterDescriptor, ParameterValues, Processor};
 
-use crate::dsp::hold::hold;
+use crate::dsp::trigger::SchmittTrigger;
 
-use crate::fundsp_worklet::FundspWorklet;
-pub struct SampleAndHold {
-    inner: FundspWorklet,
+pub struct SampleAndHoldProcessor {
+    inner: BigBlockAdapter,
 }
 
-impl AudioModule for SampleAndHold {
-    const INPUTS: u32 = 2;
+#[derive(Clone)]
+pub struct Hold {
+    trigger: SchmittTrigger,
+    off_threshold: f64,
+    on_threshold: f64,
+    signal: f32,
+}
 
-    fn create(_init: Option<Self::InitialState>, _emitter: Emitter<Self::Event>) -> Self {
-        let module = hold();
+impl Hold {
+    pub fn new() -> Self {
+        Self {
+            trigger: SchmittTrigger::default(),
+            off_threshold: 0.0,
+            on_threshold: 0.001,
+            signal: 0.0,
+        }
+    }
+}
 
-        SampleAndHold {
-            inner: FundspWorklet::create(module, Default::default()),
+impl AudioNode for Hold {
+    const ID: u64 = 99;
+    type Inputs = U2;
+    type Outputs = U1;
+
+    #[inline]
+    fn tick(&mut self, input: &Frame<f32, Self::Inputs>) -> Frame<f32, Self::Outputs> {
+        let gate = input[0];
+        let signal = input[1];
+
+        if let Some(true) = self
+            .trigger
+            .tick(gate, self.off_threshold, self.on_threshold)
+        {
+            self.signal = signal;
+        }
+
+        Frame::splat(self.signal)
+    }
+}
+
+#[inline]
+pub fn hold() -> An<Hold> {
+    An(Hold::new())
+}
+
+impl Processor for SampleAndHoldProcessor {
+    type Data = ();
+
+    fn new(_data: Self::Data) -> Self {
+        Self {
+            inner: BigBlockAdapter::new(Box::new(hold())),
         }
     }
 
-    fn process(&mut self, audio: &mut AudioBuffer, params: &ParamBuffer<Self::Param>) {
-        self.inner.process(audio, params);
+    fn process(
+        &mut self,
+        inputs: &[&[f32]],
+        outputs: &mut [&mut [f32]],
+        sample_rate: f32,
+        _params: &ParameterValues,
+    ) {
+        self.inner.set_sample_rate(sample_rate.into());
+        self.inner.process_big(128, inputs, outputs);
+    }
+
+    fn parameter_descriptors() -> Vec<ParameterDescriptor> {
+        Default::default()
     }
 }
 
-waw::main!(SampleAndHold);
+#[wasm_bindgen]
+pub struct SampleAndHoldNode {
+    node: web_sys::AudioWorkletNode,
+}
+
+#[wasm_bindgen]
+impl SampleAndHoldNode {
+    #[wasm_bindgen(constructor)]
+    pub fn new(ctx: &web_sys::AudioContext) -> Result<SampleAndHoldNode, JsValue> {
+        let node = SampleAndHoldProcessor::create_node(ctx, ())?;
+        Ok(SampleAndHoldNode { node })
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn node(&self) -> web_sys::AudioWorkletNode {
+        self.node.clone()
+    }
+}
+
+register!(SampleAndHoldProcessor, "sample-and-hold");

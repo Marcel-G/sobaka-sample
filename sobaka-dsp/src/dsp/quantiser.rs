@@ -1,11 +1,33 @@
 use fundsp::prelude::*;
+use fundsp::thingbuf::mpsc::{channel, Receiver};
 
 #[derive(Default, Clone)]
-pub struct Quantiser([i32; 24]);
+pub enum Message {
+    #[default]
+    None,
+    UpdateNotes([bool; 12]),
+}
+
+pub struct Quantiser {
+    notes: [i32; 24],
+    rx: Receiver<Message>,
+}
 
 impl Quantiser {
-    pub fn new(notes: [bool; 12]) -> Self {
-        Self(Self::create_ranges(notes))
+    pub fn new(notes: [bool; 12], rx: Receiver<Message>) -> Self {
+        Self {
+            notes: Self::create_ranges(notes),
+            rx,
+        }
+    }
+
+    fn handle_messages(&mut self) {
+        while let Ok(message) = self.rx.try_recv() {
+            match message {
+                Message::UpdateNotes(notes) => self.notes = Self::create_ranges(notes),
+                Message::None => {}
+            }
+        }
     }
 
     fn create_ranges(notes: [bool; 12]) -> [i32; 24] {
@@ -34,29 +56,30 @@ impl Quantiser {
     }
 }
 
+impl Clone for Quantiser {
+    fn clone(&self) -> Self {
+        // Receiver cannot be cloned, so instantiate a dummy channel.
+        let (_sender, receiver) = channel(1);
+        Self {
+            notes: self.notes.clone(),
+            rx: receiver,
+        }
+    }
+}
+
 impl AudioNode for Quantiser {
     const ID: u64 = 0;
 
-    type Sample = f32;
-
     type Inputs = U1;
-
     type Outputs = U1;
-    type Setting = [bool; 12];
 
-    fn tick(
-        &mut self,
-        input: &fundsp::hacker::Frame<Self::Sample, Self::Inputs>,
-    ) -> fundsp::hacker::Frame<Self::Sample, Self::Outputs> {
+    fn tick(&mut self, input: &Frame<f32, Self::Inputs>) -> Frame<f32, Self::Outputs> {
+        self.handle_messages();
         let range = (input[0] * 24.0).floor() as usize;
         let octave = range / 24;
         let index = range - octave * 24;
-        let note = self.0[index] + octave as i32 * 12;
+        let note = self.notes[index] + octave as i32 * 12;
         Frame::splat(note as f32 / 12.0)
-    }
-
-    fn set(&mut self, notes: Self::Setting) {
-        self.0 = Self::create_ranges(notes);
     }
 }
 
@@ -64,6 +87,6 @@ impl AudioNode for Quantiser {
 /// - Input 0: Input signal (1v per octave note).
 /// - Output 0: Quantised signal.
 #[inline]
-pub fn dsp_quantiser(notes: [bool; 12]) -> An<Quantiser> {
-    An(Quantiser::new(notes))
+pub fn dsp_quantiser(notes: [bool; 12], rx: Receiver<Message>) -> An<Quantiser> {
+    An(Quantiser::new(notes, rx))
 }
