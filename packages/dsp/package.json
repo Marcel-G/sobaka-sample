@@ -26,6 +26,7 @@
     "dev:wasm": "wasm-pack build --debug --target web --out-dir pkg -- --watch",
     "dev:ts": "tsc --watch",
     "dev": "npm run build:wasm:debug && npm run dev:ts",
+    "check": "tsc --noEmit",
     "clean": "rm -rf dist pkg target",
     "test:rust": "cargo test"
   },
