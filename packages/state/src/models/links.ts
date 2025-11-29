@@ -12,14 +12,14 @@ const Out = (n: number) => `out-${n}`
 const Param = (n: number) => `param-${n}`
 const Mixer = (n: number) => `mixer-${n}`
 
-export enum PlugType {
-  Input,
-  Output,
-  // TODO: mixer represents a link to the master mixer
-  //       These should have as special wire treatment that indicates
-  Mixer,
-  Param
-}
+export const PlugType = {
+  Input: 0,
+  Output: 1,
+  Mixer: 2,
+  Param: 3
+} as const
+
+export type PlugType = typeof PlugType[keyof typeof PlugType]
 
 export const is_fully_linked = (link: Partial<Link> | null): link is Link => {
   return Boolean(link?.from && link?.to)
