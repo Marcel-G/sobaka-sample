@@ -32,7 +32,8 @@ const config = {
       // Path for max message length issue: https://github.com/yjs/y-webrtc/issues/20
       '@simple-peer': 'simple-peer/simplepeer.min.js',
       'simple-peer/simplepeer.min.js': path.resolve(__dirname, './src/util/peer.ts')
-    }
+    },
+    extensions: ['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json', '.svelte']
   },
   plugins: [crossOriginIsolation, tailwindcss(), sveltekit()],
   server: {

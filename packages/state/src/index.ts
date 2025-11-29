@@ -1,13 +1,13 @@
 // Export all state-related modules
-export * from './models/workspace.js'
-export * from './models/workspaceList.js'
-export * from './models/root.js'
-export * from './models/links.js'
-export * from './models/rtc.js'
-export * from './models/syncedDoc.js'
-export * from './models/docMeta.js'
+export * from './models/workspace'
+export * from './models/workspaceList'
+export * from './models/root'
+export * from './models/links'
+export * from './models/rtc'
+export * from './models/syncedDoc'
+export * from './models/docMeta'
 
 // Export utilities
-export * from './util/subdoc.js'
-export * from './util/encoder.js'
-export * from './util/peer.js'
+export * from './util/subdoc'
+export * from './util/encoder'
+export * from './util/peer'

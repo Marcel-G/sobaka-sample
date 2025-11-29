@@ -1,5 +1,5 @@
 import SimplePeer from 'simple-peer'
-import { decodePacket, encodePacket, type DecodedPacket } from './encoder.js'
+import { decodePacket, encodePacket, type DecodedPacket } from './encoder'
 
 // Configuration constants for packet chunking and transmission
 export const CHUNK_SIZE = 1024 * 16 - 512 // 16KB - 512 bytes reserved for packet headers

@@ -1,4 +1,4 @@
-import type { PlugType } from './links.js'
+import type { PlugType } from './links'
 
 export interface ParamContext {
   type: PlugType.Param
