@@ -1,10 +1,10 @@
 <script context="module" lang="ts">
-  import { type Range, RangeType } from '../../range/range'
+  import { type Range, RangeType } from '@sobaka/ui/range/range'
 </script>
 
 <script lang="ts">
   import Arc from './Arc.svelte'
-  import { to_normalised } from '../../range/range_functions'
+  import { to_normalised } from '@sobaka/ui/range/range_functions'
   import Tooltip from '../Tooltip.svelte'
 
   export let value = 0.0

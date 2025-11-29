@@ -1,6 +1,6 @@
 <script lang="ts">
   import { formatDistanceToNow } from 'date-fns'
-  import type { Workspace } from '../models/workspace'
+  import type { Workspace } from '/state/models/workspace'
 
   export let workspace: Workspace
 

@@ -1,5 +1,5 @@
 import { getContext, setContext } from 'svelte'
-import { Workspace } from '../models/workspace'
+import { Workspace } from '/state/models/workspace'
 
 const WORKSPACE_CONTEXT = 'WORKSPACE_CONTEXT'
 

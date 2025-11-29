@@ -1,9 +1,9 @@
 <script context="module" lang="ts">
-  import { type Range } from '../../range/range'
+  import { type Range } from '@sobaka/ui/range/range'
 </script>
 
 <script lang="ts">
-  import { from_normalised, to_normalised } from '../../range/range_functions'
+  import { from_normalised, to_normalised } from '@sobaka/ui/range/range_functions'
   import Input from '../Input.svelte'
   import useDrag, { type OnDrag, relative_to_element } from '../../actions/drag'
   import useWheel, { type OnWheel } from '../../actions/wheel'

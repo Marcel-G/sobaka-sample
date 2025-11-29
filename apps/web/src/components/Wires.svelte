@@ -12,7 +12,7 @@
     throttled
   } from '../context/linkFinder'
   import type { Position } from '../@types'
-  import { is_fully_linked, plug_type, PlugType } from '../models/links'
+  import { is_fully_linked, plug_type, PlugType } from '/state/models/links'
 
   export let mouse_position: Readable<Position>
 

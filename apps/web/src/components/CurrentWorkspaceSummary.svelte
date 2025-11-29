@@ -1,7 +1,7 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
   import { formatDistanceToNow } from 'date-fns'
-  import type { Workspace } from '../models/workspace'
+  import type { Workspace } from '/state/models/workspace'
   import TitleInput from './TitleInput.svelte'
 
   export let workspace: Workspace

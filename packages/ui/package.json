@@ -3,9 +3,13 @@
   "version": "0.1.0",
   "type": "module",
   "exports": {
-    "./modules/*": "./src/modules/*",
-    "./components/*": "./src/components/*",
-    "./range": "./src/range/index.ts"
+    "./modules": "./src/modules/index.ts",
+    "./modules/*": "./src/modules/*.svelte",
+    "./components/*": "./src/components/*.svelte",
+    "./range": "./src/range/index.ts",
+    "./range/range": "./src/range/range.ts",
+    "./range/range_functions": "./src/range/range_functions.ts",
+    "./range/range_creators": "./src/range/range_creators.ts"
   },
   "scripts": {
     "dev": "vite dev",
