@@ -6,7 +6,7 @@
   import { browser } from '$app/environment'
   import { createGlobalCtx, type Global } from '../context/global'
   import { type PageData } from './$types'
-  import Loading from '../components/Loading.svelte'
+  import Loading from '@sobaka/ui/components/Loading.svelte'
 
   export let data: PageData
   let global: Global | null = null

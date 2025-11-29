@@ -6,6 +6,7 @@
     "./modules": "./src/modules/index.ts",
     "./modules/*": "./src/modules/*.svelte",
     "./components/*": "./src/components/*.svelte",
+    "./actions/*": "./src/actions/*.ts",
     "./range": "./src/range/index.ts",
     "./range/range": "./src/range/range.ts",
     "./range/range_functions": "./src/range/range_functions.ts",
