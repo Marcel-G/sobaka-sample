@@ -21,19 +21,19 @@ export const Default: Story = {};
 
 export const FullVolume: Story = {
   args: {
-    state: { gain: 1.0 },
+    state: { value: 1.0 },
   },
 };
 
 export const HalfVolume: Story = {
   args: {
-    state: { gain: 0.5 },
+    state: { value: 0.5 },
   },
 };
 
 export const Silent: Story = {
   args: {
-    state: { gain: 0 },
+    state: { value: 0 },
   },
 };
 

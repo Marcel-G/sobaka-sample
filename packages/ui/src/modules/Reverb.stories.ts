@@ -21,25 +21,25 @@ export const Default: Story = {};
 
 export const SmallRoom: Story = {
   args: {
-    state: { mix: 0.3, time: 0.3, damping: 0.5 },
+    state: { wet: 0.3, length: 0.3 },
   },
 };
 
 export const LargeHall: Story = {
   args: {
-    state: { mix: 0.5, time: 0.9, damping: 0.3 },
+    state: { wet: 0.5, length: 0.9 },
   },
 };
 
 export const Plate: Story = {
   args: {
-    state: { mix: 0.4, time: 0.6, damping: 0.8 },
+    state: { wet: 0.4, length: 0.6 },
   },
 };
 
 export const Subtle: Story = {
   args: {
-    state: { mix: 0.15, time: 0.4, damping: 0.5 },
+    state: { wet: 0.15, length: 0.4 },
   },
 };
 

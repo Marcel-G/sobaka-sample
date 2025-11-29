@@ -21,19 +21,19 @@ export const Default: Story = {};
 
 export const Zero: Story = {
   args: {
-    state: { value: 0 },
+    state: { min: 0, max: 1, value: 0 },
   },
 };
 
 export const Half: Story = {
   args: {
-    state: { value: 0.5 },
+    state: { min: 0, max: 1, value: 0.5 },
   },
 };
 
 export const Full: Story = {
   args: {
-    state: { value: 1.0 },
+    state: { min: 0, max: 1, value: 1.0 },
   },
 };
 

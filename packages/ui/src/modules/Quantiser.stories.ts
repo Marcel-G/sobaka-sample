@@ -19,21 +19,19 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
 
-export const Chromatic: Story = {
+export const AllNotes: Story = {
   args: {
-    state: { scale: 0 },
+    state: { notes: Array(12).fill({ value: true }) },
   },
 };
 
-export const Major: Story = {
+export const SomeNotes: Story = {
   args: {
-    state: { scale: 1 },
-  },
-};
-
-export const Minor: Story = {
-  args: {
-    state: { scale: 2 },
+    state: { notes: [
+      { value: true }, { value: false }, { value: true }, { value: false },
+      { value: true }, { value: true }, { value: false }, { value: true },
+      { value: false }, { value: true }, { value: false }, { value: true }
+    ]},
   },
 };
 

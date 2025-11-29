@@ -21,25 +21,19 @@ export const Default: Story = {};
 
 export const Slow: Story = {
   args: {
-    state: { frequency: 0.5, shape: 0 },
+    state: { bpm: 60 },
   },
 };
 
 export const Fast: Story = {
   args: {
-    state: { frequency: 10, shape: 0 },
+    state: { bpm: 180 },
   },
 };
 
-export const Saw: Story = {
+export const Medium: Story = {
   args: {
-    state: { frequency: 2, shape: 1 },
-  },
-};
-
-export const Square: Story = {
-  args: {
-    state: { frequency: 2, shape: 2 },
+    state: { bpm: 120 },
   },
 };
 

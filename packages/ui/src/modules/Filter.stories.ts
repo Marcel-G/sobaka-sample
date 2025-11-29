@@ -19,27 +19,27 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
 
-export const LowPass: Story = {
+export const LowFrequency: Story = {
   args: {
-    state: { cutoff: 1000, resonance: 0.5, type: 0 },
+    state: { frequency: 0.1, q: 0.5 },
   },
 };
 
-export const HighPass: Story = {
+export const MidFrequency: Story = {
   args: {
-    state: { cutoff: 1000, resonance: 0.5, type: 1 },
+    state: { frequency: 0.5, q: 0.5 },
   },
 };
 
-export const BandPass: Story = {
+export const HighFrequency: Story = {
   args: {
-    state: { cutoff: 1000, resonance: 0.5, type: 2 },
+    state: { frequency: 0.9, q: 0.5 },
   },
 };
 
 export const HighResonance: Story = {
   args: {
-    state: { cutoff: 1000, resonance: 0.9, type: 0 },
+    state: { frequency: 0.5, q: 0.9 },
   },
 };
 

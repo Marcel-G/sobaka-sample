@@ -9,7 +9,6 @@ const meta = {
     disabled: { control: 'boolean' },
   },
   args: {
-    state: initialState,
     disabled: false,
   },
 } satisfies Meta<SampleAndHold>;
