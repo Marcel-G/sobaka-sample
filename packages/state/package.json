@@ -1,0 +1,33 @@
+{
+  "name": "@sobaka/state",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@syncedstore/core": "^0.6.0",
+    "lib0": "^0.2.108",
+    "simple-peer": "^9.11.1",
+    "y-indexeddb": "^9.0.9",
+    "y-webrtc": "^10.2.4",
+    "yjs": "^13.5.48"
+  },
+  "devDependencies": {
+    "@types/simple-peer": "^9.11.8",
+    "typescript": "^5.0.0"
+  }
+}

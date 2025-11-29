@@ -1,0 +1,1 @@
+export const env={"PUBLIC_SIGNALING_URL":"ws://localhost:8000/signaling","PUBLIC_GLOBAL_LISTS":"a4984ea9-27e2-4475-a727-6e6c69cf84b7"}

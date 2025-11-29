@@ -1,0 +1,1 @@
+html{background-color:var(--color-darker);color:var(--color-light)}body,html{height:100vh}body>div{display:flex;flex-direction:column;height:100%}main{overflow-x:auto;flex:1 1 100%}

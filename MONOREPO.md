@@ -1,0 +1,191 @@
+# Monorepo Structure
+
+This project uses npm workspaces to organize code into focused packages.
+
+## Package Structure
+
+```
+packages/
+├── state/          @sobaka/state    - State management (Yjs, documents, sync)
+├── dsp/            @sobaka/dsp      - Audio processing layer
+├── ui/             @sobaka/ui       - Module UI components + Storybook
+└── app/            @sobaka/app      - Main SvelteKit application
+```
+
+## Package Dependencies
+
+```
+@sobaka/state (foundation)
+    ↓
+@sobaka/dsp (depends on state)
+    ↓
+@sobaka/ui (depends on state)
+    ↓
+@sobaka/app (depends on state, dsp, ui)
+```
+
+## Packages
+
+### @sobaka/state
+
+**Purpose**: Core state management and data synchronization
+
+**Contents**:
+- Yjs models (Workspace, WorkspaceList, Root)
+- Document metadata and sync logic
+- RTC provider for collaboration
+- Utility functions for state
+
+**No UI dependencies** - Pure TypeScript/Yjs
+
+### @sobaka/dsp
+
+**Purpose**: Audio processing layer
+
+**Contents**:
+- `ModuleDSPManager` - Orchestrates DSP instances
+- Module-specific DSP classes (ClockDSP, OscillatorDSP, etc.)
+- Audio node creation and lifecycle management
+- Reactive parameter updates
+
+**Dependencies**: `@sobaka/state`, `sobaka-dsp` (WASM)
+
+### @sobaka/ui
+
+**Purpose**: Reusable UI components and module views
+
+**Contents**:
+- Module components (Clock, Oscillator, Filter, etc.)
+- Shared components (Knob, Switch, Led, Panel, etc.)
+- Range utilities
+- Actions (drag, wheel)
+- **Storybook** for component development
+
+**Features**:
+- Component isolation and development
+- Visual regression testing capability
+- Design system documentation
+
+**Run Storybook**:
+```bash
+cd packages/ui
+npm run storybook
+```
+
+### @sobaka/app
+
+**Purpose**: Main application - SvelteKit app
+
+**Contents**:
+- Routes and pages
+- App-level components (Workspace, Toolbox, etc.)
+- Context providers (global, workspace, audio)
+- Infrastructure code for deployment
+
+**Dependencies**: All other packages
+
+## Development
+
+### Install Dependencies
+
+```bash
+# From root
+npm install
+```
+
+This installs all dependencies for all packages using npm workspaces.
+
+### Run Development
+
+```bash
+# Run main app
+npm run dev
+
+# Or run specific package
+npm run dev --workspace=@sobaka/app
+npm run storybook --workspace=@sobaka/ui
+```
+
+### Build All Packages
+
+```bash
+npm run build
+```
+
+Builds packages in dependency order:
+1. @sobaka/state
+2. @sobaka/dsp
+3. @sobaka/ui
+4. @sobaka/app
+
+### Clean
+
+```bash
+npm run clean
+```
+
+Removes all `node_modules` and `dist` folders.
+
+## Benefits
+
+### 1. **Separation of Concerns**
+- State logic isolated from UI
+- DSP logic separated from presentation
+- Clear dependency boundaries
+
+### 2. **Reusability**
+- Packages can be used independently
+- UI components can be developed in isolation
+- State logic can be tested without UI
+
+### 3. **Scalability**
+- Easy to add new packages
+- Clear import boundaries prevent circular dependencies
+- Smaller, focused packages are easier to understand
+
+### 4. **Developer Experience**
+- Storybook for UI component development
+- Type safety across package boundaries
+- Fast rebuilds (only changed packages rebuild)
+
+### 5. **Testing**
+- Test state logic independently
+- Test DSP logic without UI
+- Visual testing with Storybook
+
+## Adding a New Package
+
+1. Create package directory:
+```bash
+mkdir -p packages/my-package/src
+```
+
+2. Add `package.json`:
+```json
+{
+  "name": "@sobaka/my-package",
+  "version": "0.1.0",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts"
+}
+```
+
+3. Add to workspace dependencies where needed:
+```json
+{
+  "dependencies": {
+    "@sobaka/my-package": "workspace:*"
+  }
+}
+```
+
+## Migration Notes
+
+The monorepo was created by extracting focused concerns from the original `frontend/` directory:
+
+- **State layer** → `@sobaka/state`
+- **DSP layer** → `@sobaka/dsp`
+- **UI components** → `@sobaka/ui`
+- **Application** → `@sobaka/app`
+
+This maintains the three-layer architecture (State, DSP, View) while adding better package boundaries and tooling.
