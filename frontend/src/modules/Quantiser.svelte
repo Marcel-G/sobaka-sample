@@ -23,46 +23,17 @@
 </script>
 
 <script lang="ts">
-  import type { Quantiser } from 'sobaka-dsp'
-  import { onDestroy, onMount } from 'svelte'
   import Panel from './shared/Panel.svelte'
   import Plug from './shared/Plug.svelte'
-  import { getGlobalCtx } from '../context/global'
-  import { type Tuple } from '../@types'
-  import Layout from '../components/Layout.svelte'
-  import RingSpinner from '../components/RingSpinner.svelte'
   import { PlugType } from '../models/links'
 
   export let state: State
   export let disabled = false
   let name = 'quantiser'
-  let quantiser: Quantiser
-  let node: AudioNode
-  let loading = true
-
-  const context = getGlobalCtx()
-
-  onMount(async () => {
-    const { Quantiser } = await import('sobaka-dsp')
-    quantiser = await Quantiser.create(context.audio)
-    node = quantiser.node()
-    loading = false
-  })
-
-  // Update the sobaka node when the state changes
-  $: notes = state.notes // @todo this may not update
-  $: quantiser?.command({
-    UpdateNotes: notes.map(({ value }) => value) as Tuple<boolean, 12>
-  })
 
   function on_toggle(index: number) {
     state.notes[index].value = !state.notes[index].value
   }
-
-  onDestroy(() => {
-    quantiser?.destroy()
-    quantiser?.free()
-  })
 </script>
 
 <Panel
@@ -73,46 +44,30 @@
   --color-module-accent="var(--color-cyan)"
   --color-module-background="var(--color-cyan-dark)"
 >
-  {#if loading}
-    <Layout type="center">
-      <RingSpinner color="blue" size="sm" />
-    </Layout>
-  {:else}
-    <ul class="board">
-      {#each NOTE_LABELS as label, i}
-        <li>
-          <button
-            type="button"
-            class="key {label}"
-            class:pressed={state.notes[i].value}
-            on:click={() => {
-              if (!disabled) on_toggle(i)
-            }}
-            {disabled}
-            aria-pressed={state.notes[i].value}
-            aria-label="{label} note"
-          ></button>
-        </li>
-      {/each}
-    </ul>
-  {/if}
+  <ul class="board">
+    {#each NOTE_LABELS as label, i}
+      <li>
+        <button
+          type="button"
+          class="key {label}"
+          class:pressed={state.notes[i].value}
+          on:click={() => {
+            if (!disabled) on_toggle(i)
+          }}
+          {disabled}
+          aria-pressed={state.notes[i].value}
+          aria-label="{label} note"
+        ></button>
+      </li>
+    {/each}
+  </ul>
 
   <div slot="inputs">
-    <Plug
-      id={0}
-      {disabled}
-      label="Signal_1"
-      ctx={{ type: PlugType.Input, module: node, connectIndex: 0 }}
-    />
+    <Plug id={0} {disabled} label="Signal_1" ctx={{ type: PlugType.Input }} />
   </div>
 
   <div slot="outputs">
-    <Plug
-      id={0}
-      {disabled}
-      label="Output_1"
-      ctx={{ type: PlugType.Output, module: node, connectIndex: 0 }}
-    />
+    <Plug id={0} {disabled} label="Output_1" ctx={{ type: PlugType.Output }} />
   </div>
 </Panel>
 

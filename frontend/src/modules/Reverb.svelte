@@ -11,14 +11,9 @@
 </script>
 
 <script lang="ts">
-  import type { Reverb } from 'sobaka-dsp'
-  import { onDestroy, onMount } from 'svelte'
   import Panel from './shared/Panel.svelte'
   import Plug from './shared/Plug.svelte'
   import Knob from '../components/Knob/Knob.svelte'
-  import { getGlobalCtx } from '../context/global'
-  import Layout from '../components/Layout.svelte'
-  import RingSpinner from '../components/RingSpinner.svelte'
   import { type Range, RangeType } from '../range/range'
   import { create_scale_range } from '../range/range_creators'
   import { PlugType } from '../models/links'
@@ -26,29 +21,6 @@
   export let state: State
   export let disabled = false
   let name = 'reverb'
-  let reverb: Reverb
-  let node: AudioNode
-  let wet_param: AudioParam
-  let delay_param: AudioParam
-  let loading = true
-  const context = getGlobalCtx()
-
-  onMount(async () => {
-    const { Reverb } = await import('sobaka-dsp')
-    reverb = await Reverb.create(context.audio)
-    node = reverb.node()
-    wet_param = reverb.get_param('Wet')
-    delay_param = reverb.get_param('Delay')
-
-    loading = false
-  })
-
-  // Update the sobaka node when the state changes
-  $: wet = state.wet
-  $: wet_param?.setValueAtTime(wet, context.audio.currentTime)
-
-  $: delay = state.length
-  $: delay_param?.setValueAtTime(delay, context.audio.currentTime)
 
   const scalar = create_scale_range()
 
@@ -57,11 +29,6 @@
     start: 0,
     end: 10
   }
-
-  onDestroy(() => {
-    reverb?.destroy()
-    reverb?.free()
-  })
 </script>
 
 <Panel
@@ -72,50 +39,19 @@
   --color-module-accent="var(--color-purple)"
   --color-module-background="var(--color-purple-dark)"
 >
-  {#if loading}
-    <Layout type="center">
-      <RingSpinner color="blue" size="sm" />
-    </Layout>
-  {:else}
-    <div class="controls">
-      <Knob {disabled} bind:value={state.wet} range={scalar} label="wet" />
-      <Knob
-        {disabled}
-        bind:value={state.length}
-        range={delay_length_range}
-        label="length"
-      />
-    </div>
-  {/if}
+  <div class="controls">
+    <Knob {disabled} bind:value={state.wet} range={scalar} label="wet" />
+    <Knob {disabled} bind:value={state.length} range={delay_length_range} label="length" />
+  </div>
 
   <div slot="inputs">
-    <Plug
-      id={0}
-      {disabled}
-      label="l"
-      ctx={{ type: PlugType.Input, module: node, connectIndex: 0 }}
-    />
-    <Plug
-      id={1}
-      {disabled}
-      label="r"
-      ctx={{ type: PlugType.Input, module: node, connectIndex: 1 }}
-    />
+    <Plug id={0} {disabled} label="l" ctx={{ type: PlugType.Input }} />
+    <Plug id={1} {disabled} label="r" ctx={{ type: PlugType.Input }} />
   </div>
 
   <div slot="outputs">
-    <Plug
-      id={0}
-      {disabled}
-      label="l"
-      ctx={{ type: PlugType.Output, module: node, connectIndex: 0 }}
-    />
-    <Plug
-      id={1}
-      {disabled}
-      label="r"
-      ctx={{ type: PlugType.Output, module: node, connectIndex: 1 }}
-    />
+    <Plug id={0} {disabled} label="l" ctx={{ type: PlugType.Output }} />
+    <Plug id={1} {disabled} label="r" ctx={{ type: PlugType.Output }} />
   </div>
 </Panel>
 

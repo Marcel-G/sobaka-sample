@@ -9,35 +9,17 @@
 </script>
 
 <script lang="ts">
-  import { onMount } from 'svelte'
   import Knob from '../components/Knob/Knob.svelte'
   import Plug from './shared/Plug.svelte'
   import Panel from './shared/Panel.svelte'
-  import { getGlobalCtx } from '../context/global'
-  import Layout from '../components/Layout.svelte'
-  import RingSpinner from '../components/RingSpinner.svelte'
   import { create_scale_range } from '../range/range_creators'
   import { PlugType } from '../models/links'
-
-  const context = getGlobalCtx()
 
   export let state: State
   export let disabled = false
   let name = 'parameter'
-  let parameter: ConstantSourceNode
-  let loading = true
-
-  onMount(async () => {
-    parameter = new ConstantSourceNode(context.audio)
-    parameter.start()
-    loading = false
-  })
 
   $: param_range = create_scale_range(state.min, state.max)
-
-  // Update the sobaka node when the state changes
-  $: value = state.value
-  $: parameter?.offset.setValueAtTime(value, context.audio.currentTime)
 </script>
 
 <Panel
@@ -48,21 +30,10 @@
   --color-module-accent="var(--color-cyan)"
   --color-module-background="var(--color-cyan-dark)"
 >
-  {#if loading}
-    <Layout type="center">
-      <RingSpinner color="blue" size="sm" />
-    </Layout>
-  {:else}
-    <span>
-      <Knob {disabled} bind:value={state.value} range={param_range} label="value" />
-    </span>
-  {/if}
+  <span>
+    <Knob {disabled} bind:value={state.value} range={param_range} label="value" />
+  </span>
   <div slot="outputs">
-    <Plug
-      id={0}
-      {disabled}
-      label="output"
-      ctx={{ type: PlugType.Output, connectIndex: 0, module: parameter }}
-    />
+    <Plug id={0} {disabled} label="output" ctx={{ type: PlugType.Output }} />
   </div>
 </Panel>
