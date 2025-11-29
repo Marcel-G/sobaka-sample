@@ -11,7 +11,7 @@
   import Wires from '../components/Wires.svelte'
   import { get_workspace } from '../context/workspace'
   import AvatarList from '../components/collaborative/AvatarList.svelte'
-  import Mixer from '@sobaka/ui/modules/Mixer.svelte'
+  import Mixer from '../modules/Mixer.svelte'
 
   let toolbox_visible = false
   let toolbox_position: Position = { x: 0, y: 0 }

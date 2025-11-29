@@ -12,12 +12,12 @@
 
 <script lang="ts">
   import { onMount } from 'svelte'
-  import Knob from '../components/Knob/Knob.svelte'
+  import Knob from '@sobaka/ui/components/Knob/Knob.svelte'
   import { getGlobalCtx } from '../context/global'
-  import Layout from '../components/Layout.svelte'
-  import RingSpinner from '../components/RingSpinner.svelte'
-  import { create_volume_range } from '../range/range_creators'
-  import LevelIndicator from '../components/LevelIndicator.svelte'
+  import Layout from '@sobaka/ui/components/Layout.svelte'
+  import RingSpinner from '@sobaka/ui/components/RingSpinner.svelte'
+  import { create_volume_range } from '@sobaka/ui/range/range_creators'
+  import LevelIndicator from '@sobaka/ui/components/LevelIndicator.svelte'
   import { get_workspace } from '../context/workspace'
   import { createPlugId, PlugType } from '@sobaka/state/models/links'
 
