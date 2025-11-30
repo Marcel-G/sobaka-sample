@@ -9,6 +9,7 @@ import { FilterNode } from "./module/filter/node";
 import { EnvelopeNode } from "./module/envelope/node";
 import { DelayNode } from "./module/delay/node";
 import { ReverbNode } from "./module/reverb/node";
+import { QuantiserNode } from "./module/quantiser/node";
 
 /**
  * Creates a DSP instance for a given module
@@ -22,6 +23,7 @@ const createAudioModule = (module: Module, audioContext: AudioContext): ModuleDS
   if (module.type === 'Envelope') return new EnvelopeNode(module.id, audioContext, module.state as any)
   if (module.type === 'Delay') return new DelayNode(module.id, audioContext, module.state as any)
   if (module.type === 'Reverb') return new ReverbNode(module.id, audioContext, module.state as any)
+  if (module.type === 'Quantiser') return new QuantiserNode(module.id, audioContext, module.state as any)
   throw new Error('not implemented: createAudioModule for type ' + module.type)
 }
 
