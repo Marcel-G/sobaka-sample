@@ -20,7 +20,7 @@ export class ClockNode implements ModuleDSP {
 
   constructor(
     public readonly id: string,
-    private audioContext: AudioContext,
+    audioContext: AudioContext,
     initialState: ClockState = INITIAL_STATE
   ) {
     this.clock = new _ClockDividerNode(audioContext)

@@ -1,66 +1,71 @@
-import { OscillatorNode as _OscillatorNode, OscillatorShape} from '@sobaka/dsp/wasm'
-import { ModuleDSP, ModuleRouting } from '../../shared/types'
+import { OscillatorNode as _OscillatorNode, OscillatorShape } from '@sobaka/dsp/wasm'
+import { ModuleDSP, Route, RouteInfo } from '../../shared/types'
+import { PlugType } from '@sobaka/state'
 
-interface OscillatorState {
+export interface OscillatorState {
   pitch: number
   shape: number
 }
 
-const SHAPES: OscillatorShape[] = [OscillatorShape.Sine, OscillatorShape.Square, OscillatorShape.Triangle, OscillatorShape.Saw]
+const INITIAL_STATE: OscillatorState = { pitch: 1.0, shape: 3 } // Default to Saw
+
+const SHAPES: OscillatorShape[] = [
+  OscillatorShape.Sine,
+  OscillatorShape.Square,
+  OscillatorShape.Triangle,
+  OscillatorShape.Saw
+]
 
 /**
  * DSP implementation for Oscillator module
- * Manages Oscillator WASM node and its parameters
+ * Manages OscillatorNode and its parameters
  */
-export class OscillatorDSP implements ModuleDSP {
+export class OscillatorNode implements ModuleDSP {
+  public name = "oscillator"
   private oscillator: _OscillatorNode
   private pitchParam: AudioParam
+  public state: OscillatorState
 
   constructor(
     public readonly id: string,
-    private audioContext: AudioContext,
-    initialState: OscillatorState,
-    oscillator: _OscillatorNode
+    audioContext: AudioContext,
+    initialState: OscillatorState = INITIAL_STATE
   ) {
-    this.oscillator = oscillator
-    this.pitchParam = oscillator.node.parameters.get('Pitch')
+    this.oscillator = new _OscillatorNode(audioContext)
+    this.pitchParam = this.oscillator.node.parameters.get('pitch')!
+    this.state = initialState
     
-    // Set initial state
-    this.updateState(initialState)
+    // Set initial shape
+    this.oscillator.setShape(SHAPES[this.state.shape])
   }
 
-  get node(): AudioNode {
-    return this.oscillator.node
+  getRoutingDefinition() {
+    return {
+      pitch: { name: "pitch", type: PlugType.Param, label: 'Pitch CV' },
+      output: { name: "output", type: PlugType.Output, label: 'Out' },
+    } satisfies Record<string, RouteInfo>
   }
 
-  updateState(state: Record<string, unknown>): void {
-    const oscState = state as OscillatorState
-    
-    // Update pitch
-    this.pitchParam.setValueAtTime(oscState.pitch, this.audioContext.currentTime)
-    
-    // Update shape
-    const shape = SHAPES[oscState.shape]
-    if (shape) {
-      this.oscillator.setShape(shape)
+  getRoute(routeName: string): Route {
+    switch (routeName) {
+      case "pitch":
+        return { node: this.pitchParam }
+      case "output":
+        return { node: this.oscillator.node, connectIndex: 0 }
+      default:
+        throw new Error(`Unknown routeName ${routeName}`)
     }
   }
 
-  getRoute(): ModuleRouting {
-    return {
-      params: [
-        { index: 0, label: 'Pitch CV', param: this.pitchParam }
-      ],
-      inputs: [
-        { index: 1, label: 'Reset', node: this.oscillator.node, connectIndex: 0 }
-      ],
-      outputs: [
-        { index: 0, label: 'Out', node: this.oscillator.node, connectIndex: 0 }
-      ]
+  setShape(shapeIndex: number) {
+    const shape = SHAPES[shapeIndex]
+    if (shape) {
+      this.oscillator.setShape(shape)
+      this.state.shape = shapeIndex
     }
   }
 
   destroy(): void {
-    this.oscillator?.free()
+    // OscillatorNode cleanup if needed
   }
 }
