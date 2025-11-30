@@ -11,7 +11,7 @@
 
   export let mousePosition: Readable<Position>
 
-  const { workspace, positions, getPlugType } = getWorkspace()
+  const { workspace, positions, dsp } = getWorkspace()
 
   const intoPath = (points: Point[]): string => {
     return points.reduce((acc, point, i) => {
@@ -33,7 +33,7 @@
     if (!isPartialLink(l)) {
       return []
     }
-    return linkFinder(l, p, mp, getPlugType)
+    return linkFinder(l, p, mp, dsp)
   })
 
   // Calculate wire paths from links and positions
@@ -80,7 +80,7 @@
         cy={line.path.at(-1)!.y}
         r="3"
       />
-      {#if getPlugType(line.endId) === PlugType.Mixer}
+      {#if dsp.getPlugType(line.endId.moduleId, line.endId.routeName) === PlugType.Mixer}
         <polygon
           points={`
             ${line.path.at(0)!.x},${line.path.at(0)!.y - 5}

@@ -1,6 +1,7 @@
 import { PlugType, type Link, type LinkPoint, linkPointToKey } from '@sobaka/state/models/links'
 import { type PlugPosition } from './positions'
 import type { Position } from '@sobaka/state'
+import type { AudioGraph } from '@sobaka/dsp'
 
 const distance = (a: PlugPosition, b: PlugPosition): number => {
   return Math.abs(a.position.x - b.position.x) + Math.abs(a.position.y - b.position.y)
@@ -30,7 +31,7 @@ export const linkFinder = (
   link: Partial<Link> | null,
   plugPositions: Map<string, PlugPosition>,
   mousePosition: Position,
-  plugTypeGetter: (linkPoint: LinkPoint) => PlugType
+  dsp: AudioGraph
 ): Required<Link>[] => {
   // Early exit if no partial link exists
   if (!link || !isPartialLink(link)) {
@@ -46,14 +47,16 @@ export const linkFinder = (
   }
 
   // Get the type of the plug that was clicked first
-  const startType = plugTypeGetter(startPoint)
+  const startType = dsp.getPlugType(startPoint.moduleId, startPoint.routeName)
+  if (!startType) return []
   
   // Filter for compatible plugs based on what was clicked
   const plugs = Array.from(plugPositions.values()).filter(plug => {
     // Don't connect to same module
     if (startPoint.moduleId === plug.id.moduleId) return false
     
-    const plugType = plugTypeGetter(plug.id)
+    const plugType = dsp.getPlugType(plug.id.moduleId, plug.id.routeName)
+    if (!plugType) return false
     
     // If we clicked an output, we need input/param/mixer
     if (startType === PlugType.Output) {
@@ -71,8 +74,7 @@ export const linkFinder = (
 
   if (!end) return []
 
-  // Return the link - doesn't matter which field we use (from/to)
-  // since normalizeLink will fix the direction when it's added
+  // Return the link with proper from/to assignment
   if (link.from) {
     return [{ id: 'active-link', from: link.from, to: end.id }]
   }
