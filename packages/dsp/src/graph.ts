@@ -5,6 +5,7 @@ import { ClockNode } from "./module/clock/node";
 import { MixerDSP } from "./module/mixer/node";
 import { OscillatorNode } from "./module/oscillator/node";
 import { NoiseNode } from "./module/noise/node";
+import { FilterNode } from "./module/filter/node";
 
 /**
  * Creates a DSP instance for a given module
@@ -14,6 +15,7 @@ const createAudioModule = (module: Module, audioContext: AudioContext): ModuleDS
   if (module.type === 'Clock') return new ClockNode(module.id, audioContext, module.state as any)
   if (module.type === 'Oscillator') return new OscillatorNode(module.id, audioContext, module.state as any)
   if (module.type === 'Noise') return new NoiseNode(module.id, audioContext, module.state as any)
+  if (module.type === 'Filter') return new FilterNode(module.id, audioContext, module.state as any)
   throw new Error('not implemented: createAudioModule for type ' + module.type)
 }
 

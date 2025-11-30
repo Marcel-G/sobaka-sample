@@ -1,67 +1,73 @@
-import { FilterNode as _FilterNode} from '@sobaka/dsp/wasm'
-import { ModuleDSP, ModuleRouting } from '../../shared/types'
+import { FilterNode as _FilterNode } from '@sobaka/dsp/wasm'
+import { ModuleDSP, Route, RouteInfo } from '../../shared/types'
+import { PlugType } from '@sobaka/state'
 
-interface FilterState {
+export interface FilterState {
   frequency: number
   q: number
 }
 
+const INITIAL_STATE: FilterState = {
+  frequency: 0.1,
+  q: 0.1
+}
+
 /**
  * DSP implementation for Filter module
- * Manages Filter WASM node and its parameters
+ * Multi-mode filter with lowpass, highpass, bandpass, and moog outputs
  */
-export class FilterDSP implements ModuleDSP {
+export class FilterNode implements ModuleDSP {
+  public name = "filter"
   private filter: _FilterNode
   private frequencyParam: AudioParam
   private qParam: AudioParam
+  public state: FilterState
 
   constructor(
     public readonly id: string,
-    private audioContext: AudioContext,
-    initialState: FilterState,
-    filter: _FilterNode
+    audioContext: AudioContext,
+    initialState: FilterState = INITIAL_STATE
   ) {
-    this.filter = filter
-    this.frequencyParam = filter.node.parameters.get('frequency')
-    this.qParam = filter.node.parameters.get('q')
-    
-    // Set initial state
-    this.updateState(initialState)
+    this.filter = new _FilterNode(audioContext)
+    this.frequencyParam = this.filter.node.parameters.get('frequency')!
+    this.qParam = this.filter.node.parameters.get('q')!
+    this.state = initialState
   }
 
-  get node(): AudioNode {
-    return this.filter.node
-  }
-
-  updateState(state: Record<string, unknown>): void {
-    const filterState = state as FilterState
-    
-    this.frequencyParam.setValueAtTime(
-      filterState.frequency,
-      this.audioContext.currentTime
-    )
-    this.qParam.setValueAtTime(filterState.q, this.audioContext.currentTime)
-  }
-
-  getRoute(): ModuleRouting {
+  getRoutingDefinition() {
     return {
-      inputs: [
-        { index: 0, label: 'Signal', node: this.filter.node, connectIndex: 0 }
-      ],
-      params: [
-        { index: 1, label: 'Cutoff CV', param: this.frequencyParam },
-        { index: 2, label: 'Q CV', param: this.qParam }
-      ],
-      outputs: [
-        { index: 0, label: 'Lowpass', node: this.filter.node, connectIndex: 0 },
-        { index: 1, label: 'Highpass', node: this.filter.node, connectIndex: 1 },
-        { index: 2, label: 'Bandpass', node: this.filter.node, connectIndex: 2 },
-        { index: 3, label: 'Moog', node: this.filter.node, connectIndex: 3 }
-      ]
+      input: { name: "input", type: PlugType.Input, label: 'Signal' },
+      frequency: { name: "frequency", type: PlugType.Param, label: 'Cutoff CV' },
+      q: { name: "q", type: PlugType.Param, label: 'Q CV' },
+      lowpass: { name: "lowpass", type: PlugType.Output, label: 'Lowpass' },
+      highpass: { name: "highpass", type: PlugType.Output, label: 'Highpass' },
+      bandpass: { name: "bandpass", type: PlugType.Output, label: 'Bandpass' },
+      moog: { name: "moog", type: PlugType.Output, label: 'Moog' },
+    } satisfies Record<string, RouteInfo>
+  }
+
+  getRoute(routeName: string): Route {
+    switch (routeName) {
+      case "input":
+        return { node: this.filter.node, connectIndex: 0 }
+      case "frequency":
+        return { node: this.frequencyParam }
+      case "q":
+        return { node: this.qParam }
+      case "lowpass":
+        return { node: this.filter.node, connectIndex: 0 }
+      case "highpass":
+        return { node: this.filter.node, connectIndex: 1 }
+      case "bandpass":
+        return { node: this.filter.node, connectIndex: 2 }
+      case "moog":
+        return { node: this.filter.node, connectIndex: 3 }
+      default:
+        throw new Error(`Unknown routeName ${routeName}`)
     }
   }
 
   destroy(): void {
-    this.filter?.free()
+    // FilterNode cleanup if needed
   }
 }

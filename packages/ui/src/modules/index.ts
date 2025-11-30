@@ -2,6 +2,7 @@ import Clock from './Clock.svelte'
 import Mixer from './Mixer.svelte'
 import Oscillator from './Oscillator/Oscillator.svelte'
 import Noise from './Noise.svelte'
+import Filter from './Filter.svelte'
 import { type Module } from '@sobaka/state/models/workspace'
 
 export const MODULES = {
@@ -9,6 +10,7 @@ export const MODULES = {
   Mixer,
   Oscillator,
   Noise,
+  Filter,
 } as const
 
 export const getComponent = (module: Module) => {
