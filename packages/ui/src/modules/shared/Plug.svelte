@@ -24,16 +24,19 @@
     onClick?.(ctx.name)
   }
   
+  // Register element when it's bound, unregister on cleanup
   $effect(() => {
     if (registerElement && element) {
+      // Wait for next frame to ensure element is rendered and positioned
       requestAnimationFrame(() => {
         registerElement(ctx.name, element)
       })
+      
+      // Return cleanup function
+      return () => {
+        unregisterElement?.(ctx.name)
+      }
     }
-  })
-  
-  onDestroy(() => {
-    unregisterElement?.(ctx.name)
   })
 </script>
 

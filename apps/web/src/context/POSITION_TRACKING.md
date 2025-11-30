@@ -40,23 +40,47 @@ DOM Change (drag/resize)
 
 ### 3. Integration Points
 
-#### Module Registration (`ModuleWrapper.svelte`)
+#### Module Registration (`Panel.svelte`)
 ```typescript
-const handleRegisterElement = (element: HTMLElement) => {
-  positions.registerModule(module.id, element)
-}
+// Register element when it's bound, unregister on cleanup
+$effect(() => {
+  if (registerElement && element) {
+    // Wait for next frame to ensure element is rendered and positioned
+    requestAnimationFrame(() => {
+      registerElement(element)
+    })
+    
+    // Return cleanup function
+    return () => {
+      unregisterElement?.()
+    }
+  }
+})
 ```
 
 #### Plug Registration (`Plug.svelte`)
 ```typescript
+// Register element when it's bound, unregister on cleanup
 $effect(() => {
   if (registerElement && element) {
+    // Wait for next frame to ensure element is rendered and positioned
     requestAnimationFrame(() => {
       registerElement(ctx.name, element)
     })
+    
+    // Return cleanup function
+    return () => {
+      unregisterElement?.(ctx.name)
+    }
   }
 })
 ```
+
+**Key points:**
+- Elements are registered **once** when mounted (via `$effect` watching the `element` binding)
+- The observer handles all subsequent position updates automatically
+- Cleanup happens automatically when the `$effect` re-runs or component unmounts
+- No need to constantly re-register on position changes
 
 #### Wire Calculation (`Wires.svelte`)
 ```typescript

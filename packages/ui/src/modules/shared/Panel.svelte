@@ -42,18 +42,19 @@
   const col = $derived(`${$position.x + 1} / span ${width}`)
   const row = $derived(`${$position.y + 1} / span ${height}`)
 
+  // Register element when it's bound, unregister on cleanup
   $effect(() => {
-    // position values must be subscribed to in here to trigger reactivity
-    // even if we don't really need the values of x and y
-    if (registerElement && element && ($position.x !== 0 || $position.y !== 0)) {
+    if (registerElement && element) {
+      // Wait for next frame to ensure element is rendered and positioned
       requestAnimationFrame(() => {
         registerElement(element)
       })
+      
+      // Return cleanup function
+      return () => {
+        unregisterElement?.()
+      }
     }
-  })
-
-  onDestroy(() => {
-    unregisterElement?.()
   })
 
   const classes = {
