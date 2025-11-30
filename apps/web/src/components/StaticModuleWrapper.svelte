@@ -1,8 +1,8 @@
 <script lang="ts">
-  import Mixer from '@sobaka/ui/modules/Mixer.svelte'
   import { getWorkspace } from '../context/workspace'
   import { readable } from 'svelte/store'
-  import type { MixerDSP } from '@sobaka/dsp/module/mixer/node'
+  import Mixer from '@sobaka/ui/modules/Mixer'
+  import type { MixerDSP } from '@sobaka/dsp'
 
   interface Props {
     moduleId: string
@@ -43,7 +43,7 @@
 </script>
 
 {#if moduleType === 'Mixer'}
-  <div class="fixed top-4 right-4 z-100">
+  <div class="fixed top-4 right-4 z-10">
     <Mixer
       {node}
       disabled={false}

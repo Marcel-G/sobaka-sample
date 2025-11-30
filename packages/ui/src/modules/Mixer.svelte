@@ -5,8 +5,8 @@
   import Layout from '../components/Layout.svelte'
   import LevelIndicator from '../components/LevelIndicator.svelte'
   import { createVolumeRange } from '../range/rangeCreators'
-  import { MixerDSP } from '@sobaka/dsp/module/mixer/node'
   import type { BaseModuleProps } from '../types/props'
+  import type { MixerDSP } from '@sobaka/dsp';
 
   interface MixerProps extends BaseModuleProps {
     node: MixerDSP
@@ -41,24 +41,15 @@
   {disabled}
   {registerElement}
   {unregisterElement}
-  height={8}
-  width={6}
+  height={10}
+  width={0}
   --color-module-accent="var(--color-orange)"
-  --color-module-background="var(--color-orange-dark)"
+  --color-module-background="var(--color-darker)"
 >
   {#snippet children()}
     <Layout type="center">
-      <div class="flex flex-col items-center gap-2">
-        <Knob {disabled} bind:value={state.volume} range={volume} label="vol">
-          <div slot="knob-inputs">
-            <Plug 
-              ctx={routing.volume} 
-              onClick={onPlugClick} 
-              registerElement={registerPlugElement}
-              unregisterElement={unregisterPlugElement}
-            />
-          </div>
-        </Knob>
+      <div class="flex flex-row items-center gap-2">
+        <Knob {disabled} bind:value={state.volume} range={volume} label="vol" />
         
         <button
           class="px-2 py-1 rounded text-xs font-medium transition-colors"
@@ -71,32 +62,14 @@
           {state.muted ? 'Muted' : 'Mute'}
         </button>
         
-        <LevelIndicator module={node.getRoute('input_0').node as AudioNode} />
+        <LevelIndicator module={node.getRoute('input').node as AudioNode} />
       </div>
     </Layout>
   {/snippet}
 
   {#snippet inputs()}
     <Plug 
-      ctx={routing.input_0} 
-      onClick={onPlugClick} 
-      registerElement={registerPlugElement}
-      unregisterElement={unregisterPlugElement}
-    />
-    <Plug 
-      ctx={routing.input_1} 
-      onClick={onPlugClick} 
-      registerElement={registerPlugElement}
-      unregisterElement={unregisterPlugElement}
-    />
-    <Plug 
-      ctx={routing.input_2} 
-      onClick={onPlugClick} 
-      registerElement={registerPlugElement}
-      unregisterElement={unregisterPlugElement}
-    />
-    <Plug 
-      ctx={routing.input_3} 
+      ctx={routing.input} 
       onClick={onPlugClick} 
       registerElement={registerPlugElement}
       unregisterElement={unregisterPlugElement}

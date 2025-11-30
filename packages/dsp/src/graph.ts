@@ -1,4 +1,4 @@
-import { derived, get } from "svelte/store";
+import { derived } from "svelte/store";
 import { ModuleDSP } from "./shared/types"
 import { Link, Module, PlugType, Workspace } from "@sobaka/state";
 import { ClockNode } from "./module/clock/node";
