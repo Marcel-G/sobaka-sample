@@ -3,12 +3,14 @@
   import Tooltip from '../../components/Tooltip.svelte'
   import { twMerge } from 'tailwind-merge'
   import { PlugType } from '@sobaka/state/models/links'
-  import type { RouteInfo } from '@sobaka/dsp';
+  import type { PlugProps } from '../../types/props'
 
-  export let ctx: RouteInfo
-  export let onClick: ((routeName: string) => void) | null = null
-  export let registerElement: ((routeName: string, element: HTMLElement) => void) | null = null
-  export let unregisterElement: ((routeName: string) => void) | null = null
+  let {
+    ctx,
+    onClick = null,
+    registerElement = null,
+    unregisterElement = null
+  }: PlugProps = $props()
 
   let element: HTMLElement
 

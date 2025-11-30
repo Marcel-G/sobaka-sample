@@ -55,7 +55,6 @@
   this={component}
   {node}
   {disabled}
-  moduleId={module.id}
   {position}
   onClose={handleClose}
   onClone={handleClone}

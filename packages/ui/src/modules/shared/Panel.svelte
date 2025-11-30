@@ -14,27 +14,28 @@
 
 <script lang="ts">
   import { onDestroy } from 'svelte'
-  import { writable, type Readable } from 'svelte/store'
+  import { writable } from 'svelte/store'
 
   import { relative_to_element, useDrag } from '../../actions/drag'
   import type { OnDrag } from '../../actions/drag'
   import { twMerge } from 'tailwind-merge'
+  import type { PanelProps } from '../../types/props'
 
-  export let name: string
-  export let disabled = false
-  export let height = 0
-  export let width = 0
-  
-  // Position and ID props
-  export let moduleId: string = 'storybook-module'
-  export let position: Readable<{ x: number; y: number }> = writable({ x: 0, y: 0 })
-  
-  // Callback props - make the component dumb
-  export let onClose: (() => void) | null = null
-  export let onClone: (() => void) | null = null
-  export let onDrag: ((x: number, y: number) => void) | null = null
-  export let registerElement: ((element: HTMLElement) => void) | null = null
-  export let unregisterElement: (() => void) | null = null
+  let {
+    name,
+    disabled = false,
+    height = 0,
+    width = 0,
+    position = writable({ x: 0, y: 0 }),
+    onClose = null,
+    onClone = null,
+    onDrag = null,
+    registerElement = null,
+    unregisterElement = null,
+    children,
+    inputs,
+    outputs
+  }: PanelProps = $props()
 
   let element: HTMLElement
 
@@ -103,7 +104,6 @@
   class={twMerge('panel', classes.panel, disabled && classes.disabled)}
   style={`grid-column: ${col}; grid-row: ${row};`}
   data-kind="module"
-  data-module-id={moduleId}
 >
   <div class={classes.bar}>
     <span class={classes.name}>{name}</span>
@@ -133,11 +133,17 @@
       </span>
     {/if}
   </div>
-  <slot />
+  {#if children}
+    {@render children()}
+  {/if}
   <div class={classes.inputs}>
-    <slot class="vertical" name="inputs" />
+    {#if inputs}
+      {@render inputs()}
+    {/if}
   </div>
   <div class={classes.outputs}>
-    <slot class="vertical" name="outputs" />
+    {#if outputs}
+      {@render outputs()}
+    {/if}
   </div>
 </div>
