@@ -52,17 +52,20 @@ export const createPositionStores = () => {
     }
 
     const key = linkPointToKey(linkPoint)
-    if (get(plugPositions).has(key)) {
-      const prevPosition = get(plugPositions).get(key)!.position
+    const current = get(plugPositions)
+    if (current.has(key)) {
+      const prevPosition = current.get(key)!.position
       if (isSamePoint(prevPosition, nextPosition)) return
     }
 
+    // Create new Map to trigger reactivity
     plugPositions.update(positions => {
-      positions.set(key, {
+      const newMap = new Map(positions)
+      newMap.set(key, {
         id: linkPoint,
         position: nextPosition
       })
-      return positions
+      return newMap
     })
   }
 
@@ -77,17 +80,20 @@ export const createPositionStores = () => {
       y2: Math.ceil(rect.bottom - workspaceRect.top)
     }
 
-    if (get(modulePositions).has(moduleId)) {
-      const prevPosition = get(modulePositions).get(moduleId)!.position
+    const current = get(modulePositions)
+    if (current.has(moduleId)) {
+      const prevPosition = current.get(moduleId)!.position
       if (isSameRect(prevPosition, nextPosition)) return
     }
 
+    // Create new Map to trigger reactivity
     modulePositions.update(positions => {
-      positions.set(moduleId, {
+      const newMap = new Map(positions)
+      newMap.set(moduleId, {
         id: moduleId,
         position: nextPosition
       })
-      return positions
+      return newMap
     })
   }
 
@@ -123,9 +129,44 @@ export const createPositionStores = () => {
         return linkPoint.moduleId === moduleId
       })
       
-      for (const [key, plugElement] of plugs) {
-        const linkPoint = keyToLinkPoint(key)
-        updatePlugPosition(linkPoint, plugElement)
+      // Batch all plug updates into a single store update
+      if (plugs.length > 0) {
+        const workspace = document.querySelector('[data-kind="workspace"]')
+        const workspaceRect = workspace!.getBoundingClientRect()
+        let hasChanges = false
+        const updates = new Map<string, PlugPosition>()
+        
+        for (const [key, plugElement] of plugs) {
+          const linkPoint = keyToLinkPoint(key)
+          const rect = plugElement.getBoundingClientRect()
+          const nextPosition: Point = {
+            x: Math.floor(rect.left - workspaceRect.left + rect.width / 2),
+            y: Math.floor(rect.top - workspaceRect.top + rect.height / 2)
+          }
+          
+          const currentPlugs = get(plugPositions)
+          if (currentPlugs.has(key)) {
+            const prevPosition = currentPlugs.get(key)!.position
+            if (isSamePoint(prevPosition, nextPosition)) continue
+          }
+          
+          hasChanges = true
+          updates.set(key, {
+            id: linkPoint,
+            position: nextPosition
+          })
+        }
+        
+        // Only update the store once if there are any changes
+        if (hasChanges) {
+          plugPositions.update(positions => {
+            const newMap = new Map(positions)
+            for (const [key, plugPos] of updates) {
+              newMap.set(key, plugPos)
+            }
+            return newMap
+          })
+        }
       }
     })
     

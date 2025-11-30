@@ -33,14 +33,28 @@
     if (!isPartialLink(l)) {
       return []
     }
-    return linkFinder(l, p as Map<string, PlugPosition>, mp, getPlugType)
+    return linkFinder(l, p, mp, getPlugType)
   })
 
-  // Calculate wire paths from links and positions
+  // Calculate path for active link only (updates on mouse move during link creation)
+  const activeLinkPath = derived(
+    [activeLink, plugPositions, modulePositions],
+    ([active, plugs, modules]) => {
+      if (active.length === 0) return []
+      return linker(active, plugs, modules)
+    }
+  )
+
+  // Calculate paths for permanent links (only updates when links or positions change)
+  const permanentPaths = derived(
+    [links, plugPositions, modulePositions],
+    ([links, plugs, modules]) => linker(links, plugs, modules)
+  )
+
+  // Combine both path sets
   const paths = derived(
-    [activeLink, links, plugPositions, modulePositions],
-    ([activeLink, links, plugs, modules]) =>
-      linker([...activeLink, ...links], plugs as Map<string, PlugPosition>, modules as Map<string, ModulePosition>)
+    [activeLinkPath, permanentPaths],
+    ([active, permanent]) => [...active, ...permanent]
   )
 
   function handleClick() {

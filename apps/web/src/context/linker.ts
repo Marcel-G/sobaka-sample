@@ -294,21 +294,6 @@ export const linker = (
     const end = plugPositions.get(linkPointToKey(link.from))?.position
     const start = plugPositions.get(linkPointToKey(link.to))?.position
 
-    // Add special case for the output mixer.
-    // We don't want to have a wire going all the way there because
-    // it would cause clutter.
-    // if (end && plugType(link.to) === PlugType.Mixer) {
-    //   return [
-    //     {
-    //       id: link.id,
-    //       startId: link.to,
-    //       end,
-    //       endId: link.to,
-    //       start: { x: end.x + GRID_STEP * 3, y: end.y }
-    //     }
-    //   ]
-    // }
-
     if (!start || !end) {
       return []
     }
