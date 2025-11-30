@@ -19,6 +19,7 @@ export type ModuleUI =
   | 'Clock'
   | 'Envelope'
   | 'Filter'
+  | 'Mixer'
   | 'Oscillator'
   | 'Parameter'
   | 'Reverb'
