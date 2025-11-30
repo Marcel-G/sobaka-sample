@@ -40,7 +40,7 @@ export class AudioGraph {
    * Reconcile the audio graph with the current state
    * Efficiently updates only what has changed
    */
-  reconcile(modules: Module[], links: Required<Link>[]) {
+  async reconcile(modules: Module[], links: Required<Link>[]) {
     const moduleIds = new Set(modules.map(m => m.id))
     
     for (const module of modules) {
@@ -58,9 +58,9 @@ export class AudioGraph {
       }
     }
 
-    // Step 3: Rebuild connections
-    // Clear all existing connections
-    this.disconnectAll()
+    // Step 3: Rebuild connections with fade-out
+    // Disconnect all existing connections (with fade)
+    await this.disconnectAll()
 
     // Create new connections based on links
     for (const link of links) {
@@ -102,11 +102,34 @@ export class AudioGraph {
   }
 
   /**
-   * Disconnect all audio connections
+   * Disconnect all audio connections with a quick ramp to avoid clicks/pops
+   * Uses AudioParam automation to ramp gain to zero before disconnecting
    */
-  private disconnectAll() {
-    for (const dsp of this.connections.values()) {
-      dsp.disconnect()
+  private async disconnectAll(): Promise<void> {
+    if (this.connections.size === 0) return
+    
+    const RAMP_DURATION = 0.001 // 1ms - very short to avoid perceptible delay
+    const currentTime = this.audioContext.currentTime
+    
+    // For each connection, if it's a GainNode, ramp it down
+    // Otherwise, just wait the ramp duration to let any transients settle
+    const gainRamps: Promise<void>[] = []
+    
+    for (const sourceNode of this.connections.values()) {
+      if (sourceNode instanceof GainNode) {
+        // Schedule a ramp to zero
+        sourceNode.gain.cancelScheduledValues(currentTime)
+        sourceNode.gain.setValueAtTime(sourceNode.gain.value, currentTime)
+        sourceNode.gain.linearRampToValueAtTime(0, currentTime + RAMP_DURATION)
+      }
+    }
+    
+    // Wait for ramp duration
+    await new Promise(resolve => setTimeout(resolve, RAMP_DURATION * 1000))
+    
+    // Now disconnect everything
+    for (const sourceNode of this.connections.values()) {
+      sourceNode.disconnect()
     }
     this.connections.clear()
   }
