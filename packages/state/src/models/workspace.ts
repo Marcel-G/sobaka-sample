@@ -58,7 +58,7 @@ export class Workspace extends SyncedDoc<'workspace'> {
   userStore = writable<Record<string, UserAwareness>>({})
   pendingLinkStore = writable<Partial<Link> | null>(null)
 
-  constructor(doc: Y.Doc, config: Config, audioContext: AudioContext) {
+  constructor(doc: Y.Doc, config: Config) {
     super('workspace', doc, config)
     this.store = syncedStore(WORKSPACE_STORE_SHAPE, doc)
 
@@ -73,11 +73,10 @@ export class Workspace extends SyncedDoc<'workspace'> {
     })
   }
 
-  fork(audioContext: AudioContext) {
+  fork() {
     const workspace = new Workspace(
       this.forkDoc(this.config.currentUser),
       this.config,
-      audioContext
     )
 
     if (!workspace.store.info.title?.endsWith('(fork)')) {
@@ -90,10 +89,9 @@ export class Workspace extends SyncedDoc<'workspace'> {
 
   static fromRef(
     config: Config,
-    audioContext: AudioContext,
     ref?: SubDocReference<Workspace>
   ) {
-    return new Workspace(new Y.Doc(ref), config, audioContext)
+    return new Workspace(new Y.Doc(ref), config)
   }
 
   migrate() {

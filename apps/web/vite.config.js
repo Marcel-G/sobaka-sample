@@ -31,7 +31,7 @@ const config = {
     alias: {
       // Path for max message length issue: https://github.com/yjs/y-webrtc/issues/20
       '@simple-peer': 'simple-peer/simplepeer.min.js',
-      'simple-peer/simplepeer.min.js': path.resolve(__dirname, './src/util/peer.ts')
+      'simple-peer/simplepeer.min.js': path.resolve(__dirname, '../../packages/state/src/networking/peer.ts')
     },
     extensions: ['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json', '.svelte']
   },
