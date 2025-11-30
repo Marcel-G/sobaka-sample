@@ -1,5 +1,5 @@
 import { derived, get, type Readable } from 'svelte/store'
-import { PlugType, type Link } from '@sobaka/state/models/links'
+import { PlugType, type Link, type LinkPoint, linkPointToKey } from '@sobaka/state/models/links'
 import { type PlugPosition } from './positions'
 import type { Position } from '@sobaka/state'
 
@@ -7,10 +7,8 @@ const distance = (a: PlugPosition, b: PlugPosition): number => {
   return Math.abs(a.position.x - b.position.x) + Math.abs(a.position.y - b.position.y)
 }
 
-const moduleId = (id: string) => id.split('/')[0]
-
 const selectEnd = (plugs: PlugPosition[], mousePosition: Position) => {
-  const mouse = { id: 'mouse', position: mousePosition }
+  const mouse = { id: { moduleId: 'mouse', routeName: 'mouse' }, position: mousePosition }
 
   const inMouseRange = plugs.filter(plug => distance(plug, mouse) < 250)
 
@@ -24,23 +22,25 @@ const selectEnd = (plugs: PlugPosition[], mousePosition: Position) => {
 export const linkFinder = (
   link: Partial<Link> | null,
   plugPositions: Map<string, PlugPosition>,
-  mousePosition: Position
+  mousePosition: Position,
+  plugTypeGetter: (linkPoint: LinkPoint) => PlugType
 ): Required<Link>[] => {
   if (link == null || (link.from && link.to)) {
     return []
   }
-  const start = plugPositions.get(link.from || link.to!)
+  const startPoint = link.from || link.to!
+  const start = plugPositions.get(linkPointToKey(startPoint))
   if (!start) {
     return []
   }
 
   const plugs = Array.from(plugPositions.values()).filter(plug => {
-    const type = plugType(plug.id)
+    const type = plugTypeGetter(plug.id)
     if (link.from) {
-      if (moduleId(link.from) === moduleId(plug.id)) return false
-      return [PlugType.Input, PlugType.Param].includes(type)
+      if (link.from.moduleId === plug.id.moduleId) return false
+      return [PlugType.Input, PlugType.Param, PlugType.Mixer].includes(type)
     } else if (link.to) {
-      if (moduleId(link.to) === moduleId(plug.id)) return false
+      if (link.to.moduleId === plug.id.moduleId) return false
       return type === PlugType.Output
     }
     return false
@@ -110,6 +110,9 @@ export const linkFinderCmp = (
   if (a.length !== b.length) return false
   return a.every((_a, i) => {
     const _b = b[i]
-    return _b.from === _a.from && _b.to === _a.to
+    return _b.from.moduleId === _a.from.moduleId && 
+           _b.from.routeName === _a.from.routeName &&
+           _b.to.moduleId === _a.to.moduleId && 
+           _b.to.routeName === _a.to.routeName
   })
 }

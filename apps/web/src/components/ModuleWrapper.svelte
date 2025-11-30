@@ -41,12 +41,12 @@
   }
   
   const handleRegisterPlugElement = (routeName: string, element: HTMLElement) => {
-    const linkPoint = `${module.id}/${routeName}`
+    const linkPoint = { moduleId: module.id, routeName }
     positions.registerPlug(linkPoint, element)
   }
   
   const handleUnregisterPlugElement = (routeName: string) => {
-    const linkPoint = `${module.id}/${routeName}`
+    const linkPoint = { moduleId: module.id, routeName }
     positions.removePlug(linkPoint)
   }
 </script>

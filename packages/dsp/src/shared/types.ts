@@ -22,6 +22,13 @@ export interface ModuleDSP {
   readonly id: string
 
   /** 
+   * Get routing definition for all routes in this module
+   * Returns a map of routeName -> RouteInfo
+   * Optional for now - modules can implement as needed
+   */
+  getRoutingDefinition?(): Record<string, RouteInfo>
+
+  /** 
    * Declaratively define all routing for this module
    * This replaces the imperative getPlugContexts() method
    */

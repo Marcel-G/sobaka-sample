@@ -1,4 +1,5 @@
 import type { LinkPoint } from '@sobaka/state'
+import { linkPointToKey, keyToLinkPoint } from '@sobaka/state/models/links'
 import { get, readonly, writable } from 'svelte/store'
 
 export interface Point {
@@ -28,7 +29,8 @@ const isSameRect = (a: Rectangle, b: Rectangle) =>
   a.x1 === b.x1 && a.y1 === b.y1 && a.x2 === b.x2 && a.y2 === b.y2
 
 export const createPositionStores = () => {
-  const plugPositions = writable<Map<LinkPoint, PlugPosition>>(new Map())
+  // Use string keys for stable Map lookups
+  const plugPositions = writable<Map<string, PlugPosition>>(new Map())
   const modulePositions = writable<Map<string, ModulePosition>>(new Map())
 
   const registerPlug = (linkPoint: LinkPoint, element: Element) => {
@@ -41,13 +43,14 @@ export const createPositionStores = () => {
       y: Math.floor(rect.top - workspaceRect.top + rect.height / 2)
     }
 
-    if (get(plugPositions).has(linkPoint)) {
-      const prevPosition = get(plugPositions).get(linkPoint)!.position
+    const key = linkPointToKey(linkPoint)
+    if (get(plugPositions).has(key)) {
+      const prevPosition = get(plugPositions).get(key)!.position
       if (isSamePoint(prevPosition, nextPosition)) return
     }
 
     plugPositions.update(positions => {
-      positions.set(linkPoint, {
+      positions.set(key, {
         id: linkPoint,
         position: nextPosition
       })
@@ -87,9 +90,9 @@ export const createPositionStores = () => {
     })
   }
 
-  const removePlug = (plugId: string) => {
+  const removePlug = (linkPoint: LinkPoint) => {
     plugPositions.update(positions => {
-      positions.delete(plugId)
+      positions.delete(linkPointToKey(linkPoint))
       return positions
     })
   }

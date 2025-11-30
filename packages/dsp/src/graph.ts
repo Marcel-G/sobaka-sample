@@ -101,6 +101,38 @@ export class AudioGraph {
   }
 
   /**
+   * Get the plug type for a given LinkPoint
+   * Returns the PlugType from the module's routing definition
+   */
+  getPlugType(moduleId: string, routeName: string): PlugType | null {
+    // Handle special global mixer
+    if (moduleId === 'global' && routeName === 'mixer') {
+      return PlugType.Mixer
+    }
+
+    const dsp = this.dspModules.get(moduleId)
+    if (!dsp || !dsp.getRoutingDefinition) return null
+
+    const routing = dsp.getRoutingDefinition()
+    const route = routing[routeName]
+    return route?.type ?? null
+  }
+
+  /**
+   * Validate a link to ensure it connects output -> input/param/mixer
+   */
+  validateLink(from: { moduleId: string, routeName: string }, to: { moduleId: string, routeName: string }): boolean {
+    const fromType = this.getPlugType(from.moduleId, from.routeName)
+    const toType = this.getPlugType(to.moduleId, to.routeName)
+
+    if (!fromType || !toType) return false
+
+    // From must be output, to must be input/param/mixer
+    return fromType === PlugType.Output && 
+           [PlugType.Input, PlugType.Param, PlugType.Mixer].includes(toType)
+  }
+
+  /**
    * Clean up all resources
    */
   destroy() {

@@ -16,7 +16,7 @@
 
   export let mousePosition: Readable<Position>
 
-  const { workspace, positions } = getWorkspace()
+  const { workspace, positions, getPlugType } = getWorkspace()
 
   const intoPath = (points: Point[]): string => {
     return points.reduce((acc, point, i) => {
@@ -34,7 +34,7 @@
 
   const activeLink = memoizeLast(
     derived([partialLink, plugPositions, mousePosition], ([l, p, mp]) =>
-      linkFinder(l, p as Map<LinkPoint, PlugPosition>, mp)
+      linkFinder(l, p as Map<string, PlugPosition>, mp, getPlugType)
     ),
     linkFinderCmp
   )
@@ -44,7 +44,7 @@
       derived([activeLink, links, plugPositions, modulePositions], stores => stores)
     ),
     ([activeLink, links, plugs, modules]) =>
-      linker([...activeLink, ...links], plugs as Map<LinkPoint, PlugPosition>, modules as Map<string, ModulePosition>)
+      linker([...activeLink, ...links], plugs as Map<string, PlugPosition>, modules as Map<string, ModulePosition>)
   )
 
   function handleClick() {
@@ -83,7 +83,7 @@
         cy={line.path.at(-1)!.y}
         r="3"
       />
-      {#if plugType(line.endId) === PlugType.Mixer}
+      {#if getPlugType(line.endId) === PlugType.Mixer}
         <polygon
           points={`
             ${line.path.at(0)!.x},${line.path.at(0)!.y - 5}

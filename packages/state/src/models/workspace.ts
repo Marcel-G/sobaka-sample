@@ -231,16 +231,12 @@ export class Workspace extends SyncedDoc<'workspace'> {
   tryMakeLink(moduleId: string, routeName: string) {
     this.pendingLinkStore.update(link => {
       const next = link ? { ...link } : {}
-      if (!next.to) { // TODO figure out source / dest plugs
-        next.to = {
-          routeName,
-          moduleId
-        }
+      const newPoint = { routeName, moduleId }
+      
+      if (!next.to) {
+        next.to = newPoint
       } else {
-        next.from = {
-          routeName,
-          moduleId
-        }
+        next.from = newPoint
       }
 
       if (isFullyLinked(next)) {
@@ -269,10 +265,24 @@ export class Workspace extends SyncedDoc<'workspace'> {
   addLink(link: Link): string {
     const id = crypto.randomUUID()
     const { links } = this.store
+    
+    // Normalize the link to ensure it's always output -> input/param/mixer
+    const normalizedLink = this.normalizeLink(link)
 
-    links.push({ ...link, id })
+    links.push({ ...normalizedLink, id })
 
     return id
+  }
+
+  /**
+   * Normalize a link to ensure from is always an output and to is always input/param/mixer
+   * This is a temporary implementation until we can use the DSP graph to validate
+   */
+  private normalizeLink(link: Link): Link {
+    // For now, we'll trust the link as-is since the linkFinder should be creating them correctly
+    // In a future iteration, we could check against the DSP graph here
+    // But that would require passing the graph reference to the workspace
+    return link
   }
 
   removeLink(linkId: string) {

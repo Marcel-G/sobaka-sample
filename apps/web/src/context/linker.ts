@@ -1,6 +1,6 @@
 import { MinPriorityQueue as PriorityQueue } from '@datastructures-js/priority-queue'
 import type { ModulePosition, PlugPosition, Point, Rectangle } from './positions'
-import { type Link, type LinkPoint } from '@sobaka/state/models/links'
+import { type Link, type LinkPoint, linkPointToKey } from '@sobaka/state/models/links'
 export interface PathRequest {
   id?: string
   start: Point
@@ -285,14 +285,14 @@ const GRID_STEP = 8
 
 export const linker = (
   links: Link[],
-  plugPositions: Map<LinkPoint, PlugPosition>,
+  plugPositions: Map<string, PlugPosition>,
   modulePositions: Map<string, ModulePosition>
 ) => {
   const obstacles = Array.from(modulePositions.values().map(module => module.position))
 
   const requests: PathRequest[] = links.flatMap(link => {
-    const end = plugPositions.get(link.from)?.position
-    const start = plugPositions.get(link.to)?.position
+    const end = plugPositions.get(linkPointToKey(link.from))?.position
+    const start = plugPositions.get(linkPointToKey(link.to))?.position
 
     // Add special case for the output mixer.
     // We don't want to have a wire going all the way there because
