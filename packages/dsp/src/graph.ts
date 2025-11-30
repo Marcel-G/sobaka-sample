@@ -8,7 +8,7 @@ import { ClockNode } from "./module/clock/node";
  * This should be implemented to instantiate the appropriate module type
  */
 const createAudioModule = (module: Module, audioContext: AudioContext): ModuleDSP => {
-  if (module.type === 'Clock') return new ClockNode(module.id, audioContext)
+  if (module.type === 'Clock') return new ClockNode(module.id, audioContext, module.state as any)
   throw new Error('not implemented: createAudioModule for type ' + module.type)
 }
 

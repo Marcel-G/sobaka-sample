@@ -116,7 +116,7 @@
               classes.barButtonHover,
               classes.barButtonActive
             )}
-            on:click={() => onClone?.()}>+</button
+            onclick={onClone}>+</button
           >
         {/if}
         {#if onClose}
@@ -127,7 +127,7 @@
               classes.barButtonActive,
               'rounded-tr-[calc(var(--radius-lg)-2px)]'
             )}
-            on:click={() => onClose?.()}>x</button
+            onclick={onClose}>x</button
           >
         {/if}
       </span>

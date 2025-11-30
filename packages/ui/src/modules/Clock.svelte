@@ -6,6 +6,7 @@
   import { create_bpm_range } from '../range/range_creators'
   import { ClockNode } from '@sobaka/dsp'
   import type { BaseModuleProps } from '../types/props'
+    import { intoReadable } from '@sobaka/state/util/store';
 
   interface ClockProps extends BaseModuleProps {
     node: ClockNode
@@ -15,17 +16,18 @@
     node,
     disabled = false,
     position,
-    onClose = null,
-    onClone = null,
-    onDrag = null,
-    onPlugClick = null,
-    registerPlugElement = null,
-    unregisterPlugElement = null,
-    registerElement = null,
-    unregisterElement = null
+    onClose,
+    onClone,
+    onDrag,
+    onPlugClick,
+    registerPlugElement,
+    unregisterPlugElement,
+    registerElement,
+    unregisterElement
   }: ClockProps = $props()
 
   let name = node.name
+  const state = intoReadable(node.state);
   
   const routing = node.getRoutingDefinition()
 
@@ -48,7 +50,7 @@
 >
   {#snippet children()}
     <Layout type="center">
-      <Knob {disabled} bind:value={node.state.bpm} range={bpm} label="bpm">
+      <Knob {disabled} bind:value={$state.bpm} range={bpm} label="bpm">
         <div slot="knob-inputs">
           <Plug 
             ctx={routing.bpm} 

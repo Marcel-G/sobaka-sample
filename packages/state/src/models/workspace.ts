@@ -7,35 +7,13 @@ import cloneDeep from 'lodash/cloneDeep'
 import { intoReadable } from '../util/store'
 import { type SubDocReference } from '../util/subdoc'
 import { SyncedDoc, type Config } from './syncedDoc'
-import { isFullyLinked, PlugType, type Link } from './links'
+import { isFullyLinked, type Link } from './links'
 
 export interface Position {
   x: number
   y: number
 }
 
-// Module types - these should match the UI module types
-export type ModuleUI = 
-  | 'Clock'
-  | 'Envelope'
-  | 'Filter'
-  | 'Mixer'
-  | 'Oscillator'
-  | 'Parameter'
-  | 'Reverb'
-  | 'Sequencer'
-  | 'StepSequencer'
-  | 'Vca'
-  | 'Noise'
-  | 'Delay'
-  | 'Scope'
-  | 'SpecScope'
-  | 'Lfo'
-  | 'Quantiser'
-  | 'SampleAndHold'
-
-// Initial state registry - can be populated by UI layer
-export const INITIAL_STATE: Record<ModuleUI, any> = {} as any
 
 export interface WorkspaceDoc {
   modules: Array<Module>
@@ -44,7 +22,7 @@ export interface WorkspaceDoc {
 
 export interface Module {
   id: string
-  type: ModuleUI
+  type: string
   state: Record<string, unknown> // Needs to be mutable from inside a module
   position: {
     x: number
@@ -158,7 +136,7 @@ export class Workspace extends SyncedDoc<'workspace'> {
   // No plug registration methods needed here - the graph manages everything
 
   // Module actions
-  create_module(type: ModuleUI, position: { x: number; y: number }): string {
+  create_module(type: string, position: { x: number; y: number }): string {
     const id = crypto.randomUUID()
 
     const { modules } = this.store
@@ -169,7 +147,7 @@ export class Workspace extends SyncedDoc<'workspace'> {
         type,
         // TS doesn't know about svelte module imports - https://github.com/sveltejs/svelte/issues/5817
 
-        state: INITIAL_STATE[type],
+        state: {},
         position
       })
     }
@@ -209,7 +187,7 @@ export class Workspace extends SyncedDoc<'workspace'> {
     }
 
     links
-      .filter(link => link.from.startsWith(id) || link.to.startsWith(id))
+      .filter(link => link.from.moduleId === id || link.to.moduleId === id)
       .map(link => link.id)
       .forEach(id => this.remove_link(id))
   }
