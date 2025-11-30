@@ -39,10 +39,10 @@
 
   let element: HTMLElement
 
-  $: col = `${$position.x + 1} / span ${width}`
-  $: row = `${$position.y + 1} / span ${height}`
+  const col = $derived(`${$position.x + 1} / span ${width}`)
+  const row = $derived(`${$position.y + 1} / span ${height}`)
 
-  $: {
+  $effect(() => {
     // position values must be subscribed to in here to trigger reactivity
     // even if we don't really need the values of x and y
     if (registerElement && element && ($position.x !== 0 || $position.y !== 0)) {
@@ -50,7 +50,7 @@
         registerElement(element)
       })
     }
-  }
+  })
 
   onDestroy(() => {
     unregisterElement?.()

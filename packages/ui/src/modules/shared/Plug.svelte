@@ -24,11 +24,13 @@
     onClick?.(ctx.name)
   }
   
-  $: if (registerElement && element) {
-    requestAnimationFrame(() => {
-      registerElement(ctx.name, element)
-    })
-  }
+  $effect(() => {
+    if (registerElement && element) {
+      requestAnimationFrame(() => {
+        registerElement(ctx.name, element)
+      })
+    }
+  })
   
   onDestroy(() => {
     unregisterElement?.(ctx.name)
