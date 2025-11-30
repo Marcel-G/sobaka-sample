@@ -42,32 +42,44 @@ export class AudioGraph {
    */
   async reconcile(modules: Module[], links: Required<Link>[]) {
     const moduleIds = new Set(modules.map(m => m.id))
+    const linkIds = new Set(links.map(l => l.id))
     
+    // Step 1: Add new modules
     for (const module of modules) {
       if (!this.dspModules.has(module.id)) {
-        // Create new DSP module
         const dsp = createAudioModule(module, this.audioContext)
         this.dspModules.set(module.id, dsp)
       }
     }
 
+    // Step 2: Disconnect and remove deleted links (with fade)
+    const removedLinkIds: string[] = []
+    for (const [linkId] of this.connections.entries()) {
+      if (!linkIds.has(linkId)) {
+        removedLinkIds.push(linkId)
+      }
+    }
+    
+    if (removedLinkIds.length > 0) {
+      await this.disconnectLinks(removedLinkIds)
+    }
+
+    // Step 3: Add new connections
+    for (const link of links) {
+      if (!this.connections.has(link.id)) {
+        try {
+          this.connect(link)
+        } catch (err) {
+          console.warn('Failed to connect link:', link, err)
+        }
+      }
+    }
+
+    // Step 4: Remove deleted modules (after disconnecting their links)
     for (const [id, dsp] of this.dspModules.entries()) {
       if (!moduleIds.has(id)) {
         dsp.destroy()
         this.dspModules.delete(id)
-      }
-    }
-
-    // Step 3: Rebuild connections with fade-out
-    // Disconnect all existing connections (with fade)
-    await this.disconnectAll()
-
-    // Create new connections based on links
-    for (const link of links) {
-      try {
-        this.connect(link)
-      } catch (err) {
-        console.warn('Failed to connect link:', link, err)
       }
     }
   }
@@ -102,36 +114,45 @@ export class AudioGraph {
   }
 
   /**
-   * Disconnect all audio connections with a quick ramp to avoid clicks/pops
+   * Disconnect specific links with a quick ramp to avoid clicks/pops
    * Uses AudioParam automation to ramp gain to zero before disconnecting
    */
-  private async disconnectAll(): Promise<void> {
-    if (this.connections.size === 0) return
+  private async disconnectLinks(linkIds: string[]): Promise<void> {
+    if (linkIds.length === 0) return
     
     const RAMP_DURATION = 0.001 // 1ms - very short to avoid perceptible delay
     const currentTime = this.audioContext.currentTime
     
-    // For each connection, if it's a GainNode, ramp it down
-    // Otherwise, just wait the ramp duration to let any transients settle
-    const gainRamps: Promise<void>[] = []
+    // Collect the nodes we're about to disconnect and ramp them if possible
+    const nodesToDisconnect: AudioNode[] = []
     
-    for (const sourceNode of this.connections.values()) {
-      if (sourceNode instanceof GainNode) {
-        // Schedule a ramp to zero
-        sourceNode.gain.cancelScheduledValues(currentTime)
-        sourceNode.gain.setValueAtTime(sourceNode.gain.value, currentTime)
-        sourceNode.gain.linearRampToValueAtTime(0, currentTime + RAMP_DURATION)
+    for (const linkId of linkIds) {
+      const sourceNode = this.connections.get(linkId)
+      if (sourceNode) {
+        nodesToDisconnect.push(sourceNode)
+        
+        // If it's a GainNode, ramp it down
+        if (sourceNode instanceof GainNode) {
+          sourceNode.gain.cancelScheduledValues(currentTime)
+          sourceNode.gain.setValueAtTime(sourceNode.gain.value, currentTime)
+          sourceNode.gain.linearRampToValueAtTime(0, currentTime + RAMP_DURATION)
+        }
       }
     }
     
     // Wait for ramp duration
-    await new Promise(resolve => setTimeout(resolve, RAMP_DURATION * 1000))
-    
-    // Now disconnect everything
-    for (const sourceNode of this.connections.values()) {
-      sourceNode.disconnect()
+    if (nodesToDisconnect.length > 0) {
+      await new Promise(resolve => setTimeout(resolve, RAMP_DURATION * 1000))
     }
-    this.connections.clear()
+    
+    // Now disconnect only the specified links
+    for (const linkId of linkIds) {
+      const sourceNode = this.connections.get(linkId)
+      if (sourceNode) {
+        sourceNode.disconnect()
+        this.connections.delete(linkId)
+      }
+    }
   }
 
   moduleNode(moduleId: string) {
@@ -181,9 +202,16 @@ export class AudioGraph {
 
   /**
    * Clean up all resources
+   * Disconnects immediately without fade since we're tearing down
    */
   destroy() {
-    this.disconnectAll()
+    // Disconnect all connections immediately (no fade needed on teardown)
+    for (const sourceNode of this.connections.values()) {
+      sourceNode.disconnect()
+    }
+    this.connections.clear()
+    
+    // Destroy all DSP modules
     for (const dsp of this.dspModules.values()) {
       dsp.destroy()
     }
