@@ -1,12 +1,12 @@
 import init, { registerContext } from '@sobaka/dsp/wasm'
 
 export const load = async (ctx: AudioContext) => {
-  const handle_interaction = () => {
+  const handleInteraction = () => {
     if (ctx.state === 'suspended') {
       void ctx?.resume()
     }
   }
-  document?.addEventListener('click', handle_interaction, { once: true })
+  document?.addEventListener('click', handleInteraction, { once: true })
 
   await init()
   await registerContext(ctx)

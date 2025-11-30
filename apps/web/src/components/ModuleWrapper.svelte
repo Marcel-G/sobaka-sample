@@ -1,30 +1,30 @@
 <script lang="ts">
-  import { get_component } from '@sobaka/ui/modules'
+  import { getComponent } from '@sobaka/ui/modules'
   import { type Module } from '@sobaka/state/models/workspace'
-  import { get_workspace } from '../context/workspace'
+  import { getWorkspace } from '../context/workspace'
 
   export let module: Module
   export let disabled = false
 
-  const { workspace, dsp, positions } = get_workspace()
+  const { workspace, dsp, positions } = getWorkspace()
   
-  const position = workspace.module_position(module.id)
+  const position = workspace.modulePosition(module.id)
   const node = dsp.moduleNode(module.id)
 
-  const component = get_component(module)
+  const component = getComponent(module)
   
   // Callback handlers - bridge between dumb UI and smart workspace
   // Panel callbacks - these already know the moduleId from closure
   const handleClose = () => {
-    workspace.remove_module(module.id)
+    workspace.removeModule(module.id)
   }
   
   const handleClone = () => {
-    workspace.clone_module(module.id)
+    workspace.cloneModule(module.id)
   }
   
   const handleDrag = (x: number, y: number) => {
-    workspace.move_module(module.id, x, y)
+    workspace.moveModule(module.id, x, y)
   }
   
   const handleRegisterElement = (element: HTMLElement) => {
@@ -37,7 +37,7 @@
   
   // Plug callbacks - map routeName to full linkPoint
   const handlePlugClick = (routeName: string) => {
-    workspace.try_make_link(module.id, routeName)
+    workspace.tryMakeLink(module.id, routeName)
   }
   
   const handleRegisterPlugElement = (routeName: string, element: HTMLElement) => {

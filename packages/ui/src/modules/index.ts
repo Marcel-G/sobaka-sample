@@ -5,6 +5,6 @@ export const MODULES = {
   Clock,
 } as const
 
-export const get_component = (module: Module) => {
+export const getComponent = (module: Module) => {
   return MODULES[module.type as keyof typeof MODULES]
 }

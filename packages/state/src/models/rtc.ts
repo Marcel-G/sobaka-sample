@@ -28,16 +28,16 @@ export class VerifiedRTCProvider extends WebrtcProvider {
 
     for (const signal of this.signalingConns) {
       signal.on('message', (message: SignalingMessage) =>
-        this.handle_signal_message(message)
+        this.handleSignalMessage(message)
       )
     }
 
     this.on('peers', () => {
-      this.handle_peer_change()
+      this.handlePeerChange()
     })
   }
 
-  private handle_peer_change() {
+  private handlePeerChange() {
     for (const conn of this.room?.webrtcConns?.values() || []) {
       if (this.peers.has(conn)) continue
 
@@ -57,7 +57,7 @@ export class VerifiedRTCProvider extends WebrtcProvider {
 
         if (
           this.filterIncomingMessage(peerIdentity, data) ||
-          is_read_only_message(data)
+          isReadOnlyMessage(data)
         ) {
           existingListeners.forEach(listener => listener(data))
         } else {
@@ -69,7 +69,7 @@ export class VerifiedRTCProvider extends WebrtcProvider {
     }
   }
 
-  private handle_signal_message(message: SignalingMessage) {
+  private handleSignalMessage(message: SignalingMessage) {
     if (message.type === 'publish') {
       const { data, identity, kind } = message
       if (kind === 'client' && !this.verifiedPeerIdentities.has(data.from)) {
@@ -95,7 +95,7 @@ export class VerifiedRTCProvider extends WebrtcProvider {
   }
 }
 
-function is_read_only_message(data: Uint8Array) {
+function isReadOnlyMessage(data: Uint8Array) {
   const [byte1, byte2] = data
   // It suffices to read the first two bytes in order to determine whether a message should be accepted from a read-only user.
   // https://github.com/yjs/y-protocols/blob/40dbe4eebb1e53a7e86932ef3232f9abd5037569/PROTOCOL.md?plain=1#L100-L111

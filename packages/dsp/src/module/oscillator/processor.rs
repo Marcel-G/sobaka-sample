@@ -125,6 +125,7 @@ impl OscillatorNode {
         Ok(OscillatorNode { node, sender })
     }
 
+    #[wasm_bindgen(js_name = "setShape")]
     pub fn set_shape(&self, shape: OscillatorShape) {
         if self.sender.try_send(Message::SetShape(shape)).is_ok() {};
     }

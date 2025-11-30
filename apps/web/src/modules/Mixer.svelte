@@ -16,9 +16,9 @@
   import { getGlobalCtx } from '../context/global'
   import Layout from '@sobaka/ui/components/Layout.svelte'
   import RingSpinner from '@sobaka/ui/components/RingSpinner.svelte'
-  import { create_volume_range } from '@sobaka/ui/range/range_creators'
+  import { createVolumeRange } from '@sobaka/ui/range/range_creators'
   import LevelIndicator from '@sobaka/ui/components/LevelIndicator.svelte'
-  import { get_workspace } from '../context/workspace'
+  import { getWorkspace } from '../context/workspace'
 
   export let state: State = initialState
   export let disabled = false
@@ -26,9 +26,9 @@
   let gain: GainNode
   let loading = true
 
-  const { workspace } = get_workspace()
+  const { workspace } = getWorkspace()
   const context = getGlobalCtx()
-  const volume = create_volume_range()
+  const volume = createVolumeRange()
 
   onMount(async () => {
     gain = context.audio.createGain()
@@ -59,7 +59,7 @@
     >
       <button
         on:click={() => {
-          workspace.try_make_link_to_mixer()
+          workspace.tryMakeLinkToMixer()
         }}
       >
         Link

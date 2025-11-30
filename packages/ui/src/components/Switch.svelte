@@ -3,8 +3,8 @@
 </script>
 
 <script lang="ts">
-  import { from_normalised, to_normalised } from '../range/range_functions'
-  import useDrag, { type OnDrag, relative_to_element } from '../actions/drag'
+  import { fromNormalised, toNormalised } from '../range/range_functions'
+  import useDrag, { type OnDrag, relativeToElement } from '../actions/drag'
   import useWheel, { type OnWheel } from '../actions/wheel'
   import Dial from './Knob/Dial.svelte'
 
@@ -13,21 +13,21 @@
   export let label: string
   export let disabled = false
 
-  $: normalised_value = to_normalised(range, value)
+  $: normalisedValue = toNormalised(range, value)
 
-  let start_value = normalised_value
-  const capture_start_value = () => {
-    start_value = normalised_value
+  let startValue = normalisedValue
+  const captureStartValue = () => {
+    startValue = normalisedValue
   }
 
-  const handle_drag: OnDrag = (event, origin, element) => {
-    const { y } = relative_to_element(event, origin, element)
+  const handleDrag: OnDrag = (event, origin, element) => {
+    const { y } = relativeToElement(event, origin, element)
     const delta = (-1 * y) / 250
-    value = from_normalised(range, start_value + delta)
+    value = fromNormalised(range, startValue + delta)
   }
 
-  const handle_wheel: OnWheel = (_, position) => {
-    value = from_normalised(range, start_value + position.y)
+  const handleWheel: OnWheel = (_, position) => {
+    value = fromNormalised(range, startValue + position.y)
   }
 </script>
 
@@ -41,8 +41,8 @@
 {:else}
   <div
     class="switch"
-    use:useDrag={{ onDrag: handle_drag, onDragStart: capture_start_value }}
-    use:useWheel={{ onWheel: handle_wheel, onWheelStart: capture_start_value }}
+    use:useDrag={{ onDrag: handleDrag, onDragStart: captureStartValue }}
+    use:useWheel={{ onWheel: handleWheel, onWheelStart: captureStartValue }}
   >
     <Dial {value} {range} {label} />
     <div class="input">

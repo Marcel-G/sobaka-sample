@@ -32,7 +32,7 @@ export class QuantiserDSP implements ModuleDSP {
     const quantiserState = state as QuantiserState
     
     const notes = quantiserState.notes.map(({ value }) => value)
-    this.quantiser.update_notes(notes)
+    this.quantiser.updateNotes(notes)
   }
 
   getRoute(): ModuleRouting {

@@ -42,7 +42,7 @@ export class OscillatorDSP implements ModuleDSP {
     // Update shape
     const shape = SHAPES[oscState.shape]
     if (shape) {
-      this.oscillator.set_shape(shape)
+      this.oscillator.setShape(shape)
     }
   }
 

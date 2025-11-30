@@ -64,6 +64,7 @@ impl QuantiserNode {
     }
 
     // TODO: better type for notes
+    #[wasm_bindgen(js_name = "updateNotes")]
     pub fn update_notes(&self, notes: Array) {
         let notes: [bool; 12] = notes
             .to_vec()

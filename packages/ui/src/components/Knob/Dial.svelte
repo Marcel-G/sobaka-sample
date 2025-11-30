@@ -4,7 +4,7 @@
 
 <script lang="ts">
   import Arc from './Arc.svelte'
-  import { to_normalised } from '../../range/range_functions'
+  import { toNormalised } from '../../range/range_functions'
   import Tooltip from '../Tooltip.svelte'
 
   export let value = 0.0
@@ -13,7 +13,7 @@
 
   const baseAngle = 135
 
-  $: normalised_value = to_normalised(range, value)
+  $: normalisedValue = toNormalised(range, value)
 </script>
 
 <div class="row-start-1 col-start-2">
@@ -34,7 +34,7 @@
         radius={40}
         stroke-width="12"
         startAngle={range.type === RangeType.Continuous && range.bipolar ? 0 : -baseAngle}
-        endAngle={-baseAngle + baseAngle * 2 * normalised_value}
+        endAngle={-baseAngle + baseAngle * 2 * normalisedValue}
         class="stroke-module-accent"
       />
     </svg>

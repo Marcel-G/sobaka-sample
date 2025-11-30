@@ -7,8 +7,8 @@
 
   export let workspaceList: WorkspaceList
 
-  const workspace_refs = workspaceList.workspaces()
-  $: workspaces = $workspace_refs.map(ref => global.workspaces.get(ref))
+  const workspaceRefs = workspaceList.workspaces()
+  $: workspaces = $workspaceRefs.map(ref => global.workspaces.get(ref))
 </script>
 
 <ul class="space-y-1">

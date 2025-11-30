@@ -1,10 +1,10 @@
 <script lang="ts">
   import Avatar from 'svelte-boring-avatars'
-  import { get_workspace } from '../../context/workspace'
+  import { getWorkspace } from '../../context/workspace'
 
-  const space = get_workspace()
+  const space = getWorkspace()
 
-  const users = space.workspace.user_store
+  const users = space.workspace.userStore
 </script>
 
 {#if Object.values($users).length}

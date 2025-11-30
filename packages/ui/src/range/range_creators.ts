@@ -1,6 +1,6 @@
 import { type ContinuousRange, type ChoiceRange, RangeType, Scale } from './range'
 
-export const create_volume_range = (start = 0, end = 1): ContinuousRange => ({
+export const createVolumeRange = (start = 0, end = 1): ContinuousRange => ({
   type: RangeType.Continuous,
   start,
   end,
@@ -28,7 +28,7 @@ export const create_volume_range = (start = 0, end = 1): ContinuousRange => ({
  * @param start The start value (default = 0).
  * @param end The end value (default = 1).
  */
-export const create_percentage_range = (start = 0, end = 1): ContinuousRange => ({
+export const createPercentageRange = (start = 0, end = 1): ContinuousRange => ({
   type: RangeType.Continuous,
   start,
   end,
@@ -44,7 +44,7 @@ export const create_percentage_range = (start = 0, end = 1): ContinuousRange => 
  * @param start The start value (default = 0).
  * @param end The end value (default = 1).
  */
-export const create_bipolar_percentage_range = (start = 0, end = 1): ContinuousRange => ({
+export const createBipolarPercentageRange = (start = 0, end = 1): ContinuousRange => ({
   type: RangeType.Continuous,
   start,
   end,
@@ -61,7 +61,7 @@ export const create_bipolar_percentage_range = (start = 0, end = 1): ContinuousR
  * @param start The start value (default = 0).
  * @param end The end value (default = 1).
  */
-export const create_accurate_percentage_range = (
+export const createAccuratePercentageRange = (
   start = 0,
   end = 1
 ): ContinuousRange => ({
@@ -82,7 +82,7 @@ export const create_accurate_percentage_range = (
  * @param offLabel The label for when the value is 0.
  * @param onLabel The label for when the value is 1.
  */
-export const create_toggle_range = (offLabel = 'Off', onLabel = 'On'): ChoiceRange => ({
+export const createToggleRange = (offLabel = 'Off', onLabel = 'On'): ChoiceRange => ({
   type: RangeType.Choice,
   choices: [
     { value: 0, label: offLabel },
@@ -96,7 +96,7 @@ export const create_toggle_range = (offLabel = 'Off', onLabel = 'On'): ChoiceRan
  * @param offLabel The label for when the value is 0.
  * @param onLabel The label for when the value is 1.
  */
-export const create_time_range = (start = 0, end = 1): ContinuousRange => ({
+export const createTimeRange = (start = 0, end = 1): ContinuousRange => ({
   type: RangeType.Continuous,
   start,
   end,
@@ -114,14 +114,14 @@ export const create_time_range = (start = 0, end = 1): ContinuousRange => ({
   }
 })
 
-export const create_scale_range = (start = 0, end = 1): ContinuousRange => ({
+export const createScaleRange = (start = 0, end = 1): ContinuousRange => ({
   type: RangeType.Continuous,
   start,
   end,
   step: 0.01
 })
 
-export const create_bipolar_scale_range = (start = -1, end = 1): ContinuousRange => ({
+export const createBipolarScaleRange = (start = -1, end = 1): ContinuousRange => ({
   type: RangeType.Continuous,
   start,
   end,
@@ -129,7 +129,7 @@ export const create_bipolar_scale_range = (start = -1, end = 1): ContinuousRange
   step: 0.01
 })
 
-const note_to_voltage = (note: string): number => {
+const noteToVoltage = (note: string): number => {
   const octave = parseInt(note.slice(-1), 10)
   const noteName = note.slice(0, -1)
   const noteIndex = [
@@ -149,14 +149,14 @@ const note_to_voltage = (note: string): number => {
   return octave + noteIndex / 12
 }
 
-export const create_volt_per_octave_range = (start = 0, end = 8): ContinuousRange => ({
+export const createVoltPerOctaveRange = (start = 0, end = 8): ContinuousRange => ({
   type: RangeType.Continuous,
   start,
   end,
   stringMatcher: value => Boolean(value.match(/^[A-g]#?[0-9]+/g)),
   stringToValue: (value: number, unit: string) => {
     if (unit.match(/^[A-g]#?[0-9]+/g)) {
-      return note_to_voltage(unit)
+      return noteToVoltage(unit)
     } else if (unit === 'hz') {
       return Math.log2(value / 16.35)
     } else if (unit === 'khz') {
@@ -167,7 +167,7 @@ export const create_volt_per_octave_range = (start = 0, end = 8): ContinuousRang
   }
 })
 
-export const create_bpm_range = (start = 0, end = 320): ContinuousRange => ({
+export const createBpmRange = (start = 0, end = 320): ContinuousRange => ({
   type: RangeType.Continuous,
   start,
   end,

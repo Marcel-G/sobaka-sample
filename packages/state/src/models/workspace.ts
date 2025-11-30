@@ -51,8 +51,8 @@ type UserAwareness = {
 
 export class Workspace extends SyncedDoc<'workspace'> {
   private store: ReturnType<typeof syncedStore<WorkspaceStore>>
-  user_store = writable<Record<string, UserAwareness>>({})
-  pending_link_store = writable<Partial<Link> | null>(null)
+  userStore = writable<Record<string, UserAwareness>>({})
+  pendingLinkStore = writable<Partial<Link> | null>(null)
 
   constructor(doc: Y.Doc, config: Config, audioContext: AudioContext) {
     super('workspace', doc, config)
@@ -129,14 +129,14 @@ export class Workspace extends SyncedDoc<'workspace'> {
       }
     })
 
-    this.user_store.update(() => newState)
+    this.userStore.update(() => newState)
   }
 
   // Note: Plug registration is handled by the AudioGraph in the DSP package
   // No plug registration methods needed here - the graph manages everything
 
   // Module actions
-  create_module(type: string, position: { x: number; y: number }): string {
+  createModule(type: string, position: { x: number; y: number }): string {
     const id = crypto.randomUUID()
 
     const { modules } = this.store
@@ -155,7 +155,7 @@ export class Workspace extends SyncedDoc<'workspace'> {
     return id
   }
 
-  move_module(id: string, x: number, y: number): boolean {
+  moveModule(id: string, x: number, y: number): boolean {
     const { modules } = this.store
 
     const module = modules.find(byModuleId(id))
@@ -178,7 +178,7 @@ export class Workspace extends SyncedDoc<'workspace'> {
     return true
   }
 
-  remove_module(id: string) {
+  removeModule(id: string) {
     const { modules, links } = this.store
 
     const index = modules.findIndex(byModuleId(id))
@@ -189,10 +189,10 @@ export class Workspace extends SyncedDoc<'workspace'> {
     links
       .filter(link => link.from.moduleId === id || link.to.moduleId === id)
       .map(link => link.id)
-      .forEach(id => this.remove_link(id))
+      .forEach(id => this.removeLink(id))
   }
 
-  clone_module(id: string) {
+  cloneModule(id: string) {
     const { modules } = this.store
 
     const module = modules.find(byModuleId(id))
@@ -215,7 +215,7 @@ export class Workspace extends SyncedDoc<'workspace'> {
   }
 
   // Module selectors
-  module_position(id: string): Readable<Position> {
+  modulePosition(id: string): Readable<Position> {
     return derived(intoReadable(this.store.modules), modules => {
       const mod = modules.find(byModuleId(id))
       if (mod) {
@@ -226,8 +226,8 @@ export class Workspace extends SyncedDoc<'workspace'> {
     })
   }
 
-  try_make_link(moduleId: string, routeName: string) {
-    this.pending_link_store.update(link => {
+  tryMakeLink(moduleId: string, routeName: string) {
+    this.pendingLinkStore.update(link => {
       const next = link ? { ...link } : {}
       if (!next.to) { // TODO figure out source / dest plugs
         next.to = {
@@ -242,7 +242,7 @@ export class Workspace extends SyncedDoc<'workspace'> {
       }
 
       if (isFullyLinked(next)) {
-        this.add_link(next)
+        this.addLink(next)
         return null
       }
 
@@ -250,10 +250,10 @@ export class Workspace extends SyncedDoc<'workspace'> {
     })
   }
 
-  try_make_link_to_mixer(chan = 0) {
-    this.pending_link_store.update(link => {
+  tryMakeLinkToMixer(chan = 0) {
+    this.pendingLinkStore.update(link => {
       if (link?.from) {
-        this.add_link({
+        this.addLink({
           from: link.from,
           to: { moduleId: 'global', routeName: 'mixer' }
         })
@@ -264,7 +264,7 @@ export class Workspace extends SyncedDoc<'workspace'> {
   }
 
   // Link actions
-  add_link(link: Link): string {
+  addLink(link: Link): string {
     const id = crypto.randomUUID()
     const { links } = this.store
 
@@ -273,9 +273,9 @@ export class Workspace extends SyncedDoc<'workspace'> {
     return id
   }
 
-  remove_link(link_id: string) {
+  removeLink(linkId: string) {
     const { links } = this.store
-    const index = links.findIndex(byLinkId(link_id))
+    const index = links.findIndex(byLinkId(linkId))
     if (index >= 0) {
       links.splice(index, 1)
     }

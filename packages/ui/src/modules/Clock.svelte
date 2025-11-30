@@ -3,7 +3,7 @@
   import Plug from './shared/Plug.svelte'
   import Knob from '../components/Knob/Knob.svelte'
   import Layout from '../components/Layout.svelte'
-  import { create_bpm_range } from '../range/range_creators'
+  import { createBpmRange } from '../range/range_creators'
   import { ClockNode } from '@sobaka/dsp'
   import type { BaseModuleProps } from '../types/props'
     import { intoReadable } from '@sobaka/state/util/store';
@@ -31,7 +31,7 @@
   
   const routing = node.getRoutingDefinition()
 
-  const bpm = create_bpm_range()
+  const bpm = createBpmRange()
 </script>
 
 <Panel

@@ -16,7 +16,7 @@ export const useWheel: Action<
   let y = 0
   let wheelingTimeout: ReturnType<typeof setTimeout>
 
-  const handle_wheel = (event: Event) => {
+  const handleWheel = (event: Event) => {
     if (!(event instanceof WheelEvent)) return
 
     event.stopPropagation()
@@ -40,11 +40,11 @@ export const useWheel: Action<
     }, 500)
   }
 
-  node.addEventListener('wheel', handle_wheel)
+  node.addEventListener('wheel', handleWheel)
 
   return {
     destroy() {
-      node.removeEventListener('wheel', handle_wheel)
+      node.removeEventListener('wheel', handleWheel)
     }
   }
 }

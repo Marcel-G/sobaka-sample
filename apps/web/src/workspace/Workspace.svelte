@@ -1,5 +1,5 @@
 <script context="module" lang="ts">
-  export const mouse_position = writable<Position>({ x: 0, y: 0 })
+  export const mousePosition = writable<Position>({ x: 0, y: 0 })
 </script>
 
 <script lang="ts">
@@ -8,53 +8,53 @@
   import ModuleWrapper from '../components/ModuleWrapper.svelte'
   import Toolbox from '../components/Toolbox.svelte'
   import Wires from '../components/Wires.svelte'
-  import { get_workspace } from '../context/workspace'
+  import { getWorkspace } from '../context/workspace'
   import AvatarList from '../components/collaborative/AvatarList.svelte'
   import Mixer from '../modules/Mixer.svelte'
   import type { Position } from '@sobaka/state'
 
-  let toolbox_visible = false
-  let toolbox_position: Position = { x: 0, y: 0 }
-  let workspace_element: Element
+  let toolboxVisible = false
+  let toolboxPosition: Position = { x: 0, y: 0 }
+  let workspaceElement: Element
 
-  const { workspace } = get_workspace()
+  const { workspace } = getWorkspace()
   const modules = workspace.modules
   const isEditable = workspace.isEditable
 
-  const handle_double_click = (event: MouseEvent) => {
+  const handleDoubleClick = (event: MouseEvent) => {
     if (!$isEditable) return
-    $mouse_position = { x: event.offsetX, y: event.offsetY }
-    toolbox_visible = true
-    toolbox_position = $mouse_position
+    $mousePosition = { x: event.offsetX, y: event.offsetY }
+    toolboxVisible = true
+    toolboxPosition = $mousePosition
   }
 
-  const handle_global_keydown = (event: KeyboardEvent) => {
+  const handleGlobalKeydown = (event: KeyboardEvent) => {
     if (!$isEditable) return
-    if (event.code === 'Space' && !toolbox_visible) {
+    if (event.code === 'Space' && !toolboxVisible) {
       event.preventDefault()
-      toolbox_visible = true
-      toolbox_position = $mouse_position
+      toolboxVisible = true
+      toolboxPosition = $mousePosition
     } else if (event.code === 'Escape') {
-      workspace.pending_link_store.update(() => null)
+      workspace.pendingLinkStore.update(() => null)
     }
   }
 
-  const handle_mouse_move = (event: MouseEvent) => {
-    const rect = workspace_element.getBoundingClientRect()
+  const handleMouseMove = (event: MouseEvent) => {
+    const rect = workspaceElement.getBoundingClientRect()
     const x = event.clientX - rect.left
     const y = event.clientY - rect.top
-    $mouse_position = { x, y }
+    $mousePosition = { x, y }
   }
 
-  const handle_close = () => {
-    toolbox_visible = false
+  const handleClose = () => {
+    toolboxVisible = false
   }
 </script>
 
 <svelte:window
-  on:keydown={handle_global_keydown}
-  on:wheel={handle_mouse_move}
-  on:mousemove={handle_mouse_move}
+  on:keydown={handleGlobalKeydown}
+  on:wheel={handleMouseMove}
+  on:mousemove={handleMouseMove}
 />
 <!-- svelte-ignore a11y-click-events-have-key-events -->
 <div
@@ -63,20 +63,20 @@
   data-kind="workspace"
   class="workspace"
   class:editable={$isEditable}
-  on:click|self={handle_close}
-  on:dblclick|self={handle_double_click}
-  bind:this={workspace_element}
+  on:click|self={handleClose}
+  on:dblclick|self={handleDoubleClick}
+  bind:this={workspaceElement}
 >
   <AvatarList />
   <Mixer />
-  {#if toolbox_visible}
-    <Toolbox position={toolbox_position} onClose={handle_close} />
+  {#if toolboxVisible}
+    <Toolbox position={toolboxPosition} onClose={handleClose} />
   {/if}
 
   {#each $modules as module (module.id)}
     <ModuleWrapper {module} disabled={!$isEditable} />
   {/each}
-  <Wires {mouse_position} />
+  <Wires {mousePosition} />
 </div>
 
 <style lang="postcss">

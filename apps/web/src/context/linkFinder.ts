@@ -35,7 +35,7 @@ export const linkFinder = (
   }
 
   const plugs = Array.from(plugPositions.values()).filter(plug => {
-    const type = plug_type(plug.id)
+    const type = plugType(plug.id)
     if (link.from) {
       if (moduleId(link.from) === moduleId(plug.id)) return false
       return [PlugType.Input, PlugType.Param].includes(type)

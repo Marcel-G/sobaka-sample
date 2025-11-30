@@ -1,5 +1,5 @@
 <script context="module" lang="ts">
-  export const into_grid_coords = (coords: {
+  export const intoGridCoords = (coords: {
     x: number
     y: number
   }): { x: number; y: number } => {
@@ -16,7 +16,7 @@
   import { onDestroy } from 'svelte'
   import { writable } from 'svelte/store'
 
-  import { relative_to_element, useDrag } from '../../actions/drag'
+  import { relativeToElement, useDrag } from '../../actions/drag'
   import type { OnDrag } from '../../actions/drag'
   import { twMerge } from 'tailwind-merge'
   import type { PanelProps } from '../../types/props'
@@ -70,7 +70,7 @@
     outputs: 'absolute top-2 right-0 transform translate-x-1/2 flex flex-col'
   }
 
-  const handle_drag: OnDrag = (event, origin, element) => {
+  const handleDrag: OnDrag = (event, origin, element) => {
     if (disabled || !onDrag) return true
 
     // Find the first parent with data-kind="workspace"
@@ -87,9 +87,9 @@
     }
 
     if (workspaceElement instanceof Element) {
-      const { x: x_in, y: y_in } = relative_to_element(event, origin, workspaceElement)
+      const { x: xIn, y: yIn } = relativeToElement(event, origin, workspaceElement)
 
-      let { x, y } = into_grid_coords({ x: x_in, y: y_in })
+      let { x, y } = intoGridCoords({ x: xIn, y: yIn })
       if (x < 0 || y < 0) {
         return
       }
@@ -99,7 +99,7 @@
 </script>
 
 <div
-  use:useDrag={{ onDrag: handle_drag }}
+  use:useDrag={{ onDrag: handleDrag }}
   bind:this={element}
   class={twMerge('panel', classes.panel, disabled && classes.disabled)}
   style={`grid-column: ${col}; grid-row: ${row};`}

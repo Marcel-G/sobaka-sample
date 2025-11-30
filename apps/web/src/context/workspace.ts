@@ -12,8 +12,8 @@ type WorkspaceContext = {
   positions: PositionStore
 }
 
-export const get_workspace = () => getContext<WorkspaceContext>(WORKSPACE_CONTEXT)
-export const init_workspace = (workspace: Workspace) => {
+export const getWorkspace = () => getContext<WorkspaceContext>(WORKSPACE_CONTEXT)
+export const initWorkspace = (workspace: Workspace) => {
   const ctx: WorkspaceContext = {
     workspace,
     dsp: createDsp(workspace, getGlobalCtx().audio),

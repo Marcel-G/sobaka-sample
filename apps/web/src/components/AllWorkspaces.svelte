@@ -4,12 +4,12 @@
 
   const global = getGlobalCtx()
 
-  const list_refs = global.root.workspaceLists()
-  $: lists = $list_refs.map(ref => global.lists.get(ref))
+  const listRefs = global.root.workspaceLists()
+  $: lists = $listRefs.map(ref => global.lists.get(ref))
 </script>
 
 <div>
-  {#if $list_refs.length}
+  {#if $listRefs.length}
     {#each lists as list (list.id)}
       {#await list.load()}
         <!-- TODO: skeleton loading UI -->

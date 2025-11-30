@@ -1,51 +1,51 @@
 <script lang="ts">
   import clamp from 'lodash/clamp'
-  import { get_workspace } from '../context/workspace'
+  import { getWorkspace } from '../context/workspace'
   import { MODULES, type ModuleUI } from '@sobaka/ui/modules'
-  import { into_grid_coords } from '@sobaka/ui/modules/shared/Panel.svelte'
+  import { intoGridCoords } from '@sobaka/ui/modules/shared/Panel.svelte'
   import { onMount } from 'svelte'
 
   export let position = { x: 0, y: 0 }
   export let onClose: () => void
 
-  const { workspace } = get_workspace()
+  const { workspace } = getWorkspace()
 
   let search = ''
-  let selected_index = 0
-  let selection_refs: HTMLButtonElement[] = []
-  let input_ref: HTMLInputElement
+  let selectedIndex = 0
+  let selectionRefs: HTMLButtonElement[] = []
+  let inputRef: HTMLInputElement
 
-  const dumb_fuzzy =
+  const dumbFuzzy =
     (query: string) =>
-    (module_name: string): boolean => {
+    (moduleName: string): boolean => {
       if (!query.trim()) {
         return true
       }
 
-      return module_name.toLowerCase().includes(query.trim().toLowerCase())
+      return moduleName.toLowerCase().includes(query.trim().toLowerCase())
     }
 
-  $: list = (Object.keys(MODULES) as ModuleUI[]).filter(dumb_fuzzy(search))
-  $: selected_index = clamp(selected_index, 0, list.length - 1)
-  $: selection_refs[selected_index]?.scrollIntoView({
+  $: list = (Object.keys(MODULES) as ModuleUI[]).filter(dumbFuzzy(search))
+  $: selectedIndex = clamp(selectedIndex, 0, list.length - 1)
+  $: selectionRefs[selectedIndex]?.scrollIntoView({
     block: 'nearest',
     inline: 'nearest'
   })
 
   onMount(() => {
-    input_ref.focus()
+    inputRef.focus()
   })
 
-  function handle_create(type: ModuleUI) {
-    workspace.create_module(type, into_grid_coords(position))
+  function handleCreate(type: ModuleUI) {
+    workspace.createModule(type, intoGridCoords(position))
     onClose()
   }
 
-  const handle_key_down = (event: KeyboardEvent) => {
+  const handleKeyDown = (event: KeyboardEvent) => {
     switch (event.code) {
       case 'Enter':
-        if (list[selected_index]) {
-          handle_create(list[selected_index])
+        if (list[selectedIndex]) {
+          handleCreate(list[selectedIndex])
         } else {
           onClose()
         }
@@ -54,10 +54,10 @@
         onClose()
         break
       case 'ArrowUp':
-        selected_index -= 1
+        selectedIndex -= 1
         break
       case 'ArrowDown':
-        selected_index += 1
+        selectedIndex += 1
         break
     }
   }
@@ -77,10 +77,10 @@
   >
     <div class="p-4 border-b border-zinc-200 dark:border-zinc-800">
       <input
-        bind:this={input_ref}
+        bind:this={inputRef}
         bind:value={search}
-        on:blur={() => input_ref?.focus()}
-        on:keydown={handle_key_down}
+        on:blur={() => inputRef?.focus()}
+        on:keydown={handleKeyDown}
         class="w-full px-4 py-2 rounded-lg border-2 border-zinc-200 dark:border-zinc-800
                bg-white dark:bg-darker text-zinc-900 dark:text-zinc-100
                focus:outline-none focus:border-cyan-500 dark:focus:border-cyan-400
@@ -96,13 +96,13 @@
       <div class="max-h-[400px] overflow-y-auto p-2">
         {#each list as module, index}
           <button
-            bind:this={selection_refs[index]}
-            class:selected={index === selected_index}
-            on:click={() => handle_create(module)}
+            bind:this={selectionRefs[index]}
+            class:selected={index === selectedIndex}
+            on:click={() => handleCreate(module)}
             class="w-full px-4 py-2 rounded-lg text-left font-mono mb-1
                    bg-zinc-100 dark:bg-dark hover:bg-zinc-200 dark:hover:bg-blue-900/20
                    text-zinc-900 dark:text-zinc-100 transition-colors
-                   {index === selected_index ? 'bg-zinc-200 dark:bg-blue-900/30' : ''}"
+                   {index === selectedIndex ? 'bg-zinc-200 dark:bg-blue-900/30' : ''}"
           >
             {module}
           </button>

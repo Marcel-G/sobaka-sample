@@ -2,7 +2,7 @@
   import type { PageData } from './$types'
 
   import WorkspaceView from '../../../workspace/Workspace.svelte'
-  import { init_workspace } from '../../../context/workspace'
+  import { initWorkspace } from '../../../context/workspace'
   import { getGlobalCtx } from '../../../context/global'
   import { type SubDocReference } from '@sobaka/state/util/subdoc'
   import type { Workspace } from '@sobaka/state/models/workspace'
@@ -18,7 +18,7 @@
     guid: data.workspace.id
   } as SubDocReference<Workspace>)
 
-  $: init_workspace(workspace)
+  $: initWorkspace(workspace)
 
   $: loading = workspace.load()
 </script>

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { get_workspace } from '../context/workspace'
+  import { getWorkspace } from '../context/workspace'
   import { roundCorners } from 'svg-round-corners'
   import { linker } from '../context/linker'
   import { derived, type Readable } from 'svelte/store'
@@ -14,9 +14,9 @@
   import { isFullyLinked, PlugType, type LinkPoint } from '@sobaka/state/models/links'
     import type { Position } from '@sobaka/state/models/workspace'
 
-  export let mouse_position: Readable<Position>
+  export let mousePosition: Readable<Position>
 
-  const { workspace, positions } = get_workspace()
+  const { workspace, positions } = getWorkspace()
 
   const intoPath = (points: Point[]): string => {
     return points.reduce((acc, point, i) => {
@@ -29,11 +29,11 @@
 
   const plugPositions = positions.plugPositions
   const modulePositions = positions.modulePositions
-  const partialLink = workspace.pending_link_store
+  const partialLink = workspace.pendingLinkStore
   const links = workspace.links
 
   const activeLink = memoizeLast(
-    derived([partialLink, plugPositions, mouse_position], ([l, p, mp]) =>
+    derived([partialLink, plugPositions, mousePosition], ([l, p, mp]) =>
       linkFinder(l, p as Map<LinkPoint, PlugPosition>, mp)
     ),
     linkFinderCmp
@@ -47,16 +47,16 @@
       linker([...activeLink, ...links], plugs as Map<LinkPoint, PlugPosition>, modules as Map<string, ModulePosition>)
   )
 
-  function handle_click() {
+  function handleClick() {
     const [link] = $activeLink
     if ($partialLink && isFullyLinked(link)) {
-      workspace.add_link(link)
+      workspace.addLink(link)
       partialLink.set(null)
     }
   }
 </script>
 
-<svelte:window on:click={handle_click} />
+<svelte:window on:click={handleClick} />
 
 <svg class="wires">
   {#each $paths as line (line.id)}
@@ -66,7 +66,7 @@
       <!-- svelte-ignore a11y_no_static_element_interactions -->
       <path
         on:click={() => {
-          workspace.remove_link(line.id!)
+          workspace.removeLink(line.id!)
         }}
         class={twMerge(
           'pointer-events-auto',
@@ -83,7 +83,7 @@
         cy={line.path.at(-1)!.y}
         r="3"
       />
-      {#if plug_type(line.endId) === PlugType.Mixer}
+      {#if plugType(line.endId) === PlugType.Mixer}
         <polygon
           points={`
             ${line.path.at(0)!.x},${line.path.at(0)!.y - 5}

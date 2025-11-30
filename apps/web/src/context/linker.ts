@@ -297,7 +297,7 @@ export const linker = (
     // Add special case for the output mixer.
     // We don't want to have a wire going all the way there because
     // it would cause clutter.
-    // if (end && plug_type(link.to) === PlugType.Mixer) {
+    // if (end && plugType(link.to) === PlugType.Mixer) {
     //   return [
     //     {
     //       id: link.id,
