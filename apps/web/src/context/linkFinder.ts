@@ -28,22 +28,32 @@ export const linkFinder = (
   if (link == null || (link.from && link.to)) {
     return []
   }
+  
+  // Get the first clicked point (could be in either from or to)
   const startPoint = link.from || link.to!
   const start = plugPositions.get(linkPointToKey(startPoint))
   if (!start) {
     return []
   }
 
+  // Get the type of the plug that was clicked first
+  const startType = plugTypeGetter(startPoint)
+  
+  // Filter for compatible plugs based on what was clicked
   const plugs = Array.from(plugPositions.values()).filter(plug => {
-    const type = plugTypeGetter(plug.id)
-    if (link.from) {
-      if (link.from.moduleId === plug.id.moduleId) return false
-      return [PlugType.Input, PlugType.Param, PlugType.Mixer].includes(type)
-    } else if (link.to) {
-      if (link.to.moduleId === plug.id.moduleId) return false
-      return type === PlugType.Output
+    // Don't connect to same module
+    if (startPoint.moduleId === plug.id.moduleId) return false
+    
+    const plugType = plugTypeGetter(plug.id)
+    
+    // If we clicked an output, we need input/param/mixer
+    if (startType === PlugType.Output) {
+      return [PlugType.Input, PlugType.Param, PlugType.Mixer].includes(plugType)
     }
-    return false
+    // If we clicked input/param/mixer, we need output
+    else {
+      return plugType === PlugType.Output
+    }
   })
 
   plugs.sort((a, b) => distance(start, a) - distance(start, b))
@@ -52,6 +62,8 @@ export const linkFinder = (
 
   if (!end) return []
 
+  // Return the link - doesn't matter which field we use (from/to)
+  // since normalizeLink will fix the direction when it's added
   if (link.from) {
     return [{ id: 'active-link', from: link.from, to: end.id }]
   }

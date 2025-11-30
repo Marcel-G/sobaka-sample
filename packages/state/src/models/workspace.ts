@@ -147,8 +147,6 @@ export class Workspace extends SyncedDoc<'workspace'> {
       modules.push({
         id,
         type,
-        // TS doesn't know about svelte module imports - https://github.com/sveltejs/svelte/issues/5817
-
         state: {},
         position
       })
