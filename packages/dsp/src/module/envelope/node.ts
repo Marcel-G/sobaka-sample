@@ -1,65 +1,58 @@
 import { EnvelopeNode as _EnvelopeNode } from '@sobaka/dsp/wasm'
-import { ModuleDSP, ModuleRouting } from '../../shared/types'
+import { ModuleDSP, Route, RouteInfo } from '../../shared/types'
+import { PlugType } from '@sobaka/state'
 
-interface EnvelopeState {
+export interface EnvelopeState {
   attack: number
-  decay: number
-  sustain: number
   release: number
+}
+
+const INITIAL_STATE: EnvelopeState = {
+  attack: 0.1,
+  release: 0.1
 }
 
 /**
  * DSP implementation for Envelope module
- * Manages Envelope WASM node and its ADSR parameters
+ * Attack-Release envelope follower
  */
-export class EnvelopeDSP implements ModuleDSP {
+export class EnvelopeNode implements ModuleDSP {
+  public name = "envelope"
   private envelope: _EnvelopeNode
   private attackParam: AudioParam
-  private decayParam: AudioParam
-  private sustainParam: AudioParam
   private releaseParam: AudioParam
+  public state: EnvelopeState
 
   constructor(
     public readonly id: string,
-    private audioContext: AudioContext,
-    initialState: EnvelopeState,
-    envelope: _EnvelopeNode
+    audioContext: AudioContext,
+    initialState: EnvelopeState = INITIAL_STATE
   ) {
-    this.envelope = envelope
-    this.attackParam = this.envelope.node.parameters.get('Attack')
-    this.decayParam = this.envelope.node.parameters.get('Decay')
-    this.sustainParam = this.envelope.node.parameters.get('Sustain')
-    this.releaseParam = this.envelope.node.parameters.get('Release')
-    
-    // Set initial state
-    this.updateState(initialState)
+    this.envelope = new _EnvelopeNode(audioContext)
+    this.attackParam = this.envelope.node.parameters.get('attack')!
+    this.releaseParam = this.envelope.node.parameters.get('release')!
+    this.state = initialState
   }
 
-  get node(): AudioNode {
-    return this.envelope.node
-  }
-
-  updateState(state: Record<string, unknown>): void {
-    const envState = state as EnvelopeState
-    
-    this.attackParam.setValueAtTime(envState.attack, this.audioContext.currentTime)
-    this.decayParam.setValueAtTime(envState.decay, this.audioContext.currentTime)
-    this.sustainParam.setValueAtTime(envState.sustain, this.audioContext.currentTime)
-    this.releaseParam.setValueAtTime(envState.release, this.audioContext.currentTime)
-  }
-
-  getRoute(): ModuleRouting {
+  getRoutingDefinition() {
     return {
-      inputs: [
-        { index: 0, label: 'Gate', node: this.envelope.node, connectIndex: 0 }
-      ],
-      outputs: [
-        { index: 0, label: 'Envelope', node: this.envelope.node, connectIndex: 0 }
-      ]
+      input: { name: "input", type: PlugType.Input, label: 'Gate' },
+      output: { name: "output", type: PlugType.Output, label: 'Envelope' },
+    } satisfies Record<string, RouteInfo>
+  }
+
+  getRoute(routeName: string): Route {
+    switch (routeName) {
+      case "input":
+        return { node: this.envelope.node, connectIndex: 0 }
+      case "output":
+        return { node: this.envelope.node, connectIndex: 0 }
+      default:
+        throw new Error(`Unknown routeName ${routeName}`)
     }
   }
 
   destroy(): void {
-    this.envelope?.free()
+    // EnvelopeNode cleanup if needed
   }
 }
