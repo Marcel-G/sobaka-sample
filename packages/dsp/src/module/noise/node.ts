@@ -25,7 +25,7 @@ export class NoiseDSP implements ModuleDSP {
     // Noise has no state to update
   }
 
-  getRouting(): ModuleRouting {
+  getRoute(): ModuleRouting {
     return {
       outputs: [
         { index: 0, label: 'Noise', node: this.noise.node, connectIndex: 0 }

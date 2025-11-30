@@ -1,5 +1,6 @@
 import { ClockDividerNode as _ClockDividerNode } from '@sobaka/dsp/wasm'
-import { ModuleDSP, ModuleRouting } from '../../shared/types'
+import { ModuleDSP, Route, RouteInfo } from '../../shared/types'
+import { PlugType } from '@sobaka/state'
 
 export interface ClockState {
   bpm: number
@@ -12,8 +13,10 @@ const INITIAL_STATE: ClockState = { bpm: 120 }
  * Manages ClockDividerNode and its parameters
  */
 export class ClockNode implements ModuleDSP {
+  public name = "clock"
   private clock: _ClockDividerNode
   private bpmParam: AudioParam
+  public state: ClockState
 
   constructor(
     public readonly id: string,
@@ -22,24 +25,36 @@ export class ClockNode implements ModuleDSP {
   ) {
     this.clock = new _ClockDividerNode(audioContext)
     this.bpmParam = this.clock.node.parameters.get('bpm')!
+    this.state = initialState
   }
 
-  get node(): AudioNode {
-    return this.clock.node
-  }
-
-  getRouting(): ModuleRouting {
+  getRoutingDefinition() {
     return {
-      params: [
-        { index: 0, label: 'BPM CV', param: this.bpmParam }
-      ],
-      outputs: [
-        { index: 0, label: '1/1', node: this.clock.node, connectIndex: 0 },
-        { index: 1, label: '1/2', node: this.clock.node, connectIndex: 1 },
-        { index: 2, label: '1/4', node: this.clock.node, connectIndex: 2 },
-        { index: 3, label: '1/8', node: this.clock.node, connectIndex: 3 },
-        { index: 4, label: '1/16', node: this.clock.node, connectIndex: 4 }
-      ]
+      bpm:      { name: "bpm", type: PlugType.Param, label: 'BPM CV' },
+      output_0: { name: "output_0", type: PlugType.Output, label: '1/1' },
+      output_1: { name: "output_1", type: PlugType.Output, label: '1/2' },
+      output_2: { name: "output_2", type: PlugType.Output, label: '1/4' },
+      output_3: { name: "output_3", type: PlugType.Output, label: '1/8' },
+      output_4: { name: "output_4", type: PlugType.Output, label: '1/16' },
+    } satisfies Record<string, RouteInfo>
+  }
+
+  getRoute(routeName: string): Route {
+    switch (routeName){
+      case "bpm":
+        return { node: this.bpmParam }
+      case "output_0":
+        return { node: this.clock.node, connectIndex: 0 }
+      case "output_1":
+        return { node: this.clock.node, connectIndex: 1 }
+      case "output_2":
+        return { node: this.clock.node, connectIndex: 2 }
+      case "output_3":
+        return { node: this.clock.node, connectIndex: 3 }
+      case "output_4":
+        return { node: this.clock.node, connectIndex: 4 }
+      default:
+        throw new Error(`Unknown routeName ${routeName}`)
     }
   }
 

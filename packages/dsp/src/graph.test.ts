@@ -27,7 +27,7 @@ class MockOscillatorDSP implements ModuleDSP {
     } as any
   }
 
-  getRouting(): ModuleRouting {
+  getRoute(): ModuleRouting {
     return {
       outputs: [
         { index: 0, label: 'Out', node: this.node, connectIndex: 0 }
@@ -58,7 +58,7 @@ class MockFilterDSP implements ModuleDSP {
     } as any
   }
 
-  getRouting(): ModuleRouting {
+  getRoute(): ModuleRouting {
     return {
       inputs: [
         { index: 0, label: 'Signal', node: this.node, connectIndex: 0 }

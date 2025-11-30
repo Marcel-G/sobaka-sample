@@ -1,11 +1,14 @@
-import { ModuleDSP, InputDefinition, OutputDefinition, ParamDefinition } from "./shared/types"
-import { Link, Module, parsePlugId, PlugType } from "@sobaka/state";
+import { derived, get } from "svelte/store";
+import { ModuleDSP } from "./shared/types"
+import { Link, Module, PlugType, Workspace } from "@sobaka/state";
+import { ClockNode } from "./module/clock/node";
 
 /**
  * Creates a DSP instance for a given module
  * This should be implemented to instantiate the appropriate module type
  */
 const createAudioModule = (module: Module, audioContext: AudioContext): ModuleDSP => {
+  if (module.type === 'Clock') return new ClockNode(module.id, audioContext)
   throw new Error('not implemented: createAudioModule for type ' + module.type)
 }
 
@@ -14,7 +17,7 @@ const createAudioModule = (module: Module, audioContext: AudioContext): ModuleDS
  */
 export class AudioGraph {
   private dspModules: Map<string, ModuleDSP> = new Map()
-  private connections: Map<string, AudioNode | AudioParam> = new Map()
+  private connections: Map<string, AudioNode> = new Map()
 
   constructor(private audioContext: AudioContext) {}
 
@@ -23,7 +26,6 @@ export class AudioGraph {
    * Efficiently updates only what has changed
    */
   reconcile(modules: Module[], links: Required<Link>[]) {
-    // Step 1: Add/update modules
     const moduleIds = new Set(modules.map(m => m.id))
     
     for (const module of modules) {
@@ -34,7 +36,6 @@ export class AudioGraph {
       }
     }
 
-    // Step 2: Remove deleted modules
     for (const [id, dsp] of this.dspModules.entries()) {
       if (!moduleIds.has(id)) {
         dsp.destroy()
@@ -55,152 +56,48 @@ export class AudioGraph {
       }
     }
   }
-
-  /**
-   * Find an input definition by index
-   */
-  private findInput(dsp: ModuleDSP, index: number): InputDefinition | undefined {
-    const routing = dsp.getRouting()
-    return routing.inputs?.find(input => input.index === index)
-  }
-
-  /**
-   * Find an output definition by index
-   */
-  private findOutput(dsp: ModuleDSP, index: number): OutputDefinition | undefined {
-    const routing = dsp.getRouting()
-    return routing.outputs?.find(output => output.index === index)
-  }
-
-  /**
-   * Find a param definition by index
-   */
-  private findParam(dsp: ModuleDSP, index: number): ParamDefinition | undefined {
-    const routing = dsp.getRouting()
-    return routing.params?.find(param => param.index === index)
-  }
-
   /**
    * Create a single connection based on a link
    */
   private connect(link: Required<Link>) {
-    const from = parsePlugId(link.from)
-    const to = parsePlugId(link.to)
+    if (this.connections.has(link.id)) return
+
+    const { from, to } = link
 
     if (!from || !to) return
 
-    // Handle mixer (destination) connections specially
-    if (to.moduleId === 'global' && to.type === PlugType.Mixer) {
-      const fromDSP = this.dspModules.get(from.moduleId)
-      if (!fromDSP) return
-
-      const output = this.findOutput(fromDSP, from.connectIndex)
-      if (!output) {
-        console.warn('Missing output for mixer link:', link)
-        return
-      }
-
-      output.node.connect(this.audioContext.destination, output.connectIndex ?? 0)
-      this.connections.set(link.id, this.audioContext.destination)
-      return
-    }
-
     const fromDSP = this.dspModules.get(from.moduleId)
+    const fromRoute = fromDSP?.getRoute(from.routeName)
+
     const toDSP = this.dspModules.get(to.moduleId)
+    const toRoute = toDSP?.getRoute(to.routeName)
 
-    if (!fromDSP || !toDSP) return
+    if (!fromRoute || !toRoute) return
 
-    // Get source output
-    if (from.type !== PlugType.Output) {
-      console.warn('Source must be an output:', link)
-      return
+    if (!(fromRoute.node instanceof AudioNode)) {
+      throw new Error('TODO')
     }
 
-    const output = this.findOutput(fromDSP, from.connectIndex)
-    if (!output) {
-      console.warn('Missing output definition:', link.from)
-      return
+    if ((toRoute.node instanceof AudioNode)) {
+      fromRoute.node.connect(toRoute.node, fromRoute.connectIndex, toRoute.connectIndex)
+    } else {
+      fromRoute.node.connect(toRoute.node, fromRoute.connectIndex)
     }
-
-    // Connect based on destination type
-    if (to.type === PlugType.Input) {
-      // Audio output -> Audio input
-      const input = this.findInput(toDSP, to.connectIndex)
-      if (!input) {
-        console.warn('Missing input definition:', link.to)
-        return
-      }
-
-      output.node.connect(
-        input.node,
-        output.connectIndex ?? 0,
-        input.connectIndex ?? 0
-      )
-      this.connections.set(link.id, input.node)
-
-    } else if (to.type === PlugType.Param) {
-      // Audio output -> Parameter (CV)
-      const param = this.findParam(toDSP, to.connectIndex)
-      if (!param) {
-        console.warn('Missing param definition:', link.to)
-        return
-      }
-
-      output.node.connect(param.param, output.connectIndex ?? 0)
-      this.connections.set(link.id, param.param)
-    }
+    this.connections.set(link.id, fromRoute.node)
   }
 
   /**
    * Disconnect all audio connections
    */
   private disconnectAll() {
-    for (const dsp of this.dspModules.values()) {
-      try {
-        dsp.node.disconnect()
-      } catch (err) {
-        // Ignore errors from nodes that are already disconnected
-      }
+    for (const dsp of this.connections.values()) {
+      dsp.disconnect()
     }
     this.connections.clear()
   }
 
-  /**
-   * Get a specific input by plug ID
-   */
-  getInput(plugId: string): InputDefinition | undefined {
-    const parsed = parsePlugId(plugId)
-    const dsp = this.dspModules.get(parsed.moduleId)
-    if (!dsp) return undefined
-    return this.findInput(dsp, parsed.connectIndex)
-  }
-
-  /**
-   * Get a specific output by plug ID
-   */
-  getOutput(plugId: string): OutputDefinition | undefined {
-    const parsed = parsePlugId(plugId)
-    const dsp = this.dspModules.get(parsed.moduleId)
-    if (!dsp) return undefined
-    return this.findOutput(dsp, parsed.connectIndex)
-  }
-
-  /**
-   * Get a specific param by plug ID
-   */
-  getParam(plugId: string): ParamDefinition | undefined {
-    const parsed = parsePlugId(plugId)
-    const dsp = this.dspModules.get(parsed.moduleId)
-    if (!dsp) return undefined
-    return this.findParam(dsp, parsed.connectIndex)
-  }
-
-  /**
-   * Get all routing for a module
-   */
-  getModuleRouting(moduleId: string) {
-    const dsp = this.dspModules.get(moduleId)
-    return dsp?.getRouting()
+  moduleNode(moduleId: string) {
+    return this.dspModules.get(moduleId)
   }
 
   /**
@@ -213,4 +110,13 @@ export class AudioGraph {
     }
     this.dspModules.clear()
   }
+}
+
+export const createDsp = (ws: Workspace, audioContext: AudioContext) => {
+  const graph = new AudioGraph(audioContext)
+
+  derived([ws.modules, ws.links], ([$plugs, $links]) => [$plugs, $links] as const)
+    .subscribe(([modules, links]) => graph.reconcile(modules, links))
+
+  return graph
 }

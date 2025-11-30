@@ -43,7 +43,7 @@ export class FilterDSP implements ModuleDSP {
     this.qParam.setValueAtTime(filterState.q, this.audioContext.currentTime)
   }
 
-  getRouting(): ModuleRouting {
+  getRoute(): ModuleRouting {
     return {
       inputs: [
         { index: 0, label: 'Signal', node: this.filter.node, connectIndex: 0 }

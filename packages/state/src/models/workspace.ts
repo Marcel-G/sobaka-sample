@@ -7,7 +7,7 @@ import cloneDeep from 'lodash/cloneDeep'
 import { intoReadable } from '../util/store'
 import { type SubDocReference } from '../util/subdoc'
 import { SyncedDoc, type Config } from './syncedDoc'
-import { createPlugId, is_fully_linked, plug_type, PlugType, type Link } from './links'
+import { isFullyLinked, PlugType, type Link } from './links'
 
 export interface Position {
   x: number
@@ -248,18 +248,22 @@ export class Workspace extends SyncedDoc<'workspace'> {
     })
   }
 
-  try_make_link(plugId: string) {
-    const type = plug_type(plugId)
-
+  try_make_link(moduleId: string, routeName: string) {
     this.pending_link_store.update(link => {
       const next = link ? { ...link } : {}
-      if ([PlugType.Input, PlugType.Param].includes(type)) {
-        next.to = plugId
+      if (!next.to) { // TODO figure out source / dest plugs
+        next.to = {
+          routeName,
+          moduleId
+        }
       } else {
-        next.from = plugId
+        next.from = {
+          routeName,
+          moduleId
+        }
       }
 
-      if (is_fully_linked(next)) {
+      if (isFullyLinked(next)) {
         this.add_link(next)
         return null
       }
@@ -273,7 +277,7 @@ export class Workspace extends SyncedDoc<'workspace'> {
       if (link?.from) {
         this.add_link({
           from: link.from,
-          to: createPlugId('global', PlugType.Mixer, chan)
+          to: { moduleId: 'global', routeName: 'mixer' }
         })
         return null
       }

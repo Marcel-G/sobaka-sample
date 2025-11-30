@@ -6,18 +6,18 @@
   export let module: Module
   export let disabled = false
 
-  // Get workspace context from the app
-  const { workspace } = get_workspace()
+  const { workspace, dsp } = get_workspace()
   
   const position = workspace.module_position(module.id)
+  const node = dsp.moduleNode(module.id)
 
   const component = get_component(module)
 </script>
 
 <svelte:component 
+  node={node}
   moduleId={module.id}
-  this={component} 
-  state={module.state as any} 
+  this={component}
   {disabled}
   {position}
   workspace={workspace}

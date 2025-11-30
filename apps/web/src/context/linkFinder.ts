@@ -1,5 +1,5 @@
 import { derived, get, type Readable } from 'svelte/store'
-import { plug_type, PlugType, type Link } from '@sobaka/state/models/links'
+import { PlugType, type Link } from '@sobaka/state/models/links'
 import { type PlugPosition } from './positions'
 import type { Position } from '@sobaka/state'
 

@@ -48,7 +48,7 @@ export class EnvelopeDSP implements ModuleDSP {
     this.releaseParam.setValueAtTime(envState.release, this.audioContext.currentTime)
   }
 
-  getRouting(): ModuleRouting {
+  getRoute(): ModuleRouting {
     return {
       inputs: [
         { index: 0, label: 'Gate', node: this.envelope.node, connectIndex: 0 }

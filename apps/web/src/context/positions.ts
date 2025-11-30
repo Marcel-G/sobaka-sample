@@ -1,3 +1,4 @@
+import type { LinkPoint } from '@sobaka/state'
 import { get, readonly, writable } from 'svelte/store'
 
 export interface Point {
@@ -13,7 +14,7 @@ export interface Rectangle {
 }
 
 export interface PlugPosition {
-  id: string
+  id: LinkPoint 
   position: Point
 }
 
@@ -27,10 +28,10 @@ const isSameRect = (a: Rectangle, b: Rectangle) =>
   a.x1 === b.x1 && a.y1 === b.y1 && a.x2 === b.x2 && a.y2 === b.y2
 
 export const createPositionStores = () => {
-  const plugPositions = writable<Map<string, PlugPosition>>(new Map())
+  const plugPositions = writable<Map<LinkPoint, PlugPosition>>(new Map())
   const modulePositions = writable<Map<string, ModulePosition>>(new Map())
 
-  const registerPlug = (plugId: string, element: Element) => {
+  const registerPlug = (linkPoint: LinkPoint, element: Element) => {
     const workspace = document.querySelector('[data-kind="workspace"]')
     const workspaceRect = workspace!.getBoundingClientRect()
     const rect = element.getBoundingClientRect()
@@ -40,14 +41,14 @@ export const createPositionStores = () => {
       y: Math.floor(rect.top - workspaceRect.top + rect.height / 2)
     }
 
-    if (get(plugPositions).has(plugId)) {
-      const prevPosition = get(plugPositions).get(plugId)!.position
+    if (get(plugPositions).has(linkPoint)) {
+      const prevPosition = get(plugPositions).get(linkPoint)!.position
       if (isSamePoint(prevPosition, nextPosition)) return
     }
 
     plugPositions.update(positions => {
-      positions.set(plugId, {
-        id: plugId,
+      positions.set(linkPoint, {
+        id: linkPoint,
         position: nextPosition
       })
       return positions
@@ -102,3 +103,5 @@ export const createPositionStores = () => {
     registerModule
   }
 }
+
+export type PositionStore = ReturnType<typeof createPositionStores>

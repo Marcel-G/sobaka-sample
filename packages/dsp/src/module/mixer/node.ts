@@ -42,7 +42,7 @@ export class MixerDSP implements ModuleDSP {
     )
   }
 
-  getRouting(): ModuleRouting {
+  getRoute(): ModuleRouting {
     return {
       inputs: [
         { index: 0, label: 'In 1', node: this.mixer },

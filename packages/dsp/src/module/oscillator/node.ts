@@ -46,7 +46,7 @@ export class OscillatorDSP implements ModuleDSP {
     }
   }
 
-  getRouting(): ModuleRouting {
+  getRoute(): ModuleRouting {
     return {
       params: [
         { index: 0, label: 'Pitch CV', param: this.pitchParam }

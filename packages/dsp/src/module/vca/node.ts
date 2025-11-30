@@ -33,7 +33,7 @@ export class VcaDSP implements ModuleDSP {
     this.gainParam.setValueAtTime(vcaState.value || 0, this.audioContext.currentTime)
   }
 
-  getRouting(): ModuleRouting {
+  getRoute(): ModuleRouting {
     return {
       inputs: [
         { index: 0, label: 'Signal', node: this.vca }

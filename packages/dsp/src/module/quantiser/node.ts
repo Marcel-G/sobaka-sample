@@ -35,7 +35,7 @@ export class QuantiserDSP implements ModuleDSP {
     this.quantiser.update_notes(notes)
   }
 
-  getRouting(): ModuleRouting {
+  getRoute(): ModuleRouting {
     return {
       inputs: [
         { index: 0, label: 'Signal', node: this.quantiser.node, connectIndex: 0 }

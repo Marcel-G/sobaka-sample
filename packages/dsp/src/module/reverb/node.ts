@@ -40,7 +40,7 @@ export class ReverbDSP implements ModuleDSP {
     this.delayParam.setValueAtTime(reverbState.length, this.audioContext.currentTime)
   }
 
-  getRouting(): ModuleRouting {
+  getRoute(): ModuleRouting {
     return {
       inputs: [
         { index: 0, label: 'In L', node: this.reverb.node, connectIndex: 0 },

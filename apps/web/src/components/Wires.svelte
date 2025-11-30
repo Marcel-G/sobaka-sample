@@ -11,7 +11,7 @@
     memoizeLast,
     throttled
   } from '../context/linkFinder'
-  import { is_fully_linked, plug_type, PlugType } from '@sobaka/state/models/links'
+  import { isFullyLinked, PlugType, type LinkPoint } from '@sobaka/state/models/links'
     import type { Position } from '@sobaka/state/models/workspace'
 
   export let mouse_position: Readable<Position>
@@ -34,7 +34,7 @@
 
   const activeLink = memoizeLast(
     derived([partialLink, plugPositions, mouse_position], ([l, p, mp]) =>
-      linkFinder(l, p as Map<string, PlugPosition>, mp)
+      linkFinder(l, p as Map<LinkPoint, PlugPosition>, mp)
     ),
     linkFinderCmp
   )
@@ -44,12 +44,12 @@
       derived([activeLink, links, plugPositions, modulePositions], stores => stores)
     ),
     ([activeLink, links, plugs, modules]) =>
-      linker([...activeLink, ...links], plugs as Map<string, PlugPosition>, modules as Map<string, ModulePosition>)
+      linker([...activeLink, ...links], plugs as Map<LinkPoint, PlugPosition>, modules as Map<string, ModulePosition>)
   )
 
   function handle_click() {
     const [link] = $activeLink
-    if ($partialLink && is_fully_linked(link)) {
+    if ($partialLink && isFullyLinked(link)) {
       workspace.add_link(link)
       partialLink.set(null)
     }

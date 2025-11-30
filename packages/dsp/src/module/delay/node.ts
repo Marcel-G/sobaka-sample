@@ -35,7 +35,7 @@ export class DelayDSP implements ModuleDSP {
     this.delayTimeParam.setValueAtTime(delayState.time, this.audioContext.currentTime)
   }
 
-  getRouting(): ModuleRouting {
+  getRoute(): ModuleRouting {
     return {
       params: [
         { index: 0, label: 'Time CV', param: this.delayTimeParam }

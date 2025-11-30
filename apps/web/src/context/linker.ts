@@ -1,19 +1,19 @@
 import { MinPriorityQueue as PriorityQueue } from '@datastructures-js/priority-queue'
 import type { ModulePosition, PlugPosition, Point, Rectangle } from './positions'
-import { plug_type, PlugType, type Link } from '@sobaka/state/models/links'
+import { type Link, type LinkPoint } from '@sobaka/state/models/links'
 export interface PathRequest {
   id?: string
   start: Point
-  startId: string
+  startId: LinkPoint
   end: Point
-  endId: string
+  endId: LinkPoint
 }
 
 export interface PathResponse {
   id?: string
   path: Point[]
-  startId: string
-  endId: string
+  startId: LinkPoint
+  endId: LinkPoint
 }
 
 // Add this interface to store direction information with points
@@ -285,7 +285,7 @@ const GRID_STEP = 8
 
 export const linker = (
   links: Link[],
-  plugPositions: Map<string, PlugPosition>,
+  plugPositions: Map<LinkPoint, PlugPosition>,
   modulePositions: Map<string, ModulePosition>
 ) => {
   const obstacles = Array.from(modulePositions.values().map(module => module.position))
@@ -297,17 +297,17 @@ export const linker = (
     // Add special case for the output mixer.
     // We don't want to have a wire going all the way there because
     // it would cause clutter.
-    if (end && plug_type(link.to) === PlugType.Mixer) {
-      return [
-        {
-          id: link.id,
-          startId: link.to,
-          end,
-          endId: link.to,
-          start: { x: end.x + GRID_STEP * 3, y: end.y }
-        }
-      ]
-    }
+    // if (end && plug_type(link.to) === PlugType.Mixer) {
+    //   return [
+    //     {
+    //       id: link.id,
+    //       startId: link.to,
+    //       end,
+    //       endId: link.to,
+    //       start: { x: end.x + GRID_STEP * 3, y: end.y }
+    //     }
+    //   ]
+    // }
 
     if (!start || !end) {
       return []

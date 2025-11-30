@@ -25,7 +25,7 @@ export class SampleAndHoldDSP implements ModuleDSP {
     // Sample & Hold has no state to update
   }
 
-  getRouting(): ModuleRouting {
+  getRoute(): ModuleRouting {
     return {
       inputs: [
         { index: 0, label: 'Signal', node: this.sampleAndHold.node, connectIndex: 0 },

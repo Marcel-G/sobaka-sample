@@ -34,7 +34,7 @@ export class ParameterDSP implements ModuleDSP {
     this.parameter.offset.setValueAtTime(paramState.value, this.audioContext.currentTime)
   }
 
-  getRouting(): ModuleRouting {
+  getRoute(): ModuleRouting {
     return {
       outputs: [
         { index: 0, label: 'Out', node: this.parameter, connectIndex: 0 }
