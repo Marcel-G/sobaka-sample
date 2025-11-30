@@ -1,4 +1,3 @@
-import { derived, get, type Readable } from 'svelte/store'
 import { PlugType, type Link, type LinkPoint, linkPointToKey } from '@sobaka/state/models/links'
 import { type PlugPosition } from './positions'
 import type { Position } from '@sobaka/state'
@@ -24,7 +23,7 @@ const selectEnd = (plugs: PlugPosition[], mousePosition: Position) => {
  */
 export const isPartialLink = (link: Partial<Link> | null): boolean => {
   if (link == null) return false
-  return (link.from && !link.to) || (!link.from && link.to)
+  return !!(link.from && !link.to) || !!(!link.from && link.to)
 }
 
 export const linkFinder = (
@@ -34,12 +33,13 @@ export const linkFinder = (
   plugTypeGetter: (linkPoint: LinkPoint) => PlugType
 ): Required<Link>[] => {
   // Early exit if no partial link exists
-  if (!isPartialLink(link)) {
+  if (!link || !isPartialLink(link)) {
     return []
   }
   
+  // At this point we know link is not null and has exactly one endpoint
   // Get the first clicked point (could be in either from or to)
-  const startPoint = link.from || link.to!
+  const startPoint = (link.from || link.to) as LinkPoint
   const start = plugPositions.get(linkPointToKey(startPoint))
   if (!start) {
     return []
@@ -76,64 +76,5 @@ export const linkFinder = (
   if (link.from) {
     return [{ id: 'active-link', from: link.from, to: end.id }]
   }
-  return [{ id: 'active-link', from: end.id, to: link.to! }]
-}
-
-export const memoizeLast = <T>(
-  store: Readable<T>,
-  cmp: (previous: T, next: T) => boolean
-): Readable<T> => {
-  let lastValue: T = get(store)
-
-  return derived(
-    store,
-    (value, set) => {
-      if (!cmp(lastValue, value)) {
-        lastValue = value
-        set(value)
-      }
-    },
-    get(store)
-  )
-}
-
-export const throttled = <T>(store: Readable<T>) => {
-  let frame: number | null = null
-  let lastValue: T = get(store)
-
-  return derived(
-    store,
-    ($value, set) => {
-      lastValue = $value
-
-      if (frame === null) {
-        frame = requestAnimationFrame(() => {
-          set(lastValue)
-          frame = null
-        })
-      }
-
-      return () => {
-        if (frame !== null) {
-          cancelAnimationFrame(frame)
-          frame = null
-        }
-      }
-    },
-    get(store)
-  )
-}
-
-export const linkFinderCmp = (
-  a: ReturnType<typeof linkFinder>,
-  b: ReturnType<typeof linkFinder>
-) => {
-  if (a.length !== b.length) return false
-  return a.every((_a, i) => {
-    const _b = b[i]
-    return _b.from.moduleId === _a.from.moduleId && 
-           _b.from.routeName === _a.from.routeName &&
-           _b.to.moduleId === _a.to.moduleId && 
-           _b.to.routeName === _a.to.routeName
-  })
+  return [{ id: 'active-link', from: end.id, to: link.to as LinkPoint }]
 }

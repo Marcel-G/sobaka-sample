@@ -13,6 +13,7 @@
   import { getWorkspace } from '../context/workspace'
   import AvatarList from '../components/collaborative/AvatarList.svelte'
   import type { Position } from '@sobaka/state'
+  import { isPartialLink } from '../context/linkFinder'
 
   let toolboxVisible = false
   let toolboxPosition: Position = { x: 0, y: 0 }
@@ -21,6 +22,7 @@
   const { workspace, positions } = getWorkspace()
   const modules = workspace.modules
   const isEditable = workspace.isEditable
+  const partialLink = workspace.pendingLinkStore
   
   // Clean up position observers when workspace is destroyed
   onDestroy(() => {
@@ -45,11 +47,23 @@
     }
   }
 
+  // Track latest mouse position but only update store when needed
+  let latestMouseX = 0
+  let latestMouseY = 0
+  let rafId: number | null = null
+
   const handleMouseMove = (event: MouseEvent) => {
     const rect = workspaceElement.getBoundingClientRect()
-    const x = event.clientX - rect.left
-    const y = event.clientY - rect.top
-    $mousePosition = { x, y }
+    latestMouseX = event.clientX - rect.left
+    latestMouseY = event.clientY - rect.top
+    
+    // Only schedule RAF updates when we have a partial link
+    if (isPartialLink($partialLink) && rafId === null) {
+      rafId = requestAnimationFrame(() => {
+        $mousePosition = { x: latestMouseX, y: latestMouseY }
+        rafId = null
+      })
+    }
   }
 
   const handleClose = () => {

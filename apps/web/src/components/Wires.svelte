@@ -5,13 +5,7 @@
   import { derived, type Readable } from 'svelte/store'
   import { twMerge } from 'tailwind-merge'
   import type { ModulePosition, PlugPosition, Point } from '../context/positions'
-  import {
-    linkFinder,
-    linkFinderCmp,
-    memoizeLast,
-    throttled,
-    isPartialLink
-  } from '../context/linkFinder'
+  import { linkFinder, isPartialLink } from '../context/linkFinder'
   import { isFullyLinked, PlugType, type LinkPoint } from '@sobaka/state/models/links'
     import type { Position } from '@sobaka/state/models/workspace'
 
@@ -33,25 +27,18 @@
   const partialLink = workspace.pendingLinkStore
   const links = workspace.links
 
-  // Throttle mouse position to RAF
-  const throttledMousePosition = throttled(mousePosition)
-
   // Only run linkFinder when there's a partial link
-  const activeLink = memoizeLast(
-    derived([partialLink, plugPositions, throttledMousePosition], ([l, p, mp]) => {
-      // Skip expensive linkFinder computation if no partial link
-      if (!isPartialLink(l)) {
-        return []
-      }
-      return linkFinder(l, p as Map<string, PlugPosition>, mp, getPlugType)
-    }),
-    linkFinderCmp
-  )
+  // Mouse position is already RAF-throttled in Workspace.svelte
+  const activeLink = derived([partialLink, plugPositions, mousePosition], ([l, p, mp]) => {
+    if (!isPartialLink(l)) {
+      return []
+    }
+    return linkFinder(l, p as Map<string, PlugPosition>, mp, getPlugType)
+  })
 
+  // Calculate wire paths from links and positions
   const paths = derived(
-    throttled(
-      derived([activeLink, links, plugPositions, modulePositions], stores => stores)
-    ),
+    [activeLink, links, plugPositions, modulePositions],
     ([activeLink, links, plugs, modules]) =>
       linker([...activeLink, ...links], plugs as Map<string, PlugPosition>, modules as Map<string, ModulePosition>)
   )
