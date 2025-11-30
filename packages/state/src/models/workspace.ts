@@ -7,7 +7,7 @@ import cloneDeep from 'lodash/cloneDeep'
 import { intoReadable } from '../util/store'
 import { type SubDocReference } from '../util/subdoc'
 import { SyncedDoc, type Config } from './syncedDoc'
-import { isFullyLinked, type Link } from './links'
+import { isFullyLinked, PlugType, type Link } from './links'
 
 export interface Position {
   x: number
@@ -226,15 +226,23 @@ export class Workspace extends SyncedDoc<'workspace'> {
     })
   }
 
-  tryMakeLink(moduleId: string, routeName: string) {
+  /**
+   * Attempt to create a link by clicking on a plug.
+   * Assigns the plug to 'from' or 'to' based on its type:
+   * - Output plugs go in 'from'
+   * - Input/Param/Mixer plugs go in 'to'
+   */
+  tryMakeLink(moduleId: string, routeName: string, plugType: PlugType) {
     this.pendingLinkStore.update(link => {
       const next = link ? { ...link } : {}
       const newPoint = { routeName, moduleId }
       
-      if (!next.to) {
-        next.to = newPoint
-      } else {
+      // Assign to from/to based on plug type
+      if (plugType === PlugType.Output) {
         next.from = newPoint
+      } else {
+        // Input, Param, or Mixer
+        next.to = newPoint
       }
 
       if (isFullyLinked(next)) {

@@ -18,9 +18,12 @@
   // Static modules have a fixed position in the top-right
   const position = readable({ x: 0, y: 0 })
   
-  // Plug callbacks - map routeName to full linkPoint
+  // Plug callbacks - get plug type and pass to tryMakeLink
   const handlePlugClick = (routeName: string) => {
-    workspace.tryMakeLink(moduleId, routeName)
+    const plugType = dsp.getPlugType(moduleId, routeName)
+    if (plugType !== undefined) {
+      workspace.tryMakeLink(moduleId, routeName, plugType)
+    }
   }
   
   const handleBindPlugElement = (routeName: string, element: HTMLElement) => {

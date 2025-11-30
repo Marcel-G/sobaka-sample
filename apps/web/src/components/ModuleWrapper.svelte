@@ -31,9 +31,12 @@
     return positions.registerModule(module.id, element)
   }
   
-  // Plug callbacks - map routeName to full linkPoint
+  // Plug callbacks - get plug type and pass to tryMakeLink
   const handlePlugClick = (routeName: string) => {
-    workspace.tryMakeLink(module.id, routeName)
+    const plugType = dsp.getPlugType(module.id, routeName)
+    if (plugType !== undefined) {
+      workspace.tryMakeLink(module.id, routeName, plugType)
+    }
   }
   
   const handleBindPlugElement = (routeName: string, element: HTMLElement) => {
