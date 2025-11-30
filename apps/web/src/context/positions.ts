@@ -91,29 +91,28 @@ export const createPositionStores = () => {
     })
   }
 
-  const registerPlug = (linkPoint: LinkPoint, element: Element) => {
+  const registerPlug = (linkPoint: LinkPoint, element: Element): (() => void) => {
     const key = linkPointToKey(linkPoint)
-    
-    // Initial position update
-    updatePlugPosition(linkPoint, element)
     
     // Store element reference
     plugElements.set(key, element)
     
-    // Start observing for changes
+    // Start observing for changes (observer handles requestAnimationFrame for initial update)
     observer.observe(element, () => {
       updatePlugPosition(linkPoint, element)
     })
+    
+    // Return cleanup function
+    return () => {
+      removePlug(linkPoint)
+    }
   }
 
-  const registerModule = (moduleId: string, element: Element) => {
-    // Initial position update
-    updateModulePosition(moduleId, element)
-    
+  const registerModule = (moduleId: string, element: Element): (() => void) => {
     // Store element reference
     moduleElements.set(moduleId, element)
     
-    // Start observing for changes
+    // Start observing for changes (observer handles requestAnimationFrame for initial update)
     observer.observe(element, () => {
       updateModulePosition(moduleId, element)
       
@@ -129,6 +128,11 @@ export const createPositionStores = () => {
         updatePlugPosition(linkPoint, plugElement)
       }
     })
+    
+    // Return cleanup function
+    return () => {
+      removeModule(moduleId)
+    }
   }
 
   const removeModule = (moduleId: string) => {

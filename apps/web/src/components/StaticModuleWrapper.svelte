@@ -23,22 +23,13 @@
     workspace.tryMakeLink(moduleId, routeName)
   }
   
-  const handleRegisterPlugElement = (routeName: string, element: HTMLElement) => {
+  const handleBindPlugElement = (routeName: string, element: HTMLElement) => {
     const linkPoint = { moduleId, routeName }
-    positions.registerPlug(linkPoint, element)
+    return positions.registerPlug(linkPoint, element)
   }
   
-  const handleUnregisterPlugElement = (routeName: string) => {
-    const linkPoint = { moduleId, routeName }
-    positions.removePlug(linkPoint)
-  }
-  
-  const handleRegisterElement = (element: HTMLElement) => {
-    positions.registerModule(moduleId, element)
-  }
-  
-  const handleUnregisterElement = () => {
-    positions.removeModule(moduleId)
+  const handleBindElement = (element: HTMLElement) => {
+    return positions.registerModule(moduleId, element)
   }
 </script>
 
@@ -49,10 +40,8 @@
       disabled={false}
       {position}
       onPlugClick={handlePlugClick}
-      registerPlugElement={handleRegisterPlugElement}
-      unregisterPlugElement={handleUnregisterPlugElement}
-      registerElement={handleRegisterElement}
-      unregisterElement={handleUnregisterElement}
+      bindPlugElement={handleBindPlugElement}
+      bindElement={handleBindElement}
     />
   </div>
 {/if}

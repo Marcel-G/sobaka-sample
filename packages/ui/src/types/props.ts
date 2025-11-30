@@ -14,8 +14,7 @@ export interface PanelProps {
   onClose?: (() => void) | null
   onClone?: (() => void) | null
   onDrag?: ((x: number, y: number) => void) | null
-  registerElement?: ((element: HTMLElement) => void) | null
-  unregisterElement?: (() => void) | null
+  bindElement?: ((element: HTMLElement) => (() => void) | void) | null
   
   // Slots
   children?: import('svelte').Snippet
@@ -29,8 +28,7 @@ export interface PanelProps {
 export interface PlugProps {
   ctx: import('@sobaka/dsp').RouteInfo
   onClick?: ((routeName: string) => void) | null
-  registerElement?: ((routeName: string, element: HTMLElement) => void) | null
-  unregisterElement?: ((routeName: string) => void) | null
+  bindElement?: ((routeName: string, element: HTMLElement) => (() => void) | void) | null
 }
 
 /**
@@ -45,11 +43,9 @@ export interface BaseModuleProps {
   onClose?: (() => void) | null
   onClone?: (() => void) | null
   onDrag?: ((x: number, y: number) => void) | null
-  registerElement?: ((element: HTMLElement) => void) | null
-  unregisterElement?: (() => void) | null
+  bindElement?: ((element: HTMLElement) => (() => void) | void) | null
   
   // Plug callbacks
   onPlugClick?: ((routeName: string) => void) | null
-  registerPlugElement?: ((routeName: string, element: HTMLElement) => void) | null
-  unregisterPlugElement?: ((routeName: string) => void) | null
+  bindPlugElement?: ((routeName: string, element: HTMLElement) => (() => void) | void) | null
 }

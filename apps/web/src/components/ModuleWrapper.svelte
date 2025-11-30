@@ -27,12 +27,8 @@
     workspace.moveModule(module.id, x, y)
   }
   
-  const handleRegisterElement = (element: HTMLElement) => {
-    positions.registerModule(module.id, element)
-  }
-  
-  const handleUnregisterElement = () => {
-    positions.removeModule(module.id)
+  const handleBindElement = (element: HTMLElement) => {
+    return positions.registerModule(module.id, element)
   }
   
   // Plug callbacks - map routeName to full linkPoint
@@ -40,14 +36,9 @@
     workspace.tryMakeLink(module.id, routeName)
   }
   
-  const handleRegisterPlugElement = (routeName: string, element: HTMLElement) => {
+  const handleBindPlugElement = (routeName: string, element: HTMLElement) => {
     const linkPoint = { moduleId: module.id, routeName }
-    positions.registerPlug(linkPoint, element)
-  }
-  
-  const handleUnregisterPlugElement = (routeName: string) => {
-    const linkPoint = { moduleId: module.id, routeName }
-    positions.removePlug(linkPoint)
+    return positions.registerPlug(linkPoint, element)
   }
 </script>
 
@@ -60,8 +51,6 @@
   onClone={handleClone}
   onDrag={handleDrag}
   onPlugClick={handlePlugClick}
-  registerElement={handleRegisterElement}
-  unregisterElement={handleUnregisterElement}
-  registerPlugElement={handleRegisterPlugElement}
-  unregisterPlugElement={handleUnregisterPlugElement}
+  bindElement={handleBindElement}
+  bindPlugElement={handleBindPlugElement}
 />

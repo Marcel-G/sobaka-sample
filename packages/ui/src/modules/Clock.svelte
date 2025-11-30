@@ -20,10 +20,8 @@
     onClone,
     onDrag,
     onPlugClick,
-    registerPlugElement,
-    unregisterPlugElement,
-    registerElement,
-    unregisterElement
+    bindPlugElement,
+    bindElement
   }: ClockProps = $props()
 
   let name = node.name
@@ -41,8 +39,7 @@
   {onClose}
   {onClone}
   {onDrag}
-  {registerElement}
-  {unregisterElement}
+  {bindElement}
   height={8}
   width={5}
   --color-module-accent="var(--color-pink)"
@@ -55,8 +52,7 @@
           <Plug 
             ctx={routing.bpm} 
             onClick={onPlugClick} 
-            registerElement={registerPlugElement}
-            unregisterElement={unregisterPlugElement}
+            bindElement={bindPlugElement}
           />
         </div>
       </Knob>
@@ -67,32 +63,27 @@
     <Plug 
       ctx={routing.output_0} 
       onClick={onPlugClick} 
-      registerElement={registerPlugElement}
-      unregisterElement={unregisterPlugElement}
+      bindElement={bindPlugElement}
     />
     <Plug 
       ctx={routing.output_1} 
       onClick={onPlugClick} 
-      registerElement={registerPlugElement}
-      unregisterElement={unregisterPlugElement}
+      bindElement={bindPlugElement}
     />
     <Plug 
       ctx={routing.output_2} 
       onClick={onPlugClick} 
-      registerElement={registerPlugElement}
-      unregisterElement={unregisterPlugElement}
+      bindElement={bindPlugElement}
     />
     <Plug 
       ctx={routing.output_3} 
       onClick={onPlugClick} 
-      registerElement={registerPlugElement}
-      unregisterElement={unregisterPlugElement}
+      bindElement={bindPlugElement}
     />
     <Plug 
       ctx={routing.output_4} 
       onClick={onPlugClick} 
-      registerElement={registerPlugElement}
-      unregisterElement={unregisterPlugElement}
+      bindElement={bindPlugElement}
     />
   {/snippet}
 </Panel>

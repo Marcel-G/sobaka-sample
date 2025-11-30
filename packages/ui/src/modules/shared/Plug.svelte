@@ -8,8 +8,7 @@
   let {
     ctx,
     onClick = null,
-    registerElement = null,
-    unregisterElement = null
+    bindElement = null
   }: PlugProps = $props()
 
   let element: HTMLElement
@@ -24,18 +23,10 @@
     onClick?.(ctx.name)
   }
   
-  // Register element when it's bound, unregister on cleanup
+  // Bind element and get cleanup function
   $effect(() => {
-    if (registerElement && element) {
-      // Wait for next frame to ensure element is rendered and positioned
-      requestAnimationFrame(() => {
-        registerElement(ctx.name, element)
-      })
-      
-      // Return cleanup function
-      return () => {
-        unregisterElement?.(ctx.name)
-      }
+    if (bindElement && element) {
+      return bindElement(ctx.name, element)
     }
   })
 </script>

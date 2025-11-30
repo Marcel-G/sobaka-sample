@@ -17,10 +17,8 @@
     disabled = false,
     position,
     onPlugClick,
-    registerPlugElement,
-    unregisterPlugElement,
-    registerElement,
-    unregisterElement
+    bindPlugElement,
+    bindElement
   }: MixerProps = $props()
 
   const routing = node.getRoutingDefinition()
@@ -39,8 +37,7 @@
   name="Output"
   {position}
   {disabled}
-  {registerElement}
-  {unregisterElement}
+  {bindElement}
   height={10}
   width={0}
   --color-module-accent="var(--color-orange)"
@@ -71,8 +68,7 @@
     <Plug 
       ctx={routing.input} 
       onClick={onPlugClick} 
-      registerElement={registerPlugElement}
-      unregisterElement={unregisterPlugElement}
+      bindElement={bindPlugElement}
     />
   {/snippet}
 </Panel>

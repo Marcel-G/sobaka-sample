@@ -30,8 +30,7 @@
     onClose = null,
     onClone = null,
     onDrag = null,
-    registerElement = null,
-    unregisterElement = null,
+    bindElement = null,
     children,
     inputs,
     outputs
@@ -42,18 +41,10 @@
   const col = $derived(`${$position.x + 1} / span ${width}`)
   const row = $derived(`${$position.y + 1} / span ${height}`)
 
-  // Register element when it's bound, unregister on cleanup
+  // Bind element and get cleanup function
   $effect(() => {
-    if (registerElement && element) {
-      // Wait for next frame to ensure element is rendered and positioned
-      requestAnimationFrame(() => {
-        registerElement(element)
-      })
-      
-      // Return cleanup function
-      return () => {
-        unregisterElement?.()
-      }
+    if (bindElement && element) {
+      return bindElement(element)
     }
   })
 
