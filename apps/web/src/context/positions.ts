@@ -1,6 +1,7 @@
 import type { LinkPoint } from '@sobaka/state'
 import { linkPointToKey, keyToLinkPoint } from '@sobaka/state/models/links'
 import { get, readonly, writable } from 'svelte/store'
+import { PositionObserver } from './positionObserver'
 
 export interface Point {
   x: number
@@ -32,8 +33,15 @@ export const createPositionStores = () => {
   // Use string keys for stable Map lookups
   const plugPositions = writable<Map<string, PlugPosition>>(new Map())
   const modulePositions = writable<Map<string, ModulePosition>>(new Map())
+  
+  // Create a shared position observer instance
+  const observer = new PositionObserver()
+  
+  // Track which elements we're observing
+  const plugElements = new Map<string, Element>()
+  const moduleElements = new Map<string, Element>()
 
-  const registerPlug = (linkPoint: LinkPoint, element: Element) => {
+  const updatePlugPosition = (linkPoint: LinkPoint, element: Element) => {
     const workspace = document.querySelector('[data-kind="workspace"]')
     const workspaceRect = workspace!.getBoundingClientRect()
     const rect = element.getBoundingClientRect()
@@ -58,7 +66,7 @@ export const createPositionStores = () => {
     })
   }
 
-  const registerModule = (moduleId: string, element: Element) => {
+  const updateModulePosition = (moduleId: string, element: Element) => {
     const workspace = document.querySelector('[data-kind="workspace"]')
     const workspaceRect = workspace!.getBoundingClientRect()
     const rect = element.getBoundingClientRect()
@@ -83,7 +91,54 @@ export const createPositionStores = () => {
     })
   }
 
+  const registerPlug = (linkPoint: LinkPoint, element: Element) => {
+    const key = linkPointToKey(linkPoint)
+    
+    // Initial position update
+    updatePlugPosition(linkPoint, element)
+    
+    // Store element reference
+    plugElements.set(key, element)
+    
+    // Start observing for changes
+    observer.observe(element, () => {
+      updatePlugPosition(linkPoint, element)
+    })
+  }
+
+  const registerModule = (moduleId: string, element: Element) => {
+    // Initial position update
+    updateModulePosition(moduleId, element)
+    
+    // Store element reference
+    moduleElements.set(moduleId, element)
+    
+    // Start observing for changes
+    observer.observe(element, () => {
+      updateModulePosition(moduleId, element)
+      
+      // When a module moves, also update all its plug positions
+      // This is needed because plugs are positioned relative to their module
+      const plugs = Array.from(plugElements.entries()).filter(([key]) => {
+        const linkPoint = keyToLinkPoint(key)
+        return linkPoint.moduleId === moduleId
+      })
+      
+      for (const [key, plugElement] of plugs) {
+        const linkPoint = keyToLinkPoint(key)
+        updatePlugPosition(linkPoint, plugElement)
+      }
+    })
+  }
+
   const removeModule = (moduleId: string) => {
+    // Stop observing
+    const element = moduleElements.get(moduleId)
+    if (element) {
+      observer.unobserve(element)
+      moduleElements.delete(moduleId)
+    }
+    
     modulePositions.update(positions => {
       positions.delete(moduleId)
       return positions
@@ -91,10 +146,32 @@ export const createPositionStores = () => {
   }
 
   const removePlug = (linkPoint: LinkPoint) => {
+    const key = linkPointToKey(linkPoint)
+    
+    // Stop observing
+    const element = plugElements.get(key)
+    if (element) {
+      observer.unobserve(element)
+      plugElements.delete(key)
+    }
+    
     plugPositions.update(positions => {
-      positions.delete(linkPointToKey(linkPoint))
+      positions.delete(key)
       return positions
     })
+  }
+  
+  const forceUpdateModule = (moduleId: string) => {
+    const element = moduleElements.get(moduleId)
+    if (element) {
+      observer.forceUpdate(element)
+    }
+  }
+  
+  const destroy = () => {
+    observer.destroy()
+    plugElements.clear()
+    moduleElements.clear()
   }
 
   return {
@@ -103,7 +180,9 @@ export const createPositionStores = () => {
     removeModule,
     removePlug,
     registerPlug,
-    registerModule
+    registerModule,
+    forceUpdateModule,
+    destroy
   }
 }
 

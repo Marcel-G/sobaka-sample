@@ -4,6 +4,7 @@
 
 <script lang="ts">
   import { writable } from 'svelte/store'
+  import { onDestroy } from 'svelte'
 
   import ModuleWrapper from '../components/ModuleWrapper.svelte'
   import StaticModuleWrapper from '../components/StaticModuleWrapper.svelte'
@@ -17,9 +18,14 @@
   let toolboxPosition: Position = { x: 0, y: 0 }
   let workspaceElement: Element
 
-  const { workspace } = getWorkspace()
+  const { workspace, positions } = getWorkspace()
   const modules = workspace.modules
   const isEditable = workspace.isEditable
+  
+  // Clean up position observers when workspace is destroyed
+  onDestroy(() => {
+    positions.destroy()
+  })
 
   const handleDoubleClick = (event: MouseEvent) => {
     if (!$isEditable) return
