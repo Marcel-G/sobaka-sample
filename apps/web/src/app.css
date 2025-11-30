@@ -1,7 +1,7 @@
 @import 'tailwindcss';
 
 /* Tell Tailwind to scan @sobaka/ui package for classes */
-@source "../../packages/ui/src";
+@source "../../../packages/ui/src/**/*.{svelte,ts,js,html}";
 
 /* Define CSS custom properties for runtime use */
 :root {
