@@ -13,6 +13,7 @@
   // The actual audio node context is managed by DSP layer
   export let ctx: any | { type: PlugType } = { type: PlugType.Output }
   export let label: string
+  export let id: number 
   export let disabled = false
 
   // For backwards compatibility
