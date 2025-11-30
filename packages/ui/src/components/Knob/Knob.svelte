@@ -3,7 +3,7 @@
 </script>
 
 <script lang="ts">
-  import { fromNormalised, toNormalised } from '../../range/range_functions'
+  import { fromNormalised, toNormalised } from '../../range/rangeFunctions'
   import Input from '../Input.svelte'
   import useDrag, { type OnDrag, relativeToElement } from '../../actions/drag'
   import useWheel, { type OnWheel } from '../../actions/wheel'

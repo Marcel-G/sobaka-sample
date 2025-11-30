@@ -4,7 +4,7 @@
 
 <script lang="ts">
   import Arc from './Arc.svelte'
-  import { toNormalised } from '../../range/range_functions'
+  import { toNormalised } from '../../range/rangeFunctions'
   import Tooltip from '../Tooltip.svelte'
 
   export let value = 0.0

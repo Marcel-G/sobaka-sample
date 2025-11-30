@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/svelte';
 import Knob from './Knob.svelte';
-import { createScaleRange, createBpmRange } from '../../range/range_creators';
+import { createScaleRange, createBpmRange } from '../../range/rangeCreators';
 
 const meta = {
   title: 'Components/Knob',

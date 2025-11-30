@@ -1,6 +1,6 @@
 <script lang="ts">
   import { RangeType, type Range } from '../range/range'
-  import { fromString, limit, toString } from '../range/range_functions'
+  import { fromString, limit, toString } from '../range/rangeFunctions'
 
   export let value = 0.0
   export let range: Range

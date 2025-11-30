@@ -26,8 +26,8 @@
     "./context/global": "./src/context/global.ts",
     "./range": "./src/range/index.ts",
     "./range/range": "./src/range/range.ts",
-    "./range/range_functions": "./src/range/range_functions.ts",
-    "./range/range_creators": "./src/range/range_creators.ts",
+    "./range/rangeFunctions": "./src/range/rangeFunctions.ts",
+    "./range/rangeCreators": "./src/range/rangeCreators.ts",
     "./@types": "./src/@types/index.ts"
   },
   "scripts": {

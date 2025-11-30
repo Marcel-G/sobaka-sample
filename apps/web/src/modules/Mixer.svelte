@@ -16,7 +16,7 @@
   import { getGlobalCtx } from '../context/global'
   import Layout from '@sobaka/ui/components/Layout.svelte'
   import RingSpinner from '@sobaka/ui/components/RingSpinner.svelte'
-  import { createVolumeRange } from '@sobaka/ui/range/range_creators'
+  import { createVolumeRange } from '@sobaka/ui/range/rangeCreators'
   import LevelIndicator from '@sobaka/ui/components/LevelIndicator.svelte'
   import { getWorkspace } from '../context/workspace'
 
