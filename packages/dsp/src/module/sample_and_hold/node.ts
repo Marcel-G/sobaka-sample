@@ -1,43 +1,53 @@
-import { SampleAndHoldNode as _SampleAndHoldNode} from '@sobaka/dsp/wasm'
-import { ModuleDSP, ModuleRouting } from '../../shared/types'
+import { SampleAndHoldNode as _SampleAndHoldNode } from '@sobaka/dsp/wasm'
+import { ModuleDSP, Route, RouteInfo } from '../../shared/types'
+import { PlugType } from '@sobaka/state'
+
+export interface SampleAndHoldState {
+  // Sample and hold has no parameters
+}
+
+const INITIAL_STATE: SampleAndHoldState = {}
 
 /**
- * DSP implementation for Sample & Hold module
- * Manages SampleAndHold WASM node (no parameters)
+ * DSP implementation for Sample and Hold module
+ * Samples input signal when gate goes high
  */
-export class SampleAndHoldDSP implements ModuleDSP {
+export class SampleAndHoldNode implements ModuleDSP {
+  public name = "S & H"
   private sampleAndHold: _SampleAndHoldNode
+  public state: SampleAndHoldState
 
   constructor(
     public readonly id: string,
-    private audioContext: AudioContext,
-    initialState: Record<string, never>,
-    sampleAndHold: _SampleAndHoldNode
+    audioContext: AudioContext,
+    initialState: SampleAndHoldState = INITIAL_STATE
   ) {
-    this.sampleAndHold = sampleAndHold
+    this.sampleAndHold = new _SampleAndHoldNode(audioContext)
+    this.state = initialState
   }
 
-  get node(): AudioNode {
-    return this.sampleAndHold.node
-  }
-
-  updateState(_state: Record<string, unknown>): void {
-    // Sample & Hold has no state to update
-  }
-
-  getRoute(): ModuleRouting {
+  getRoutingDefinition() {
     return {
-      inputs: [
-        { index: 0, label: 'Signal', node: this.sampleAndHold.node, connectIndex: 0 },
-        { index: 1, label: 'Gate', node: this.sampleAndHold.node, connectIndex: 1 }
-      ],
-      outputs: [
-        { index: 0, label: 'Out', node: this.sampleAndHold.node, connectIndex: 0 }
-      ]
+      gate: { name: "gate", type: PlugType.Input, label: 'Gate' },
+      signal: { name: "signal", type: PlugType.Input, label: 'Signal' },
+      output: { name: "output", type: PlugType.Output, label: 'Out' },
+    } satisfies Record<string, RouteInfo>
+  }
+
+  getRoute(routeName: string): Route {
+    switch (routeName) {
+      case "gate":
+        return { node: this.sampleAndHold.node, connectIndex: 0 }
+      case "signal":
+        return { node: this.sampleAndHold.node, connectIndex: 1 }
+      case "output":
+        return { node: this.sampleAndHold.node, connectIndex: 0 }
+      default:
+        throw new Error(`Unknown routeName ${routeName}`)
     }
   }
 
   destroy(): void {
-    this.sampleAndHold?.free()
+    // SampleAndHoldNode cleanup if needed
   }
 }
