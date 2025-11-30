@@ -105,10 +105,26 @@ This ensures wires stay connected even when modules are being dragged.
 
 ### Fixed Position Modules (e.g., Output Mixer)
 
-The output mixer is positioned with `position: fixed` in CSS. The observer still tracks it correctly because:
-1. ResizeObserver fires when elements move in the viewport
-2. Position is calculated relative to the workspace element
-3. The observer watches for style changes on the workspace container
+The output mixer is positioned with `position: fixed` in CSS, which creates a unique challenge:
+- Fixed elements stay in place relative to the **viewport**, not the workspace
+- When the workspace scrolls, fixed elements appear to move relative to the workspace
+- Wire endpoints need to be recalculated when scroll position changes
+
+**Solution:**
+1. Observer tracks the workspace scroll container and window resize events
+2. When scroll or resize occurs, **all** positions are recalculated (throttled to 60fps)
+3. Position calculations use `getBoundingClientRect()` which accounts for viewport position
+4. This ensures wires connect correctly even as the workspace scrolls
+
+**Event Flow:**
+```
+User scrolls workspace
+  → scrollHandler triggered (throttled)
+  → scheduleUpdateAll() called
+  → All plug and module positions recalculated
+  → Wire paths updated
+  → Wires stay connected to fixed mixer
+```
 
 ### Grid-Based Positioning
 

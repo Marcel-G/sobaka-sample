@@ -4,6 +4,7 @@
  * Efficiently tracks DOM element position changes using:
  * - ResizeObserver: Detects size changes of modules
  * - MutationObserver: Detects style/attribute changes (position updates)
+ * - Scroll/Resize listeners: Handles viewport changes for fixed-position elements
  * - Throttling: Limits update frequency to avoid expensive recalculations
  */
 
@@ -23,6 +24,9 @@ export class PositionObserver {
   private entries = new Map<Element, ObserverEntry>()
   private pendingUpdates = new Set<Element>()
   private rafId: number | null = null
+  private workspaceElement: Element | null = null
+  private scrollHandler: (() => void) | null = null
+  private resizeHandler: (() => void) | null = null
 
   constructor() {
     // ResizeObserver handles module size changes and position changes
@@ -43,6 +47,40 @@ export class PositionObserver {
           }
         }
       }
+    })
+    
+    // Set up workspace scroll/resize handlers for fixed-position elements
+    this.setupWorkspaceListeners()
+  }
+  
+  /**
+   * Set up listeners for workspace scroll and window resize
+   * These are needed for fixed-position elements that move relative to viewport
+   */
+  private setupWorkspaceListeners() {
+    this.scrollHandler = () => {
+      // When workspace scrolls, all positions need to be recalculated
+      // because fixed-position elements stay in place relative to viewport
+      this.scheduleUpdateAll()
+    }
+    
+    this.resizeHandler = () => {
+      // When window resizes, fixed-position elements move
+      this.scheduleUpdateAll()
+    }
+    
+    // Add listeners (will attach to workspace when first element is observed)
+    if (typeof window !== 'undefined') {
+      window.addEventListener('resize', this.resizeHandler, { passive: true })
+    }
+  }
+  
+  /**
+   * Schedule updates for all observed elements
+   */
+  private scheduleUpdateAll() {
+    Array.from(this.entries.keys()).forEach(element => {
+      this.scheduleUpdate(element)
     })
   }
 
@@ -75,12 +113,12 @@ export class PositionObserver {
   private processPendingUpdates() {
     const now = Date.now()
     
-    for (const element of this.pendingUpdates) {
+    Array.from(this.pendingUpdates).forEach(element => {
       const entry = this.entries.get(element)
       if (entry && now - entry.lastUpdate >= THROTTLE_MS) {
         this.executeUpdate(element, entry)
       }
-    }
+    })
 
     this.pendingUpdates.clear()
     this.rafId = null
@@ -118,14 +156,19 @@ export class PositionObserver {
       attributeFilter: ['style', 'class']
     })
 
-    // Also observe parent for transforms/position changes that affect this element
-    const parent = element.parentElement
-    if (parent && parent.getAttribute('data-kind') === 'workspace') {
-      // Watch workspace for scroll/transform changes
-      this.mutationObserver.observe(parent, {
-        attributes: true,
-        attributeFilter: ['style']
-      })
+    // Find and track the workspace element for scroll events
+    if (!this.workspaceElement) {
+      const workspace = document.querySelector('[data-kind="workspace"]')
+      if (workspace) {
+        this.workspaceElement = workspace
+        
+        // Attach scroll listener to the main scroll container
+        // The workspace is inside <main> which has overflow-x: auto
+        const scrollContainer = workspace.closest('main')
+        if (scrollContainer && this.scrollHandler) {
+          scrollContainer.addEventListener('scroll', this.scrollHandler, { passive: true })
+        }
+      }
     }
 
     // Initial update to capture current position
@@ -169,5 +212,21 @@ export class PositionObserver {
       cancelAnimationFrame(this.rafId)
       this.rafId = null
     }
+    
+    // Clean up scroll and resize listeners
+    if (this.workspaceElement && this.scrollHandler) {
+      const scrollContainer = this.workspaceElement.closest('main')
+      if (scrollContainer) {
+        scrollContainer.removeEventListener('scroll', this.scrollHandler)
+      }
+    }
+    
+    if (this.resizeHandler && typeof window !== 'undefined') {
+      window.removeEventListener('resize', this.resizeHandler)
+    }
+    
+    this.workspaceElement = null
+    this.scrollHandler = null
+    this.resizeHandler = null
   }
 }
