@@ -2,6 +2,7 @@ import type { LinkPoint } from '@sobaka/state'
 import { linkPointToKey, keyToLinkPoint } from '@sobaka/state/models/links'
 import { get, readonly, writable } from 'svelte/store'
 import { PositionObserver } from './positionObserver'
+import { rafBatched } from './rafBatched'
 
 export interface Point {
   x: number
@@ -58,14 +59,12 @@ export const createPositionStores = () => {
       if (isSamePoint(prevPosition, nextPosition)) return
     }
 
-    // Create new Map to trigger reactivity
     plugPositions.update(positions => {
-      const newMap = new Map(positions)
-      newMap.set(key, {
+      positions.set(key, {
         id: linkPoint,
         position: nextPosition
       })
-      return newMap
+      return positions
     })
   }
 
@@ -86,14 +85,12 @@ export const createPositionStores = () => {
       if (isSameRect(prevPosition, nextPosition)) return
     }
 
-    // Create new Map to trigger reactivity
     modulePositions.update(positions => {
-      const newMap = new Map(positions)
-      newMap.set(moduleId, {
+      positions.set(moduleId, {
         id: moduleId,
         position: nextPosition
       })
-      return newMap
+      return positions
     })
   }
 
@@ -129,44 +126,9 @@ export const createPositionStores = () => {
         return linkPoint.moduleId === moduleId
       })
       
-      // Batch all plug updates into a single store update
-      if (plugs.length > 0) {
-        const workspace = document.querySelector('[data-kind="workspace"]')
-        const workspaceRect = workspace!.getBoundingClientRect()
-        let hasChanges = false
-        const updates = new Map<string, PlugPosition>()
-        
-        for (const [key, plugElement] of plugs) {
-          const linkPoint = keyToLinkPoint(key)
-          const rect = plugElement.getBoundingClientRect()
-          const nextPosition: Point = {
-            x: Math.floor(rect.left - workspaceRect.left + rect.width / 2),
-            y: Math.floor(rect.top - workspaceRect.top + rect.height / 2)
-          }
-          
-          const currentPlugs = get(plugPositions)
-          if (currentPlugs.has(key)) {
-            const prevPosition = currentPlugs.get(key)!.position
-            if (isSamePoint(prevPosition, nextPosition)) continue
-          }
-          
-          hasChanges = true
-          updates.set(key, {
-            id: linkPoint,
-            position: nextPosition
-          })
-        }
-        
-        // Only update the store once if there are any changes
-        if (hasChanges) {
-          plugPositions.update(positions => {
-            const newMap = new Map(positions)
-            for (const [key, plugPos] of updates) {
-              newMap.set(key, plugPos)
-            }
-            return newMap
-          })
-        }
+      for (const [key, plugElement] of plugs) {
+        const linkPoint = keyToLinkPoint(key)
+        updatePlugPosition(linkPoint, plugElement)
       }
     })
     
@@ -220,8 +182,9 @@ export const createPositionStores = () => {
   }
 
   return {
-    plugPositions: readonly(plugPositions),
-    modulePositions: readonly(modulePositions),
+    // Wrap position stores with RAF batching - updates batched to once per frame
+    plugPositions: rafBatched(readonly(plugPositions)),
+    modulePositions: rafBatched(readonly(modulePositions)),
     removeModule,
     removePlug,
     registerPlug,

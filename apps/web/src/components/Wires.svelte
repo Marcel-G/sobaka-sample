@@ -36,25 +36,12 @@
     return linkFinder(l, p, mp, getPlugType)
   })
 
-  // Calculate path for active link only (updates on mouse move during link creation)
-  const activeLinkPath = derived(
-    [activeLink, plugPositions, modulePositions],
-    ([active, plugs, modules]) => {
-      if (active.length === 0) return []
-      return linker(active, plugs, modules)
-    }
-  )
-
-  // Calculate paths for permanent links (only updates when links or positions change)
-  const permanentPaths = derived(
-    [links, plugPositions, modulePositions],
-    ([links, plugs, modules]) => linker(links, plugs, modules)
-  )
-
-  // Combine both path sets
+  // Calculate wire paths from links and positions
+  // Position stores are RAF-batched, so this recalculates at most once per frame
   const paths = derived(
-    [activeLinkPath, permanentPaths],
-    ([active, permanent]) => [...active, ...permanent]
+    [activeLink, links, plugPositions, modulePositions],
+    ([activeLink, links, plugs, modules]) =>
+      linker([...activeLink, ...links], plugs, modules)
   )
 
   function handleClick() {
