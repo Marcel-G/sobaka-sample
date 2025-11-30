@@ -4,6 +4,7 @@ import { Link, Module, PlugType, Workspace } from "@sobaka/state";
 import { ClockNode } from "./module/clock/node";
 import { MixerDSP } from "./module/mixer/node";
 import { OscillatorNode } from "./module/oscillator/node";
+import { NoiseNode } from "./module/noise/node";
 
 /**
  * Creates a DSP instance for a given module
@@ -12,6 +13,7 @@ import { OscillatorNode } from "./module/oscillator/node";
 const createAudioModule = (module: Module, audioContext: AudioContext): ModuleDSP => {
   if (module.type === 'Clock') return new ClockNode(module.id, audioContext, module.state as any)
   if (module.type === 'Oscillator') return new OscillatorNode(module.id, audioContext, module.state as any)
+  if (module.type === 'Noise') return new NoiseNode(module.id, audioContext, module.state as any)
   throw new Error('not implemented: createAudioModule for type ' + module.type)
 }
 

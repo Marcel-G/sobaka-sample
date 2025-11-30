@@ -1,39 +1,47 @@
-import { NoiseNode as _NoiseNode} from '@sobaka/dsp/wasm'
-import { ModuleDSP, ModuleRouting } from '../../shared/types'
+import { NoiseNode as _NoiseNode } from '@sobaka/dsp/wasm'
+import { ModuleDSP, Route, RouteInfo } from '../../shared/types'
+import { PlugType } from '@sobaka/state'
+
+export interface NoiseState {
+  // Noise module has no state
+}
+
+const INITIAL_STATE: NoiseState = {}
 
 /**
  * DSP implementation for Noise module
- * Manages Noise WASM node (no parameters needed)
+ * White noise generator with no parameters
  */
-export class NoiseDSP implements ModuleDSP {
+export class NoiseNode implements ModuleDSP {
+  public name = "noise"
   private noise: _NoiseNode
+  public state: NoiseState
 
   constructor(
     public readonly id: string,
-    private audioContext: AudioContext,
-    initialState: Record<string, never>,
-    noise: _NoiseNode
+    audioContext: AudioContext,
+    initialState: NoiseState = INITIAL_STATE
   ) {
-    this.noise = noise
+    this.noise = new _NoiseNode(audioContext)
+    this.state = initialState
   }
 
-  get node(): AudioNode {
-    return this.noise.node
-  }
-
-  updateState(_state: Record<string, unknown>): void {
-    // Noise has no state to update
-  }
-
-  getRoute(): ModuleRouting {
+  getRoutingDefinition() {
     return {
-      outputs: [
-        { index: 0, label: 'Noise', node: this.noise.node, connectIndex: 0 }
-      ]
+      output: { name: "output", type: PlugType.Output, label: 'Noise' },
+    } satisfies Record<string, RouteInfo>
+  }
+
+  getRoute(routeName: string): Route {
+    switch (routeName) {
+      case "output":
+        return { node: this.noise.node, connectIndex: 0 }
+      default:
+        throw new Error(`Unknown routeName ${routeName}`)
     }
   }
 
   destroy(): void {
-    this.noise?.free()
+    // NoiseNode cleanup if needed
   }
 }
