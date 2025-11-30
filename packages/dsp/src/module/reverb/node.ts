@@ -1,59 +1,53 @@
-import { ReverbNode as _ReverbNode} from '@sobaka/dsp/wasm'
-import { ModuleDSP, ModuleRouting } from '../../shared/types'
+import { ReverbNode as _ReverbNode } from '@sobaka/dsp/wasm'
+import { ModuleDSP, Route, RouteInfo } from '../../shared/types'
+import { PlugType } from '@sobaka/state'
 
-interface ReverbState {
-  wet: number
-  length: number
+export interface ReverbState {
+  // Reverb currently has no parameters in the processor
 }
+
+const INITIAL_STATE: ReverbState = {}
 
 /**
  * DSP implementation for Reverb module
- * Manages Reverb WASM node and its parameters
+ * Stereo reverb effect
  */
-export class ReverbDSP implements ModuleDSP {
+export class ReverbNode implements ModuleDSP {
+  public name = "reverb"
   private reverb: _ReverbNode
-  private wetParam: AudioParam
-  private delayParam: AudioParam
+  public state: ReverbState
 
   constructor(
     public readonly id: string,
-    private audioContext: AudioContext,
-    initialState: ReverbState,
-    reverb: _ReverbNode
+    audioContext: AudioContext,
+    initialState: ReverbState = INITIAL_STATE
   ) {
-    this.reverb = reverb
-    this.wetParam = reverb.node.parameters.get('Wet')
-    this.delayParam = reverb.node.parameters.get('Delay')
-    
-    // Set initial state
-    this.updateState(initialState)
+    this.reverb = new _ReverbNode(audioContext)
+    this.state = initialState
   }
 
-  get node(): AudioNode {
-    return this.reverb.node
-  }
-
-  updateState(state: Record<string, unknown>): void {
-    const reverbState = state as ReverbState
-    
-    this.wetParam.setValueAtTime(reverbState.wet, this.audioContext.currentTime)
-    this.delayParam.setValueAtTime(reverbState.length, this.audioContext.currentTime)
-  }
-
-  getRoute(): ModuleRouting {
+  getRoutingDefinition() {
     return {
-      inputs: [
-        { index: 0, label: 'In L', node: this.reverb.node, connectIndex: 0 },
-        { index: 1, label: 'In R', node: this.reverb.node, connectIndex: 1 }
-      ],
-      outputs: [
-        { index: 0, label: 'Out L', node: this.reverb.node, connectIndex: 0 },
-        { index: 1, label: 'Out R', node: this.reverb.node, connectIndex: 1 }
-      ]
+      input: { name: "input", type: PlugType.Input, label: 'In' },
+      left: { name: "left", type: PlugType.Output, label: 'L' },
+      right: { name: "right", type: PlugType.Output, label: 'R' },
+    } satisfies Record<string, RouteInfo>
+  }
+
+  getRoute(routeName: string): Route {
+    switch (routeName) {
+      case "input":
+        return { node: this.reverb.node, connectIndex: 0 }
+      case "left":
+        return { node: this.reverb.node, connectIndex: 0 }
+      case "right":
+        return { node: this.reverb.node, connectIndex: 1 }
+      default:
+        throw new Error(`Unknown routeName ${routeName}`)
     }
   }
 
   destroy(): void {
-    this.reverb?.free()
+    // ReverbNode cleanup if needed
   }
 }

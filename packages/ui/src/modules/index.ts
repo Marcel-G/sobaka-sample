@@ -5,6 +5,7 @@ import Noise from './Noise.svelte'
 import Filter from './Filter.svelte'
 import Envelope from './Envelope/Envelope.svelte'
 import Delay from './Delay.svelte'
+import Reverb from './Reverb.svelte'
 import { type Module } from '@sobaka/state/models/workspace'
 
 export const MODULES = {
@@ -15,6 +16,7 @@ export const MODULES = {
   Filter,
   Envelope,
   Delay,
+  Reverb,
 } as const
 
 export const getComponent = (module: Module) => {
