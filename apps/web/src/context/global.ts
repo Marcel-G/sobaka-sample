@@ -35,7 +35,7 @@ export class Global {
 
   audio = new AudioContext()
   workspaces = new SyncedDocFactory<Workspace>(ref =>
-    Workspace.fromRef(this.config, this.audio, ref)
+    Workspace.fromRef(this.config, ref)
   )
   lists = new SyncedDocFactory<WorkspaceList>(ref =>
     WorkspaceList.fromRef(this.config, ref)
@@ -137,7 +137,7 @@ export class Global {
   }
 
   public createFork(workspace: Workspace) {
-    const fork = workspace.fork(this.audio)
+    const fork = workspace.fork()
     const userList = this.lists.get(this.root.userList())
     userList.synced(() => {
       userList.add(fork)
