@@ -1,6 +1,6 @@
 use fundsp::prelude::*;
 use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
-use waw::{register, AutomationRate, ParameterDescriptor, ParameterValues, Processor};
+use waw::{register, AutomationRate, ParameterDescriptor, ParameterValuesRef, Processor};
 
 pub struct ClockDividerProcessor {
     inner: BigBlockAdapter,
@@ -22,7 +22,7 @@ impl Processor for ClockDividerProcessor {
             let divide = [1.0, 2.0, 4.0, 8.0, 16.0];
 
             let clock_divider_node =
-                branchi::<U5, _, _>(|n| mul(divide[n as usize]) >> clock_square());
+                branchi::<U4, _, _>(|n| mul(divide[n as usize]) >> clock_square());
 
             let bpm = var(&bpm) >> map(|f| bpm_hz(f[0]));
 
@@ -40,10 +40,10 @@ impl Processor for ClockDividerProcessor {
         inputs: &[&[f32]],
         outputs: &mut [&mut [f32]],
         sample_rate: f32,
-        params: &ParameterValues,
+        params: &ParameterValuesRef,
     ) {
-        // self.bpm.set_value(params.get("bpm", 120.0));
-        // self.inner.set_sample_rate(sample_rate.into());
+        self.bpm.set_value(*params.get("bpm").and_then(|b|b.get(0)).unwrap_or(&120.0));
+        self.inner.set_sample_rate(sample_rate.into());
         self.inner.process_big(128, inputs, outputs);
     }
 
@@ -67,7 +67,12 @@ pub struct ClockDividerNode {
 impl ClockDividerNode {
     #[wasm_bindgen(constructor)]
     pub fn new(ctx: &web_sys::AudioContext) -> Result<ClockDividerNode, JsValue> {
-        let node = ClockDividerProcessor::create_node(ctx, ())?;
+        let options = web_sys::AudioWorkletNodeOptions::new();
+        options.set_channel_count(1);
+        options.set_number_of_inputs(0);
+        options.set_number_of_outputs(4);
+
+        let node = ClockDividerProcessor::create_node(ctx, (), Some(&options))?;
         Ok(ClockDividerNode { node })
     }
 

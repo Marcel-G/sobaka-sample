@@ -4,7 +4,7 @@ use fundsp::{
 };
 use js_sys::Array;
 use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
-use waw::{register, ParameterDescriptor, ParameterValues, Processor};
+use waw::{register, ParameterDescriptor, ParameterValuesRef, Processor};
 
 use crate::shared::quantiser::{dsp_quantiser, Message};
 
@@ -33,7 +33,7 @@ impl Processor for QuantiserProcessor {
         inputs: &[&[f32]],
         outputs: &mut [&mut [f32]],
         sample_rate: f32,
-        _params: &ParameterValues,
+        _params: &ParameterValuesRef,
     ) {
         self.inner.set_sample_rate(sample_rate.into());
         self.inner.process_big(128, inputs, outputs);
@@ -59,7 +59,12 @@ impl QuantiserNode {
             notes: [false; 12],
             receiver,
         };
-        let node = QuantiserProcessor::create_node(ctx, data)?;
+        let options = web_sys::AudioWorkletNodeOptions::new();
+        options.set_channel_count(1);
+        options.set_number_of_inputs(1);
+        options.set_number_of_outputs(1);
+
+        let node = QuantiserProcessor::create_node(ctx, data, Some(&options))?;
         Ok(QuantiserNode { node, sender })
     }
 

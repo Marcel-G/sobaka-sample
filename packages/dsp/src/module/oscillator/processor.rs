@@ -3,7 +3,7 @@ use fundsp::{
     thingbuf::mpsc::{channel, Receiver, Sender},
 };
 use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
-use waw::{register, AutomationRate, ParameterDescriptor, ParameterValues, Processor};
+use waw::{register, AutomationRate, ParameterDescriptor, ParameterValuesRef, Processor};
 
 #[wasm_bindgen]
 #[derive(Clone)]
@@ -79,10 +79,10 @@ impl Processor for OscillatorProcessor {
         inputs: &[&[f32]],
         outputs: &mut [&mut [f32]],
         sample_rate: f32,
-        params: &ParameterValues,
+        params: &ParameterValuesRef,
     ) {
         self.handle_messages();
-        let pitch = params.get("pitch", 1.0); // TODO: Audio-rate frequency.
+        let pitch = *params.get("pitch").and_then(|b|b.get(0)).unwrap_or(&1.0); // TODO: Audio-rate frequency.
         self.frequency.set_value(volt_hz(pitch));
 
         let module = match self.current_shape {
@@ -121,7 +121,12 @@ impl OscillatorNode {
             shape: OscillatorShape::Saw,
             receiver,
         };
-        let node = OscillatorProcessor::create_node(ctx, data)?;
+        let options = web_sys::AudioWorkletNodeOptions::new();
+        options.set_channel_count(1);
+        options.set_number_of_inputs(1);
+        options.set_number_of_outputs(1);
+
+        let node = OscillatorProcessor::create_node(ctx, data, Some(&options))?;
         Ok(OscillatorNode { node, sender })
     }
 

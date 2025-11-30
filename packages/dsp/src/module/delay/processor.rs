@@ -1,6 +1,6 @@
 use fundsp::prelude::*;
 use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
-use waw::{register, AutomationRate, ParameterDescriptor, ParameterValues, Processor};
+use waw::{register, AutomationRate, ParameterDescriptor, ParameterValuesRef, Processor};
 
 pub struct DelayProcessor {
     inner: BigBlockAdapter,
@@ -26,9 +26,9 @@ impl Processor for DelayProcessor {
         inputs: &[&[f32]],
         outputs: &mut [&mut [f32]],
         sample_rate: f32,
-        params: &ParameterValues,
+        params: &ParameterValuesRef,
     ) {
-        self.delay.set_value(params.get("delay", 1.0));
+        self.delay.set_value(*params.get("delay").and_then(|b|b.get(0)).unwrap_or(&1.0));
         self.inner.set_sample_rate(sample_rate.into());
         self.inner.process_big(128, inputs, outputs);
     }
@@ -53,7 +53,12 @@ pub struct DelayNode {
 impl DelayNode {
     #[wasm_bindgen(constructor)]
     pub fn new(ctx: &web_sys::AudioContext) -> Result<DelayNode, JsValue> {
-        let node = DelayProcessor::create_node(ctx, ())?;
+        let options = web_sys::AudioWorkletNodeOptions::new();
+        options.set_channel_count(1);
+        options.set_number_of_inputs(1);
+        options.set_number_of_outputs(4);
+
+        let node = DelayProcessor::create_node(ctx, (), Some(&options))?;
         Ok(DelayNode { node })
     }
 
