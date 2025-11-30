@@ -16,6 +16,7 @@
   export let onClose: ((id: string) => void) | null = null
   export let onClone: ((id: string) => void) | null = null
   export let onDrag: ((id: string, x: number, y: number) => void) | null = null
+  export let onPlugClick: ((moduleId: string, routeName: string) => void) | null = null
   export let registerElement: ((id: string, element: HTMLElement) => void) | null = null
   export let unregisterElement: ((id: string) => void) | null = null
 
@@ -45,16 +46,16 @@
   <Layout type="center">
     <Knob {disabled} bind:value={node.state.bpm} range={bpm} label="bpm">
       <div slot="knob-inputs">
-        <Plug ctx={routing.bpm} />
+        <Plug ctx={routing.bpm} {moduleId} onClick={onPlugClick} />
       </div>
     </Knob>
   </Layout>
 
   <div slot="outputs">
-    <Plug ctx={routing.output_0} />
-    <Plug ctx={routing.output_1} />
-    <Plug ctx={routing.output_2} />
-    <Plug ctx={routing.output_3} />
-    <Plug ctx={routing.output_4} />
+    <Plug ctx={routing.output_0} {moduleId} onClick={onPlugClick} />
+    <Plug ctx={routing.output_1} {moduleId} onClick={onPlugClick} />
+    <Plug ctx={routing.output_2} {moduleId} onClick={onPlugClick} />
+    <Plug ctx={routing.output_3} {moduleId} onClick={onPlugClick} />
+    <Plug ctx={routing.output_4} {moduleId} onClick={onPlugClick} />
   </div>
 </Panel>

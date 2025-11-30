@@ -26,6 +26,10 @@
     workspace.move_module(id, x, y)
   }
   
+  const handlePlugClick = (moduleId: string, routeName: string) => {
+    workspace.try_make_link(moduleId, routeName)
+  }
+  
   const handleRegisterElement = (id: string, element: HTMLElement) => {
     positions.registerModule(id, element)
   }
@@ -44,6 +48,7 @@
   onClose={handleClose}
   onClone={handleClone}
   onDrag={handleDrag}
+  onPlugClick={handlePlugClick}
   registerElement={handleRegisterElement}
   unregisterElement={handleUnregisterElement}
 />
