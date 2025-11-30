@@ -19,13 +19,22 @@ const selectEnd = (plugs: PlugPosition[], mousePosition: Position) => {
   return plugs[0]
 }
 
+/**
+ * Checks if a link is partial (has one endpoint defined but not the other)
+ */
+export const isPartialLink = (link: Partial<Link> | null): boolean => {
+  if (link == null) return false
+  return (link.from && !link.to) || (!link.from && link.to)
+}
+
 export const linkFinder = (
   link: Partial<Link> | null,
   plugPositions: Map<string, PlugPosition>,
   mousePosition: Position,
   plugTypeGetter: (linkPoint: LinkPoint) => PlugType
 ): Required<Link>[] => {
-  if (link == null || (link.from && link.to)) {
+  // Early exit if no partial link exists
+  if (!isPartialLink(link)) {
     return []
   }
   

@@ -9,7 +9,8 @@
     linkFinder,
     linkFinderCmp,
     memoizeLast,
-    throttled
+    throttled,
+    isPartialLink
   } from '../context/linkFinder'
   import { isFullyLinked, PlugType, type LinkPoint } from '@sobaka/state/models/links'
     import type { Position } from '@sobaka/state/models/workspace'
@@ -32,10 +33,18 @@
   const partialLink = workspace.pendingLinkStore
   const links = workspace.links
 
+  // Throttle mouse position to RAF
+  const throttledMousePosition = throttled(mousePosition)
+
+  // Only run linkFinder when there's a partial link
   const activeLink = memoizeLast(
-    derived([partialLink, plugPositions, mousePosition], ([l, p, mp]) =>
-      linkFinder(l, p as Map<string, PlugPosition>, mp, getPlugType)
-    ),
+    derived([partialLink, plugPositions, throttledMousePosition], ([l, p, mp]) => {
+      // Skip expensive linkFinder computation if no partial link
+      if (!isPartialLink(l)) {
+        return []
+      }
+      return linkFinder(l, p as Map<string, PlugPosition>, mp, getPlugType)
+    }),
     linkFinderCmp
   )
 
