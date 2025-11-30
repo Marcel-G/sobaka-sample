@@ -1,49 +1,53 @@
-import { ModuleDSP, ModuleRouting } from '../../shared/types'
+import { ModuleDSP, Route, RouteInfo } from '../../shared/types'
+import { PlugType } from '@sobaka/state'
 
-interface VcaState {
+export interface VcaState {
   value: number
+}
+
+const INITIAL_STATE: VcaState = {
+  value: 0.5
 }
 
 /**
  * DSP implementation for VCA (Voltage Controlled Amplifier) module
- * Uses native Web Audio API GainNode
+ * Uses native Web Audio GainNode for amplification/attenuation
  */
-export class VcaDSP implements ModuleDSP {
+export class VcaNode implements ModuleDSP {
+  public name = "vca"
   private vca: GainNode
-  private gainParam: AudioParam
+  public state: VcaState
 
   constructor(
     public readonly id: string,
-    private audioContext: AudioContext,
-    initialState: VcaState
+    audioContext: AudioContext,
+    initialState: VcaState = INITIAL_STATE
   ) {
     this.vca = new GainNode(audioContext)
-    this.gainParam = this.vca.gain
+    this.state = initialState
     
-    // Set initial state
-    this.updateState(initialState)
+    // Set initial gain value
+    this.vca.gain.setValueAtTime(this.state.value, audioContext.currentTime)
   }
 
-  get node(): AudioNode {
-    return this.vca
-  }
-
-  updateState(state: Record<string, unknown>): void {
-    const vcaState = state as VcaState
-    this.gainParam.setValueAtTime(vcaState.value || 0, this.audioContext.currentTime)
-  }
-
-  getRoute(): ModuleRouting {
+  getRoutingDefinition() {
     return {
-      inputs: [
-        { index: 0, label: 'Signal', node: this.vca }
-      ],
-      params: [
-        { index: 1, label: 'CV', param: this.gainParam }
-      ],
-      outputs: [
-        { index: 0, label: 'Out', node: this.vca }
-      ]
+      input: { name: "input", type: PlugType.Input, label: 'Signal' },
+      cv: { name: "cv", type: PlugType.Param, label: 'CV' },
+      output: { name: "output", type: PlugType.Output, label: 'Out' },
+    } satisfies Record<string, RouteInfo>
+  }
+
+  getRoute(routeName: string): Route {
+    switch (routeName) {
+      case "input":
+        return { node: this.vca, connectIndex: 0 }
+      case "cv":
+        return { node: this.vca.gain }
+      case "output":
+        return { node: this.vca, connectIndex: 0 }
+      default:
+        throw new Error(`Unknown routeName ${routeName}`)
     }
   }
 

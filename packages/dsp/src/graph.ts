@@ -12,6 +12,7 @@ import { ReverbNode } from "./module/reverb/node";
 import { QuantiserNode } from "./module/quantiser/node";
 import { SampleAndHoldNode } from "./module/sample_and_hold/node";
 import { ParameterNode } from "./module/parameter/node";
+import { VcaNode } from "./module/vca/node";
 
 /**
  * Creates a DSP instance for a given module
@@ -28,6 +29,7 @@ const createAudioModule = (module: Module, audioContext: AudioContext): ModuleDS
   if (module.type === 'Quantiser') return new QuantiserNode(module.id, audioContext, module.state as any)
   if (module.type === 'SampleAndHold') return new SampleAndHoldNode(module.id, audioContext, module.state as any)
   if (module.type === 'Parameter') return new ParameterNode(module.id, audioContext, module.state as any)
+  if (module.type === 'Vca') return new VcaNode(module.id, audioContext, module.state as any)
   throw new Error('not implemented: createAudioModule for type ' + module.type)
 }
 

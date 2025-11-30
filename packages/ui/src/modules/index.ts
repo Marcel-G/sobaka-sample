@@ -9,6 +9,7 @@ import Reverb from './Reverb.svelte'
 import Quantiser from './Quantiser.svelte'
 import SampleAndHold from './SampleAndHold.svelte'
 import Parameter from './Parameter.svelte'
+import Vca from './Vca.svelte'
 import { type Module } from '@sobaka/state/models/workspace'
 
 export const MODULES = {
@@ -23,6 +24,7 @@ export const MODULES = {
   Quantiser,
   SampleAndHold,
   Parameter,
+  Vca,
 } as const
 
 export const getComponent = (module: Module) => {
