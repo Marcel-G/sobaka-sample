@@ -1,44 +1,48 @@
-import { ModuleDSP, ModuleRouting } from '../../shared/types'
+import { ModuleDSP, Route, RouteInfo } from '../../shared/types'
+import { PlugType } from '@sobaka/state'
 
-interface ParameterState {
-  min: number
-  max: number
+export interface ParameterState {
   value: number
+}
+
+const INITIAL_STATE: ParameterState = {
+  value: 0.5
 }
 
 /**
  * DSP implementation for Parameter module
- * Uses native Web Audio API ConstantSourceNode
+ * Uses native Web Audio ConstantSourceNode for CV generation
  */
-export class ParameterDSP implements ModuleDSP {
+export class ParameterNode implements ModuleDSP {
+  public name = "parameter"
   private parameter: ConstantSourceNode
+  public state: ParameterState
 
   constructor(
     public readonly id: string,
-    private audioContext: AudioContext,
-    initialState: ParameterState
+    audioContext: AudioContext,
+    initialState: ParameterState = INITIAL_STATE
   ) {
     this.parameter = new ConstantSourceNode(audioContext)
     this.parameter.start()
+    this.state = initialState
     
-    // Set initial state
-    this.updateState(initialState)
+    // Set initial value
+    this.parameter.offset.setValueAtTime(this.state.value, audioContext.currentTime)
   }
 
-  get node(): AudioNode {
-    return this.parameter
-  }
-
-  updateState(state: Record<string, unknown>): void {
-    const paramState = state as ParameterState
-    this.parameter.offset.setValueAtTime(paramState.value, this.audioContext.currentTime)
-  }
-
-  getRoute(): ModuleRouting {
+  getRoutingDefinition() {
     return {
-      outputs: [
-        { index: 0, label: 'Out', node: this.parameter, connectIndex: 0 }
-      ]
+      output: { name: "output", type: PlugType.Output, label: 'Out' },
+    } satisfies Record<string, RouteInfo>
+  }
+
+  getRoute(routeName: string): Route {
+    switch (routeName) {
+      case "output":
+        return { node: this.parameter, connectIndex: 0 }
+      default:
+        throw new Error(`Unknown routeName ${routeName}`)
     }
   }
 
