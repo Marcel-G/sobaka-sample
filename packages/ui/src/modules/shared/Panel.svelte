@@ -30,14 +30,11 @@
   export let position: Readable<{ x: number; y: number }> = writable({ x: 0, y: 0 })
   
   // Callback props - make the component dumb
-  export let onClose: ((id: string) => void) | null = null
-  export let onClone: ((id: string) => void) | null = null
-  export let onDrag: ((id: string, x: number, y: number) => void) | null = null
-  export let registerElement: ((id: string, element: HTMLElement) => void) | null = null
-  export let unregisterElement: ((id: string) => void) | null = null
-
-  // For backwards compatibility with context-based usage
-  const id = moduleId
+  export let onClose: (() => void) | null = null
+  export let onClone: (() => void) | null = null
+  export let onDrag: ((x: number, y: number) => void) | null = null
+  export let registerElement: ((element: HTMLElement) => void) | null = null
+  export let unregisterElement: (() => void) | null = null
 
   let element: HTMLElement
 
@@ -49,13 +46,13 @@
     // even if we don't really need the values of x and y
     if (registerElement && element && ($position.x !== 0 || $position.y !== 0)) {
       requestAnimationFrame(() => {
-        registerElement(id, element)
+        registerElement(element)
       })
     }
   }
 
   onDestroy(() => {
-    unregisterElement?.(id)
+    unregisterElement?.()
   })
 
   const classes = {
@@ -95,7 +92,7 @@
       if (x < 0 || y < 0) {
         return
       }
-      onDrag(id, x, y)
+      onDrag(x, y)
     }
   }
 </script>
@@ -106,7 +103,7 @@
   class={twMerge('panel', classes.panel, disabled && classes.disabled)}
   style={`grid-column: ${col}; grid-row: ${row};`}
   data-kind="module"
-  data-module-id={id}
+  data-module-id={moduleId}
 >
   <div class={classes.bar}>
     <span class={classes.name}>{name}</span>
@@ -119,7 +116,7 @@
               classes.barButtonHover,
               classes.barButtonActive
             )}
-            on:click={() => onClone?.(id)}>+</button
+            on:click={() => onClone?.()}>+</button
           >
         {/if}
         {#if onClose}
@@ -130,7 +127,7 @@
               classes.barButtonActive,
               'rounded-tr-[calc(var(--radius-lg)-2px)]'
             )}
-            on:click={() => onClose?.(id)}>x</button
+            on:click={() => onClose?.()}>x</button
           >
         {/if}
       </span>

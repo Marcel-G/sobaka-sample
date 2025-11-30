@@ -13,12 +13,14 @@
   // Props forwarded from ModuleWrapper
   export let moduleId: string
   export let position: Readable<{ x: number; y: number }>
-  export let onClose: ((id: string) => void) | null = null
-  export let onClone: ((id: string) => void) | null = null
-  export let onDrag: ((id: string, x: number, y: number) => void) | null = null
-  export let onPlugClick: ((moduleId: string, routeName: string) => void) | null = null
-  export let registerElement: ((id: string, element: HTMLElement) => void) | null = null
-  export let unregisterElement: ((id: string) => void) | null = null
+  export let onClose: (() => void) | null = null
+  export let onClone: (() => void) | null = null
+  export let onDrag: ((x: number, y: number) => void) | null = null
+  export let onPlugClick: ((routeName: string) => void) | null = null
+  export let registerPlugElement: ((routeName: string, element: HTMLElement) => void) | null = null
+  export let unregisterPlugElement: ((routeName: string) => void) | null = null
+  export let registerElement: ((element: HTMLElement) => void) | null = null
+  export let unregisterElement: (() => void) | null = null
 
   let name = node.name
   
@@ -46,16 +48,46 @@
   <Layout type="center">
     <Knob {disabled} bind:value={node.state.bpm} range={bpm} label="bpm">
       <div slot="knob-inputs">
-        <Plug ctx={routing.bpm} {moduleId} onClick={onPlugClick} />
+        <Plug 
+          ctx={routing.bpm} 
+          onClick={onPlugClick} 
+          registerElement={registerPlugElement}
+          unregisterElement={unregisterPlugElement}
+        />
       </div>
     </Knob>
   </Layout>
 
   <div slot="outputs">
-    <Plug ctx={routing.output_0} {moduleId} onClick={onPlugClick} />
-    <Plug ctx={routing.output_1} {moduleId} onClick={onPlugClick} />
-    <Plug ctx={routing.output_2} {moduleId} onClick={onPlugClick} />
-    <Plug ctx={routing.output_3} {moduleId} onClick={onPlugClick} />
-    <Plug ctx={routing.output_4} {moduleId} onClick={onPlugClick} />
+    <Plug 
+      ctx={routing.output_0} 
+      onClick={onPlugClick} 
+      registerElement={registerPlugElement}
+      unregisterElement={unregisterPlugElement}
+    />
+    <Plug 
+      ctx={routing.output_1} 
+      onClick={onPlugClick} 
+      registerElement={registerPlugElement}
+      unregisterElement={unregisterPlugElement}
+    />
+    <Plug 
+      ctx={routing.output_2} 
+      onClick={onPlugClick} 
+      registerElement={registerPlugElement}
+      unregisterElement={unregisterPlugElement}
+    />
+    <Plug 
+      ctx={routing.output_3} 
+      onClick={onPlugClick} 
+      registerElement={registerPlugElement}
+      unregisterElement={unregisterPlugElement}
+    />
+    <Plug 
+      ctx={routing.output_4} 
+      onClick={onPlugClick} 
+      registerElement={registerPlugElement}
+      unregisterElement={unregisterPlugElement}
+    />
   </div>
 </Panel>

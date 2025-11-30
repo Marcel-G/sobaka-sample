@@ -1,12 +1,14 @@
 <script lang="ts">
+  import { onDestroy } from 'svelte'
   import Tooltip from '../../components/Tooltip.svelte'
   import { twMerge } from 'tailwind-merge'
   import { PlugType } from '@sobaka/state/models/links'
   import type { RouteInfo } from '@sobaka/dsp';
 
   export let ctx: RouteInfo
-  export let moduleId: string
-  export let onClick: ((moduleId: string, routeName: string) => void) | null = null
+  export let onClick: ((routeName: string) => void) | null = null
+  export let registerElement: ((routeName: string, element: HTMLElement) => void) | null = null
+  export let unregisterElement: ((routeName: string) => void) | null = null
 
   let element: HTMLElement
 
@@ -17,8 +19,18 @@
   
   const handleClick = (event: MouseEvent) => {
     event.stopPropagation()
-    onClick?.(moduleId, ctx.name)
+    onClick?.(ctx.name)
   }
+  
+  $: if (registerElement && element) {
+    requestAnimationFrame(() => {
+      registerElement(ctx.name, element)
+    })
+  }
+  
+  onDestroy(() => {
+    unregisterElement?.(ctx.name)
+  })
 </script>
 
 <Tooltip label={ctx.label} position={ctx.type !== PlugType.Output ? 'left' : 'right'}>

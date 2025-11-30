@@ -14,28 +14,40 @@
   const component = get_component(module)
   
   // Callback handlers - bridge between dumb UI and smart workspace
-  const handleClose = (id: string) => {
-    workspace.remove_module(id)
+  // Panel callbacks - these already know the moduleId from closure
+  const handleClose = () => {
+    workspace.remove_module(module.id)
   }
   
-  const handleClone = (id: string) => {
-    workspace.clone_module(id)
+  const handleClone = () => {
+    workspace.clone_module(module.id)
   }
   
-  const handleDrag = (id: string, x: number, y: number) => {
-    workspace.move_module(id, x, y)
+  const handleDrag = (x: number, y: number) => {
+    workspace.move_module(module.id, x, y)
   }
   
-  const handlePlugClick = (moduleId: string, routeName: string) => {
-    workspace.try_make_link(moduleId, routeName)
+  const handleRegisterElement = (element: HTMLElement) => {
+    positions.registerModule(module.id, element)
   }
   
-  const handleRegisterElement = (id: string, element: HTMLElement) => {
-    positions.registerModule(id, element)
+  const handleUnregisterElement = () => {
+    positions.removeModule(module.id)
   }
   
-  const handleUnregisterElement = (id: string) => {
-    positions.removeModule(id)
+  // Plug callbacks - map routeName to full linkPoint
+  const handlePlugClick = (routeName: string) => {
+    workspace.try_make_link(module.id, routeName)
+  }
+  
+  const handleRegisterPlugElement = (routeName: string, element: HTMLElement) => {
+    const linkPoint = `${module.id}/${routeName}`
+    positions.registerPlug(linkPoint, element)
+  }
+  
+  const handleUnregisterPlugElement = (routeName: string) => {
+    const linkPoint = `${module.id}/${routeName}`
+    positions.removePlug(linkPoint)
   }
 </script>
 
@@ -51,4 +63,6 @@
   onPlugClick={handlePlugClick}
   registerElement={handleRegisterElement}
   unregisterElement={handleUnregisterElement}
+  registerPlugElement={handleRegisterPlugElement}
+  unregisterPlugElement={handleUnregisterPlugElement}
 />
