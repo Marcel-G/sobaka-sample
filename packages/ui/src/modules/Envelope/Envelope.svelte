@@ -1,4 +1,6 @@
 <script context="module" lang="ts">
+  import { routing } from '../routing'
+  
   type State = {
     attack: number
     decay: number
@@ -12,16 +14,21 @@
     sustain: 0.1,
     release: 0.1
   }
+  
+  // Routing definition - matches DSP layer's getRouting()
+  export const moduleRouting = routing({
+    inputs: [[0, 'Gate']],
+    outputs: [[0, 'Out']]
+  })
 </script>
 
 <script lang="ts">
   import Panel from '../shared/Panel.svelte'
-  import Plug from '../shared/Plug.svelte'
+  import PlugList from '../shared/PlugList.svelte'
   import Graph from './Graph.svelte'
   import Input from '../../components/Input.svelte'
   import { create_scale_range, create_time_range } from '../../range/range_creators'
   import Tooltip from '../../components/Tooltip.svelte'
-  import { PlugType } from '@sobaka/state/models/links'
   import { writable, type Readable } from 'svelte/store'
 
   export let state: State
@@ -88,10 +95,10 @@
     </div>
   </div>
   <div slot="inputs">
-    <Plug {moduleId} {position} {workspace} id={0} {disabled} label="gate" ctx={{ type: PlugType.Input }} />
+    <PlugList {moduleId} {position} {workspace} {disabled} plugs={moduleRouting.inputs} type="inputs" />
   </div>
   <div slot="outputs">
-    <Plug {moduleId} {position} {workspace} id={0} {disabled} label="envelope" ctx={{ type: PlugType.Output }} />
+    <PlugList {moduleId} {position} {workspace} {disabled} plugs={moduleRouting.outputs} type="outputs" />
   </div>
 </Panel>
 

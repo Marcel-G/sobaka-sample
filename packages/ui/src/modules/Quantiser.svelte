@@ -1,4 +1,6 @@
 <script context="module" lang="ts">
+  import { routing } from './routing'
+  
   const NOTE_LABELS = [
     'C',
     'Cs',
@@ -20,12 +22,17 @@
   export const initialState: State = {
     notes: Array(NOTE_LABELS.length).fill({ value: false })
   }
+  
+  // Routing definition - matches DSP layer's getRouting()
+  export const moduleRouting = routing({
+    inputs: [[0, 'Signal']],
+    outputs: [[0, 'Out']]
+  })
 </script>
 
 <script lang="ts">
   import Panel from './shared/Panel.svelte'
-  import Plug from './shared/Plug.svelte'
-  import { PlugType } from '@sobaka/state/models/links'
+  import PlugList from './shared/PlugList.svelte'
   import { writable, type Readable } from 'svelte/store'
 
   export let state: State
@@ -73,11 +80,11 @@
   </ul>
 
   <div slot="inputs">
-    <Plug {moduleId} {position} {workspace} id={0} {disabled} label="Signal_1" ctx={{ type: PlugType.Input }} />
+    <PlugList {moduleId} {position} {workspace} {disabled} plugs={moduleRouting.inputs} type="inputs" />
   </div>
 
   <div slot="outputs">
-    <Plug {moduleId} {position} {workspace} id={0} {disabled} label="Output_1" ctx={{ type: PlugType.Output }} />
+    <PlugList {moduleId} {position} {workspace} {disabled} plugs={moduleRouting.outputs} type="outputs" />
   </div>
 </Panel>
 

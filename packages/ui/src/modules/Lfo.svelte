@@ -1,15 +1,21 @@
 <script context="module" lang="ts">
+  import { routing } from './routing'
+  
   type State = { bpm: number }
 
   export const initialState: State = { bpm: 120 }
+  
+  // Routing definition - matches DSP layer's getRouting()
+  export const moduleRouting = routing({
+    outputs: [[0, 'Out']]
+  })
 </script>
 
 <script lang="ts">
   import Panel from './shared/Panel.svelte'
-  import Plug from './shared/Plug.svelte'
+  import PlugList from './shared/PlugList.svelte'
   import Knob from '../components/Knob/Knob.svelte'
   import { create_bpm_range } from '../range/range_creators'
-  import { PlugType } from '@sobaka/state/models/links'
   import { writable, type Readable } from 'svelte/store'
 
   export let state: State
@@ -48,6 +54,6 @@
   </div> -->
 
   <div slot="outputs">
-    <Plug {moduleId} {position} {workspace} id={0} {disabled} label="signal" ctx={{ type: PlugType.Output }} />
+    <PlugList {moduleId} {position} {workspace} {disabled} plugs={moduleRouting.outputs} type="outputs" />
   </div>
 </Panel>

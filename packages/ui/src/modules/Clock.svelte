@@ -1,18 +1,32 @@
 <script context="module" lang="ts">
+  import { routing } from './routing'
+  
   type State = { bpm: number }
 
   export const initialState: State = { bpm: 120 }
+  
+  // Routing definition - single source of truth for plugs
+  // This mirrors the DSP layer's getRouting() but lives with the UI component
+  export const moduleRouting = routing({
+    params: [[0, 'BPM CV']],
+    outputs: [
+      [0, '1/1'],
+      [1, '1/2'],
+      [2, '1/4'],
+      [3, '1/8'],
+      [4, '1/16']
+    ]
+  })
 </script>
 
 <script lang="ts">
   import Panel from './shared/Panel.svelte'
-  import Plug from './shared/Plug.svelte'
+  import PlugList from './shared/PlugList.svelte'
   import Knob from '../components/Knob/Knob.svelte'
   import Layout from '../components/Layout.svelte'
   import { create_bpm_range } from '../range/range_creators'
-  import { PlugType } from '@sobaka/state/models/links'
   import { writable, type Readable } from 'svelte/store'
-  import { type ClockState } from '@sobaka/dsp';
+  import { type ClockState } from '@sobaka/dsp'
 
   export let state: ClockState
   export let disabled = false
@@ -42,16 +56,12 @@
   <Layout type="center">
     <Knob {disabled} bind:value={state.bpm} range={bpm} label="bpm">
       <div slot="knob-inputs">
-        <Plug {moduleId} {position} {workspace} id={0} {disabled} label="bpm_cv" ctx={{ type: PlugType.Param }} />
+        <PlugList {moduleId} {position} {workspace} {disabled} plugs={moduleRouting.params} type="params" />
       </div>
     </Knob>
   </Layout>
 
   <div slot="outputs">
-    <Plug {moduleId} {position} {workspace} id={0} {disabled} label="1/1" ctx={{ type: PlugType.Output }} />
-    <Plug {moduleId} {position} {workspace} id={1} {disabled} label="1/2" ctx={{ type: PlugType.Output }} />
-    <Plug {moduleId} {position} {workspace} id={2} {disabled} label="1/4" ctx={{ type: PlugType.Output }} />
-    <Plug {moduleId} {position} {workspace} id={3} {disabled} label="1/8" ctx={{ type: PlugType.Output }} />
-    <Plug {moduleId} {position} {workspace} id={4} {disabled} label="1/16" ctx={{ type: PlugType.Output }} />
+    <PlugList {moduleId} {position} {workspace} {disabled} plugs={moduleRouting.outputs} type="outputs" />
   </div>
 </Panel>

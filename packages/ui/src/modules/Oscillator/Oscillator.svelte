@@ -1,4 +1,6 @@
 <script context="module" lang="ts">
+  import { routing } from '../routing'
+  
   type State = {
     pitch: number
     shape: number
@@ -8,12 +10,19 @@
     pitch: 0,
     shape: 0
   }
+  
+  // Routing definition - matches DSP layer's getRouting()
+  export const moduleRouting = routing({
+    params: [[0, 'Pitch CV']],
+    inputs: [[1, 'Reset']],
+    outputs: [[0, 'Out']]
+  })
 </script>
 
 <script lang="ts">
   import type { OscillatorShape } from '@sobaka/dsp'
   import Panel from '../shared/Panel.svelte'
-  import Plug from '../shared/Plug.svelte'
+  import PlugList from '../shared/PlugList.svelte'
   import Knob from '../../components/Knob/Knob.svelte'
   import Layout from '../../components/Layout.svelte'
   import { create_volt_per_octave_range } from '../../range/range_creators'
@@ -23,7 +32,6 @@
   import Saw from './Saw.svelte'
   import Square from './Square.svelte'
   import Triangle from './Triangle.svelte'
-  import { PlugType } from '@sobaka/state/models/links'
   import { writable, type Readable } from 'svelte/store'
 
   export let state: State
@@ -73,15 +81,15 @@
     </Switch>
     <Knob {disabled} bind:value={state.pitch} range={freq_range} label="pitch">
       <div slot="knob-inputs">
-        <Plug {moduleId} {position} {workspace} id={0} {disabled} label="pitch cv" ctx={{ type: PlugType.Param }} />
+        <PlugList {moduleId} {position} {workspace} {disabled} plugs={moduleRouting.params} type="params" />
       </div>
     </Knob>
   </div>
   <div slot="inputs">
-    <Plug {moduleId} {position} {workspace} id={1} {disabled} label="reset" ctx={{ type: PlugType.Input }} />
+    <PlugList {moduleId} {position} {workspace} {disabled} plugs={moduleRouting.inputs} type="inputs" />
   </div>
   <div slot="outputs">
-    <Plug {moduleId} {position} {workspace} id={0} {disabled} label="output" ctx={{ type: PlugType.Output }} />
+    <PlugList {moduleId} {position} {workspace} {disabled} plugs={moduleRouting.outputs} type="outputs" />
   </div>
 </Panel>
 

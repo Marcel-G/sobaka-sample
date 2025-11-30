@@ -1,4 +1,6 @@
 <script context="module" lang="ts">
+  import { routing } from './routing'
+  
   type State = { min: number; max: number; value: number }
 
   export const initialState: State = {
@@ -6,14 +8,18 @@
     max: 10,
     value: 0.5
   }
+  
+  // Routing definition - matches DSP layer's getRouting()
+  export const moduleRouting = routing({
+    outputs: [[0, 'Out']]
+  })
 </script>
 
 <script lang="ts">
   import Knob from '../components/Knob/Knob.svelte'
-  import Plug from './shared/Plug.svelte'
+  import PlugList from './shared/PlugList.svelte'
   import Panel from './shared/Panel.svelte'
   import { create_scale_range } from '../range/range_creators'
-  import { PlugType } from '@sobaka/state/models/links'
   import { writable, type Readable } from 'svelte/store'
 
   export let state: State
@@ -44,6 +50,6 @@
     <Knob {disabled} bind:value={state.value} range={param_range} label="value" />
   </span>
   <div slot="outputs">
-    <Plug {moduleId} {position} {workspace} id={0} {disabled} label="output" ctx={{ type: PlugType.Output }} />
+    <PlugList {moduleId} {position} {workspace} {disabled} plugs={moduleRouting.outputs} type="outputs" />
   </div>
 </Panel>

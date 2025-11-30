@@ -1,4 +1,6 @@
 <script context="module" lang="ts">
+  import { routing } from './routing'
+  
   type State = {
     frequency: number
     q: number
@@ -8,17 +10,31 @@
     frequency: 0.1,
     q: 0.1
   }
+  
+  // Routing definition - matches DSP layer's getRouting()
+  export const moduleRouting = routing({
+    inputs: [[0, 'Signal']],
+    params: [
+      [1, 'Cutoff CV'],
+      [2, 'Q CV']
+    ],
+    outputs: [
+      [0, 'Lowpass'],
+      [1, 'Highpass'],
+      [2, 'Bandpass'],
+      [3, 'Moog']
+    ]
+  })
 </script>
 
 <script lang="ts">
   import Panel from './shared/Panel.svelte'
-  import Plug from './shared/Plug.svelte'
+  import PlugList from './shared/PlugList.svelte'
   import Knob from '../components/Knob/Knob.svelte'
   import {
     create_scale_range,
     create_volt_per_octave_range
   } from '../range/range_creators'
-  import { PlugType } from '@sobaka/state/models/links'
   import { writable, type Readable } from 'svelte/store'
 
   export let state: State
@@ -49,23 +65,20 @@
   <div class="controls">
     <Knob {disabled} bind:value={state.frequency} range={freq_range} label="cutoff">
       <div slot="knob-inputs">
-        <Plug {moduleId} {position} {workspace} id={1} {disabled} label="cutoff_cv" ctx={{ type: PlugType.Param }} />
+        <PlugList {moduleId} {position} {workspace} {disabled} plugs={moduleRouting.params?.slice(0, 1)} type="params" />
       </div>
     </Knob>
     <Knob {disabled} bind:value={state.q} range={scalar} label="q">
       <div slot="knob-inputs">
-        <Plug {moduleId} {position} {workspace} id={2} {disabled} label="q_cv" ctx={{ type: PlugType.Param }} />
+        <PlugList {moduleId} {position} {workspace} {disabled} plugs={moduleRouting.params?.slice(1, 2)} type="params" />
       </div>
     </Knob>
   </div>
   <div slot="inputs">
-    <Plug {moduleId} {position} {workspace} id={0} {disabled} label="signal" ctx={{ type: PlugType.Input }} />
+    <PlugList {moduleId} {position} {workspace} {disabled} plugs={moduleRouting.inputs} type="inputs" />
   </div>
   <div slot="outputs">
-    <Plug {moduleId} {position} {workspace} id={0} {disabled} label="lowpass" ctx={{ type: PlugType.Output }} />
-    <Plug {moduleId} {position} {workspace} id={1} {disabled} label="highpass" ctx={{ type: PlugType.Output }} />
-    <Plug {moduleId} {position} {workspace} id={2} {disabled} label="bandpass" ctx={{ type: PlugType.Output }} />
-    <Plug {moduleId} {position} {workspace} id={3} {disabled} label="moog" ctx={{ type: PlugType.Output }} />
+    <PlugList {moduleId} {position} {workspace} {disabled} plugs={moduleRouting.outputs} type="outputs" />
   </div>
 </Panel>
 

@@ -1,17 +1,25 @@
 <script context="module" lang="ts">
+  import { routing } from './routing'
+  
   type State = { value: number }
 
   export const initialState: State = {
     value: 0.5
   }
+  
+  // Routing definition - matches DSP layer's getRouting()
+  export const moduleRouting = routing({
+    inputs: [[0, 'Signal']],
+    params: [[1, 'CV']],
+    outputs: [[0, 'Out']]
+  })
 </script>
 
 <script lang="ts">
   import Panel from './shared/Panel.svelte'
-  import Plug from './shared/Plug.svelte'
+  import PlugList from './shared/PlugList.svelte'
   import Knob from '../components/Knob/Knob.svelte'
   import { create_bipolar_scale_range } from '../range/range_creators'
-  import { PlugType } from '@sobaka/state/models/links'
   import { writable, type Readable } from 'svelte/store'
 
   export let state: State
@@ -43,11 +51,14 @@
   </span>
 
   <div slot="inputs">
-    <Plug {moduleId} {position} {workspace} id={0} {disabled} label="Signal" ctx={{ type: PlugType.Input }} />
-    <Plug {moduleId} {position} {workspace} id={1} {disabled} label="Cv" ctx={{ type: PlugType.Param }} />
+    <PlugList {moduleId} {position} {workspace} {disabled} plugs={moduleRouting.inputs} type="inputs" />
+  </div>
+
+  <div slot="params">
+    <PlugList {moduleId} {position} {workspace} {disabled} plugs={moduleRouting.params} type="params" />
   </div>
 
   <div slot="outputs">
-    <Plug {moduleId} {position} {workspace} id={0} {disabled} label="Output" ctx={{ type: PlugType.Output }} />
+    <PlugList {moduleId} {position} {workspace} {disabled} plugs={moduleRouting.outputs} type="outputs" />
   </div>
 </Panel>

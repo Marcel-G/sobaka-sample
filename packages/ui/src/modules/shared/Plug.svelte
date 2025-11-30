@@ -3,28 +3,21 @@
   import { writable, type Readable } from 'svelte/store'
   import Tooltip from '../../components/Tooltip.svelte'
   import { twMerge } from 'tailwind-merge'
-  import { createPlugId, PlugType } from '@sobaka/state/models/links'
+  import { plug_type, PlugType } from '@sobaka/state/models/links'
 
   // Workspace props - optional for standalone/storybook use
   export let position: Readable<{ x: number; y: number }> = writable({ x: 0, y: 0 })
   export let workspace: any = null
 
-  // ctx is now optional - if not provided, only type is needed for plug ID generation
-  // The actual audio node context is managed by DSP layer
-  export let ctx: any | { type: PlugType } = { type: PlugType.Output }
+  // Simplified: only need plug_id and label
+  export let plug_id: string
   export let label: string
-  export let id: number 
   export let disabled = false
 
-  // For backwards compatibility
-  export let plug_id: string
+  // Derive plug type from plug_id
+  $: plugType = plug_type(plug_id)
 
   let element: HTMLElement
-
-  // @todo - make this type-safe
-  if ([PlugType.Input, PlugType.Output].includes(ctx.type) && id === undefined) {
-    throw new Error('Input & Output plug types must have id')
-  }
 
   function handle_click(event: MouseEvent) {
     if (disabled || !workspace) return
@@ -54,7 +47,7 @@
   }
 </script>
 
-<Tooltip {label} position={ctx.type !== PlugType.Output ? 'left' : 'right'}>
+<Tooltip {label} position={plugType !== PlugType.Output ? 'left' : 'right'}>
   <!-- svelte-ignore a11y-click-events-have-key-events -->
   <div
     role="button"
