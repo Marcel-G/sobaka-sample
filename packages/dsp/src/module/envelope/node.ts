@@ -1,8 +1,5 @@
-import { createPlugId, PlugType } from '@sobaka/state'
-
 import { EnvelopeNode as _EnvelopeNode } from '@sobaka/dsp/wasm'
-import { ModuleDSP } from '../../shared/types'
-import { NodeContext, ParamContext } from '@sobaka/state/models/plugs'
+import { ModuleDSP, ModuleRouting } from '../../shared/types'
 
 interface EnvelopeState {
   attack: number
@@ -38,6 +35,10 @@ export class EnvelopeDSP implements ModuleDSP {
     this.updateState(initialState)
   }
 
+  get node(): AudioNode {
+    return this.envelope.node
+  }
+
   updateState(state: Record<string, unknown>): void {
     const envState = state as EnvelopeState
     
@@ -47,20 +48,14 @@ export class EnvelopeDSP implements ModuleDSP {
     this.releaseParam.setValueAtTime(envState.release, this.audioContext.currentTime)
   }
 
-  getPlugContexts(): Record<string, ParamContext | NodeContext> {
+  getRouting(): ModuleRouting {
     return {
-      // Gate input
-      [createPlugId(this.id, PlugType.Input, 0)]: {
-        type: PlugType.Input,
-        module: this.envelope.node,
-        connectIndex: 0
-      },
-      // Envelope output
-      [createPlugId(this.id, PlugType.Output, 0)]: {
-        type: PlugType.Output,
-        module: this.envelope.node,
-        connectIndex: 0
-      }
+      inputs: [
+        { index: 0, label: 'Gate', node: this.envelope.node, connectIndex: 0 }
+      ],
+      outputs: [
+        { index: 0, label: 'Envelope', node: this.envelope.node, connectIndex: 0 }
+      ]
     }
   }
 
@@ -68,4 +63,3 @@ export class EnvelopeDSP implements ModuleDSP {
     this.envelope?.free()
   }
 }
-

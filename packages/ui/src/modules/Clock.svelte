@@ -12,8 +12,9 @@
   import { create_bpm_range } from '../range/range_creators'
   import { PlugType } from '@sobaka/state/models/links'
   import { writable, type Readable } from 'svelte/store'
+  import { type ClockState } from '@sobaka/dsp';
 
-  export let state: State
+  export let state: ClockState
   export let disabled = false
   
   // Workspace props (passed from ModuleWrapper)

@@ -1,9 +1,5 @@
-import { createPlugId, PlugType } from '@sobaka/state'
-
 import { OscillatorNode as _OscillatorNode, OscillatorShape} from '@sobaka/dsp/wasm'
-import { ModuleDSP } from '../../shared/types'
-import { NodeContext, ParamContext } from '@sobaka/state/models/plugs'
-
+import { ModuleDSP, ModuleRouting } from '../../shared/types'
 
 interface OscillatorState {
   pitch: number
@@ -33,6 +29,10 @@ export class OscillatorDSP implements ModuleDSP {
     this.updateState(initialState)
   }
 
+  get node(): AudioNode {
+    return this.oscillator.node
+  }
+
   updateState(state: Record<string, unknown>): void {
     const oscState = state as OscillatorState
     
@@ -46,25 +46,17 @@ export class OscillatorDSP implements ModuleDSP {
     }
   }
 
-  getPlugContexts(): Record<string, ParamContext | NodeContext> {
+  getRouting(): ModuleRouting {
     return {
-      // Pitch CV input (param)
-      [createPlugId(this.id, PlugType.Param, 0)]: {
-        type: PlugType.Param,
-        param: this.pitchParam
-      },
-      // Reset input
-      [createPlugId(this.id, PlugType.Input, 1)]: {
-        type: PlugType.Input,
-        module: this.oscillator.node,
-        connectIndex: 0
-      },
-      // Audio output
-      [createPlugId(this.id, PlugType.Output, 0)]: {
-        type: PlugType.Output,
-        module: this.oscillator.node,
-        connectIndex: 0
-      }
+      params: [
+        { index: 0, label: 'Pitch CV', param: this.pitchParam }
+      ],
+      inputs: [
+        { index: 1, label: 'Reset', node: this.oscillator.node, connectIndex: 0 }
+      ],
+      outputs: [
+        { index: 0, label: 'Out', node: this.oscillator.node, connectIndex: 0 }
+      ]
     }
   }
 

@@ -1,8 +1,5 @@
-import { createPlugId, PlugType } from '@sobaka/state'
-
 import { FilterNode as _FilterNode} from '@sobaka/dsp/wasm'
-import { ModuleDSP } from '../../shared/types'
-import { NodeContext, ParamContext } from '@sobaka/state/models/plugs'
+import { ModuleDSP, ModuleRouting } from '../../shared/types'
 
 interface FilterState {
   frequency: number
@@ -32,6 +29,10 @@ export class FilterDSP implements ModuleDSP {
     this.updateState(initialState)
   }
 
+  get node(): AudioNode {
+    return this.filter.node
+  }
+
   updateState(state: Record<string, unknown>): void {
     const filterState = state as FilterState
     
@@ -42,48 +43,21 @@ export class FilterDSP implements ModuleDSP {
     this.qParam.setValueAtTime(filterState.q, this.audioContext.currentTime)
   }
 
-  getPlugContexts(): Record<string, ParamContext | NodeContext> {
+  getRouting(): ModuleRouting {
     return {
-      // Signal input
-      [createPlugId(this.id, PlugType.Input, 0)]: {
-        type: PlugType.Input,
-        module: this.filter.node,
-        connectIndex: 0
-      },
-      // Cutoff CV input
-      [createPlugId(this.id, PlugType.Param, 1)]: {
-        type: PlugType.Param,
-        param: this.frequencyParam
-      },
-      // Q CV input
-      [createPlugId(this.id, PlugType.Param, 2)]: {
-        type: PlugType.Param,
-        param: this.qParam
-      },
-      // Lowpass output
-      [createPlugId(this.id, PlugType.Output, 0)]: {
-        type: PlugType.Output,
-        module: this.filter.node,
-        connectIndex: 0
-      },
-      // Highpass output
-      [createPlugId(this.id, PlugType.Output, 1)]: {
-        type: PlugType.Output,
-        module: this.filter.node,
-        connectIndex: 1
-      },
-      // Bandpass output
-      [createPlugId(this.id, PlugType.Output, 2)]: {
-        type: PlugType.Output,
-        module: this.filter.node,
-        connectIndex: 2
-      },
-      // Moog output
-      [createPlugId(this.id, PlugType.Output, 3)]: {
-        type: PlugType.Output,
-        module: this.filter.node,
-        connectIndex: 3
-      }
+      inputs: [
+        { index: 0, label: 'Signal', node: this.filter.node, connectIndex: 0 }
+      ],
+      params: [
+        { index: 1, label: 'Cutoff CV', param: this.frequencyParam },
+        { index: 2, label: 'Q CV', param: this.qParam }
+      ],
+      outputs: [
+        { index: 0, label: 'Lowpass', node: this.filter.node, connectIndex: 0 },
+        { index: 1, label: 'Highpass', node: this.filter.node, connectIndex: 1 },
+        { index: 2, label: 'Bandpass', node: this.filter.node, connectIndex: 2 },
+        { index: 3, label: 'Moog', node: this.filter.node, connectIndex: 3 }
+      ]
     }
   }
 
@@ -91,4 +65,3 @@ export class FilterDSP implements ModuleDSP {
     this.filter?.free()
   }
 }
-

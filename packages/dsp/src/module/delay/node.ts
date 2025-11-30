@@ -1,8 +1,5 @@
 import type { DelayNode as _DelayNode } from '@sobaka/dsp/wasm'
-import type { ModuleDSP, ModuleDSPFactory } from '../types'
-import { registerDSPFactory } from '../types'
-import { createPlugId, PlugType } from '@sobaka/state/models/links'
-import type { NodeContext, ParamContext } from '@sobaka/state/models/plugs'
+import { ModuleDSP, ModuleRouting } from '../../shared/types'
 
 interface DelayState {
   time: number
@@ -29,36 +26,27 @@ export class DelayDSP implements ModuleDSP {
     this.updateState(initialState)
   }
 
+  get node(): AudioNode {
+    return this.delay.node
+  }
+
   updateState(state: Record<string, unknown>): void {
     const delayState = state as DelayState
     this.delayTimeParam.setValueAtTime(delayState.time, this.audioContext.currentTime)
   }
 
-  getPlugContexts(): Record<string, ParamContext | NodeContext> {
+  getRouting(): ModuleRouting {
     return {
-      // Delay time CV input
-      [createPlugId(this.id, PlugType.Param, 0)]: {
-        type: PlugType.Param,
-        param: this.delayTimeParam
-      },
-      // Signal input
-      [createPlugId(this.id, PlugType.Input, 0)]: {
-        type: PlugType.Input,
-        module: this.delay.node,
-        connectIndex: 1
-      },
-      // Reset input
-      [createPlugId(this.id, PlugType.Input, 1)]: {
-        type: PlugType.Input,
-        module: this.delay.node,
-        connectIndex: 0
-      },
-      // Output
-      [createPlugId(this.id, PlugType.Output, 0)]: {
-        type: PlugType.Output,
-        module: this.delay.node,
-        connectIndex: 0
-      }
+      params: [
+        { index: 0, label: 'Time CV', param: this.delayTimeParam }
+      ],
+      inputs: [
+        { index: 0, label: 'Signal', node: this.delay.node, connectIndex: 1 },
+        { index: 1, label: 'Reset', node: this.delay.node, connectIndex: 0 }
+      ],
+      outputs: [
+        { index: 0, label: 'Out', node: this.delay.node, connectIndex: 0 }
+      ]
     }
   }
 

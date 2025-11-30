@@ -1,8 +1,5 @@
-import { createPlugId, PlugType } from '@sobaka/state'
-
 import { SampleAndHoldNode as _SampleAndHoldNode} from '@sobaka/dsp/wasm'
-import { ModuleDSP } from '../../shared/types'
-import { NodeContext, ParamContext } from '@sobaka/state/models/plugs'
+import { ModuleDSP, ModuleRouting } from '../../shared/types'
 
 /**
  * DSP implementation for Sample & Hold module
@@ -20,30 +17,23 @@ export class SampleAndHoldDSP implements ModuleDSP {
     this.sampleAndHold = sampleAndHold
   }
 
+  get node(): AudioNode {
+    return this.sampleAndHold.node
+  }
+
   updateState(_state: Record<string, unknown>): void {
     // Sample & Hold has no state to update
   }
 
-  getPlugContexts(): Record<string, ParamContext | NodeContext> {
+  getRouting(): ModuleRouting {
     return {
-      // Signal input
-      [createPlugId(this.id, PlugType.Input, 0)]: {
-        type: PlugType.Input,
-        module: this.sampleAndHold.node,
-        connectIndex: 0
-      },
-      // Gate input
-      [createPlugId(this.id, PlugType.Input, 1)]: {
-        type: PlugType.Input,
-        module: this.sampleAndHold.node,
-        connectIndex: 1
-      },
-      // Output
-      [createPlugId(this.id, PlugType.Output, 0)]: {
-        type: PlugType.Output,
-        module: this.sampleAndHold.node,
-        connectIndex: 0
-      }
+      inputs: [
+        { index: 0, label: 'Signal', node: this.sampleAndHold.node, connectIndex: 0 },
+        { index: 1, label: 'Gate', node: this.sampleAndHold.node, connectIndex: 1 }
+      ],
+      outputs: [
+        { index: 0, label: 'Out', node: this.sampleAndHold.node, connectIndex: 0 }
+      ]
     }
   }
 
@@ -51,4 +41,3 @@ export class SampleAndHoldDSP implements ModuleDSP {
     this.sampleAndHold?.free()
   }
 }
-

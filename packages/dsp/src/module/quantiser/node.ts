@@ -1,8 +1,5 @@
-import { createPlugId, PlugType } from '@sobaka/state'
-
 import { QuantiserNode as _QuantiserNode} from '@sobaka/dsp/wasm'
-import { ModuleDSP } from '../../shared/types'
-import { NodeContext, ParamContext } from '@sobaka/state/models/plugs'
+import { ModuleDSP, ModuleRouting } from '../../shared/types'
 
 interface QuantiserState {
   notes: { value: boolean }[]
@@ -27,6 +24,10 @@ export class QuantiserDSP implements ModuleDSP {
     this.updateState(initialState)
   }
 
+  get node(): AudioNode {
+    return this.quantiser.node
+  }
+
   updateState(state: Record<string, unknown>): void {
     const quantiserState = state as QuantiserState
     
@@ -34,20 +35,14 @@ export class QuantiserDSP implements ModuleDSP {
     this.quantiser.update_notes(notes)
   }
 
-  getPlugContexts(): Record<string, ParamContext | NodeContext> {
+  getRouting(): ModuleRouting {
     return {
-      // Signal input
-      [createPlugId(this.id, PlugType.Input, 0)]: {
-        type: PlugType.Input,
-        module: this.quantiser.node,
-        connectIndex: 0
-      },
-      // Output
-      [createPlugId(this.id, PlugType.Output, 0)]: {
-        type: PlugType.Output,
-        module: this.quantiser.node,
-        connectIndex: 0
-      }
+      inputs: [
+        { index: 0, label: 'Signal', node: this.quantiser.node, connectIndex: 0 }
+      ],
+      outputs: [
+        { index: 0, label: 'Quantised', node: this.quantiser.node, connectIndex: 0 }
+      ]
     }
   }
 
@@ -55,4 +50,3 @@ export class QuantiserDSP implements ModuleDSP {
     this.quantiser?.free()
   }
 }
-

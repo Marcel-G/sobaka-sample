@@ -19,7 +19,6 @@
   import { create_volume_range } from '@sobaka/ui/range/range_creators'
   import LevelIndicator from '@sobaka/ui/components/LevelIndicator.svelte'
   import { get_workspace } from '../context/workspace'
-  import { createPlugId, PlugType } from '@sobaka/state/models/links'
 
   export let state: State = initialState
   export let disabled = false
@@ -27,19 +26,9 @@
   let gain: GainNode
   let loading = true
 
-  const plug_id = createPlugId('global', PlugType.Mixer, 0)
-
   const { workspace } = get_workspace()
   const context = getGlobalCtx()
   const volume = create_volume_range()
-
-  $: {
-    workspace.register_plug(plug_id, {
-      type: PlugType.Mixer,
-      connectIndex: 0,
-      module: gain
-    })
-  }
 
   onMount(async () => {
     gain = context.audio.createGain()

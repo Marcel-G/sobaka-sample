@@ -1,12 +1,11 @@
-import { createPlugId, PlugType } from '@sobaka/state'
-
 import { ClockDividerNode as _ClockDividerNode } from '@sobaka/dsp/wasm'
-import { ModuleDSP } from '../../shared/types'
-import { NodeContext, ParamContext } from '@sobaka/state/models/plugs'
+import { ModuleDSP, ModuleRouting } from '../../shared/types'
 
-interface ClockState {
+export interface ClockState {
   bpm: number
 }
+
+const INITIAL_STATE: ClockState = { bpm: 120 }
 
 /**
  * DSP implementation for Clock module
@@ -19,54 +18,28 @@ export class ClockNode implements ModuleDSP {
   constructor(
     public readonly id: string,
     private audioContext: AudioContext,
-    initialState: ClockState
+    initialState: ClockState = INITIAL_STATE
   ) {
     this.clock = new _ClockDividerNode(audioContext)
     this.bpmParam = this.clock.node.parameters.get('bpm')!
-    
-    // Set initial state
-    this.updateState(initialState)
   }
 
-  updateState(state: Record<string, unknown>): void {
-    this.bpmParam.setValueAtTime(state.bpm, this.audioContext.currentTime)
+  get node(): AudioNode {
+    return this.clock.node
   }
 
-  getPlugContexts(): Record<string, ParamContext | NodeContext> {
-    const node = this.clock.node
-    
+  getRouting(): ModuleRouting {
     return {
-      // BPM CV input (param)
-      [createPlugId(this.id, PlugType.Param, 0)]: {
-        type: PlugType.Param,
-        param: this.bpmParam
-      },
-      // Clock outputs
-      [createPlugId(this.id, PlugType.Output, 0)]: {
-        type: PlugType.Output,
-        module: node,
-        connectIndex: 0
-      },
-      [createPlugId(this.id, PlugType.Output, 1)]: {
-        type: PlugType.Output,
-        module: node,
-        connectIndex: 1
-      },
-      [createPlugId(this.id, PlugType.Output, 2)]: {
-        type: PlugType.Output,
-        module: node,
-        connectIndex: 2
-      },
-      [createPlugId(this.id, PlugType.Output, 3)]: {
-        type: PlugType.Output,
-        module: node,
-        connectIndex: 3
-      },
-      [createPlugId(this.id, PlugType.Output, 4)]: {
-        type: PlugType.Output,
-        module: node,
-        connectIndex: 4
-      }
+      params: [
+        { index: 0, label: 'BPM CV', param: this.bpmParam }
+      ],
+      outputs: [
+        { index: 0, label: '1/1', node: this.clock.node, connectIndex: 0 },
+        { index: 1, label: '1/2', node: this.clock.node, connectIndex: 1 },
+        { index: 2, label: '1/4', node: this.clock.node, connectIndex: 2 },
+        { index: 3, label: '1/8', node: this.clock.node, connectIndex: 3 },
+        { index: 4, label: '1/16', node: this.clock.node, connectIndex: 4 }
+      ]
     }
   }
 
@@ -75,4 +48,3 @@ export class ClockNode implements ModuleDSP {
     // The node will be garbage collected when no longer referenced
   }
 }
-

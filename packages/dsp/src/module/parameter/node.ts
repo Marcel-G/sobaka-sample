@@ -1,6 +1,4 @@
-import { createPlugId, PlugType } from '@sobaka/state/models/links'
-import type { NodeContext, ParamContext } from '@sobaka/state/models/plugs'
-import { ModuleDSP } from '../../shared/types'
+import { ModuleDSP, ModuleRouting } from '../../shared/types'
 
 interface ParameterState {
   min: number
@@ -27,19 +25,20 @@ export class ParameterDSP implements ModuleDSP {
     this.updateState(initialState)
   }
 
+  get node(): AudioNode {
+    return this.parameter
+  }
+
   updateState(state: Record<string, unknown>): void {
     const paramState = state as ParameterState
     this.parameter.offset.setValueAtTime(paramState.value, this.audioContext.currentTime)
   }
 
-  getPlugContexts(): Record<string, ParamContext | NodeContext> {
+  getRouting(): ModuleRouting {
     return {
-      // Output
-      [createPlugId(this.id, PlugType.Output, 0)]: {
-        type: PlugType.Output,
-        module: this.parameter,
-        connectIndex: 0
-      }
+      outputs: [
+        { index: 0, label: 'Out', node: this.parameter, connectIndex: 0 }
+      ]
     }
   }
 

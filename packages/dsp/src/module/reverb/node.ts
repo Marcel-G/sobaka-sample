@@ -1,8 +1,5 @@
-import { createPlugId, PlugType } from '@sobaka/state'
-
 import { ReverbNode as _ReverbNode} from '@sobaka/dsp/wasm'
-import { ModuleDSP } from '../../shared/types'
-import { NodeContext, ParamContext } from '@sobaka/state/models/plugs'
+import { ModuleDSP, ModuleRouting } from '../../shared/types'
 
 interface ReverbState {
   wet: number
@@ -32,6 +29,10 @@ export class ReverbDSP implements ModuleDSP {
     this.updateState(initialState)
   }
 
+  get node(): AudioNode {
+    return this.reverb.node
+  }
+
   updateState(state: Record<string, unknown>): void {
     const reverbState = state as ReverbState
     
@@ -39,32 +40,16 @@ export class ReverbDSP implements ModuleDSP {
     this.delayParam.setValueAtTime(reverbState.length, this.audioContext.currentTime)
   }
 
-  getPlugContexts(): Record<string, ParamContext | NodeContext> {
+  getRouting(): ModuleRouting {
     return {
-      // Left input
-      [createPlugId(this.id, PlugType.Input, 0)]: {
-        type: PlugType.Input,
-        module: this.reverb.node,
-        connectIndex: 0
-      },
-      // Right input
-      [createPlugId(this.id, PlugType.Input, 1)]: {
-        type: PlugType.Input,
-        module: this.reverb.node,
-        connectIndex: 1
-      },
-      // Left output
-      [createPlugId(this.id, PlugType.Output, 0)]: {
-        type: PlugType.Output,
-        module: this.reverb.node,
-        connectIndex: 0
-      },
-      // Right output
-      [createPlugId(this.id, PlugType.Output, 1)]: {
-        type: PlugType.Output,
-        module: this.reverb.node,
-        connectIndex: 1
-      }
+      inputs: [
+        { index: 0, label: 'In L', node: this.reverb.node, connectIndex: 0 },
+        { index: 1, label: 'In R', node: this.reverb.node, connectIndex: 1 }
+      ],
+      outputs: [
+        { index: 0, label: 'Out L', node: this.reverb.node, connectIndex: 0 },
+        { index: 1, label: 'Out R', node: this.reverb.node, connectIndex: 1 }
+      ]
     }
   }
 

@@ -6,20 +6,17 @@
   import { createPlugId, PlugType } from '@sobaka/state/models/links'
 
   // Workspace props - optional for standalone/storybook use
-  export let moduleId: string = 'storybook-module'
   export let position: Readable<{ x: number; y: number }> = writable({ x: 0, y: 0 })
   export let workspace: any = null
 
   // ctx is now optional - if not provided, only type is needed for plug ID generation
   // The actual audio node context is managed by DSP layer
   export let ctx: any | { type: PlugType } = { type: PlugType.Output }
-  export let id: number
   export let label: string
   export let disabled = false
 
   // For backwards compatibility
-  const module_id = moduleId
-  const plug_id = createPlugId(module_id, ctx.type, id)
+  export let plug_id: string
 
   let element: HTMLElement
 
@@ -45,15 +42,7 @@
     }
   }
 
-  $: {
-    // Register plug context with workspace (now handled by DSP layer, but kept for backwards compat)
-    if (workspace && ('param' in ctx || 'module' in ctx)) {
-      workspace.register_plug(plug_id, ctx)
-    }
-  }
-
   onDestroy(() => {
-    workspace?.remove_plug?.(plug_id)
     workspace?.positions?.removePlug?.(plug_id)
   })
 

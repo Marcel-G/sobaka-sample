@@ -7,44 +7,51 @@ export interface Link {
   to: string
 }
 
-const In = (n: number) => `in-${n}`
-const Out = (n: number) => `out-${n}`
-const Param = (n: number) => `param-${n}`
-const Mixer = (n: number) => `mixer-${n}`
-
 export enum PlugType {
-  Input,
-  Output,
+  Input = "in",
+  Output = "out",
   // TODO: mixer represents a link to the master mixer
   //       These should have as special wire treatment that indicates
-  Mixer,
-  Param
+  Mixer = "mixer",
+  Param = "param"
 }
 
-export const is_fully_linked = (link: Partial<Link> | null): link is Link => {
+export const isFullyLinked = (link: Partial<Link> | null): link is Link => {
   return Boolean(link?.from && link?.to)
 }
 
-const to_string = (type: PlugType, n: number) => {
-  switch (type) {
-    case PlugType.Input:
-      return In(n)
-    case PlugType.Output:
-      return Out(n)
-    case PlugType.Param:
-      return Param(n)
-    case PlugType.Mixer:
-      return Mixer(n)
+export const plugTypeFromStr = (str: string) => {
+  switch (str) {
+    case 'in':
+      return PlugType.Input
+    case 'out':
+      return PlugType.Output
+    case 'mixer':
+      return PlugType.Mixer
+    case 'param':
+      return PlugType.Param
+    default:
+      throw new Error('Invalid plug type')
   }
 }
 
-export const plug_type = (id: string) => {
-  if (id.includes('in-')) return PlugType.Input
-  if (id.includes('out-')) return PlugType.Output
-  if (id.includes('param-')) return PlugType.Param
-  if (id.includes('mixer-')) return PlugType.Mixer
-  throw new Error('Invalid plug id')
+export const parsePlugId = (id: string) => {
+  const input = id.split('/')
+  if (input.length !== 3) throw new Error('Invalid plug id')
+  const [moduleId, _type, _n] = input
+  return ({
+    moduleId,
+    type: plugTypeFromStr(_type),
+    connectIndex: parseInt(_n, 10)
+  })
 }
 
 export const createPlugId = (moduleId: string, type: PlugType, n: number) =>
-  moduleId + '/' + to_string(type, n)
+  [moduleId, type, n].join('/')
+
+// Snake case aliases for backward compatibility
+export const is_fully_linked = isFullyLinked
+export const plug_type = (plugId: string): PlugType => {
+  const parsed = parsePlugId(plugId)
+  return parsed.type
+}

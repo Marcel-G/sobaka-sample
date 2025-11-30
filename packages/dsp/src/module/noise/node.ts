@@ -1,9 +1,5 @@
-import { createPlugId, PlugType } from '@sobaka/state'
-
 import { NoiseNode as _NoiseNode} from '@sobaka/dsp/wasm'
-import { ModuleDSP } from '../../shared/types'
-import { NodeContext, ParamContext } from '@sobaka/state/models/plugs'
-
+import { ModuleDSP, ModuleRouting } from '../../shared/types'
 
 /**
  * DSP implementation for Noise module
@@ -21,18 +17,19 @@ export class NoiseDSP implements ModuleDSP {
     this.noise = noise
   }
 
+  get node(): AudioNode {
+    return this.noise.node
+  }
+
   updateState(_state: Record<string, unknown>): void {
     // Noise has no state to update
   }
 
-  getPlugContexts(): Record<string, ParamContext | NodeContext> {
+  getRouting(): ModuleRouting {
     return {
-      // Noise output
-      [createPlugId(this.id, PlugType.Output, 0)]: {
-        type: PlugType.Output,
-        module: this.noise.node,
-        connectIndex: 0
-      }
+      outputs: [
+        { index: 0, label: 'Noise', node: this.noise.node, connectIndex: 0 }
+      ]
     }
   }
 
@@ -40,4 +37,3 @@ export class NoiseDSP implements ModuleDSP {
     this.noise?.free()
   }
 }
-

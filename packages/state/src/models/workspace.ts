@@ -8,7 +8,6 @@ import { intoReadable } from '../util/store'
 import { type SubDocReference } from '../util/subdoc'
 import { SyncedDoc, type Config } from './syncedDoc'
 import { createPlugId, is_fully_linked, plug_type, PlugType, type Link } from './links'
-import { NodeContext, ParamContext } from './plugs'
 
 export interface Position {
   x: number
@@ -69,14 +68,6 @@ const WORKSPACE_STORE_SHAPE = {
 
 type UserAwareness = {
   user: User
-}
-
-const createAudioGraph = (
-  state: ReturnType<typeof syncedStore<WorkspaceStore>>
-) => {
-  // TODO:
-  //  1. Turn modules into audio nodes
-  //  2. link audio modules via links
 }
 
 export class Workspace extends SyncedDoc<'workspace'> {
@@ -162,15 +153,8 @@ export class Workspace extends SyncedDoc<'workspace'> {
     this.user_store.update(() => newState)
   }
 
-  // Note: Plug registration is now handled automatically by the DSP manager
-  // These methods are kept for backwards compatibility but are no-ops
-  register_plug(_id: string, _context: ParamContext | NodeContext) {
-    // Plugs are now managed by DSP layer
-  }
-
-  remove_plug(_id: string) {
-    // Plugs are now managed by DSP layer
-  }
+  // Note: Plug registration is handled by the AudioGraph in the DSP package
+  // No plug registration methods needed here - the graph manages everything
 
   // Module actions
   create_module(type: ModuleUI, position: { x: number; y: number }): string {
