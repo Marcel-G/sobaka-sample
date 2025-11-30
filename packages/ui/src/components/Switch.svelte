@@ -23,11 +23,17 @@
   const handleDrag: OnDrag = (event, origin, element) => {
     const { y } = relativeToElement(event, origin, element)
     const delta = (-1 * y) / 250
-    value = fromNormalised(range, startValue + delta)
+    const next = fromNormalised(range, startValue + delta)
+    if (next !== value) {
+      value = next
+    }
   }
 
   const handleWheel: OnWheel = (_, position) => {
-    value = fromNormalised(range, startValue + position.y)
+    const next = fromNormalised(range, startValue + position.y)
+    if (next !== value) {
+      value = next
+    }
   }
 </script>
 

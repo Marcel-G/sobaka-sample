@@ -1,6 +1,5 @@
 // Export types
 export * from './types'
-export * from './routing-builder'
 
 // Export all DSP modules to register their factories
 import '../module/clock/node'

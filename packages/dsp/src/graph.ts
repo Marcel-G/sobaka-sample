@@ -140,7 +140,7 @@ export class AudioGraph {
   private async disconnectLinks(linkIds: string[]): Promise<void> {
     if (linkIds.length === 0) return
     
-    const RAMP_DURATION = 0.001 // 1ms - very short to avoid perceptible delay
+    const RAMP_DURATION = 0.001
     const currentTime = this.audioContext.currentTime
     
     // Collect the nodes we're about to disconnect and ramp them if possible

@@ -2,7 +2,6 @@
   import Panel from '../shared/Panel.svelte'
   import Plug from '../shared/Plug.svelte'
   import Knob from '../../components/Knob/Knob.svelte'
-  import Layout from '../../components/Layout.svelte'
   import Switch from '../../components/Switch.svelte'
   import { createVoltPerOctaveRange } from '../../range/rangeCreators'
   import { RangeType, type ChoiceRange } from '../../range/range'
@@ -13,6 +12,7 @@
   import Saw from './Saw.svelte'
   import Square from './Square.svelte'
   import Triangle from './Triangle.svelte'
+    import { OscillatorShape } from '@sobaka/dsp/wasm';
 
   interface OscillatorProps extends BaseModuleProps {
     node: OscillatorNode
@@ -41,10 +41,6 @@
     type: RangeType.Choice,
     choices: shapeNames.map((shape, i) => ({ label: shape, value: i }))
   }
-
-  $effect(() => {
-    node.setShape($state.shape)
-  })
 </script>
 
 <Panel
@@ -64,13 +60,13 @@
     <div class="controls">
       <Switch {disabled} bind:value={$state.shape} range={shapeRange} label="shape">
         <div class="wave" slot="value">
-          {#if shapeNames[$state.shape] === 'Square'}
+          {#if $state.shape === OscillatorShape.Square}
             <Square />
-          {:else if shapeNames[$state.shape] === 'Sine'}
+          {:else if $state.shape === OscillatorShape.Sine}
             <Sine />
-          {:else if shapeNames[$state.shape] === 'Saw'}
+          {:else if $state.shape === OscillatorShape.Saw}
             <Saw />
-          {:else if shapeNames[$state.shape] === 'Triangle'}
+          {:else if $state.shape === OscillatorShape.Triangle}
             <Triangle />
           {/if}
         </div>

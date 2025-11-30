@@ -115,10 +115,10 @@ pub struct OscillatorNode {
 #[wasm_bindgen]
 impl OscillatorNode {
     #[wasm_bindgen(constructor)]
-    pub fn new(ctx: &web_sys::AudioContext) -> Result<OscillatorNode, JsValue> {
+    pub fn new(ctx: &web_sys::AudioContext, shape: OscillatorShape) -> Result<OscillatorNode, JsValue> {
         let (sender, receiver) = channel(1);
         let data = OscillatorData {
-            shape: OscillatorShape::Saw,
+            shape,
             receiver,
         };
         let options = web_sys::AudioWorkletNodeOptions::new();

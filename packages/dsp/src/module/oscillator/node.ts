@@ -1,20 +1,18 @@
 import { OscillatorNode as _OscillatorNode, OscillatorShape } from '@sobaka/dsp/wasm'
+import * as Y from 'yjs';
+import { getYjsValue } from "@syncedstore/core";
 import { ModuleDSP, Route, RouteInfo } from '../../shared/types'
 import { PlugType } from '@sobaka/state'
 
 export interface OscillatorState {
   pitch: number
-  shape: number
+  shape: OscillatorShape
 }
 
-const INITIAL_STATE: OscillatorState = { pitch: 1.0, shape: 3 } // Default to Saw
-
-const SHAPES: OscillatorShape[] = [
-  OscillatorShape.Sine,
-  OscillatorShape.Square,
-  OscillatorShape.Triangle,
-  OscillatorShape.Saw
-]
+const INITIAL_STATE: OscillatorState = {
+  pitch: 1.0,
+  shape: OscillatorShape.Saw
+}
 
 /**
  * DSP implementation for Oscillator module
@@ -25,18 +23,39 @@ export class OscillatorNode implements ModuleDSP {
   private oscillator: _OscillatorNode
   private pitchParam: AudioParam
   public state: OscillatorState
+  private cleanupHandler: (() => void) | null = null
 
   constructor(
     public readonly id: string,
-    audioContext: AudioContext,
+    private audioContext: AudioContext,
     initialState: OscillatorState = INITIAL_STATE
   ) {
-    this.oscillator = new _OscillatorNode(audioContext)
-    this.pitchParam = this.oscillator.node.parameters.get('pitch')!
     this.state = initialState
-    
-    // Set initial shape
-    this.oscillator.setShape(SHAPES[this.state.shape])
+    this.state.pitch ??= INITIAL_STATE.pitch
+    this.state.shape ??= INITIAL_STATE.shape
+
+    this.oscillator = new _OscillatorNode(audioContext, this.state.shape)
+    this.pitchParam = this.oscillator.node.parameters.get('pitch')!
+    this.pitchParam.setValueAtTime(this.state.pitch, this.audioContext.currentTime)
+
+    const state = getYjsValue(this.state);
+    if (state instanceof Y.Map) {
+      const handler = this.handleStateChange.bind(this)
+      state.observe(handler)
+      this.cleanupHandler = () => { state.unobserve(handler) }
+    }
+
+  }
+
+  handleStateChange(event: Y.YMapEvent<any>) {
+    if (event.keysChanged.has('shape')) {
+      const shape = event.target.get('shape');
+      this.oscillator.setShape(shape)
+    }
+    if (event.keysChanged.has('pitch')) {
+      const value = event.target.get('pitch');
+      this.pitchParam.setValueAtTime(value, this.audioContext.currentTime)
+    }
   }
 
   getRoutingDefinition() {
@@ -57,15 +76,7 @@ export class OscillatorNode implements ModuleDSP {
     }
   }
 
-  setShape(shapeIndex: number) {
-    const shape = SHAPES[shapeIndex]
-    if (shape) {
-      this.oscillator.setShape(shape)
-      this.state.shape = shapeIndex
-    }
-  }
-
   destroy(): void {
-    // OscillatorNode cleanup if needed
+    this.cleanupHandler?.()
   }
 }
