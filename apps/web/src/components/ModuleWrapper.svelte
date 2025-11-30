@@ -6,19 +6,44 @@
   export let module: Module
   export let disabled = false
 
-  const { workspace, dsp } = get_workspace()
+  const { workspace, dsp, positions } = get_workspace()
   
   const position = workspace.module_position(module.id)
   const node = dsp.moduleNode(module.id)
 
   const component = get_component(module)
+  
+  // Callback handlers - bridge between dumb UI and smart workspace
+  const handleClose = (id: string) => {
+    workspace.remove_module(id)
+  }
+  
+  const handleClone = (id: string) => {
+    workspace.clone_module(id)
+  }
+  
+  const handleDrag = (id: string, x: number, y: number) => {
+    workspace.move_module(id, x, y)
+  }
+  
+  const handleRegisterElement = (id: string, element: HTMLElement) => {
+    positions.registerModule(id, element)
+  }
+  
+  const handleUnregisterElement = (id: string) => {
+    positions.removeModule(id)
+  }
 </script>
 
 <svelte:component 
-  node={node}
-  moduleId={module.id}
   this={component}
+  {node}
   {disabled}
+  moduleId={module.id}
   {position}
-  workspace={workspace}
+  onClose={handleClose}
+  onClone={handleClone}
+  onDrag={handleDrag}
+  registerElement={handleRegisterElement}
+  unregisterElement={handleUnregisterElement}
 />

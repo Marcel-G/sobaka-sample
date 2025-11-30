@@ -25,10 +25,16 @@
   export let height = 0
   export let width = 0
   
-  // Workspace props - optional for standalone/storybook use
+  // Position and ID props
   export let moduleId: string = 'storybook-module'
   export let position: Readable<{ x: number; y: number }> = writable({ x: 0, y: 0 })
-  export let workspace: any = null
+  
+  // Callback props - make the component dumb
+  export let onClose: ((id: string) => void) | null = null
+  export let onClone: ((id: string) => void) | null = null
+  export let onDrag: ((id: string, x: number, y: number) => void) | null = null
+  export let registerElement: ((id: string, element: HTMLElement) => void) | null = null
+  export let unregisterElement: ((id: string) => void) | null = null
 
   // For backwards compatibility with context-based usage
   const id = moduleId
@@ -41,15 +47,15 @@
   $: {
     // position values must be subscribed to in here to trigger reactivity
     // even if we don't really need the values of x and y
-    if (workspace && element && ($position.x !== 0 || $position.y !== 0)) {
+    if (registerElement && element && ($position.x !== 0 || $position.y !== 0)) {
       requestAnimationFrame(() => {
-        workspace.positions?.registerModule?.(id, element)
+        registerElement(id, element)
       })
     }
   }
 
   onDestroy(() => {
-    workspace?.positions?.removeModule?.(id)
+    unregisterElement?.(id)
   })
 
   const classes = {
@@ -67,7 +73,7 @@
   }
 
   const handle_drag: OnDrag = (event, origin, element) => {
-    if (disabled || !workspace) return true
+    if (disabled || !onDrag) return true
 
     // Find the first parent with data-kind="workspace"
     let workspaceElement = element
@@ -89,7 +95,7 @@
       if (x < 0 || y < 0) {
         return
       }
-      workspace?.move_module?.(id, x, y)
+      onDrag(id, x, y)
     }
   }
 </script>
@@ -104,25 +110,29 @@
 >
   <div class={classes.bar}>
     <span class={classes.name}>{name}</span>
-    {#if !disabled && workspace}
+    {#if !disabled && (onClone || onClose)}
       <span class="actions flex">
-        <button
-          class={twMerge(
-            classes.barButton,
-            classes.barButtonHover,
-            classes.barButtonActive
-          )}
-          on:click={() => workspace?.clone_module?.(id)}>+</button
-        >
-        <button
-          class={twMerge(
-            classes.barButton,
-            classes.barButtonHover,
-            classes.barButtonActive,
-            'rounded-tr-[calc(var(--radius-lg)-2px)]'
-          )}
-          on:click={() => workspace?.remove_module?.(id)}>x</button
-        >
+        {#if onClone}
+          <button
+            class={twMerge(
+              classes.barButton,
+              classes.barButtonHover,
+              classes.barButtonActive
+            )}
+            on:click={() => onClone?.(id)}>+</button
+          >
+        {/if}
+        {#if onClose}
+          <button
+            class={twMerge(
+              classes.barButton,
+              classes.barButtonHover,
+              classes.barButtonActive,
+              'rounded-tr-[calc(var(--radius-lg)-2px)]'
+            )}
+            on:click={() => onClose?.(id)}>x</button
+          >
+        {/if}
       </span>
     {/if}
   </div>

@@ -5,9 +5,19 @@
   import Layout from '../components/Layout.svelte'
   import { create_bpm_range } from '../range/range_creators'
   import { ClockNode } from '@sobaka/dsp';
+  import type { Readable } from 'svelte/store'
 
   export let node: ClockNode 
   export let disabled = false
+  
+  // Props forwarded from ModuleWrapper
+  export let moduleId: string
+  export let position: Readable<{ x: number; y: number }>
+  export let onClose: ((id: string) => void) | null = null
+  export let onClone: ((id: string) => void) | null = null
+  export let onDrag: ((id: string, x: number, y: number) => void) | null = null
+  export let registerElement: ((id: string, element: HTMLElement) => void) | null = null
+  export let unregisterElement: ((id: string) => void) | null = null
 
   let name = node.name
   
@@ -19,6 +29,14 @@
 
 <Panel
   {name}
+  {moduleId}
+  {position}
+  {disabled}
+  {onClose}
+  {onClone}
+  {onDrag}
+  {registerElement}
+  {unregisterElement}
   height={8}
   width={5}
   --color-module-accent="var(--color-pink)"
