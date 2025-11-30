@@ -2,6 +2,7 @@ import { derived, get } from "svelte/store";
 import { ModuleDSP } from "./shared/types"
 import { Link, Module, PlugType, Workspace } from "@sobaka/state";
 import { ClockNode } from "./module/clock/node";
+import { MixerDSP } from "./module/mixer/node";
 
 /**
  * Creates a DSP instance for a given module
@@ -17,9 +18,23 @@ const createAudioModule = (module: Module, audioContext: AudioContext): ModuleDS
  */
 export class AudioGraph {
   private dspModules: Map<string, ModuleDSP> = new Map()
+  private staticModules: Map<string, ModuleDSP> = new Map()
   private connections: Map<string, AudioNode> = new Map()
 
-  constructor(private audioContext: AudioContext) {}
+  constructor(private audioContext: AudioContext) {
+    // Initialize static modules (always present, not in workspace state)
+    this.initializeStaticModules()
+  }
+
+  /**
+   * Initialize static modules that are always present
+   * These are not synced to workspace state
+   */
+  private initializeStaticModules() {
+    // Create the global output mixer
+    const mixer = new MixerDSP('global-mixer', this.audioContext)
+    this.staticModules.set('global-mixer', mixer)
+  }
 
   /**
    * Reconcile the audio graph with the current state
@@ -66,10 +81,10 @@ export class AudioGraph {
 
     if (!from || !to) return
 
-    const fromDSP = this.dspModules.get(from.moduleId)
+    const fromDSP = this.dspModules.get(from.moduleId) || this.staticModules.get(from.moduleId)
     const fromRoute = fromDSP?.getRoute(from.routeName)
 
-    const toDSP = this.dspModules.get(to.moduleId)
+    const toDSP = this.dspModules.get(to.moduleId) || this.staticModules.get(to.moduleId)
     const toRoute = toDSP?.getRoute(to.routeName)
 
     if (!fromRoute || !toRoute) return
@@ -97,7 +112,21 @@ export class AudioGraph {
   }
 
   moduleNode(moduleId: string) {
-    return this.dspModules.get(moduleId)
+    return this.dspModules.get(moduleId) || this.staticModules.get(moduleId)
+  }
+
+  /**
+   * Get a static module (e.g., global mixer)
+   */
+  getStaticModule(moduleId: string): ModuleDSP | undefined {
+    return this.staticModules.get(moduleId)
+  }
+
+  /**
+   * Get all static module IDs
+   */
+  getStaticModuleIds(): string[] {
+    return Array.from(this.staticModules.keys())
   }
 
   /**
@@ -105,12 +134,7 @@ export class AudioGraph {
    * Returns the PlugType from the module's routing definition
    */
   getPlugType(moduleId: string, routeName: string): PlugType | null {
-    // Handle special global mixer
-    if (moduleId === 'global' && routeName === 'mixer') {
-      return PlugType.Mixer
-    }
-
-    const dsp = this.dspModules.get(moduleId)
+    const dsp = this.dspModules.get(moduleId) || this.staticModules.get(moduleId)
     if (!dsp || !dsp.getRoutingDefinition) return null
 
     const routing = dsp.getRoutingDefinition()
@@ -141,6 +165,12 @@ export class AudioGraph {
       dsp.destroy()
     }
     this.dspModules.clear()
+    
+    // Clean up static modules
+    for (const dsp of this.staticModules.values()) {
+      dsp.destroy()
+    }
+    this.staticModules.clear()
   }
 }
 

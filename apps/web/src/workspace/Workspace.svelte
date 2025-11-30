@@ -6,11 +6,11 @@
   import { writable } from 'svelte/store'
 
   import ModuleWrapper from '../components/ModuleWrapper.svelte'
+  import StaticModuleWrapper from '../components/StaticModuleWrapper.svelte'
   import Toolbox from '../components/Toolbox.svelte'
   import Wires from '../components/Wires.svelte'
   import { getWorkspace } from '../context/workspace'
   import AvatarList from '../components/collaborative/AvatarList.svelte'
-  import Mixer from '../modules/Mixer.svelte'
   import type { Position } from '@sobaka/state'
 
   let toolboxVisible = false
@@ -68,7 +68,7 @@
   bind:this={workspaceElement}
 >
   <AvatarList />
-  <Mixer />
+  <StaticModuleWrapper moduleId="global-mixer" moduleType="Mixer" />
   {#if toolboxVisible}
     <Toolbox position={toolboxPosition} onClose={handleClose} />
   {/if}

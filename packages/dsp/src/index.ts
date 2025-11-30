@@ -8,3 +8,4 @@
 export * from './shared'
 export * from './graph'
 export * from './module/clock/node'
+export * from './module/mixer/node'

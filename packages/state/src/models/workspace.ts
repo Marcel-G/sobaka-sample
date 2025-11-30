@@ -246,18 +246,6 @@ export class Workspace extends SyncedDoc<'workspace'> {
     })
   }
 
-  tryMakeLinkToMixer(chan = 0) {
-    this.pendingLinkStore.update(link => {
-      if (link?.from) {
-        this.addLink({
-          from: link.from,
-          to: { moduleId: 'global', routeName: 'mixer' }
-        })
-        return null
-      }
-      return link
-    })
-  }
 
   // Link actions
   addLink(link: Link): string {
