@@ -1,20 +1,16 @@
 import * as Y from 'yjs'
-import { VerifiedRTCProvider } from '@sobaka/state/models/rtc'
+import { VerifiedRTCProvider } from '@sobaka/state/networking/provider'
 import { uuidv4 } from 'lib0/random'
 import { writable, type Readable } from 'svelte/store'
 import { getContext, setContext } from 'svelte'
 import type { SubDocReference } from '@sobaka/state/util/subdoc'
-import { Root } from '@sobaka/state/models/root'
-import { Workspace } from '@sobaka/state/models/workspace'
+import { Root, type GlobalContext } from '@sobaka/state/models/root'
+import { Workspace, type User } from '@sobaka/state/models/workspace'
 import { WorkspaceList } from '@sobaka/state/models/workspaceList'
 import { EmptyDocument } from '@sobaka/state/models/docMeta'
 import { load } from './audio'
 import type { Config as ConfigApi } from '../routes/proxy+layout.server'
 import { SyncedDocFactory, type Config } from '@sobaka/state/models/syncedDoc'
-
-export interface User {
-  uuid: string
-}
 
 // TODO: this is more like a context
 export const createGlobalCtx = async (config: ConfigApi) => {
@@ -29,11 +25,6 @@ export const getGlobalCtx = () => {
 }
 
 const PING_INTERVAL = 30e3
-
-export interface GlobalContext {
-  workspaces: SyncedDocFactory<Workspace>
-  lists: SyncedDocFactory<WorkspaceList>
-}
 
 export class Global {
   private rtc: VerifiedRTCProvider

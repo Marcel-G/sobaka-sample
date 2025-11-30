@@ -4,10 +4,16 @@ import * as Y from 'yjs'
 import { WorkspaceList } from './workspaceList.ts'
 import { type SubDocReference } from '../util/subdoc.ts'
 import { intoReadable } from '../util/store.ts'
-import { SyncedDoc, type Config } from './syncedDoc.ts'
+import { SyncedDoc, SyncedDocFactory, type Config } from './syncedDoc.ts'
+import type { Workspace } from './workspace.ts'
 
 type RootStore = {
   workspaceLists: SubDocReference<WorkspaceList>[]
+}
+
+export interface GlobalContext {
+  workspaces: SyncedDocFactory<Workspace>
+  lists: SyncedDocFactory<WorkspaceList>
 }
 
 const ROOT_STORE_SHAPE = {

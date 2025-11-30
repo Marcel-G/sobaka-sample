@@ -45,6 +45,10 @@ const WORKSPACE_STORE_SHAPE = {
   links: []
 }
 
+export interface User {
+  uuid: string
+}
+
 type UserAwareness = {
   user: User
 }
