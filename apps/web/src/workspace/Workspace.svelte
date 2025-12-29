@@ -24,9 +24,13 @@
   const isEditable = workspace.isEditable
   const partialLink = workspace.pendingLinkStore
 
-  // Clean up position observers when workspace is destroyed
+  // Clean up position observers and RAF when workspace is destroyed
   onDestroy(() => {
     positions.destroy()
+    if (rafId !== null) {
+      cancelAnimationFrame(rafId)
+      rafId = null
+    }
   })
 
   const handleDoubleClick = (event: MouseEvent) => {
@@ -53,6 +57,8 @@
   let rafId: number | null = null
 
   const handleMouseMove = (event: MouseEvent) => {
+    if (!workspaceElement) return
+    
     const rect = workspaceElement.getBoundingClientRect()
     latestMouseX = event.clientX - rect.left
     latestMouseY = event.clientY - rect.top
