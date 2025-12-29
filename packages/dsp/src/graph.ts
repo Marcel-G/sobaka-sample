@@ -140,7 +140,11 @@ export class AudioGraph {
     for (const linkId of linkIds) {
       const sourceNode = this.connections.get(linkId)
       if (sourceNode) {
-        sourceNode.disconnect()
+        try {
+          sourceNode.disconnect()
+        } catch (err) {
+          // Node may already be disconnected, ignore
+        }
         this.connections.delete(linkId)
       }
     }
@@ -198,7 +202,11 @@ export class AudioGraph {
   destroy() {
     // Disconnect all connections immediately (no fade needed on teardown)
     for (const sourceNode of this.connections.values()) {
-      sourceNode.disconnect()
+      try {
+        sourceNode.disconnect()
+      } catch (err) {
+        // Node may already be disconnected, ignore
+      }
     }
     this.connections.clear()
     

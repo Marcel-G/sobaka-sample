@@ -44,7 +44,11 @@
 
     return () => {
       paused = true
-      module.disconnect(analyser)
+      try {
+        module.disconnect(analyser)
+      } catch (err) {
+        // Node may already be disconnected if parent was destroyed
+      }
     }
   })
 </script>
