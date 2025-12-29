@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { PageData } from './$types'
+  import type { AudioGraph } from '@sobaka/dsp'
 
   import WorkspaceView from '../../../workspace/Workspace.svelte'
   import { initWorkspace } from '../../../context/workspace'
@@ -10,17 +11,38 @@
   import AppLayout from '../../../components/AppLayout.svelte'
   import Loading from '@sobaka/ui/components/Loading.svelte'
 
-  export let data: PageData
+  let { data }: { data: PageData } = $props()
 
   const context = getGlobalCtx()
 
-  $: workspace = context.workspaces.get({
+  const workspace = $derived(context.workspaces.get({
     guid: data.workspace.id
-  } as SubDocReference<Workspace>)
+  } as SubDocReference<Workspace>))
 
-  $: initWorkspace(workspace)
+  const loading = $derived(workspace.load())
 
-  $: loading = workspace.load()
+  // Track current DSP instance for cleanup
+  let currentDsp: AudioGraph | null = null
+
+  // Initialize workspace and handle cleanup when workspace changes
+  $effect(() => {
+    // Clean up previous DSP instance if it exists
+    if (currentDsp) {
+      currentDsp.destroy()
+    }
+
+    // Initialize new workspace context
+    const workspaceContext = initWorkspace(workspace)
+    currentDsp = workspaceContext.dsp
+
+    // Cleanup function called when effect re-runs or component unmounts
+    return () => {
+      if (currentDsp) {
+        currentDsp.destroy()
+        currentDsp = null
+      }
+    }
+  })
 </script>
 
 <AppLayout>
