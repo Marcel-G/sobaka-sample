@@ -200,7 +200,6 @@ export class AudioGraph {
    * Disconnects immediately without fade since we're tearing down
    */
   destroy() {
-    // Disconnect all connections immediately (no fade needed on teardown)
     for (const sourceNode of this.connections.values()) {
       try {
         sourceNode.disconnect()
@@ -210,13 +209,11 @@ export class AudioGraph {
     }
     this.connections.clear()
     
-    // Destroy all DSP modules
     for (const dsp of this.dspModules.values()) {
       dsp.destroy()
     }
     this.dspModules.clear()
     
-    // Clean up static modules
     for (const dsp of this.staticModules.values()) {
       dsp.destroy()
     }
@@ -226,7 +223,6 @@ export class AudioGraph {
 
 /**
  * Create an AudioGraph instance
- * Note: This only creates the graph - you need to set up reconciliation separately
  */
 export const createAudioGraph = (audioContext: AudioContext) => {
   return new AudioGraph(audioContext)
