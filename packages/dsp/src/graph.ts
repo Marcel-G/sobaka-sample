@@ -224,19 +224,10 @@ export class AudioGraph {
   }
 }
 
-export const createDsp = (ws: Workspace, audioContext: AudioContext) => {
-  const graph = new AudioGraph(audioContext)
-
-  // Store the unsubscribe function so we can clean it up
-  const unsubscribe = derived([ws.modules, ws.links], ([$plugs, $links]) => [$plugs, $links] as const)
-    .subscribe(([modules, links]) => graph.reconcile(modules, links))
-
-  // Extend destroy to also unsubscribe from the store
-  const originalDestroy = graph.destroy.bind(graph)
-  graph.destroy = () => {
-    unsubscribe()
-    originalDestroy()
-  }
-
-  return graph
+/**
+ * Create an AudioGraph instance
+ * Note: This only creates the graph - you need to set up reconciliation separately
+ */
+export const createAudioGraph = (audioContext: AudioContext) => {
+  return new AudioGraph(audioContext)
 }
