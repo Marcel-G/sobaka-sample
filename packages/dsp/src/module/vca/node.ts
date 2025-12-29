@@ -21,13 +21,17 @@ export class VcaNode implements ModuleDSP {
   constructor(
     public readonly id: string,
     audioContext: AudioContext,
-    initialState: VcaState = INITIAL_STATE
+    initialState: Partial<VcaState> = {}
   ) {
     this.vca = new GainNode(audioContext)
-    this.state = initialState
+    // Merge initial state with defaults to ensure all properties are defined
+    this.state = { ...INITIAL_STATE, ...initialState }
     
-    // Set initial gain value
-    this.vca.gain.setValueAtTime(this.state.value, audioContext.currentTime)
+    // Set initial gain value (ensure it's a valid finite number)
+    const gainValue = typeof this.state.value === 'number' && isFinite(this.state.value) 
+      ? this.state.value 
+      : INITIAL_STATE.value
+    this.vca.gain.setValueAtTime(gainValue, audioContext.currentTime)
   }
 
   getRoutingDefinition() {

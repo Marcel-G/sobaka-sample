@@ -58,7 +58,7 @@ impl ReverbNode {
     pub fn new(ctx: &web_sys::AudioContext) -> Result<ReverbNode, JsValue> {
         let options = web_sys::AudioWorkletNodeOptions::new();
         options.set_channel_count(1);
-        options.set_number_of_inputs(1);
+        options.set_number_of_inputs(2);
         options.set_number_of_outputs(2);
 
         let node = ReverbProcessor::create_node(ctx, (), Some(&options))?;

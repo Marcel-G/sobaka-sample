@@ -35,15 +35,15 @@ impl Processor for FilterProcessor {
         vec![
             ParameterDescriptor {
                 name: "q".to_string(),
-                default_value: 0.1,
-                min_value: 0.0,
+                default_value: 0.5,
+                min_value: 0.1,
                 max_value: 1.0,
                 automation_rate: AutomationRate::KRate,
             },
             ParameterDescriptor {
                 name: "frequency".to_string(),
-                default_value: 0.1,
-                min_value: 0.0,
+                default_value: 0.5,
+                min_value: 0.1,
                 max_value: 1.0,
                 automation_rate: AutomationRate::ARate,
             },
@@ -62,7 +62,7 @@ impl FilterNode {
     pub fn new(ctx: &web_sys::AudioContext) -> Result<FilterNode, JsValue> {
         let options = web_sys::AudioWorkletNodeOptions::new();
         options.set_channel_count(1);
-        options.set_number_of_inputs(1);
+        options.set_number_of_inputs(3);
         options.set_number_of_outputs(4);
 
         let node = FilterProcessor::create_node(ctx, (), Some(&options))?;
