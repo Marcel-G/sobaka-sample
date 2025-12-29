@@ -1,4 +1,4 @@
-import { getContext, setContext, onDestroy } from 'svelte'
+import { getContext, setContext } from 'svelte'
 import { Workspace } from '@sobaka/state/models/workspace'
 import { createPositionStores, type PositionStore } from './positions'
 import { createDsp, type AudioGraph } from '@sobaka/dsp'
@@ -29,11 +29,6 @@ export const initWorkspace = (workspace: Workspace) => {
   }
 
   setContext(WORKSPACE_CONTEXT, ctx)
-  
-  // Automatically cleanup when component unmounts
-  onDestroy(() => {
-    ctx.destroy()
-  })
 
   return ctx
 }
