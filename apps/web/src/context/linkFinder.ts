@@ -1,4 +1,9 @@
-import { PlugType, type Link, type LinkPoint, linkPointToKey } from '@sobaka/state/models/links'
+import {
+  PlugType,
+  type Link,
+  type LinkPoint,
+  linkPointToKey
+} from '@sobaka/state/models/links'
 import { type PlugPosition } from './positions'
 import type { Position } from '@sobaka/state'
 import type { AudioGraph } from '@sobaka/dsp'
@@ -37,7 +42,7 @@ export const linkFinder = (
   if (!link || !isPartialLink(link)) {
     return []
   }
-  
+
   // At this point we know link is not null and has exactly one endpoint
   // Get the first clicked point (could be in either from or to)
   const startPoint = (link.from || link.to) as LinkPoint
@@ -49,15 +54,15 @@ export const linkFinder = (
   // Get the type of the plug that was clicked first
   const startType = dsp.getPlugType(startPoint.moduleId, startPoint.routeName)
   if (!startType) return []
-  
+
   // Filter for compatible plugs based on what was clicked
   const plugs = Array.from(plugPositions.values()).filter(plug => {
     // Don't connect to same module
     if (startPoint.moduleId === plug.id.moduleId) return false
-    
+
     const plugType = dsp.getPlugType(plug.id.moduleId, plug.id.routeName)
     if (!plugType) return false
-    
+
     // If we clicked an output, we need input/param/mixer
     if (startType === PlugType.Output) {
       return [PlugType.Input, PlugType.Param, PlugType.Mixer].includes(plugType)

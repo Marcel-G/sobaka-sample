@@ -13,6 +13,7 @@ const INITIAL_STATE: NoiseState = {}
  * White noise generator with no parameters
  */
 export class NoiseNode implements ModuleDSP {
+  static initialState = INITIAL_STATE
   public name = "noise"
   private noise: _NoiseNode
   public state: NoiseState

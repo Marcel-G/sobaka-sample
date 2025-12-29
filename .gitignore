@@ -3,6 +3,7 @@ dist
 pkg
 .localstack
 builds
+target
 
 # Local .terraform directories
 **/.terraform*

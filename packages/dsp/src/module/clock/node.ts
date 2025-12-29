@@ -13,6 +13,7 @@ const INITIAL_STATE: ClockState = { bpm: 120 }
  * Manages ClockDividerNode and its parameters
  */
 export class ClockNode implements ModuleDSP {
+  static initialState = INITIAL_STATE
   public name = "clock"
   private clock: _ClockDividerNode
   private bpmParam: AudioParam

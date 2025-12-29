@@ -15,6 +15,7 @@ const INITIAL_STATE: QuantiserState = {
  * Quantizes pitch CV to selected notes in chromatic scale
  */
 export class QuantiserNode implements ModuleDSP {
+  static initialState = INITIAL_STATE
   public name = "quantiser"
   private quantiser: _QuantiserNode
   public state: QuantiserState
@@ -26,7 +27,7 @@ export class QuantiserNode implements ModuleDSP {
   ) {
     this.quantiser = new _QuantiserNode(audioContext)
     this.state = initialState
-    
+
     // Set initial notes
     this.updateNotes(this.state.notes)
   }
@@ -51,7 +52,7 @@ export class QuantiserNode implements ModuleDSP {
 
   updateNotes(notes: boolean[]) {
     this.quantiser.updateNotes(notes)
-    this.state.notes = notes
+    this.state.notes = [...notes]
   }
 
   destroy(): void {

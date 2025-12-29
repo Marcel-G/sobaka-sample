@@ -14,6 +14,7 @@ const INITIAL_STATE: ParameterState = {
  * Uses native Web Audio ConstantSourceNode for CV generation
  */
 export class ParameterNode implements ModuleDSP {
+  static initialState = INITIAL_STATE
   public name = "parameter"
   private parameter: ConstantSourceNode
   public state: ParameterState
@@ -28,7 +29,10 @@ export class ParameterNode implements ModuleDSP {
     this.state = initialState
     
     // Set initial value
-    this.parameter.offset.setValueAtTime(this.state.value, audioContext.currentTime)
+    this.parameter.offset.setValueAtTime(
+      this.state.value ?? INITIAL_STATE.value,
+      audioContext.currentTime
+    )
   }
 
   getRoutingDefinition() {

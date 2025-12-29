@@ -19,6 +19,7 @@ const INITIAL_STATE: OscillatorState = {
  * Manages OscillatorNode and its parameters
  */
 export class OscillatorNode implements ModuleDSP {
+  static initialState = INITIAL_STATE
   public name = "oscillator"
   private oscillator: _OscillatorNode
   private pitchParam: AudioParam

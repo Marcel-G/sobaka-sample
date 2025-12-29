@@ -1,5 +1,4 @@
 import Clock from './Clock.svelte'
-import Mixer from './Mixer.svelte'
 import Oscillator from './Oscillator/Oscillator.svelte'
 import Noise from './Noise.svelte'
 import Filter from './Filter.svelte'
@@ -14,16 +13,15 @@ import { type Module } from '@sobaka/state/models/workspace'
 
 export const MODULES = {
   Clock,
-  Mixer,
-  Oscillator,
-  Noise,
-  Filter,
-  Envelope,
   Delay,
-  Reverb,
-  Quantiser,
-  SampleAndHold,
+  Envelope,
+  Filter,
+  Noise,
+  Oscillator,
   Parameter,
+  Quantiser,
+  Reverb,
+  SampleAndHold,
   Vca,
 } as const
 

@@ -34,9 +34,7 @@ export class Global {
   private lastPong: number = 0
 
   audio = new AudioContext()
-  workspaces = new SyncedDocFactory<Workspace>(ref =>
-    Workspace.fromRef(this.config, ref)
-  )
+  workspaces = new SyncedDocFactory<Workspace>(ref => Workspace.fromRef(this.config, ref))
   lists = new SyncedDocFactory<WorkspaceList>(ref =>
     WorkspaceList.fromRef(this.config, ref)
   )

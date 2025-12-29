@@ -16,7 +16,7 @@ export const getWorkspace = () => getContext<WorkspaceContext>(WORKSPACE_CONTEXT
 
 export const initWorkspace = (workspace: Workspace) => {
   const dsp = createDsp(workspace, getGlobalCtx().audio)
-  
+
   const ctx: WorkspaceContext = {
     workspace,
     dsp,

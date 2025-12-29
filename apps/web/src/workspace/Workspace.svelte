@@ -23,7 +23,7 @@
   const modules = workspace.modules
   const isEditable = workspace.isEditable
   const partialLink = workspace.pendingLinkStore
-  
+
   // Clean up position observers when workspace is destroyed
   onDestroy(() => {
     positions.destroy()
@@ -56,7 +56,7 @@
     const rect = workspaceElement.getBoundingClientRect()
     latestMouseX = event.clientX - rect.left
     latestMouseY = event.clientY - rect.top
-    
+
     // Only schedule RAF updates when we have a partial link
     if (isPartialLink($partialLink) && rafId === null) {
       rafId = requestAnimationFrame(() => {

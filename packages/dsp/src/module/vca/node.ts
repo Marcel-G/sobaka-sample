@@ -14,6 +14,7 @@ const INITIAL_STATE: VcaState = {
  * Uses native Web Audio GainNode for amplification/attenuation
  */
 export class VcaNode implements ModuleDSP {
+  static initialState = INITIAL_STATE
   public name = "vca"
   private vca: GainNode
   public state: VcaState
@@ -21,17 +22,16 @@ export class VcaNode implements ModuleDSP {
   constructor(
     public readonly id: string,
     audioContext: AudioContext,
-    initialState: Partial<VcaState> = {}
+    initialState: VcaState = INITIAL_STATE
   ) {
     this.vca = new GainNode(audioContext)
-    // Merge initial state with defaults to ensure all properties are defined
-    this.state = { ...INITIAL_STATE, ...initialState }
-    
-    // Set initial gain value (ensure it's a valid finite number)
-    const gainValue = typeof this.state.value === 'number' && isFinite(this.state.value) 
-      ? this.state.value 
-      : INITIAL_STATE.value
-    this.vca.gain.setValueAtTime(gainValue, audioContext.currentTime)
+    this.state = initialState
+
+    // Set initial gain value
+    this.vca.gain.setValueAtTime(
+      this.state.value,
+      audioContext.currentTime
+    )
   }
 
   getRoutingDefinition() {

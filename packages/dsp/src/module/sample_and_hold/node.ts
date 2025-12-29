@@ -13,6 +13,7 @@ const INITIAL_STATE: SampleAndHoldState = {}
  * Samples input signal when gate goes high
  */
 export class SampleAndHoldNode implements ModuleDSP {
+  static initialState = INITIAL_STATE
   public name = "S & H"
   private sampleAndHold: _SampleAndHoldNode
   public state: SampleAndHoldState

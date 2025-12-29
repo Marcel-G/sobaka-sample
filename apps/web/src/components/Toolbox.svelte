@@ -1,7 +1,7 @@
 <script lang="ts">
   import clamp from 'lodash/clamp'
   import { getWorkspace } from '../context/workspace'
-  import { MODULES, type ModuleUI } from '@sobaka/ui/modules'
+  import { MODULES } from '@sobaka/ui/modules'
   import { intoGridCoords } from '@sobaka/ui/modules/shared/Panel.svelte'
   import { onMount } from 'svelte'
 
@@ -25,7 +25,7 @@
       return moduleName.toLowerCase().includes(query.trim().toLowerCase())
     }
 
-  $: list = (Object.keys(MODULES) as ModuleUI[]).filter(dumbFuzzy(search))
+  $: list = Object.keys(MODULES).filter(dumbFuzzy(search))
   $: selectedIndex = clamp(selectedIndex, 0, list.length - 1)
   $: selectionRefs[selectedIndex]?.scrollIntoView({
     block: 'nearest',
@@ -36,7 +36,7 @@
     inputRef.focus()
   })
 
-  function handleCreate(type: ModuleUI) {
+  function handleCreate(type: string) {
     workspace.createModule(type, intoGridCoords(position))
     onClose()
   }

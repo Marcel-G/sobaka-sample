@@ -4,7 +4,7 @@ import { derived, get, type Readable } from 'svelte/store'
  * Wraps a store to batch updates to once per animation frame.
  * The underlying store can update as frequently as needed, but subscribers
  * will only receive the latest value once per RAF.
- * 
+ *
  * @param store - The source store to batch
  * @returns A new store that emits at most once per animation frame
  */

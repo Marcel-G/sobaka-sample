@@ -15,6 +15,7 @@ const INITIAL_STATE: DelayState = {
  * Tap delay with multiple delay time outputs
  */
 export class DelayNode implements ModuleDSP {
+  static initialState = INITIAL_STATE
   public name = "delay"
   private delay: _DelayNode
   private delayParam: AudioParam

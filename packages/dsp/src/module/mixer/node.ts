@@ -14,6 +14,7 @@ const INITIAL_STATE: MixerState = { volume: 0.7, muted: false }
  * It receives inputs from other modules and outputs to speakers/headphones
  */
 export class MixerDSP implements ModuleDSP {
+  static initialState = INITIAL_STATE
   private mixer: GainNode
   private volumeParam: AudioParam
   public state: MixerState

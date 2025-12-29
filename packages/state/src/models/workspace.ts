@@ -5,6 +5,7 @@ import { derived, writable, type Readable } from 'svelte/store'
 
 import cloneDeep from 'lodash/cloneDeep'
 import { intoReadable } from '../util/store'
+import { createAudioModuleInitialState } from '@sobaka/dsp'
 import { type SubDocReference } from '../util/subdoc'
 import { SyncedDoc, type Config } from './syncedDoc'
 import { isFullyLinked, PlugType, type Link } from './links'
@@ -143,11 +144,13 @@ export class Workspace extends SyncedDoc<'workspace'> {
 
     const { modules } = this.store
 
-    if (modules) {
+    const initialState = createAudioModuleInitialState(type)
+
+    if (modules && initialState) {
       modules.push({
         id,
         type,
-        state: {},
+        state: initialState,
         position
       })
     }

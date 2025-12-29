@@ -5,6 +5,7 @@ The main SvelteKit web application for Sobaka - a collaborative modular synthesi
 ## Overview
 
 This is the frontend web application that users interact with. It provides:
+
 - Visual modular synthesizer interface
 - Real-time collaboration
 - Audio synthesis and routing
@@ -60,6 +61,7 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for details.
 ## Deployment
 
 This is a static site that can be deployed to:
+
 - AWS S3 + CloudFront (current setup - see `infrastructure/`)
 - Vercel
 - Netlify
@@ -68,22 +70,26 @@ This is a static site that can be deployed to:
 ## Environment Variables
 
 None required for basic operation. The app connects to:
+
 - Signaling server (configurable via server response)
 - Persistence server (optional, for long-term storage)
 
 ## Key Features
 
 ### Modular Synthesis
+
 - Visual patch cable routing
 - Real-time audio processing via Web Audio API
 - WASM-based audio worklets for performance
 
 ### Collaboration
+
 - Real-time collaborative editing via Yjs + WebRTC
 - Presence indicators (avatars)
 - Conflict-free state synchronization
 
 ### Workspace Management
+
 - Create/fork workspaces
 - Share via URL
 - Local persistence (IndexedDB)

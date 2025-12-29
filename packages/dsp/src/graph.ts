@@ -1,37 +1,8 @@
 import { derived } from "svelte/store";
 import { ModuleDSP } from "./shared/types"
 import { Link, Module, PlugType, Workspace } from "@sobaka/state";
-import { ClockNode } from "./module/clock/node";
 import { MixerDSP } from "./module/mixer/node";
-import { OscillatorNode } from "./module/oscillator/node";
-import { NoiseNode } from "./module/noise/node";
-import { FilterNode } from "./module/filter/node";
-import { EnvelopeNode } from "./module/envelope/node";
-import { DelayNode } from "./module/delay/node";
-import { ReverbNode } from "./module/reverb/node";
-import { QuantiserNode } from "./module/quantiser/node";
-import { SampleAndHoldNode } from "./module/sample_and_hold/node";
-import { ParameterNode } from "./module/parameter/node";
-import { VcaNode } from "./module/vca/node";
-
-/**
- * Creates a DSP instance for a given module
- * This should be implemented to instantiate the appropriate module type
- */
-const createAudioModule = (module: Module, audioContext: AudioContext): ModuleDSP => {
-  if (module.type === 'Clock') return new ClockNode(module.id, audioContext, module.state as any)
-  if (module.type === 'Oscillator') return new OscillatorNode(module.id, audioContext, module.state as any)
-  if (module.type === 'Noise') return new NoiseNode(module.id, audioContext, module.state as any)
-  if (module.type === 'Filter') return new FilterNode(module.id, audioContext, module.state as any)
-  if (module.type === 'Envelope') return new EnvelopeNode(module.id, audioContext, module.state as any)
-  if (module.type === 'Delay') return new DelayNode(module.id, audioContext, module.state as any)
-  if (module.type === 'Reverb') return new ReverbNode(module.id, audioContext, module.state as any)
-  if (module.type === 'Quantiser') return new QuantiserNode(module.id, audioContext, module.state as any)
-  if (module.type === 'SampleAndHold') return new SampleAndHoldNode(module.id, audioContext, module.state as any)
-  if (module.type === 'Parameter') return new ParameterNode(module.id, audioContext, module.state as any)
-  if (module.type === 'Vca') return new VcaNode(module.id, audioContext, module.state as any)
-  throw new Error('not implemented: createAudioModule for type ' + module.type)
-}
+import { createAudioModule } from "./module";
 
 /**
  * Audio graph reconciler - maintains the Web Audio graph based on state

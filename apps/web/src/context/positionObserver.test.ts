@@ -7,21 +7,21 @@ describe('PositionObserver', () => {
     const observer = new PositionObserver()
     const element = document.createElement('div')
     document.body.appendChild(element)
-    
+
     let callCount = 0
     let calledElement: Element | null = null
-    
-    observer.observe(element, (el) => {
+
+    observer.observe(element, el => {
       callCount++
       calledElement = el
     })
-    
+
     // Wait for initial requestAnimationFrame
     await new Promise(resolve => requestAnimationFrame(resolve))
-    
+
     assert.strictEqual(callCount, 1)
     assert.strictEqual(calledElement, element)
-    
+
     observer.destroy()
     document.body.removeChild(element)
   })
@@ -30,19 +30,23 @@ describe('PositionObserver', () => {
     const observer = new PositionObserver()
     const element = document.createElement('div')
     document.body.appendChild(element)
-    
+
     let callback1Count = 0
     let callback2Count = 0
-    
-    observer.observe(element, () => { callback1Count++ })
-    observer.observe(element, () => { callback2Count++ })
-    
+
+    observer.observe(element, () => {
+      callback1Count++
+    })
+    observer.observe(element, () => {
+      callback2Count++
+    })
+
     await new Promise(resolve => requestAnimationFrame(resolve))
-    
+
     // Only the first callback should be called
     assert.ok(callback1Count > 0)
     assert.strictEqual(callback2Count, 0)
-    
+
     observer.destroy()
     document.body.removeChild(element)
   })
@@ -51,22 +55,24 @@ describe('PositionObserver', () => {
     const observer = new PositionObserver()
     const element = document.createElement('div')
     document.body.appendChild(element)
-    
+
     let callCount = 0
-    
-    observer.observe(element, () => { callCount++ })
+
+    observer.observe(element, () => {
+      callCount++
+    })
     await new Promise(resolve => requestAnimationFrame(resolve))
-    
+
     const initialCount = callCount
     observer.unobserve(element)
-    
+
     // Trigger a style change
     element.style.left = '100px'
     await new Promise(resolve => requestAnimationFrame(resolve))
-    
+
     // Callback should not be called after unobserve
     assert.strictEqual(callCount, initialCount)
-    
+
     observer.destroy()
     document.body.removeChild(element)
   })
@@ -75,17 +81,19 @@ describe('PositionObserver', () => {
     const observer = new PositionObserver()
     const element = document.createElement('div')
     document.body.appendChild(element)
-    
+
     let callCount = 0
-    
-    observer.observe(element, () => { callCount++ })
+
+    observer.observe(element, () => {
+      callCount++
+    })
     await new Promise(resolve => requestAnimationFrame(resolve))
-    
+
     const initialCount = callCount
     observer.forceUpdate(element)
-    
+
     assert.ok(callCount > initialCount)
-    
+
     observer.destroy()
     document.body.removeChild(element)
   })
@@ -94,14 +102,14 @@ describe('PositionObserver', () => {
     const observer = new PositionObserver()
     const element = document.createElement('div')
     document.body.appendChild(element)
-    
+
     observer.observe(element, () => {})
-    
+
     // Verify destroy doesn't throw
     assert.doesNotThrow(() => {
       observer.destroy()
     })
-    
+
     document.body.removeChild(element)
   })
 })

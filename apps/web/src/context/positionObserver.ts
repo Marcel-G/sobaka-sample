@@ -1,6 +1,6 @@
 /**
  * Position Observer System
- * 
+ *
  * Efficiently tracks DOM element position changes using:
  * - ResizeObserver: Detects size changes of modules
  * - MutationObserver: Detects style/attribute changes (position updates)
@@ -31,14 +31,14 @@ export class PositionObserver {
   constructor() {
     // ResizeObserver handles module size changes and position changes
     // (ResizeObserver fires when elements move, not just resize)
-    this.resizeObserver = new ResizeObserver((entries) => {
+    this.resizeObserver = new ResizeObserver(entries => {
       for (const entry of entries) {
         this.scheduleUpdate(entry.target)
       }
     })
 
     // MutationObserver handles style/class changes that might affect position
-    this.mutationObserver = new MutationObserver((mutations) => {
+    this.mutationObserver = new MutationObserver(mutations => {
       for (const mutation of mutations) {
         if (mutation.type === 'attributes') {
           // Style or class attribute changed
@@ -48,11 +48,11 @@ export class PositionObserver {
         }
       }
     })
-    
+
     // Set up workspace scroll/resize handlers for fixed-position elements
     this.setupWorkspaceListeners()
   }
-  
+
   /**
    * Set up listeners for workspace scroll and window resize
    * These are needed for fixed-position elements that move relative to viewport
@@ -63,18 +63,18 @@ export class PositionObserver {
       // because fixed-position elements stay in place relative to viewport
       this.scheduleUpdateAll()
     }
-    
+
     this.resizeHandler = () => {
       // When window resizes, fixed-position elements move
       this.scheduleUpdateAll()
     }
-    
+
     // Add listeners (will attach to workspace when first element is observed)
     if (typeof window !== 'undefined') {
       window.addEventListener('resize', this.resizeHandler, { passive: true })
     }
   }
-  
+
   /**
    * Schedule updates for all observed elements
    */
@@ -112,7 +112,7 @@ export class PositionObserver {
    */
   private processPendingUpdates() {
     const now = Date.now()
-    
+
     Array.from(this.pendingUpdates).forEach(element => {
       const entry = this.entries.get(element)
       if (entry && now - entry.lastUpdate >= THROTTLE_MS) {
@@ -161,12 +161,14 @@ export class PositionObserver {
       const workspace = document.querySelector('[data-kind="workspace"]')
       if (workspace) {
         this.workspaceElement = workspace
-        
+
         // Attach scroll listener to the main scroll container
         // The workspace is inside <main> which has overflow-x: auto
         const scrollContainer = workspace.closest('main')
         if (scrollContainer && this.scrollHandler) {
-          scrollContainer.addEventListener('scroll', this.scrollHandler, { passive: true })
+          scrollContainer.addEventListener('scroll', this.scrollHandler, {
+            passive: true
+          })
         }
       }
     }
@@ -207,12 +209,12 @@ export class PositionObserver {
     this.mutationObserver.disconnect()
     this.entries.clear()
     this.pendingUpdates.clear()
-    
+
     if (this.rafId !== null) {
       cancelAnimationFrame(this.rafId)
       this.rafId = null
     }
-    
+
     // Clean up scroll and resize listeners
     if (this.workspaceElement && this.scrollHandler) {
       const scrollContainer = this.workspaceElement.closest('main')
@@ -220,11 +222,11 @@ export class PositionObserver {
         scrollContainer.removeEventListener('scroll', this.scrollHandler)
       }
     }
-    
+
     if (this.resizeHandler && typeof window !== 'undefined') {
       window.removeEventListener('resize', this.resizeHandler)
     }
-    
+
     this.workspaceElement = null
     this.scrollHandler = null
     this.resizeHandler = null

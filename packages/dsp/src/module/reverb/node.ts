@@ -13,6 +13,7 @@ const INITIAL_STATE: ReverbState = {}
  * Stereo reverb effect
  */
 export class ReverbNode implements ModuleDSP {
+  static initialState = INITIAL_STATE
   public name = "reverb"
   private reverb: _ReverbNode
   public state: ReverbState

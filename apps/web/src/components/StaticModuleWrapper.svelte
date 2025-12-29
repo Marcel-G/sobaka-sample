@@ -12,12 +12,12 @@
   let { moduleId, moduleType }: Props = $props()
 
   const { workspace, dsp, positions } = getWorkspace()
-  
+
   const node = dsp.getStaticModule(moduleId) as MixerDSP
-  
+
   // Static modules have a fixed position in the top-right
   const position = readable({ x: 0, y: 0 })
-  
+
   // Plug callbacks - get plug type and pass to tryMakeLink
   const handlePlugClick = (routeName: string) => {
     const plugType = dsp.getPlugType(moduleId, routeName)
@@ -25,12 +25,12 @@
       workspace.tryMakeLink(moduleId, routeName, plugType)
     }
   }
-  
+
   const handleBindPlugElement = (routeName: string, element: HTMLElement) => {
     const linkPoint = { moduleId, routeName }
     return positions.registerPlug(linkPoint, element)
   }
-  
+
   const handleBindElement = (element: HTMLElement) => {
     return positions.registerModule(moduleId, element)
   }

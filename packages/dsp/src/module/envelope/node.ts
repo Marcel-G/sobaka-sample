@@ -17,6 +17,7 @@ const INITIAL_STATE: EnvelopeState = {
  * Attack-Release envelope follower
  */
 export class EnvelopeNode implements ModuleDSP {
+  static initialState = INITIAL_STATE
   public name = "envelope"
   private envelope: _EnvelopeNode
   private attackParam: AudioParam

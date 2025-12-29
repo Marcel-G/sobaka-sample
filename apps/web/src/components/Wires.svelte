@@ -7,7 +7,7 @@
   import type { ModulePosition, PlugPosition, Point } from '../context/positions'
   import { linkFinder, isPartialLink } from '../context/linkFinder'
   import { isFullyLinked, PlugType, type LinkPoint } from '@sobaka/state/models/links'
-    import type { Position } from '@sobaka/state/models/workspace'
+  import type { Position } from '@sobaka/state/models/workspace'
 
   export let mousePosition: Readable<Position>
 
@@ -29,12 +29,15 @@
 
   // Only run linkFinder when there's a partial link
   // Mouse position is already RAF-throttled in Workspace.svelte
-  const activeLink = derived([partialLink, plugPositions, mousePosition], ([l, p, mp]) => {
-    if (!isPartialLink(l)) {
-      return []
+  const activeLink = derived(
+    [partialLink, plugPositions, mousePosition],
+    ([l, p, mp]) => {
+      if (!isPartialLink(l)) {
+        return []
+      }
+      return linkFinder(l, p, mp, dsp)
     }
-    return linkFinder(l, p, mp, dsp)
-  })
+  )
 
   // Calculate wire paths from links and positions
   // Position stores are RAF-batched, so this recalculates at most once per frame

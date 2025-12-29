@@ -17,7 +17,7 @@ export interface Rectangle {
 }
 
 export interface PlugPosition {
-  id: LinkPoint 
+  id: LinkPoint
   position: Point
 }
 
@@ -34,10 +34,10 @@ export const createPositionStores = () => {
   // Use string keys for stable Map lookups
   const plugPositions = writable<Map<string, PlugPosition>>(new Map())
   const modulePositions = writable<Map<string, ModulePosition>>(new Map())
-  
+
   // Create a shared position observer instance
   const observer = new PositionObserver()
-  
+
   // Track which elements we're observing
   const plugElements = new Map<string, Element>()
   const moduleElements = new Map<string, Element>()
@@ -96,15 +96,15 @@ export const createPositionStores = () => {
 
   const registerPlug = (linkPoint: LinkPoint, element: Element): (() => void) => {
     const key = linkPointToKey(linkPoint)
-    
+
     // Store element reference
     plugElements.set(key, element)
-    
+
     // Start observing for changes (observer handles requestAnimationFrame for initial update)
     observer.observe(element, () => {
       updatePlugPosition(linkPoint, element)
     })
-    
+
     // Return cleanup function
     return () => {
       removePlug(linkPoint)
@@ -114,24 +114,24 @@ export const createPositionStores = () => {
   const registerModule = (moduleId: string, element: Element): (() => void) => {
     // Store element reference
     moduleElements.set(moduleId, element)
-    
+
     // Start observing for changes (observer handles requestAnimationFrame for initial update)
     observer.observe(element, () => {
       updateModulePosition(moduleId, element)
-      
+
       // When a module moves, also update all its plug positions
       // This is needed because plugs are positioned relative to their module
       const plugs = Array.from(plugElements.entries()).filter(([key]) => {
         const linkPoint = keyToLinkPoint(key)
         return linkPoint.moduleId === moduleId
       })
-      
+
       for (const [key, plugElement] of plugs) {
         const linkPoint = keyToLinkPoint(key)
         updatePlugPosition(linkPoint, plugElement)
       }
     })
-    
+
     // Return cleanup function
     return () => {
       removeModule(moduleId)
@@ -145,7 +145,7 @@ export const createPositionStores = () => {
       observer.unobserve(element)
       moduleElements.delete(moduleId)
     }
-    
+
     modulePositions.update(positions => {
       positions.delete(moduleId)
       return positions
@@ -154,27 +154,27 @@ export const createPositionStores = () => {
 
   const removePlug = (linkPoint: LinkPoint) => {
     const key = linkPointToKey(linkPoint)
-    
+
     // Stop observing
     const element = plugElements.get(key)
     if (element) {
       observer.unobserve(element)
       plugElements.delete(key)
     }
-    
+
     plugPositions.update(positions => {
       positions.delete(key)
       return positions
     })
   }
-  
+
   const forceUpdateModule = (moduleId: string) => {
     const element = moduleElements.get(moduleId)
     if (element) {
       observer.forceUpdate(element)
     }
   }
-  
+
   const destroy = () => {
     observer.destroy()
     plugElements.clear()

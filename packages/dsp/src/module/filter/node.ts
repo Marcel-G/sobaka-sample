@@ -17,6 +17,7 @@ const INITIAL_STATE: FilterState = {
  * Multi-mode filter with lowpass, highpass, bandpass, and moog outputs
  */
 export class FilterNode implements ModuleDSP {
+  static initialState = INITIAL_STATE
   public name = "filter"
   private filter: _FilterNode
   private frequencyParam: AudioParam
