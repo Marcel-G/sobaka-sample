@@ -1,8 +1,7 @@
 <script lang="ts">
   import type { PageData } from './$types'
 
-  import WorkspaceView from '../../../workspace/Workspace.svelte'
-  import { useWorkspace } from '../../../context/workspace'
+  import WorkspaceContainer from '../../../workspace/WorkspaceContainer.svelte'
   import { getGlobalCtx } from '../../../context/global'
   import { type SubDocReference } from '@sobaka/state/util/subdoc'
   import type { Workspace } from '@sobaka/state/models/workspace'
@@ -19,9 +18,6 @@
   } as SubDocReference<Workspace>))
 
   const loading = $derived(workspace.load())
-
-  // Set up workspace context and handle cleanup on workspace changes
-  $effect(() => useWorkspace(workspace))
 </script>
 
 <AppLayout>
@@ -38,7 +34,9 @@
   {#await loading}
     <Loading />
   {:then}
-    <WorkspaceView />
+    {#key workspace.id}
+      <WorkspaceContainer {workspace} />
+    {/key}
   {:catch error}
     Failed to load workspace: {error.message}
   {/await}

@@ -1,4 +1,4 @@
-import { getContext, setContext } from 'svelte'
+import { getContext, setContext, onDestroy } from 'svelte'
 import { derived } from 'svelte/store'
 import { Workspace } from '@sobaka/state/models/workspace'
 import { createPositionStores, type PositionStore } from './positions'
@@ -16,20 +16,26 @@ type WorkspaceContext = {
 export const getWorkspace = () => getContext<WorkspaceContext>(WORKSPACE_CONTEXT)
 
 /**
- * Set up workspace context with automatic cleanup
- * Call this inside an $effect to handle workspace changes
- * Returns a cleanup function that should be called when the workspace is unmounted
+ * Initialize workspace context
+ * Sets up DSP, positions, and automatic reconciliation
+ * Cleans up automatically on component unmount
  */
-export const useWorkspace = (workspace: Workspace) => {
+export const initWorkspaceContext = (workspace: Workspace) => {
   const dsp = createAudioGraph(getGlobalCtx().audio)
   const positions = createPositionStores()
 
-  // Subscribe to workspace state changes and reconcile the audio graph
+  // Set up reactive reconciliation
   const unsubscribe = derived(
-    [workspace.modules, workspace.links], 
+    [workspace.modules, workspace.links],
     ([$modules, $links]) => [$modules, $links] as const
   ).subscribe(([modules, links]) => {
     dsp.reconcile(modules, links)
+  })
+
+  // Clean up on unmount
+  onDestroy(() => {
+    unsubscribe()
+    dsp.destroy()
   })
 
   const ctx: WorkspaceContext = {
@@ -40,9 +46,5 @@ export const useWorkspace = (workspace: Workspace) => {
 
   setContext(WORKSPACE_CONTEXT, ctx)
 
-  // Return cleanup function
-  return () => {
-    unsubscribe()
-    dsp.destroy()
-  }
+  return ctx
 }
