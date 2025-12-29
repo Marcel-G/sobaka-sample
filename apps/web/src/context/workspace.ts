@@ -11,42 +11,37 @@ type WorkspaceContext = {
   workspace: Workspace
   dsp: AudioGraph
   positions: PositionStore
-  destroy: () => void
 }
 
 export const getWorkspace = () => getContext<WorkspaceContext>(WORKSPACE_CONTEXT)
 
+/**
+ * Initialize workspace context with automatic cleanup
+ * Call this inside an $effect to handle workspace changes
+ */
 export const initWorkspace = (workspace: Workspace) => {
   const dsp = createAudioGraph(getGlobalCtx().audio)
   const positions = createPositionStores()
 
-  // Set up reactive reconciliation using Svelte's effect system
-  let unsubscribe: (() => void) | null = null
-  
-  $effect(() => {
-    // Subscribe to workspace changes and reconcile the audio graph
-    unsubscribe = derived([workspace.modules, workspace.links], ([$modules, $links]) => [$modules, $links] as const)
-      .subscribe(([modules, links]) => {
-        dsp.reconcile(modules, links)
-      })
-
-    // Cleanup function
-    return () => {
-      unsubscribe?.()
-    }
+  // Subscribe to workspace state changes and reconcile the audio graph
+  const unsubscribe = derived(
+    [workspace.modules, workspace.links], 
+    ([$modules, $links]) => [$modules, $links] as const
+  ).subscribe(([modules, links]) => {
+    dsp.reconcile(modules, links)
   })
 
   const ctx: WorkspaceContext = {
     workspace,
     dsp,
-    positions,
-    destroy: () => {
-      unsubscribe?.()
-      dsp.destroy()
-    }
+    positions
   }
 
   setContext(WORKSPACE_CONTEXT, ctx)
 
-  return ctx
+  // Return cleanup function
+  return () => {
+    unsubscribe()
+    dsp.destroy()
+  }
 }

@@ -18,19 +18,10 @@
     guid: data.workspace.id
   } as SubDocReference<Workspace>))
 
-  console.log(data.workspace.id, workspace.id)
-
   const loading = $derived(workspace.load())
 
-  // Reinitialize workspace context when workspace changes
-  $effect(() => {
-    const ctx = initWorkspace(workspace)
-    
-    // Return cleanup function to destroy previous context when workspace changes
-    return () => {
-      ctx.destroy()
-    }
-  })
+  // Initialize workspace context and handle cleanup on workspace changes
+  $effect(() => initWorkspace(workspace))
 </script>
 
 <AppLayout>
