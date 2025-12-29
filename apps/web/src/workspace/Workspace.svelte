@@ -56,15 +56,12 @@
   let latestMouseY = 0
   let rafId: number | null = null
 
-  const handleMouseMove = (event: MouseEvent) => {
-    if (!workspaceElement) return
-    
-    const rect = workspaceElement.getBoundingClientRect()
-    latestMouseX = event.clientX - rect.left
-    latestMouseY = event.clientY - rect.top
-
-    // Only schedule RAF updates when we have a partial link
-    if (isPartialLink($partialLink) && rafId === null) {
+  const handleMousePositionChange = (event: MouseEvent) => {
+    if (isPartialLink($partialLink)) {
+      const rect = workspaceElement.getBoundingClientRect()
+      latestMouseX = event.clientX - rect.left
+      latestMouseY = event.clientY - rect.top
+      if (rafId !== null) { cancelAnimationFrame(rafId) }
       rafId = requestAnimationFrame(() => {
         $mousePosition = { x: latestMouseX, y: latestMouseY }
         rafId = null
@@ -79,8 +76,8 @@
 
 <svelte:window
   on:keydown={handleGlobalKeydown}
-  on:wheel={handleMouseMove}
-  on:mousemove={handleMouseMove}
+  on:wheel={handleMousePositionChange}
+  on:mousemove={handleMousePositionChange}
 />
 <!-- svelte-ignore a11y-click-events-have-key-events -->
 <div
