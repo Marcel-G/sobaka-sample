@@ -16,10 +16,11 @@ type WorkspaceContext = {
 export const getWorkspace = () => getContext<WorkspaceContext>(WORKSPACE_CONTEXT)
 
 /**
- * Initialize workspace context with automatic cleanup
+ * Set up workspace context with automatic cleanup
  * Call this inside an $effect to handle workspace changes
+ * Returns a cleanup function that should be called when the workspace is unmounted
  */
-export const initWorkspace = (workspace: Workspace) => {
+export const useWorkspace = (workspace: Workspace) => {
   const dsp = createAudioGraph(getGlobalCtx().audio)
   const positions = createPositionStores()
 

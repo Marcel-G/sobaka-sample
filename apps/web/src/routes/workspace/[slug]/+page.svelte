@@ -2,7 +2,7 @@
   import type { PageData } from './$types'
 
   import WorkspaceView from '../../../workspace/Workspace.svelte'
-  import { initWorkspace } from '../../../context/workspace'
+  import { useWorkspace } from '../../../context/workspace'
   import { getGlobalCtx } from '../../../context/global'
   import { type SubDocReference } from '@sobaka/state/util/subdoc'
   import type { Workspace } from '@sobaka/state/models/workspace'
@@ -20,8 +20,8 @@
 
   const loading = $derived(workspace.load())
 
-  // Initialize workspace context and handle cleanup on workspace changes
-  $effect(() => initWorkspace(workspace))
+  // Set up workspace context and handle cleanup on workspace changes
+  $effect(() => useWorkspace(workspace))
 </script>
 
 <AppLayout>
