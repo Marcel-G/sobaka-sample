@@ -1,33 +1,68 @@
 import { ReverbNode as _ReverbNode } from '@sobaka/dsp/wasm'
+import * as Y from 'yjs';
+import { getYjsValue } from "@syncedstore/core";
 import { ModuleDSP, Route, RouteInfo } from '../../shared/types'
 import { PlugType } from '@sobaka/state'
 
 export interface ReverbState {
-  // Reverb currently has no parameters in the processor
+  roomSize: number
+  damping: number
+  wet: number
 }
 
-const INITIAL_STATE: ReverbState = {}
+const INITIAL_STATE: ReverbState = {
+  roomSize: 10.0,
+  damping: 2.0,
+  wet: 0.5
+}
 
 /**
  * DSP implementation for Reverb module
- * Stereo reverb effect
+ * Stereo reverb effect with room size, damping, and wet controls
  */
 export class ReverbNode implements ModuleDSP {
   static initialState = INITIAL_STATE
   public name = "reverb"
   private reverb?: _ReverbNode
   public state: ReverbState
+  private cleanupHandler: (() => void) | null = null
 
   constructor(
     public readonly id: string,
-    audioContext: AudioContext,
+    private audioContext: AudioContext,
     initialState: ReverbState = INITIAL_STATE,
     skipInit: boolean = false
   ) {
     this.state = initialState
     
     if (!skipInit) {
-      this.reverb = new _ReverbNode(audioContext)
+      this.reverb = new _ReverbNode(
+        audioContext,
+        this.state.roomSize,
+        this.state.damping,
+        this.state.wet
+      )
+
+      const state = getYjsValue(this.state);
+      if (state instanceof Y.Map) {
+        const handler = this.handleStateChange.bind(this)
+        state.observe(handler)
+        this.cleanupHandler = () => { state.unobserve(handler) }
+      }
+    }
+  }
+
+  handleStateChange(event: Y.YMapEvent<any>) {
+    if (!this.reverb) return
+    
+    // Update reverb parameters when any of them change
+    if (event.keysChanged.has('roomSize') || 
+        event.keysChanged.has('damping') || 
+        event.keysChanged.has('wet')) {
+      const roomSize = event.target.get('roomSize');
+      const damping = event.target.get('damping');
+      const wet = event.target.get('wet');
+      this.reverb.setParams(roomSize, damping, wet)
     }
   }
 
@@ -54,6 +89,6 @@ export class ReverbNode implements ModuleDSP {
   }
 
   destroy(): void {
-    // ReverbNode cleanup if needed
+    this.cleanupHandler?.()
   }
 }

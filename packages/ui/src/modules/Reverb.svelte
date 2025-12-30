@@ -1,7 +1,8 @@
 <script lang="ts">
   import Panel from './shared/Panel.svelte'
   import Plug from './shared/Plug.svelte'
-  import Layout from '../components/Layout.svelte'
+  import Knob from '../components/Knob/Knob.svelte'
+  import { createScaleRange } from '../range/rangeCreators'
   import { ReverbNode } from '@sobaka/dsp'
   import type { BaseModuleProps } from '../types/props'
   import { intoReadable } from '@sobaka/state/util/store'
@@ -25,6 +26,10 @@
   let name = node.name
   const state = intoReadable(node.state)
   const routing = node.getRoutingDefinition()
+
+  const roomSizeRange = createScaleRange(0.1, 50)
+  const dampingRange = createScaleRange(0.1, 10)
+  const wetRange = createScaleRange(0, 1)
 </script>
 
 <Panel
@@ -35,13 +40,17 @@
   {onClone}
   {onDrag}
   {bindElement}
-  height={6}
-  width={6}
+  height={8}
+  width={10}
   --color-module-accent="var(--color-purple)"
   --color-module-background="var(--color-purple-dark)"
 >
   {#snippet children()}
-    <Layout type="center">🌊</Layout>
+    <div class="controls">
+      <Knob {disabled} bind:value={$state.roomSize} range={roomSizeRange} label="room size" />
+      <Knob {disabled} bind:value={$state.damping} range={dampingRange} label="damping" />
+      <Knob {disabled} bind:value={$state.wet} range={wetRange} label="wet" />
+    </div>
   {/snippet}
 
   {#snippet inputs()}
@@ -60,3 +69,11 @@
     />
   {/snippet}
 </Panel>
+
+<style>
+  .controls {
+    display: grid;
+    grid-template-columns: auto auto auto;
+    pointer-events: none;
+  }
+</style>
