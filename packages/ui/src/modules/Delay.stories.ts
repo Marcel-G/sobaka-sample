@@ -1,46 +1,45 @@
 import type { Meta, StoryObj } from '@storybook/svelte';
-import Clock from './Clock.svelte';
-import { ClockNode } from '@sobaka/dsp';
+import Delay from './Delay.svelte';
+import { DelayNode } from '@sobaka/dsp';
 import { writable } from 'svelte/store';
-import { PlugType } from '@sobaka/state';
 
 // Mock AudioContext for Storybook
 const mockAudioContext = new AudioContext();
 
-// Helper to create a mock ClockNode
-function createMockClockNode(bpm: number = 120) {
-  const node = new ClockNode('story-clock', mockAudioContext, { bpm });
+// Helper to create a mock DelayNode
+function createMockDelayNode(delay: number = 1.0) {
+  const node = new DelayNode('story-delay', mockAudioContext, { delay });
   return node;
 }
 
 const meta = {
-  title: 'Modules/Clock',
-  component: Clock,
+  title: 'Modules/Delay',
+  component: Delay,
   tags: ['autodocs'],
   argTypes: {
     disabled: { control: 'boolean' },
   },
   args: {
-    node: createMockClockNode(),
+    node: createMockDelayNode(),
     disabled: false,
     position: writable({ x: 0, y: 0 }),
   },
-} satisfies Meta<Clock>;
+} satisfies Meta<Delay>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
 
-export const Slow: Story = {
+export const Short: Story = {
   args: {
-    node: createMockClockNode(60),
+    node: createMockDelayNode(0.1),
   },
 };
 
-export const Fast: Story = {
+export const Long: Story = {
   args: {
-    node: createMockClockNode(180),
+    node: createMockDelayNode(2.0),
   },
 };
 

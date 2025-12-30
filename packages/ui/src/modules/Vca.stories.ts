@@ -1,46 +1,51 @@
 import type { Meta, StoryObj } from '@storybook/svelte';
-import Clock from './Clock.svelte';
-import { ClockNode } from '@sobaka/dsp';
+import Vca from './Vca.svelte';
+import { VcaNode } from '@sobaka/dsp';
 import { writable } from 'svelte/store';
-import { PlugType } from '@sobaka/state';
 
 // Mock AudioContext for Storybook
 const mockAudioContext = new AudioContext();
 
-// Helper to create a mock ClockNode
-function createMockClockNode(bpm: number = 120) {
-  const node = new ClockNode('story-clock', mockAudioContext, { bpm });
+// Helper to create a mock VcaNode
+function createMockVcaNode(value: number = 0.5) {
+  const node = new VcaNode('story-vca', mockAudioContext, { value });
   return node;
 }
 
 const meta = {
-  title: 'Modules/Clock',
-  component: Clock,
+  title: 'Modules/Vca',
+  component: Vca,
   tags: ['autodocs'],
   argTypes: {
     disabled: { control: 'boolean' },
   },
   args: {
-    node: createMockClockNode(),
+    node: createMockVcaNode(),
     disabled: false,
     position: writable({ x: 0, y: 0 }),
   },
-} satisfies Meta<Clock>;
+} satisfies Meta<Vca>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
 
-export const Slow: Story = {
+export const LowGain: Story = {
   args: {
-    node: createMockClockNode(60),
+    node: createMockVcaNode(0.1),
   },
 };
 
-export const Fast: Story = {
+export const HighGain: Story = {
   args: {
-    node: createMockClockNode(180),
+    node: createMockVcaNode(0.9),
+  },
+};
+
+export const Unity: Story = {
+  args: {
+    node: createMockVcaNode(0.5),
   },
 };
 
