@@ -2,6 +2,8 @@ use fundsp::prelude::*;
 use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
 use waw::{register, ParameterDescriptor, ParameterValuesRef, Processor};
 
+use crate::debug;
+
 pub struct ReverbProcessor {
     inner: BigBlockAdapter,
 }
@@ -10,10 +12,10 @@ impl Processor for ReverbProcessor {
     type Data = ();
 
     fn new(_data: Self::Data) -> Self {
-        let module = reverb_stereo(10.0, 2.0, 0.5);
+        let mono_reverb = split() >> reverb_stereo(10.0, 2.0, 0.5) >> join();
 
         Self {
-            inner: BigBlockAdapter::new(Box::new(module)),
+            inner: BigBlockAdapter::new(Box::new(mono_reverb)),
         }
     }
 
@@ -26,6 +28,8 @@ impl Processor for ReverbProcessor {
     ) {
         self.inner.set_sample_rate(sample_rate.into());
         self.inner.process_big(128, inputs, outputs);
+
+        debug::log_buffer_stats("Reverb", outputs);
     }
 
     fn parameter_descriptors() -> Vec<ParameterDescriptor> {
@@ -58,8 +62,8 @@ impl ReverbNode {
     pub fn new(ctx: &web_sys::AudioContext) -> Result<ReverbNode, JsValue> {
         let options = web_sys::AudioWorkletNodeOptions::new();
         options.set_channel_count(1);
-        options.set_number_of_inputs(2);
-        options.set_number_of_outputs(2);
+        options.set_number_of_inputs(1);
+        options.set_number_of_outputs(1);
 
         let node = ReverbProcessor::create_node(ctx, (), Some(&options))?;
         Ok(ReverbNode { node })

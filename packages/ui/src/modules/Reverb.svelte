@@ -54,12 +54,7 @@
 
   {#snippet outputs()}
     <Plug 
-      ctx={routing.left} 
-      onClick={onPlugClick} 
-      bindElement={bindPlugElement}
-    />
-    <Plug 
-      ctx={routing.right} 
+      ctx={routing.output} 
       onClick={onPlugClick} 
       bindElement={bindPlugElement}
     />

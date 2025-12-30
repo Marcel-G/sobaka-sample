@@ -30,8 +30,7 @@ export class ReverbNode implements ModuleDSP {
   getRoutingDefinition() {
     return {
       input: { name: "input", type: PlugType.Input, label: 'In' },
-      left: { name: "left", type: PlugType.Output, label: 'L' },
-      right: { name: "right", type: PlugType.Output, label: 'R' },
+      output: { name: "output", type: PlugType.Output, label: 'Out' },
     } satisfies Record<string, RouteInfo>
   }
 
@@ -39,10 +38,8 @@ export class ReverbNode implements ModuleDSP {
     switch (routeName) {
       case "input":
         return { node: this.reverb.node, connectIndex: 0 }
-      case "left":
+      case "output":
         return { node: this.reverb.node, connectIndex: 0 }
-      case "right":
-        return { node: this.reverb.node, connectIndex: 1 }
       default:
         throw new Error(`Unknown routeName ${routeName}`)
     }
