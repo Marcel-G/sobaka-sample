@@ -23,11 +23,11 @@ export class MixerDSP implements ModuleDSP {
     public readonly id: string,
     private audioContext: AudioContext,
     initialState: MixerState = INITIAL_STATE,
-    mixerNode: GainNode | null = null
+    skipInit: boolean = false
   ) {
     this.state = initialState
     
-    if (mixerNode === null) {
+    if (!skipInit) {
       this.mixer = new GainNode(audioContext)
       this.volumeParam = this.mixer.gain
       
@@ -37,9 +37,6 @@ export class MixerDSP implements ModuleDSP {
       // Set initial volume
       const targetVolume = initialState.muted ? 0 : initialState.volume
       this.volumeParam.setValueAtTime(targetVolume, audioContext.currentTime)
-    } else {
-      this.mixer = mixerNode
-      this.volumeParam = this.mixer.gain
     }
   }
 

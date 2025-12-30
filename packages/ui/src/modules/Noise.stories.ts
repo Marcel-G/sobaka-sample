@@ -4,8 +4,7 @@ import { NoiseNode } from '@sobaka/dsp';
 import { writable } from 'svelte/store';
 
 function createMockNoiseNode() {
-  const node = new NoiseNode('story-noise', new AudioContext(), {}, undefined);
-  return node;
+  return new NoiseNode('story-noise', new AudioContext(), {}, true);
 }
 
 const meta = {

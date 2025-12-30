@@ -4,8 +4,7 @@ import { QuantiserNode } from '@sobaka/dsp';
 import { writable } from 'svelte/store';
 
 function createMockQuantiserNode(notes?: boolean[]) {
-  const node = new QuantiserNode('story-quantiser', new AudioContext(), notes ? { notes } : undefined, undefined);
-  return node;
+  return new QuantiserNode('story-quantiser', new AudioContext(), notes ? { notes } : undefined, true);
 }
 
 const meta = {

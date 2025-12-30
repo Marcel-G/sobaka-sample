@@ -4,8 +4,7 @@ import { ReverbNode } from '@sobaka/dsp';
 import { writable } from 'svelte/store';
 
 function createMockReverbNode() {
-  const node = new ReverbNode('story-reverb', new AudioContext(), {}, undefined);
-  return node;
+  return new ReverbNode('story-reverb', new AudioContext(), {}, true);
 }
 
 const meta = {

@@ -4,8 +4,7 @@ import { ClockNode } from '@sobaka/dsp';
 import { writable } from 'svelte/store';
 
 function createMockClockNode(bpm: number = 120) {
-  const node = new ClockNode('story-clock', new AudioContext(), { bpm }, undefined);
-  return node;
+  return new ClockNode('story-clock', new AudioContext(), { bpm }, true);
 }
 
 const meta = {

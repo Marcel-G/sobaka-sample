@@ -4,8 +4,7 @@ import { ParameterNode } from '@sobaka/dsp';
 import { writable } from 'svelte/store';
 
 function createMockParameterNode(value: number = 0.5) {
-  const node = new ParameterNode('story-parameter', new AudioContext(), { value }, undefined);
-  return node;
+  return new ParameterNode('story-parameter', new AudioContext(), { value }, true);
 }
 
 const meta = {

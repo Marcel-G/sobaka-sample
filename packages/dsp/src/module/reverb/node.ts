@@ -22,10 +22,13 @@ export class ReverbNode implements ModuleDSP {
     public readonly id: string,
     audioContext: AudioContext,
     initialState: ReverbState = INITIAL_STATE,
-    reverbNode: _ReverbNode | null = null
+    skipInit: boolean = false
   ) {
     this.state = initialState
-    this.reverb = reverbNode === null ? new _ReverbNode(audioContext) : reverbNode
+    
+    if (!skipInit) {
+      this.reverb = new _ReverbNode(audioContext)
+    }
   }
 
   getRoutingDefinition() {

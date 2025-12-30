@@ -25,12 +25,12 @@ export class DelayNode implements ModuleDSP {
     public readonly id: string,
     audioContext: AudioContext,
     initialState: DelayState = INITIAL_STATE,
-    delayNode: _DelayNode | null = null
+    skipInit: boolean = false
   ) {
     this.state = initialState
-    this.delay = delayNode === null ? new _DelayNode(audioContext) : delayNode
     
-    if (this.delay) {
+    if (!skipInit) {
+      this.delay = new _DelayNode(audioContext)
       this.delayParam = this.delay.node.parameters.get('delay')!
     }
   }

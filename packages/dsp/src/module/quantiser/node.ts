@@ -24,12 +24,12 @@ export class QuantiserNode implements ModuleDSP {
     public readonly id: string,
     audioContext: AudioContext,
     initialState: QuantiserState = INITIAL_STATE,
-    quantiserNode: _QuantiserNode | null = null
+    skipInit: boolean = false
   ) {
     this.state = initialState
-    this.quantiser = quantiserNode === null ? new _QuantiserNode(audioContext) : quantiserNode
-
-    if (this.quantiser) {
+    
+    if (!skipInit) {
+      this.quantiser = new _QuantiserNode(audioContext)
       // Set initial notes
       this.updateNotes(this.state.notes)
     }

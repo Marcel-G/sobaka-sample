@@ -23,11 +23,11 @@ export class ParameterNode implements ModuleDSP {
     public readonly id: string,
     audioContext: AudioContext,
     initialState: ParameterState = INITIAL_STATE,
-    parameterNode: ConstantSourceNode | null = null
+    skipInit: boolean = false
   ) {
     this.state = initialState
     
-    if (parameterNode === null) {
+    if (!skipInit) {
       this.parameter = new ConstantSourceNode(audioContext)
       this.parameter.start()
       
@@ -36,8 +36,6 @@ export class ParameterNode implements ModuleDSP {
         this.state.value ?? INITIAL_STATE.value,
         audioContext.currentTime
       )
-    } else {
-      this.parameter = parameterNode
     }
   }
 

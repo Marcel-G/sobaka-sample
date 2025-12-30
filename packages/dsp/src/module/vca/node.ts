@@ -23,19 +23,17 @@ export class VcaNode implements ModuleDSP {
     public readonly id: string,
     audioContext: AudioContext,
     initialState: VcaState = INITIAL_STATE,
-    vcaNode: GainNode | null = null
+    skipInit: boolean = false
   ) {
     this.state = initialState
     
-    if (vcaNode === null) {
+    if (!skipInit) {
       this.vca = new GainNode(audioContext)
       // Set initial gain value
       this.vca.gain.setValueAtTime(
         this.state.value,
         audioContext.currentTime
       )
-    } else {
-      this.vca = vcaNode
     }
   }
 

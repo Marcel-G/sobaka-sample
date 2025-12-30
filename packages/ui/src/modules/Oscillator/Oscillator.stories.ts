@@ -5,8 +5,7 @@ import { OscillatorShape } from '@sobaka/dsp/wasm';
 import { writable } from 'svelte/store';
 
 function createMockOscillatorNode(pitch: number = 1.0, shape: OscillatorShape = OscillatorShape.Saw) {
-  const node = new OscillatorNode('story-oscillator', new AudioContext(), { pitch, shape }, undefined);
-  return node;
+  return new OscillatorNode('story-oscillator', new AudioContext(), { pitch, shape }, true);
 }
 
 const meta = {

@@ -4,8 +4,7 @@ import { EnvelopeNode } from '@sobaka/dsp';
 import { writable } from 'svelte/store';
 
 function createMockEnvelopeNode(attack: number = 0.1, release: number = 0.1) {
-  const node = new EnvelopeNode('story-envelope', new AudioContext(), { attack, release }, undefined);
-  return node;
+  return new EnvelopeNode('story-envelope', new AudioContext(), { attack, release }, true);
 }
 
 const meta = {

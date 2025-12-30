@@ -4,8 +4,7 @@ import { MixerDSP } from '@sobaka/dsp';
 import { writable } from 'svelte/store';
 
 function createMockMixerNode(volume: number = 0.7, muted: boolean = false) {
-  const node = new MixerDSP('story-mixer', new AudioContext(), { volume, muted }, undefined);
-  return node;
+  return new MixerDSP('story-mixer', new AudioContext(), { volume, muted }, true);
 }
 
 const meta = {

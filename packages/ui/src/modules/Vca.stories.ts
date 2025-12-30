@@ -4,8 +4,7 @@ import { VcaNode } from '@sobaka/dsp';
 import { writable } from 'svelte/store';
 
 function createMockVcaNode(value: number = 0.5) {
-  const node = new VcaNode('story-vca', new AudioContext(), { value }, undefined);
-  return node;
+  return new VcaNode('story-vca', new AudioContext(), { value }, true);
 }
 
 const meta = {

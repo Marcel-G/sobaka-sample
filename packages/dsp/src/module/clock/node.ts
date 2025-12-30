@@ -23,12 +23,12 @@ export class ClockNode implements ModuleDSP {
     public readonly id: string,
     audioContext: AudioContext,
     initialState: ClockState = INITIAL_STATE,
-    clockNode: _ClockDividerNode | null = null
+    skipInit: boolean = false
   ) {
     this.state = initialState
-    this.clock = clockNode === null ? new _ClockDividerNode(audioContext) : clockNode
     
-    if (this.clock) {
+    if (!skipInit) {
+      this.clock = new _ClockDividerNode(audioContext)
       this.bpmParam = this.clock.node.parameters.get('bpm')!
     }
   }

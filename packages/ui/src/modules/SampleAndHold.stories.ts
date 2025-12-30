@@ -4,8 +4,7 @@ import { SampleAndHoldNode } from '@sobaka/dsp';
 import { writable } from 'svelte/store';
 
 function createMockSampleAndHoldNode() {
-  const node = new SampleAndHoldNode('story-sample-and-hold', new AudioContext(), {}, undefined);
-  return node;
+  return new SampleAndHoldNode('story-sample-and-hold', new AudioContext(), {}, true);
 }
 
 const meta = {

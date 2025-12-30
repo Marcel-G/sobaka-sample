@@ -22,10 +22,13 @@ export class NoiseNode implements ModuleDSP {
     public readonly id: string,
     audioContext: AudioContext,
     initialState: NoiseState = INITIAL_STATE,
-    noiseNode: _NoiseNode | null = null
+    skipInit: boolean = false
   ) {
     this.state = initialState
-    this.noise = noiseNode === null ? new _NoiseNode(audioContext) : noiseNode
+    
+    if (!skipInit) {
+      this.noise = new _NoiseNode(audioContext)
+    }
   }
 
   getRoutingDefinition() {

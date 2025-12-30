@@ -4,8 +4,7 @@ import { FilterNode } from '@sobaka/dsp';
 import { writable } from 'svelte/store';
 
 function createMockFilterNode(frequency: number = 0.1, q: number = 0.1) {
-  const node = new FilterNode('story-filter', new AudioContext(), { frequency, q }, undefined);
-  return node;
+  return new FilterNode('story-filter', new AudioContext(), { frequency, q }, true);
 }
 
 const meta = {
