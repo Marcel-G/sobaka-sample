@@ -1,4 +1,6 @@
 import { FilterNode as _FilterNode } from '@sobaka/dsp/wasm'
+import * as Y from 'yjs';
+import { getYjsValue } from "@syncedstore/core";
 import { ModuleDSP, Route, RouteInfo } from '../../shared/types'
 import { PlugType } from '@sobaka/state'
 
@@ -23,16 +25,38 @@ export class FilterNode implements ModuleDSP {
   private frequencyParam: AudioParam
   private qParam: AudioParam
   public state: FilterState
+  private cleanupHandler: (() => void) | null = null
 
   constructor(
     public readonly id: string,
-    audioContext: AudioContext,
+    private audioContext: AudioContext,
     initialState: FilterState = INITIAL_STATE
   ) {
     this.filter = new _FilterNode(audioContext)
     this.frequencyParam = this.filter.node.parameters.get('frequency')!
     this.qParam = this.filter.node.parameters.get('q')!
     this.state = initialState
+
+    this.frequencyParam.setValueAtTime(this.state.frequency, this.audioContext.currentTime)
+    this.qParam.setValueAtTime(this.state.q, this.audioContext.currentTime)
+
+    const state = getYjsValue(this.state);
+    if (state instanceof Y.Map) {
+      const handler = this.handleStateChange.bind(this)
+      state.observe(handler)
+      this.cleanupHandler = () => { state.unobserve(handler) }
+    }
+  }
+
+  handleStateChange(event: Y.YMapEvent<any>) {
+    if (event.keysChanged.has('q')) {
+      const value = event.target.get('q');
+      this.qParam.setValueAtTime(value, this.audioContext.currentTime)
+    }
+    if (event.keysChanged.has('frequency')) {
+      const value = event.target.get('frequency');
+      this.frequencyParam.setValueAtTime(value, this.audioContext.currentTime)
+    }
   }
 
   getRoutingDefinition() {
@@ -69,6 +93,6 @@ export class FilterNode implements ModuleDSP {
   }
 
   destroy(): void {
-    // FilterNode cleanup if needed
+    this.cleanupHandler?.()
   }
 }

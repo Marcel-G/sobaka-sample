@@ -28,7 +28,8 @@ impl Processor for DelayProcessor {
         sample_rate: f32,
         params: &ParameterValuesRef,
     ) {
-        self.delay.set_value(*params.get("delay").and_then(|b|b.get(0)).unwrap_or(&1.0));
+        self.delay
+            .set_value(*params.get("delay").and_then(|b| b.get(0)).unwrap_or(&1.0));
         self.inner.set_sample_rate(sample_rate.into());
         self.inner.process_big(128, inputs, outputs);
     }

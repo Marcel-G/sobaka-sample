@@ -61,7 +61,9 @@
       const rect = workspaceElement.getBoundingClientRect()
       latestMouseX = event.clientX - rect.left
       latestMouseY = event.clientY - rect.top
-      if (rafId !== null) { cancelAnimationFrame(rafId) }
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId)
+      }
       rafId = requestAnimationFrame(() => {
         $mousePosition = { x: latestMouseX, y: latestMouseY }
         rafId = null

@@ -42,7 +42,8 @@ impl Processor for ClockDividerProcessor {
         sample_rate: f32,
         params: &ParameterValuesRef,
     ) {
-        self.bpm.set_value(*params.get("bpm").and_then(|b|b.get(0)).unwrap_or(&120.0));
+        self.bpm
+            .set_value(*params.get("bpm").and_then(|b| b.get(0)).unwrap_or(&120.0));
         self.inner.set_sample_rate(sample_rate.into());
         self.inner.process_big(128, inputs, outputs);
     }

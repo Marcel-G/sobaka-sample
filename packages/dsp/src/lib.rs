@@ -4,10 +4,10 @@ use wasm_bindgen::prelude::wasm_bindgen;
 use wasm_bindgen_futures::JsFuture;
 use web_sys::AudioContext;
 
+pub mod debug;
 pub mod module;
 pub mod shared;
 pub mod util;
-
 
 async fn polyfill(ctx: &AudioContext) {
     JsFuture::from(

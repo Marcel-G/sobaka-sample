@@ -13,9 +13,11 @@
 
   const context = getGlobalCtx()
 
-  const workspace = $derived(context.workspaces.get({
-    guid: data.workspace.id
-  } as SubDocReference<Workspace>))
+  const workspace = $derived(
+    context.workspaces.get({
+      guid: data.workspace.id
+    } as SubDocReference<Workspace>)
+  )
 
   const loading = $derived(workspace.load())
 </script>

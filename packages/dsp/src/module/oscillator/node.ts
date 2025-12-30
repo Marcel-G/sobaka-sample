@@ -32,9 +32,6 @@ export class OscillatorNode implements ModuleDSP {
     initialState: OscillatorState = INITIAL_STATE
   ) {
     this.state = initialState
-    this.state.pitch ??= INITIAL_STATE.pitch
-    this.state.shape ??= INITIAL_STATE.shape
-
     this.oscillator = new _OscillatorNode(audioContext, this.state.shape)
     this.pitchParam = this.oscillator.node.parameters.get('pitch')!
     this.pitchParam.setValueAtTime(this.state.pitch, this.audioContext.currentTime)

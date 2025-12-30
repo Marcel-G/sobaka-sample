@@ -5,7 +5,10 @@ edition = "2021"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[features]
+default = []
+debug-audio = []
 
 [dependencies]
 rustfft = { version = "6.0.1" }

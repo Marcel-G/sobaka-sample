@@ -28,7 +28,7 @@
   const routing = node.getRoutingDefinition()
 
   const freqRange = createVoltPerOctaveRange()
-  const scalarRange = createScaleRange()
+  const scalarRange = createScaleRange(0.5, 5)
 </script>
 
 <Panel

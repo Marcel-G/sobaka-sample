@@ -24,8 +24,8 @@ impl Processor for EnvelopeProcessor {
         sample_rate: f32,
         params: &ParameterValuesRef,
     ) {
-        let attack = params.get("attack").and_then(|b|b.get(0)).unwrap_or(&0.1);
-        let release = params.get("release").and_then(|b|b.get(0)).unwrap_or(&0.1);
+        let attack = params.get("attack").and_then(|b| b.get(0)).unwrap_or(&0.1);
+        let release = params.get("release").and_then(|b| b.get(0)).unwrap_or(&0.1);
         self.inner.set(Setting::attack_release(*attack, *release));
         self.inner.set_sample_rate(sample_rate.into());
         self.inner.process_big(128, inputs, outputs);

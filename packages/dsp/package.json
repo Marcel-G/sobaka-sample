@@ -18,8 +18,10 @@
   "scripts": {
     "build:wasm": "wasm-pack build --target web --out-dir pkg",
     "build:wasm:debug": "wasm-pack build --debug --target web --out-dir pkg",
+    "build:wasm:debug-audio": "wasm-pack build --target web --out-dir pkg -- --features debug-audio",
     "build": "npm run build:wasm",
     "dev": "wasm-pack build --debug --target web --out-dir pkg -- --watch",
+    "dev:debug-audio": "wasm-pack build --debug --target web --out-dir pkg -- --watch --features debug-audio",
     "check": "tsc --noEmit",
     "clean": "rm -rf pkg target",
     "test:rust": "cargo test"

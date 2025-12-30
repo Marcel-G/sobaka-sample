@@ -1,9 +1,12 @@
+use crate::{debug, util::conversion::volt_hz};
 use fundsp::{
     prelude::*,
     thingbuf::mpsc::{channel, Receiver, Sender},
 };
 use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
 use waw::{register, AutomationRate, ParameterDescriptor, ParameterValuesRef, Processor};
+
+const ZERO_BUFFER: [f32; 128] = [0.0; 128];
 
 #[wasm_bindgen]
 #[derive(Clone)]
@@ -26,14 +29,8 @@ enum Message {
     SetShape(OscillatorShape),
 }
 
-/// Convert 1v per octave to hz
-pub fn volt_hz<T: Float>(voltage: T) -> T {
-    T::from_f64(16.35 * 2.0_f64.powf(voltage.to_f64()))
-}
-
 pub struct OscillatorProcessor {
     current_shape: OscillatorShape,
-    frequency: Shared,
     sine: BigBlockAdapter,
     triangle: BigBlockAdapter,
     saw: BigBlockAdapter,
@@ -56,16 +53,13 @@ impl Processor for OscillatorProcessor {
     type Data = OscillatorData;
 
     fn new(data: Self::Data) -> Self {
-        let frequency = shared(220.0);
-
-        let saw = var(&frequency) >> saw() >> shape(Tanh(0.8));
-        let sine = var(&frequency) >> sine::<f32>() >> shape(Tanh(0.8));
-        let square = var(&frequency) >> square() >> shape(Tanh(0.8));
-        let triangle = var(&frequency) >> triangle() >> shape(Tanh(0.8));
+        let saw = saw() >> shape(Tanh(0.8));
+        let sine = sine::<f32>() >> shape(Tanh(0.8));
+        let square = square() >> shape(Tanh(0.8));
+        let triangle = triangle() >> shape(Tanh(0.8));
 
         Self {
             current_shape: data.shape,
-            frequency,
             receiver: data.receiver,
             saw: BigBlockAdapter::new(Box::new(saw)),
             sine: BigBlockAdapter::new(Box::new(sine)),
@@ -76,14 +70,15 @@ impl Processor for OscillatorProcessor {
 
     fn process(
         &mut self,
-        inputs: &[&[f32]],
+        _inputs: &[&[f32]],
         outputs: &mut [&mut [f32]],
         sample_rate: f32,
         params: &ParameterValuesRef,
     ) {
         self.handle_messages();
-        let pitch = *params.get("pitch").and_then(|b|b.get(0)).unwrap_or(&1.0); // TODO: Audio-rate frequency.
-        self.frequency.set_value(volt_hz(pitch));
+
+        let pitch = params.get("pitch").unwrap_or(&ZERO_BUFFER);
+        let pitch_hz: Vec<f32> = pitch.iter().map(|&v| volt_hz(v)).collect();
 
         let module = match self.current_shape {
             OscillatorShape::Sine => &mut self.sine,
@@ -92,7 +87,9 @@ impl Processor for OscillatorProcessor {
             OscillatorShape::Saw => &mut self.saw,
         };
         module.set_sample_rate(sample_rate.into());
-        module.process_big(128, inputs, outputs);
+        module.process_big(128, &[&pitch_hz], outputs);
+
+        debug::log_buffer_stats("Oscillator", outputs);
     }
 
     fn parameter_descriptors() -> Vec<ParameterDescriptor> {
@@ -115,15 +112,15 @@ pub struct OscillatorNode {
 #[wasm_bindgen]
 impl OscillatorNode {
     #[wasm_bindgen(constructor)]
-    pub fn new(ctx: &web_sys::AudioContext, shape: OscillatorShape) -> Result<OscillatorNode, JsValue> {
+    pub fn new(
+        ctx: &web_sys::AudioContext,
+        shape: OscillatorShape,
+    ) -> Result<OscillatorNode, JsValue> {
         let (sender, receiver) = channel(1);
-        let data = OscillatorData {
-            shape,
-            receiver,
-        };
+        let data = OscillatorData { shape, receiver };
         let options = web_sys::AudioWorkletNodeOptions::new();
         options.set_channel_count(1);
-        options.set_number_of_inputs(1);
+        options.set_number_of_inputs(0);
         options.set_number_of_outputs(1);
 
         let node = OscillatorProcessor::create_node(ctx, data, Some(&options))?;
