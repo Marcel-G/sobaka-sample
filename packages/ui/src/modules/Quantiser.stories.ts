@@ -3,12 +3,9 @@ import Quantiser from './Quantiser.svelte';
 import { QuantiserNode } from '@sobaka/dsp';
 import { writable } from 'svelte/store';
 
-// Mock AudioContext for Storybook
-const mockAudioContext = new AudioContext();
-
-// Helper to create a mock QuantiserNode
+// Helper to create a mock QuantiserNode without initializing the WASM node
 function createMockQuantiserNode(notes?: boolean[]) {
-  const node = new QuantiserNode('story-quantiser', mockAudioContext, notes ? { notes } : undefined);
+  const node = new QuantiserNode('story-quantiser', new AudioContext(), notes ? { notes } : undefined, undefined);
   return node;
 }
 

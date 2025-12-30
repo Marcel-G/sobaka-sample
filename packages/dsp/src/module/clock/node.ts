@@ -15,18 +15,22 @@ const INITIAL_STATE: ClockState = { bpm: 120 }
 export class ClockNode implements ModuleDSP {
   static initialState = INITIAL_STATE
   public name = "clock"
-  private clock: _ClockDividerNode
-  private bpmParam: AudioParam
+  private clock?: _ClockDividerNode
+  private bpmParam?: AudioParam
   public state: ClockState
 
   constructor(
     public readonly id: string,
     audioContext: AudioContext,
-    initialState: ClockState = INITIAL_STATE
+    initialState: ClockState = INITIAL_STATE,
+    clockNode?: _ClockDividerNode
   ) {
-    this.clock = new _ClockDividerNode(audioContext)
-    this.bpmParam = this.clock.node.parameters.get('bpm')!
     this.state = initialState
+    this.clock = clockNode ?? new _ClockDividerNode(audioContext)
+    
+    if (this.clock) {
+      this.bpmParam = this.clock.node.parameters.get('bpm')!
+    }
   }
 
   getRoutingDefinition() {
@@ -41,9 +45,14 @@ export class ClockNode implements ModuleDSP {
   }
 
   getRoute(routeName: string): Route {
+    if (!this.clock) {
+      // Return mock audio nodes for Storybook/testing
+      return { node: new GainNode(new AudioContext()) }
+    }
+    
     switch (routeName){
       case "bpm":
-        return { node: this.bpmParam }
+        return { node: this.bpmParam! }
       case "output_0":
         return { node: this.clock.node, connectIndex: 0 }
       case "output_1":

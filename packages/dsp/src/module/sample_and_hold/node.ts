@@ -15,16 +15,17 @@ const INITIAL_STATE: SampleAndHoldState = {}
 export class SampleAndHoldNode implements ModuleDSP {
   static initialState = INITIAL_STATE
   public name = "S & H"
-  private sampleAndHold: _SampleAndHoldNode
+  private sampleAndHold?: _SampleAndHoldNode
   public state: SampleAndHoldState
 
   constructor(
     public readonly id: string,
     audioContext: AudioContext,
-    initialState: SampleAndHoldState = INITIAL_STATE
+    initialState: SampleAndHoldState = INITIAL_STATE,
+    sampleAndHoldNode?: _SampleAndHoldNode
   ) {
-    this.sampleAndHold = new _SampleAndHoldNode(audioContext)
     this.state = initialState
+    this.sampleAndHold = sampleAndHoldNode ?? new _SampleAndHoldNode(audioContext)
   }
 
   getRoutingDefinition() {
@@ -36,6 +37,10 @@ export class SampleAndHoldNode implements ModuleDSP {
   }
 
   getRoute(routeName: string): Route {
+    if (!this.sampleAndHold) {
+      return { node: new GainNode(new AudioContext()) }
+    }
+    
     switch (routeName) {
       case "gate":
         return { node: this.sampleAndHold.node, connectIndex: 0 }

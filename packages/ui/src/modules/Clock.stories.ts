@@ -2,14 +2,10 @@ import type { Meta, StoryObj } from '@storybook/svelte';
 import Clock from './Clock.svelte';
 import { ClockNode } from '@sobaka/dsp';
 import { writable } from 'svelte/store';
-import { PlugType } from '@sobaka/state';
 
-// Mock AudioContext for Storybook
-const mockAudioContext = new AudioContext();
-
-// Helper to create a mock ClockNode
+// Helper to create a mock ClockNode without initializing the WASM node
 function createMockClockNode(bpm: number = 120) {
-  const node = new ClockNode('story-clock', mockAudioContext, { bpm });
+  const node = new ClockNode('story-clock', new AudioContext(), { bpm }, undefined);
   return node;
 }
 

@@ -3,12 +3,9 @@ import Filter from './Filter.svelte';
 import { FilterNode } from '@sobaka/dsp';
 import { writable } from 'svelte/store';
 
-// Mock AudioContext for Storybook
-const mockAudioContext = new AudioContext();
-
-// Helper to create a mock FilterNode
+// Helper to create a mock FilterNode without initializing the WASM node
 function createMockFilterNode(frequency: number = 0.1, q: number = 0.1) {
-  const node = new FilterNode('story-filter', mockAudioContext, { frequency, q });
+  const node = new FilterNode('story-filter', new AudioContext(), { frequency, q }, undefined);
   return node;
 }
 

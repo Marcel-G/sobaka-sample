@@ -17,19 +17,22 @@ const INITIAL_STATE: QuantiserState = {
 export class QuantiserNode implements ModuleDSP {
   static initialState = INITIAL_STATE
   public name = "quantiser"
-  private quantiser: _QuantiserNode
+  private quantiser?: _QuantiserNode
   public state: QuantiserState
 
   constructor(
     public readonly id: string,
     audioContext: AudioContext,
-    initialState: QuantiserState = INITIAL_STATE
+    initialState: QuantiserState = INITIAL_STATE,
+    quantiserNode?: _QuantiserNode
   ) {
-    this.quantiser = new _QuantiserNode(audioContext)
     this.state = initialState
+    this.quantiser = quantiserNode ?? new _QuantiserNode(audioContext)
 
-    // Set initial notes
-    this.updateNotes(this.state.notes)
+    if (this.quantiser) {
+      // Set initial notes
+      this.updateNotes(this.state.notes)
+    }
   }
 
   getRoutingDefinition() {
@@ -40,6 +43,10 @@ export class QuantiserNode implements ModuleDSP {
   }
 
   getRoute(routeName: string): Route {
+    if (!this.quantiser) {
+      return { node: new GainNode(new AudioContext()) }
+    }
+    
     switch (routeName) {
       case "input":
         return { node: this.quantiser.node, connectIndex: 0 }
@@ -51,7 +58,9 @@ export class QuantiserNode implements ModuleDSP {
   }
 
   updateNotes(notes: boolean[]) {
-    this.quantiser.updateNotes(notes)
+    if (this.quantiser) {
+      this.quantiser.updateNotes(notes)
+    }
     this.state.notes = [...notes]
   }
 

@@ -15,16 +15,17 @@ const INITIAL_STATE: NoiseState = {}
 export class NoiseNode implements ModuleDSP {
   static initialState = INITIAL_STATE
   public name = "noise"
-  private noise: _NoiseNode
+  private noise?: _NoiseNode
   public state: NoiseState
 
   constructor(
     public readonly id: string,
     audioContext: AudioContext,
-    initialState: NoiseState = INITIAL_STATE
+    initialState: NoiseState = INITIAL_STATE,
+    noiseNode?: _NoiseNode
   ) {
-    this.noise = new _NoiseNode(audioContext)
     this.state = initialState
+    this.noise = noiseNode ?? new _NoiseNode(audioContext)
   }
 
   getRoutingDefinition() {
@@ -34,6 +35,10 @@ export class NoiseNode implements ModuleDSP {
   }
 
   getRoute(routeName: string): Route {
+    if (!this.noise) {
+      return { node: new GainNode(new AudioContext()) }
+    }
+    
     switch (routeName) {
       case "output":
         return { node: this.noise.node, connectIndex: 0 }

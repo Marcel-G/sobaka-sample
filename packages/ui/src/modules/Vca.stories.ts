@@ -3,12 +3,9 @@ import Vca from './Vca.svelte';
 import { VcaNode } from '@sobaka/dsp';
 import { writable } from 'svelte/store';
 
-// Mock AudioContext for Storybook
-const mockAudioContext = new AudioContext();
-
-// Helper to create a mock VcaNode
+// Helper to create a mock VcaNode without initializing the GainNode
 function createMockVcaNode(value: number = 0.5) {
-  const node = new VcaNode('story-vca', mockAudioContext, { value });
+  const node = new VcaNode('story-vca', new AudioContext(), { value }, undefined);
   return node;
 }
 

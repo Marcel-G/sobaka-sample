@@ -15,25 +15,32 @@ const INITIAL_STATE: MixerState = { volume: 0.7, muted: false }
  */
 export class MixerDSP implements ModuleDSP {
   static initialState = INITIAL_STATE
-  private mixer: GainNode
-  private volumeParam: AudioParam
+  private mixer?: GainNode
+  private volumeParam?: AudioParam
   public state: MixerState
 
   constructor(
     public readonly id: string,
     private audioContext: AudioContext,
-    initialState: MixerState = INITIAL_STATE
+    initialState: MixerState = INITIAL_STATE,
+    mixerNode?: GainNode
   ) {
-    this.mixer = new GainNode(audioContext)
-    this.volumeParam = this.mixer.gain
     this.state = initialState
+    this.mixer = mixerNode
     
-    // Connect to audio destination (speakers)
-    this.mixer.connect(audioContext.destination)
-    
-    // Set initial volume
-    const targetVolume = initialState.muted ? 0 : initialState.volume
-    this.volumeParam.setValueAtTime(targetVolume, audioContext.currentTime)
+    if (!this.mixer) {
+      this.mixer = new GainNode(audioContext)
+      this.volumeParam = this.mixer.gain
+      
+      // Connect to audio destination (speakers)
+      this.mixer.connect(audioContext.destination)
+      
+      // Set initial volume
+      const targetVolume = initialState.muted ? 0 : initialState.volume
+      this.volumeParam.setValueAtTime(targetVolume, audioContext.currentTime)
+    } else {
+      this.volumeParam = this.mixer.gain
+    }
   }
 
   getRoutingDefinition() {
@@ -43,6 +50,10 @@ export class MixerDSP implements ModuleDSP {
   }
 
   getRoute(routeName: string): Route {
+    if (!this.mixer) {
+      return { node: new GainNode(new AudioContext()) }
+    }
+    
     switch (routeName) {
       case "input":
         return { node: this.mixer }
@@ -53,6 +64,9 @@ export class MixerDSP implements ModuleDSP {
 
   updateState(state: MixerState): void {
     this.state = state
+    
+    if (!this.mixer || !this.volumeParam) return
+    
     const targetVolume = state.muted ? 0 : state.volume
     
     // Smooth volume changes to avoid clicks
@@ -64,6 +78,8 @@ export class MixerDSP implements ModuleDSP {
   }
 
   destroy(): void {
-    this.mixer.disconnect()
+    if (this.mixer) {
+      this.mixer.disconnect()
+    }
   }
 }

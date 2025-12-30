@@ -16,23 +16,28 @@ const INITIAL_STATE: ParameterState = {
 export class ParameterNode implements ModuleDSP {
   static initialState = INITIAL_STATE
   public name = "parameter"
-  private parameter: ConstantSourceNode
+  private parameter?: ConstantSourceNode
   public state: ParameterState
 
   constructor(
     public readonly id: string,
     audioContext: AudioContext,
-    initialState: ParameterState = INITIAL_STATE
+    initialState: ParameterState = INITIAL_STATE,
+    parameterNode?: ConstantSourceNode
   ) {
-    this.parameter = new ConstantSourceNode(audioContext)
-    this.parameter.start()
     this.state = initialState
+    this.parameter = parameterNode
     
-    // Set initial value
-    this.parameter.offset.setValueAtTime(
-      this.state.value ?? INITIAL_STATE.value,
-      audioContext.currentTime
-    )
+    if (!this.parameter) {
+      this.parameter = new ConstantSourceNode(audioContext)
+      this.parameter.start()
+      
+      // Set initial value
+      this.parameter.offset.setValueAtTime(
+        this.state.value ?? INITIAL_STATE.value,
+        audioContext.currentTime
+      )
+    }
   }
 
   getRoutingDefinition() {
@@ -42,6 +47,10 @@ export class ParameterNode implements ModuleDSP {
   }
 
   getRoute(routeName: string): Route {
+    if (!this.parameter) {
+      return { node: new GainNode(new AudioContext()) }
+    }
+    
     switch (routeName) {
       case "output":
         return { node: this.parameter, connectIndex: 0 }
@@ -51,10 +60,12 @@ export class ParameterNode implements ModuleDSP {
   }
 
   destroy(): void {
-    try {
-      this.parameter.stop()
-    } catch {
-      // May already be stopped
+    if (this.parameter) {
+      try {
+        this.parameter.stop()
+      } catch {
+        // May already be stopped
+      }
     }
   }
 }

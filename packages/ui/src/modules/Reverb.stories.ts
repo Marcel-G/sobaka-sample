@@ -3,12 +3,9 @@ import Reverb from './Reverb.svelte';
 import { ReverbNode } from '@sobaka/dsp';
 import { writable } from 'svelte/store';
 
-// Mock AudioContext for Storybook
-const mockAudioContext = new AudioContext();
-
-// Helper to create a mock ReverbNode
+// Helper to create a mock ReverbNode without initializing the WASM node
 function createMockReverbNode() {
-  const node = new ReverbNode('story-reverb', mockAudioContext);
+  const node = new ReverbNode('story-reverb', new AudioContext(), {}, undefined);
   return node;
 }
 

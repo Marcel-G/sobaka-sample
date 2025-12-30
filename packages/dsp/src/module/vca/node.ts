@@ -16,22 +16,26 @@ const INITIAL_STATE: VcaState = {
 export class VcaNode implements ModuleDSP {
   static initialState = INITIAL_STATE
   public name = "vca"
-  private vca: GainNode
+  private vca?: GainNode
   public state: VcaState
 
   constructor(
     public readonly id: string,
     audioContext: AudioContext,
-    initialState: VcaState = INITIAL_STATE
+    initialState: VcaState = INITIAL_STATE,
+    vcaNode?: GainNode
   ) {
-    this.vca = new GainNode(audioContext)
     this.state = initialState
-
-    // Set initial gain value
-    this.vca.gain.setValueAtTime(
-      this.state.value,
-      audioContext.currentTime
-    )
+    this.vca = vcaNode
+    
+    if (!this.vca) {
+      this.vca = new GainNode(audioContext)
+      // Set initial gain value
+      this.vca.gain.setValueAtTime(
+        this.state.value,
+        audioContext.currentTime
+      )
+    }
   }
 
   getRoutingDefinition() {
@@ -43,6 +47,10 @@ export class VcaNode implements ModuleDSP {
   }
 
   getRoute(routeName: string): Route {
+    if (!this.vca) {
+      return { node: new GainNode(new AudioContext()) }
+    }
+    
     switch (routeName) {
       case "input":
         return { node: this.vca, connectIndex: 0 }

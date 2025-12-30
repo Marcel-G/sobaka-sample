@@ -17,18 +17,22 @@ const INITIAL_STATE: DelayState = {
 export class DelayNode implements ModuleDSP {
   static initialState = INITIAL_STATE
   public name = "delay"
-  private delay: _DelayNode
-  private delayParam: AudioParam
+  private delay?: _DelayNode
+  private delayParam?: AudioParam
   public state: DelayState
 
   constructor(
     public readonly id: string,
     audioContext: AudioContext,
-    initialState: DelayState = INITIAL_STATE
+    initialState: DelayState = INITIAL_STATE,
+    delayNode?: _DelayNode
   ) {
-    this.delay = new _DelayNode(audioContext)
-    this.delayParam = this.delay.node.parameters.get('delay')!
     this.state = initialState
+    this.delay = delayNode ?? new _DelayNode(audioContext)
+    
+    if (this.delay) {
+      this.delayParam = this.delay.node.parameters.get('delay')!
+    }
   }
 
   getRoutingDefinition() {
@@ -43,11 +47,15 @@ export class DelayNode implements ModuleDSP {
   }
 
   getRoute(routeName: string): Route {
+    if (!this.delay) {
+      return { node: new GainNode(new AudioContext()) }
+    }
+    
     switch (routeName) {
       case "input":
         return { node: this.delay.node, connectIndex: 0 }
       case "delay":
-        return { node: this.delayParam }
+        return { node: this.delayParam! }
       case "tap_0":
         return { node: this.delay.node, connectIndex: 0 }
       case "tap_1":

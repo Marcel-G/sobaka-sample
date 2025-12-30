@@ -21,38 +21,43 @@ const INITIAL_STATE: OscillatorState = {
 export class OscillatorNode implements ModuleDSP {
   static initialState = INITIAL_STATE
   public name = "oscillator"
-  private oscillator: _OscillatorNode
-  private pitchParam: AudioParam
+  private oscillator?: _OscillatorNode
+  private pitchParam?: AudioParam
   public state: OscillatorState
   private cleanupHandler: (() => void) | null = null
 
   constructor(
     public readonly id: string,
     private audioContext: AudioContext,
-    initialState: OscillatorState = INITIAL_STATE
+    initialState: OscillatorState = INITIAL_STATE,
+    oscillatorNode?: _OscillatorNode
   ) {
     this.state = initialState
-    this.oscillator = new _OscillatorNode(audioContext, this.state.shape)
-    this.pitchParam = this.oscillator.node.parameters.get('pitch')!
-    this.pitchParam.setValueAtTime(this.state.pitch, this.audioContext.currentTime)
+    this.oscillator = oscillatorNode ?? new _OscillatorNode(audioContext, this.state.shape)
+    
+    if (this.oscillator) {
+      this.pitchParam = this.oscillator.node.parameters.get('pitch')!
+      this.pitchParam.setValueAtTime(this.state.pitch, audioContext.currentTime)
 
-    const state = getYjsValue(this.state);
-    if (state instanceof Y.Map) {
-      const handler = this.handleStateChange.bind(this)
-      state.observe(handler)
-      this.cleanupHandler = () => { state.unobserve(handler) }
+      const state = getYjsValue(this.state);
+      if (state instanceof Y.Map) {
+        const handler = this.handleStateChange.bind(this)
+        state.observe(handler)
+        this.cleanupHandler = () => { state.unobserve(handler) }
+      }
     }
-
   }
 
   handleStateChange(event: Y.YMapEvent<any>) {
+    if (!this.oscillator) return
+    
     if (event.keysChanged.has('shape')) {
       const shape = event.target.get('shape');
       this.oscillator.setShape(shape)
     }
     if (event.keysChanged.has('pitch')) {
       const value = event.target.get('pitch');
-      this.pitchParam.setValueAtTime(value, this.audioContext.currentTime)
+      this.pitchParam!.setValueAtTime(value, this.audioContext.currentTime)
     }
   }
 
@@ -64,9 +69,13 @@ export class OscillatorNode implements ModuleDSP {
   }
 
   getRoute(routeName: string): Route {
+    if (!this.oscillator) {
+      return { node: new GainNode(new AudioContext()) }
+    }
+    
     switch (routeName) {
       case "pitch":
-        return { node: this.pitchParam }
+        return { node: this.pitchParam! }
       case "output":
         return { node: this.oscillator.node, connectIndex: 0 }
       default:

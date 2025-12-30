@@ -3,12 +3,9 @@ import SampleAndHold from './SampleAndHold.svelte';
 import { SampleAndHoldNode } from '@sobaka/dsp';
 import { writable } from 'svelte/store';
 
-// Mock AudioContext for Storybook
-const mockAudioContext = new AudioContext();
-
-// Helper to create a mock SampleAndHoldNode
+// Helper to create a mock SampleAndHoldNode without initializing the WASM node
 function createMockSampleAndHoldNode() {
-  const node = new SampleAndHoldNode('story-sample-and-hold', mockAudioContext);
+  const node = new SampleAndHoldNode('story-sample-and-hold', new AudioContext(), {}, undefined);
   return node;
 }
 

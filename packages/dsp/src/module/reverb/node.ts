@@ -15,16 +15,17 @@ const INITIAL_STATE: ReverbState = {}
 export class ReverbNode implements ModuleDSP {
   static initialState = INITIAL_STATE
   public name = "reverb"
-  private reverb: _ReverbNode
+  private reverb?: _ReverbNode
   public state: ReverbState
 
   constructor(
     public readonly id: string,
     audioContext: AudioContext,
-    initialState: ReverbState = INITIAL_STATE
+    initialState: ReverbState = INITIAL_STATE,
+    reverbNode?: _ReverbNode
   ) {
-    this.reverb = new _ReverbNode(audioContext)
     this.state = initialState
+    this.reverb = reverbNode ?? new _ReverbNode(audioContext)
   }
 
   getRoutingDefinition() {
@@ -35,6 +36,10 @@ export class ReverbNode implements ModuleDSP {
   }
 
   getRoute(routeName: string): Route {
+    if (!this.reverb) {
+      return { node: new GainNode(new AudioContext()) }
+    }
+    
     switch (routeName) {
       case "input":
         return { node: this.reverb.node, connectIndex: 0 }

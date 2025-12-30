@@ -4,12 +4,9 @@ import { OscillatorNode } from '@sobaka/dsp';
 import { OscillatorShape } from '@sobaka/dsp/wasm';
 import { writable } from 'svelte/store';
 
-// Mock AudioContext for Storybook
-const mockAudioContext = new AudioContext();
-
-// Helper to create a mock OscillatorNode
+// Helper to create a mock OscillatorNode without initializing the WASM node
 function createMockOscillatorNode(pitch: number = 1.0, shape: OscillatorShape = OscillatorShape.Saw) {
-  const node = new OscillatorNode('story-oscillator', mockAudioContext, { pitch, shape });
+  const node = new OscillatorNode('story-oscillator', new AudioContext(), { pitch, shape }, undefined);
   return node;
 }
 

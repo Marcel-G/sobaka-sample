@@ -21,41 +21,47 @@ const INITIAL_STATE: FilterState = {
 export class FilterNode implements ModuleDSP {
   static initialState = INITIAL_STATE
   public name = "filter"
-  private filter: _FilterNode
-  private frequencyParam: AudioParam
-  private qParam: AudioParam
+  private filter?: _FilterNode
+  private frequencyParam?: AudioParam
+  private qParam?: AudioParam
   public state: FilterState
   private cleanupHandler: (() => void) | null = null
 
   constructor(
     public readonly id: string,
     private audioContext: AudioContext,
-    initialState: FilterState = INITIAL_STATE
+    initialState: FilterState = INITIAL_STATE,
+    filterNode?: _FilterNode
   ) {
-    this.filter = new _FilterNode(audioContext)
-    this.frequencyParam = this.filter.node.parameters.get('frequency')!
-    this.qParam = this.filter.node.parameters.get('q')!
     this.state = initialState
+    this.filter = filterNode ?? new _FilterNode(audioContext)
 
-    this.frequencyParam.setValueAtTime(this.state.frequency, this.audioContext.currentTime)
-    this.qParam.setValueAtTime(this.state.q, this.audioContext.currentTime)
+    if (this.filter) {
+      this.frequencyParam = this.filter.node.parameters.get('frequency')!
+      this.qParam = this.filter.node.parameters.get('q')!
 
-    const state = getYjsValue(this.state);
-    if (state instanceof Y.Map) {
-      const handler = this.handleStateChange.bind(this)
-      state.observe(handler)
-      this.cleanupHandler = () => { state.unobserve(handler) }
+      this.frequencyParam.setValueAtTime(this.state.frequency, audioContext.currentTime)
+      this.qParam.setValueAtTime(this.state.q, audioContext.currentTime)
+
+      const state = getYjsValue(this.state);
+      if (state instanceof Y.Map) {
+        const handler = this.handleStateChange.bind(this)
+        state.observe(handler)
+        this.cleanupHandler = () => { state.unobserve(handler) }
+      }
     }
   }
 
   handleStateChange(event: Y.YMapEvent<any>) {
+    if (!this.filter) return
+    
     if (event.keysChanged.has('q')) {
       const value = event.target.get('q');
-      this.qParam.setValueAtTime(value, this.audioContext.currentTime)
+      this.qParam!.setValueAtTime(value, this.audioContext.currentTime)
     }
     if (event.keysChanged.has('frequency')) {
       const value = event.target.get('frequency');
-      this.frequencyParam.setValueAtTime(value, this.audioContext.currentTime)
+      this.frequencyParam!.setValueAtTime(value, this.audioContext.currentTime)
     }
   }
 
@@ -72,13 +78,17 @@ export class FilterNode implements ModuleDSP {
   }
 
   getRoute(routeName: string): Route {
+    if (!this.filter) {
+      return { node: new GainNode(new AudioContext()) }
+    }
+    
     switch (routeName) {
       case "input":
         return { node: this.filter.node, connectIndex: 0 }
       case "frequency":
-        return { node: this.frequencyParam }
+        return { node: this.frequencyParam! }
       case "q":
-        return { node: this.qParam }
+        return { node: this.qParam! }
       case "lowpass":
         return { node: this.filter.node, connectIndex: 0 }
       case "highpass":

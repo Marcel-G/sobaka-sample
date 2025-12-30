@@ -19,20 +19,24 @@ const INITIAL_STATE: EnvelopeState = {
 export class EnvelopeNode implements ModuleDSP {
   static initialState = INITIAL_STATE
   public name = "envelope"
-  private envelope: _EnvelopeNode
-  private attackParam: AudioParam
-  private releaseParam: AudioParam
+  private envelope?: _EnvelopeNode
+  private attackParam?: AudioParam
+  private releaseParam?: AudioParam
   public state: EnvelopeState
 
   constructor(
     public readonly id: string,
     audioContext: AudioContext,
-    initialState: EnvelopeState = INITIAL_STATE
+    initialState: EnvelopeState = INITIAL_STATE,
+    envelopeNode?: _EnvelopeNode
   ) {
-    this.envelope = new _EnvelopeNode(audioContext)
-    this.attackParam = this.envelope.node.parameters.get('attack')!
-    this.releaseParam = this.envelope.node.parameters.get('release')!
     this.state = initialState
+    this.envelope = envelopeNode ?? new _EnvelopeNode(audioContext)
+    
+    if (this.envelope) {
+      this.attackParam = this.envelope.node.parameters.get('attack')!
+      this.releaseParam = this.envelope.node.parameters.get('release')!
+    }
   }
 
   getRoutingDefinition() {
@@ -43,6 +47,10 @@ export class EnvelopeNode implements ModuleDSP {
   }
 
   getRoute(routeName: string): Route {
+    if (!this.envelope) {
+      return { node: new GainNode(new AudioContext()) }
+    }
+    
     switch (routeName) {
       case "input":
         return { node: this.envelope.node, connectIndex: 0 }

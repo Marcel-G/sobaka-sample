@@ -3,12 +3,9 @@ import Envelope from './Envelope.svelte';
 import { EnvelopeNode } from '@sobaka/dsp';
 import { writable } from 'svelte/store';
 
-// Mock AudioContext for Storybook
-const mockAudioContext = new AudioContext();
-
-// Helper to create a mock EnvelopeNode
+// Helper to create a mock EnvelopeNode without initializing the WASM node
 function createMockEnvelopeNode(attack: number = 0.1, release: number = 0.1) {
-  const node = new EnvelopeNode('story-envelope', mockAudioContext, { attack, release });
+  const node = new EnvelopeNode('story-envelope', new AudioContext(), { attack, release }, undefined);
   return node;
 }
 
