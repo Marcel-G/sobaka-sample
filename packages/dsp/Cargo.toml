@@ -7,7 +7,7 @@ edition = "2021"
 crate-type = ["cdylib", "rlib"]
 
 [features]
-default = []
+default = ["console_error_panic_hook"]
 debug-audio = []
 
 [dependencies]

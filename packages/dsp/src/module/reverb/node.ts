@@ -5,25 +5,25 @@ import { ModuleDSP, Route, RouteInfo } from '../../shared/types'
 import { PlugType } from '@sobaka/state'
 
 export interface ReverbState {
-  roomSize: number
-  damping: number
+  time: number
   wet: number
 }
 
 const INITIAL_STATE: ReverbState = {
-  roomSize: 10.0,
-  damping: 2.0,
+  time: 2.0,
   wet: 0.5
 }
 
 /**
  * DSP implementation for Reverb module
- * Stereo reverb effect with room size, damping, and wet controls
+ * Stereo reverb effect with time (k-rate) and wet (a-rate) controls
+ * Room size is fixed at 10.0
  */
 export class ReverbNode implements ModuleDSP {
   static initialState = INITIAL_STATE
   public name = "reverb"
   private reverb?: _ReverbNode
+  private wetParam?: AudioParam
   public state: ReverbState
   private cleanupHandler: (() => void) | null = null
 
@@ -38,10 +38,10 @@ export class ReverbNode implements ModuleDSP {
     if (!skipInit) {
       this.reverb = new _ReverbNode(
         audioContext,
-        this.state.roomSize,
-        this.state.damping,
-        this.state.wet
+        this.state.time
       )
+      this.wetParam = this.reverb.node.parameters.get('wet')!
+      this.wetParam.setValueAtTime(this.state.wet, audioContext.currentTime)
 
       const state = getYjsValue(this.state);
       if (state instanceof Y.Map) {
@@ -55,20 +55,21 @@ export class ReverbNode implements ModuleDSP {
   handleStateChange(event: Y.YMapEvent<any>) {
     if (!this.reverb) return
     
-    // Update reverb parameters when any of them change
-    if (event.keysChanged.has('roomSize') || 
-        event.keysChanged.has('damping') || 
-        event.keysChanged.has('wet')) {
-      const roomSize = event.target.get('roomSize');
-      const damping = event.target.get('damping');
-      const wet = event.target.get('wet');
-      this.reverb.setParams(roomSize, damping, wet)
+    if (event.keysChanged.has('time')) {
+      const time = event.target.get('time');
+      this.reverb.setTime(time)
+    }
+    
+    if (event.keysChanged.has('wet')) {
+      const value = event.target.get('wet');
+      this.wetParam!.setValueAtTime(value, this.audioContext.currentTime)
     }
   }
 
   getRoutingDefinition() {
     return {
       input: { name: "input", type: PlugType.Input, label: 'In' },
+      wet: { name: "wet", type: PlugType.Param, label: 'Wet CV' },
       output: { name: "output", type: PlugType.Output, label: 'Out' },
     } satisfies Record<string, RouteInfo>
   }
@@ -81,6 +82,8 @@ export class ReverbNode implements ModuleDSP {
     switch (routeName) {
       case "input":
         return { node: this.reverb.node, connectIndex: 0 }
+      case "wet":
+        return { node: this.wetParam! }
       case "output":
         return { node: this.reverb.node, connectIndex: 0 }
       default:

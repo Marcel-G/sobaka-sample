@@ -5,20 +5,16 @@ use waw::{register, AutomationRate, ParameterDescriptor, ParameterValuesRef, Pro
 
 use crate::debug;
 
+const ZERO_BUFFER: [f32; 128] = [0.0; 128];
+
 #[derive(Clone)]
 pub struct ReverbParams {
-    pub room_size: f32,
-    pub damping: f32,
-    pub wet: f32,
+    pub time: f32,
 }
 
 impl Default for ReverbParams {
     fn default() -> Self {
-        Self {
-            room_size: 10.0,
-            damping: 2.0,
-            wet: 0.5,
-        }
+        Self { time: 2.0 }
     }
 }
 
@@ -47,24 +43,24 @@ impl ReverbProcessor {
         while let Ok(message) = self.receiver.try_recv() {
             match message {
                 Message::UpdateParams(params) => {
-                    self.current_params = params.clone();
-                    // Create new reverb with updated parameters
-                    let new_reverb = split() 
-                        >> reverb_stereo(params.room_size, params.damping, params.wet) 
-                        >> join();
-                    // Crossfade to avoid clicks
-                    self.net.crossfade(
-                        self.reverb_id,
-                        Fade::Smooth,
-                        0.1, // 100ms crossfade
-                        Box::new(new_reverb),
-                    );
-                    self.net.commit();
+                    if self.current_params.time != params.time {
+                        self.current_params = params.clone();
+                        self.net.crossfade(
+                            self.reverb_id,
+                            Fade::Smooth,
+                            0.1, // 100ms crossfade
+                            create_reverb(params.time),
+                        );
+                        self.net.commit();
+                    }
                 }
                 Message::None => {}
             }
         }
     }
+}
+fn create_reverb(time: f32) -> Box<dyn AudioUnit> {
+    Box::new(split() >> reverb_stereo(10.0, time, 0.5) >> join())
 }
 
 impl Processor for ReverbProcessor {
@@ -72,11 +68,12 @@ impl Processor for ReverbProcessor {
 
     fn new(data: Self::Data) -> Self {
         let params = data.params;
-        let mut net = Net::new(1, 1);
-        let reverb = split() >> reverb_stereo(params.room_size, params.damping, params.wet) >> join();
-        let reverb_id = net.chain(Box::new(reverb));
-        let backend = net.backend();
-        let inner = BigBlockAdapter::new(Box::new(backend));
+
+        let (mut net, reverb_id) = Net::wrap_id(create_reverb(params.time));
+
+        net = (net * pass()) & (pass() * (1.0 - pass())) >> join();
+
+        let inner = BigBlockAdapter::new(Box::new(net.backend()));
 
         Self {
             current_params: params,
@@ -92,39 +89,28 @@ impl Processor for ReverbProcessor {
         inputs: &[&[f32]],
         outputs: &mut [&mut [f32]],
         sample_rate: f32,
-        _params: &ParameterValuesRef,
+        params: &ParameterValuesRef,
     ) {
         self.handle_messages();
         self.inner.set_sample_rate(sample_rate.into());
-        self.inner.process_big(128, inputs, outputs);
+
+        let wet_param = params.get("wet").unwrap_or(&ZERO_BUFFER);
+
+        let combined_inputs = [inputs, &[&wet_param]].concat();
+
+        self.inner.process_big(128, &combined_inputs, outputs);
 
         debug::log_buffer_stats("Reverb", outputs);
     }
 
     fn parameter_descriptors() -> Vec<ParameterDescriptor> {
-        vec![
-            ParameterDescriptor {
-                name: "room_size".to_string(),
-                default_value: 10.0,
-                min_value: 0.1,
-                max_value: 50.0,
-                automation_rate: AutomationRate::KRate,
-            },
-            ParameterDescriptor {
-                name: "damping".to_string(),
-                default_value: 2.0,
-                min_value: 0.1,
-                max_value: 10.0,
-                automation_rate: AutomationRate::KRate,
-            },
-            ParameterDescriptor {
-                name: "wet".to_string(),
-                default_value: 0.5,
-                min_value: 0.0,
-                max_value: 1.0,
-                automation_rate: AutomationRate::KRate,
-            },
-        ]
+        vec![ParameterDescriptor {
+            name: "wet".to_string(),
+            default_value: 0.5,
+            min_value: 0.0,
+            max_value: 1.0,
+            automation_rate: AutomationRate::ARate,
+        }]
     }
 }
 
@@ -137,20 +123,11 @@ pub struct ReverbNode {
 #[wasm_bindgen]
 impl ReverbNode {
     #[wasm_bindgen(constructor)]
-    pub fn new(
-        ctx: &web_sys::AudioContext,
-        room_size: f32,
-        damping: f32,
-        wet: f32,
-    ) -> Result<ReverbNode, JsValue> {
+    pub fn new(ctx: &web_sys::AudioContext, time: f32) -> Result<ReverbNode, JsValue> {
         let (sender, receiver) = channel(1);
-        let params = ReverbParams {
-            room_size,
-            damping,
-            wet,
-        };
+        let params = ReverbParams { time };
         let data = ReverbData { params, receiver };
-        
+
         let options = web_sys::AudioWorkletNodeOptions::new();
         options.set_channel_count(1);
         options.set_number_of_inputs(1);
@@ -160,13 +137,9 @@ impl ReverbNode {
         Ok(ReverbNode { node, sender })
     }
 
-    #[wasm_bindgen(js_name = "setParams")]
-    pub fn set_params(&self, room_size: f32, damping: f32, wet: f32) {
-        let params = ReverbParams {
-            room_size,
-            damping,
-            wet,
-        };
+    #[wasm_bindgen(js_name = "setTime")]
+    pub fn set_time(&self, time: f32) {
+        let params = ReverbParams { time };
         if self.sender.try_send(Message::UpdateParams(params)).is_ok() {};
     }
 

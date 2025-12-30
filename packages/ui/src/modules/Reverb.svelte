@@ -27,8 +27,7 @@
   const state = intoReadable(node.state)
   const routing = node.getRoutingDefinition()
 
-  const roomSizeRange = createScaleRange(0.1, 50)
-  const dampingRange = createScaleRange(0.1, 10)
+  const timeRange = createScaleRange(0.1, 10)
   const wetRange = createScaleRange(0, 1)
 </script>
 
@@ -41,15 +40,22 @@
   {onDrag}
   {bindElement}
   height={8}
-  width={10}
+  width={8}
   --color-module-accent="var(--color-purple)"
   --color-module-background="var(--color-purple-dark)"
 >
   {#snippet children()}
     <div class="controls">
-      <Knob {disabled} bind:value={$state.roomSize} range={roomSizeRange} label="room size" />
-      <Knob {disabled} bind:value={$state.damping} range={dampingRange} label="damping" />
-      <Knob {disabled} bind:value={$state.wet} range={wetRange} label="wet" />
+      <Knob {disabled} bind:value={$state.time} range={timeRange} label="time" />
+      <Knob {disabled} bind:value={$state.wet} range={wetRange} label="wet">
+        <div slot="knob-inputs">
+          <Plug 
+            ctx={routing.wet} 
+            onClick={onPlugClick} 
+            bindElement={bindPlugElement}
+          />
+        </div>
+      </Knob>
     </div>
   {/snippet}
 
@@ -73,7 +79,7 @@
 <style>
   .controls {
     display: grid;
-    grid-template-columns: auto auto auto;
+    grid-template-columns: auto auto;
     pointer-events: none;
   }
 </style>
