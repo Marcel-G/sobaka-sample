@@ -3,7 +3,6 @@ import Clock from './Clock.svelte';
 import { ClockNode } from '@sobaka/dsp';
 import { writable } from 'svelte/store';
 
-// Helper to create a mock ClockNode without initializing the WASM node
 function createMockClockNode(bpm: number = 120) {
   const node = new ClockNode('story-clock', new AudioContext(), { bpm }, undefined);
   return node;

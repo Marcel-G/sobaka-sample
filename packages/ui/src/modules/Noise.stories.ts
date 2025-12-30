@@ -3,7 +3,6 @@ import Noise from './Noise.svelte';
 import { NoiseNode } from '@sobaka/dsp';
 import { writable } from 'svelte/store';
 
-// Helper to create a mock NoiseNode without initializing the WASM node
 function createMockNoiseNode() {
   const node = new NoiseNode('story-noise', new AudioContext(), {}, undefined);
   return node;

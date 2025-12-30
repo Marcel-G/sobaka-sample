@@ -3,7 +3,6 @@ import Parameter from './Parameter.svelte';
 import { ParameterNode } from '@sobaka/dsp';
 import { writable } from 'svelte/store';
 
-// Helper to create a mock ParameterNode without starting the ConstantSourceNode
 function createMockParameterNode(value: number = 0.5) {
   const node = new ParameterNode('story-parameter', new AudioContext(), { value }, undefined);
   return node;

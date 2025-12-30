@@ -3,7 +3,6 @@ import Delay from './Delay.svelte';
 import { DelayNode } from '@sobaka/dsp';
 import { writable } from 'svelte/store';
 
-// Helper to create a mock DelayNode without initializing the WASM node
 function createMockDelayNode(delay: number = 1.0) {
   const node = new DelayNode('story-delay', new AudioContext(), { delay }, undefined);
   return node;

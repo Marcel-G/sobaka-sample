@@ -28,10 +28,10 @@ export class EnvelopeNode implements ModuleDSP {
     public readonly id: string,
     audioContext: AudioContext,
     initialState: EnvelopeState = INITIAL_STATE,
-    envelopeNode?: _EnvelopeNode
+    envelopeNode: _EnvelopeNode | null = null
   ) {
     this.state = initialState
-    this.envelope = envelopeNode ?? new _EnvelopeNode(audioContext)
+    this.envelope = envelopeNode === null ? new _EnvelopeNode(audioContext) : envelopeNode
     
     if (this.envelope) {
       this.attackParam = this.envelope.node.parameters.get('attack')!

@@ -3,7 +3,6 @@ import Mixer from './Mixer.svelte';
 import { MixerDSP } from '@sobaka/dsp';
 import { writable } from 'svelte/store';
 
-// Helper to create a mock MixerDSP without connecting to audio destination
 function createMockMixerNode(volume: number = 0.7, muted: boolean = false) {
   const node = new MixerDSP('story-mixer', new AudioContext(), { volume, muted }, undefined);
   return node;

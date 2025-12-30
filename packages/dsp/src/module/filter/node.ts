@@ -31,10 +31,10 @@ export class FilterNode implements ModuleDSP {
     public readonly id: string,
     private audioContext: AudioContext,
     initialState: FilterState = INITIAL_STATE,
-    filterNode?: _FilterNode
+    filterNode: _FilterNode | null = null
   ) {
     this.state = initialState
-    this.filter = filterNode ?? new _FilterNode(audioContext)
+    this.filter = filterNode === null ? new _FilterNode(audioContext) : filterNode
 
     if (this.filter) {
       this.frequencyParam = this.filter.node.parameters.get('frequency')!

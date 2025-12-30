@@ -3,7 +3,6 @@ import Reverb from './Reverb.svelte';
 import { ReverbNode } from '@sobaka/dsp';
 import { writable } from 'svelte/store';
 
-// Helper to create a mock ReverbNode without initializing the WASM node
 function createMockReverbNode() {
   const node = new ReverbNode('story-reverb', new AudioContext(), {}, undefined);
   return node;

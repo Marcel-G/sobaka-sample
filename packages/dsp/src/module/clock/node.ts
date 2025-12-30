@@ -23,10 +23,10 @@ export class ClockNode implements ModuleDSP {
     public readonly id: string,
     audioContext: AudioContext,
     initialState: ClockState = INITIAL_STATE,
-    clockNode?: _ClockDividerNode
+    clockNode: _ClockDividerNode | null = null
   ) {
     this.state = initialState
-    this.clock = clockNode ?? new _ClockDividerNode(audioContext)
+    this.clock = clockNode === null ? new _ClockDividerNode(audioContext) : clockNode
     
     if (this.clock) {
       this.bpmParam = this.clock.node.parameters.get('bpm')!
@@ -46,7 +46,6 @@ export class ClockNode implements ModuleDSP {
 
   getRoute(routeName: string): Route {
     if (!this.clock) {
-      // Return mock audio nodes for Storybook/testing
       return { node: new GainNode(new AudioContext()) }
     }
     

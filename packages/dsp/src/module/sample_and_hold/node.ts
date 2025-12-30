@@ -22,10 +22,10 @@ export class SampleAndHoldNode implements ModuleDSP {
     public readonly id: string,
     audioContext: AudioContext,
     initialState: SampleAndHoldState = INITIAL_STATE,
-    sampleAndHoldNode?: _SampleAndHoldNode
+    sampleAndHoldNode: _SampleAndHoldNode | null = null
   ) {
     this.state = initialState
-    this.sampleAndHold = sampleAndHoldNode ?? new _SampleAndHoldNode(audioContext)
+    this.sampleAndHold = sampleAndHoldNode === null ? new _SampleAndHoldNode(audioContext) : sampleAndHoldNode
   }
 
   getRoutingDefinition() {

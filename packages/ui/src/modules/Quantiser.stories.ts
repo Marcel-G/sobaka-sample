@@ -3,7 +3,6 @@ import Quantiser from './Quantiser.svelte';
 import { QuantiserNode } from '@sobaka/dsp';
 import { writable } from 'svelte/store';
 
-// Helper to create a mock QuantiserNode without initializing the WASM node
 function createMockQuantiserNode(notes?: boolean[]) {
   const node = new QuantiserNode('story-quantiser', new AudioContext(), notes ? { notes } : undefined, undefined);
   return node;
