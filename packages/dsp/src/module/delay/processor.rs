@@ -2,22 +2,20 @@ use fundsp::prelude::*;
 use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
 use waw::{register, AutomationRate, ParameterDescriptor, ParameterValuesRef, Processor};
 
+const ZERO_BUFFER: [f32; 128] = [0.0; 128];
+
 pub struct DelayProcessor {
     inner: BigBlockAdapter,
-    delay: Shared,
 }
 
 impl Processor for DelayProcessor {
     type Data = ();
 
     fn new(_data: Self::Data) -> Self {
-        let delay = shared(1.0);
-
-        let module = (pass() | var(&delay)) >> tap(0.0, 10.0);
+        let module = tap(0.0, 10.0);
 
         Self {
             inner: BigBlockAdapter::new(Box::new(module)),
-            delay,
         }
     }
 
@@ -28,10 +26,12 @@ impl Processor for DelayProcessor {
         sample_rate: f32,
         params: &ParameterValuesRef,
     ) {
-        self.delay
-            .set_value(*params.get("delay").and_then(|b| b.get(0)).unwrap_or(&1.0));
+        let delay_param = params.get("delay").unwrap_or(&ZERO_BUFFER);
+
+        let combined_inputs = [inputs, &[&delay_param]].concat();
+
         self.inner.set_sample_rate(sample_rate.into());
-        self.inner.process_big(128, inputs, outputs);
+        self.inner.process_big(128, &combined_inputs, outputs);
     }
 
     fn parameter_descriptors() -> Vec<ParameterDescriptor> {
@@ -40,7 +40,7 @@ impl Processor for DelayProcessor {
             default_value: 1.0,
             min_value: 0.0,
             max_value: 10.0,
-            automation_rate: AutomationRate::KRate,
+            automation_rate: AutomationRate::ARate,
         }]
     }
 }
@@ -57,7 +57,7 @@ impl DelayNode {
         let options = web_sys::AudioWorkletNodeOptions::new();
         options.set_channel_count(1);
         options.set_number_of_inputs(1);
-        options.set_number_of_outputs(4);
+        options.set_number_of_outputs(1);
 
         let wrapper = DelayProcessor::create_node(ctx, (), Some(&options))?;
         Ok(DelayNode { wrapper })

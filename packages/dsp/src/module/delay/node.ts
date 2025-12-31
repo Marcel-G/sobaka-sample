@@ -39,10 +39,7 @@ export class DelayNode implements ModuleDSP {
     return {
       input: { name: "input", type: PlugType.Input, label: 'Signal' },
       delay: { name: "delay", type: PlugType.Param, label: 'Time CV' },
-      tap_0: { name: "tap_0", type: PlugType.Output, label: 'Tap 1' },
-      tap_1: { name: "tap_1", type: PlugType.Output, label: 'Tap 2' },
-      tap_2: { name: "tap_2", type: PlugType.Output, label: 'Tap 3' },
-      tap_3: { name: "tap_3", type: PlugType.Output, label: 'Tap 4' },
+      out: { name: "out", type: PlugType.Output, label: 'out' },
     } satisfies Record<string, RouteInfo>
   }
 
@@ -56,14 +53,8 @@ export class DelayNode implements ModuleDSP {
         return { node: this.delay.node, connectIndex: 0 }
       case "delay":
         return { node: this.delayParam! }
-      case "tap_0":
+      case "out":
         return { node: this.delay.node, connectIndex: 0 }
-      case "tap_1":
-        return { node: this.delay.node, connectIndex: 1 }
-      case "tap_2":
-        return { node: this.delay.node, connectIndex: 2 }
-      case "tap_3":
-        return { node: this.delay.node, connectIndex: 3 }
       default:
         throw new Error(`Unknown routeName ${routeName}`)
     }

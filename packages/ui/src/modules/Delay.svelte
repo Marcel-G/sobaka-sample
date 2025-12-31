@@ -27,7 +27,7 @@
   const state = intoReadable(node.state)
   const routing = node.getRoutingDefinition()
 
-  const timeRange = createTimeRange()
+  const timeRange = createTimeRange(0, 5)
 </script>
 
 <Panel
@@ -65,22 +65,7 @@
 
   {#snippet outputs()}
     <Plug 
-      ctx={routing.tap_0} 
-      onClick={onPlugClick} 
-      bindElement={bindPlugElement}
-    />
-    <Plug 
-      ctx={routing.tap_1} 
-      onClick={onPlugClick} 
-      bindElement={bindPlugElement}
-    />
-    <Plug 
-      ctx={routing.tap_2} 
-      onClick={onPlugClick} 
-      bindElement={bindPlugElement}
-    />
-    <Plug 
-      ctx={routing.tap_3} 
+      ctx={routing.out} 
       onClick={onPlugClick} 
       bindElement={bindPlugElement}
     />
