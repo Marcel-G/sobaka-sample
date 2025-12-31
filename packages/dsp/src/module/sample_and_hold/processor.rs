@@ -2,15 +2,12 @@ use fundsp::prelude::*;
 use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
 use waw::{register, ParameterDescriptor, ParameterValuesRef, Processor};
 
-use crate::util::trigger::SchmittTrigger;
-
 pub struct SampleAndHoldProcessor {
     inner: BigBlockAdapter,
 }
 
 #[derive(Clone)]
 pub struct Hold {
-    trigger: SchmittTrigger,
     off_threshold: f64,
     on_threshold: f64,
     signal: f32,
@@ -19,7 +16,6 @@ pub struct Hold {
 impl Hold {
     pub fn new() -> Self {
         Self {
-            trigger: SchmittTrigger::default(),
             off_threshold: 0.0,
             on_threshold: 0.001,
             signal: 0.0,
@@ -36,13 +32,6 @@ impl AudioNode for Hold {
     fn tick(&mut self, input: &Frame<f32, Self::Inputs>) -> Frame<f32, Self::Outputs> {
         let gate = input[0];
         let signal = input[1];
-
-        if let Some(true) = self
-            .trigger
-            .tick(gate, self.off_threshold, self.on_threshold)
-        {
-            self.signal = signal;
-        }
 
         Frame::splat(self.signal)
     }

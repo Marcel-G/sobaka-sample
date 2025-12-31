@@ -3,8 +3,13 @@ import Envelope from './Envelope.svelte';
 import { EnvelopeNode } from '@sobaka/dsp';
 import { writable } from 'svelte/store';
 
-function createMockEnvelopeNode(attack: number = 0.1, release: number = 0.1) {
-  return new EnvelopeNode('story-envelope', new AudioContext(), { attack, release }, true);
+function createMockEnvelopeNode(
+  attack: number = 0.1,
+  decay: number = 0.1,
+  sustain: number = 0.7,
+  release: number = 0.1
+) {
+  return new EnvelopeNode('story-envelope', new AudioContext(), { attack, decay, sustain, release }, true);
 }
 
 const meta = {
@@ -28,25 +33,31 @@ export const Default: Story = {};
 
 export const FastAttack: Story = {
   args: {
-    node: createMockEnvelopeNode(0.01, 0.1),
+    node: createMockEnvelopeNode(0.01, 0.1, 0.7, 0.1),
   },
 };
 
 export const SlowRelease: Story = {
   args: {
-    node: createMockEnvelopeNode(0.1, 1.0),
+    node: createMockEnvelopeNode(0.1, 0.1, 0.7, 1.0),
   },
 };
 
 export const Percussive: Story = {
   args: {
-    node: createMockEnvelopeNode(0.001, 0.05),
+    node: createMockEnvelopeNode(0.001, 0.01, 0.5, 0.05),
   },
 };
 
 export const Pad: Story = {
   args: {
-    node: createMockEnvelopeNode(0.5, 2.0),
+    node: createMockEnvelopeNode(0.5, 0.3, 0.8, 2.0),
+  },
+};
+
+export const Pluck: Story = {
+  args: {
+    node: createMockEnvelopeNode(0.001, 0.2, 0.3, 0.1),
   },
 };
 
