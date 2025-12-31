@@ -11,7 +11,7 @@ export interface FilterState {
 
 const INITIAL_STATE: FilterState = {
   frequency: 0.1,
-  q: 0.1
+  q: 0.5
 }
 
 /**
