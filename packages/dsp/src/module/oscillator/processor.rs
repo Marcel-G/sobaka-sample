@@ -1,6 +1,6 @@
 use crate::{debug, util::conversion::volt_hz};
 use fundsp::{
-    prelude::*,
+    hacker::*,
     thingbuf::mpsc::{channel, Receiver, Sender},
 };
 use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
@@ -9,7 +9,7 @@ use waw::{register, AutomationRate, ParameterDescriptor, ParameterValuesRef, Pro
 const ZERO_BUFFER: [f32; 128] = [0.0; 128];
 
 #[wasm_bindgen]
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub enum OscillatorShape {
     Sine,
     Square,
@@ -31,10 +31,9 @@ enum Message {
 
 pub struct OscillatorProcessor {
     current_shape: OscillatorShape,
-    sine: BigBlockAdapter,
-    triangle: BigBlockAdapter,
-    saw: BigBlockAdapter,
-    square: BigBlockAdapter,
+    net: Net,
+    oscillator_id: NodeId,
+    inner: BigBlockAdapter,
     receiver: Receiver<Message>,
 }
 
@@ -42,10 +41,30 @@ impl OscillatorProcessor {
     fn handle_messages(&mut self) {
         while let Ok(message) = self.receiver.try_recv() {
             match message {
-                Message::SetShape(shape) => self.current_shape = shape,
+                Message::SetShape(shape) => {
+                    if self.current_shape != shape {
+                        self.current_shape = shape.clone();
+                        self.net.crossfade(
+                            self.oscillator_id,
+                            Fade::Smooth,
+                            0.01, // 10ms crossfade
+                            create_oscillator(&shape),
+                        );
+                        self.net.commit();
+                    }
+                }
                 Message::None => {}
             }
         }
+    }
+}
+
+fn create_oscillator(shape: &OscillatorShape) -> Box<dyn AudioUnit> {
+    match shape {
+        OscillatorShape::Sine => Box::new(sine()),
+        OscillatorShape::Square => Box::new(square()),
+        OscillatorShape::Triangle => Box::new(triangle()),
+        OscillatorShape::Saw => Box::new(saw()),
     }
 }
 
@@ -53,18 +72,18 @@ impl Processor for OscillatorProcessor {
     type Data = OscillatorData;
 
     fn new(data: Self::Data) -> Self {
-        let saw = saw() >> shape(Tanh(0.8));
-        let sine = sine::<f32>() >> shape(Tanh(0.8));
-        let square = square() >> shape(Tanh(0.8));
-        let triangle = triangle() >> shape(Tanh(0.8));
+        let (mut net, oscillator_id) = Net::wrap_id(create_oscillator(&data.shape));
+
+        net = net >> shape(Tanh(0.8));
+
+        let inner = BigBlockAdapter::new(Box::new(net.backend()));
 
         Self {
             current_shape: data.shape,
+            net,
+            oscillator_id,
+            inner,
             receiver: data.receiver,
-            saw: BigBlockAdapter::new(Box::new(saw)),
-            sine: BigBlockAdapter::new(Box::new(sine)),
-            square: BigBlockAdapter::new(Box::new(square)),
-            triangle: BigBlockAdapter::new(Box::new(triangle)),
         }
     }
 
@@ -76,18 +95,12 @@ impl Processor for OscillatorProcessor {
         params: &ParameterValuesRef,
     ) {
         self.handle_messages();
+        self.inner.set_sample_rate(sample_rate.into());
 
         let pitch = params.get("pitch").unwrap_or(&ZERO_BUFFER);
         let pitch_hz: Vec<f32> = pitch.iter().map(|&v| volt_hz(v)).collect();
 
-        let module = match self.current_shape {
-            OscillatorShape::Sine => &mut self.sine,
-            OscillatorShape::Square => &mut self.square,
-            OscillatorShape::Triangle => &mut self.triangle,
-            OscillatorShape::Saw => &mut self.saw,
-        };
-        module.set_sample_rate(sample_rate.into());
-        module.process_big(128, &[&pitch_hz], outputs);
+        self.inner.process_big(128, &[&pitch_hz], outputs);
 
         debug::log_buffer_stats("Oscillator", outputs);
     }
