@@ -62,6 +62,6 @@ export class EnvelopeNode implements ModuleDSP {
   }
 
   destroy(): void {
-    // EnvelopeNode cleanup if needed
+    this.envelope?.free()
   }
 }

@@ -85,5 +85,6 @@ export class OscillatorNode implements ModuleDSP {
 
   destroy(): void {
     this.cleanupHandler?.()
+    this.oscillator?.free()
   }
 }

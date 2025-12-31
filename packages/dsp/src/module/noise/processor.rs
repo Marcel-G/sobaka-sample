@@ -35,7 +35,7 @@ impl Processor for NoiseProcessor {
 
 #[wasm_bindgen]
 pub struct NoiseNode {
-    node: web_sys::AudioWorkletNode,
+    wrapper: waw::AudioWorkletNodeWrapper,
 }
 
 #[wasm_bindgen]
@@ -47,13 +47,13 @@ impl NoiseNode {
         options.set_number_of_inputs(0);
         options.set_number_of_outputs(1);
 
-        let node = NoiseProcessor::create_node(ctx, (), Some(&options))?;
-        Ok(NoiseNode { node })
+        let wrapper = NoiseProcessor::create_node(ctx, (), Some(&options))?;
+        Ok(NoiseNode { wrapper })
     }
 
     #[wasm_bindgen(getter)]
     pub fn node(&self) -> web_sys::AudioWorkletNode {
-        self.node.clone()
+        self.wrapper.node().clone()
     }
 }
 

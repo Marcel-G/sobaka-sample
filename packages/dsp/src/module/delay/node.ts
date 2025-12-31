@@ -70,6 +70,6 @@ export class DelayNode implements ModuleDSP {
   }
 
   destroy(): void {
-    // DelayNode cleanup if needed
+    this.delay?.free()
   }
 }

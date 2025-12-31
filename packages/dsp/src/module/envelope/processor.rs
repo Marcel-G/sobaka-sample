@@ -53,7 +53,7 @@ impl Processor for EnvelopeProcessor {
 
 #[wasm_bindgen]
 pub struct EnvelopeNode {
-    node: web_sys::AudioWorkletNode,
+    wrapper: waw::AudioWorkletNodeWrapper,
 }
 
 #[wasm_bindgen]
@@ -65,13 +65,13 @@ impl EnvelopeNode {
         options.set_number_of_inputs(1);
         options.set_number_of_outputs(1);
 
-        let node = EnvelopeProcessor::create_node(ctx, (), Some(&options))?;
-        Ok(EnvelopeNode { node })
+        let wrapper = EnvelopeProcessor::create_node(ctx, (), Some(&options))?;
+        Ok(EnvelopeNode { wrapper })
     }
 
     #[wasm_bindgen(getter)]
     pub fn node(&self) -> web_sys::AudioWorkletNode {
-        self.node.clone()
+        self.wrapper.node().clone()
     }
 }
 

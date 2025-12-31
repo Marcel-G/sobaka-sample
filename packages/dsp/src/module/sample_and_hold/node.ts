@@ -57,6 +57,6 @@ export class SampleAndHoldNode implements ModuleDSP {
   }
 
   destroy(): void {
-    // SampleAndHoldNode cleanup if needed
+    this.sampleAndHold?.free()
   }
 }

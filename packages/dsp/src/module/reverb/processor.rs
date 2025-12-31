@@ -116,7 +116,7 @@ impl Processor for ReverbProcessor {
 
 #[wasm_bindgen]
 pub struct ReverbNode {
-    node: web_sys::AudioWorkletNode,
+    wrapper: waw::AudioWorkletNodeWrapper,
     sender: Sender<Message>,
 }
 
@@ -133,8 +133,8 @@ impl ReverbNode {
         options.set_number_of_inputs(1);
         options.set_number_of_outputs(1);
 
-        let node = ReverbProcessor::create_node(ctx, data, Some(&options))?;
-        Ok(ReverbNode { node, sender })
+        let wrapper = ReverbProcessor::create_node(ctx, data, Some(&options))?;
+        Ok(ReverbNode { wrapper, sender })
     }
 
     #[wasm_bindgen(js_name = "setTime")]
@@ -145,7 +145,7 @@ impl ReverbNode {
 
     #[wasm_bindgen(getter)]
     pub fn node(&self) -> web_sys::AudioWorkletNode {
-        self.node.clone()
+        self.wrapper.node().clone()
     }
 }
 

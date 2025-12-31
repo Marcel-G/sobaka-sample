@@ -47,7 +47,7 @@ impl Processor for DelayProcessor {
 
 #[wasm_bindgen]
 pub struct DelayNode {
-    node: web_sys::AudioWorkletNode,
+    wrapper: waw::AudioWorkletNodeWrapper,
 }
 
 #[wasm_bindgen]
@@ -59,13 +59,13 @@ impl DelayNode {
         options.set_number_of_inputs(1);
         options.set_number_of_outputs(4);
 
-        let node = DelayProcessor::create_node(ctx, (), Some(&options))?;
-        Ok(DelayNode { node })
+        let wrapper = DelayProcessor::create_node(ctx, (), Some(&options))?;
+        Ok(DelayNode { wrapper })
     }
 
     #[wasm_bindgen(getter)]
     pub fn node(&self) -> web_sys::AudioWorkletNode {
-        self.node.clone()
+        self.wrapper.node().clone()
     }
 }
 

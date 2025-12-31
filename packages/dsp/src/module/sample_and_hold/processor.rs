@@ -80,7 +80,7 @@ impl Processor for SampleAndHoldProcessor {
 
 #[wasm_bindgen]
 pub struct SampleAndHoldNode {
-    node: web_sys::AudioWorkletNode,
+    wrapper: waw::AudioWorkletNodeWrapper,
 }
 
 #[wasm_bindgen]
@@ -92,13 +92,13 @@ impl SampleAndHoldNode {
         options.set_number_of_inputs(2);
         options.set_number_of_outputs(1);
 
-        let node = SampleAndHoldProcessor::create_node(ctx, (), Some(&options))?;
-        Ok(SampleAndHoldNode { node })
+        let wrapper = SampleAndHoldProcessor::create_node(ctx, (), Some(&options))?;
+        Ok(SampleAndHoldNode { wrapper })
     }
 
     #[wasm_bindgen(getter)]
     pub fn node(&self) -> web_sys::AudioWorkletNode {
-        self.node.clone()
+        self.wrapper.node().clone()
     }
 }
 

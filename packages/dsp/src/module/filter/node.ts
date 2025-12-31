@@ -104,5 +104,6 @@ export class FilterNode implements ModuleDSP {
 
   destroy(): void {
     this.cleanupHandler?.()
+    this.filter?.free()
   }
 }

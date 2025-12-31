@@ -51,6 +51,6 @@ export class NoiseNode implements ModuleDSP {
   }
 
   destroy(): void {
-    // NoiseNode cleanup if needed
+    this.noise?.free()
   }
 }

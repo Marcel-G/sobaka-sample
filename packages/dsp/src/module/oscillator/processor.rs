@@ -105,7 +105,7 @@ impl Processor for OscillatorProcessor {
 
 #[wasm_bindgen]
 pub struct OscillatorNode {
-    node: web_sys::AudioWorkletNode,
+    wrapper: waw::AudioWorkletNodeWrapper,
     sender: Sender<Message>,
 }
 
@@ -123,8 +123,8 @@ impl OscillatorNode {
         options.set_number_of_inputs(0);
         options.set_number_of_outputs(1);
 
-        let node = OscillatorProcessor::create_node(ctx, data, Some(&options))?;
-        Ok(OscillatorNode { node, sender })
+        let wrapper = OscillatorProcessor::create_node(ctx, data, Some(&options))?;
+        Ok(OscillatorNode { wrapper, sender })
     }
 
     #[wasm_bindgen(js_name = "setShape")]
@@ -134,7 +134,7 @@ impl OscillatorNode {
 
     #[wasm_bindgen(getter)]
     pub fn node(&self) -> web_sys::AudioWorkletNode {
-        self.node.clone()
+        self.wrapper.node().clone()
     }
 }
 

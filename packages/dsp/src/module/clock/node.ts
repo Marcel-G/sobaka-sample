@@ -68,7 +68,6 @@ export class ClockNode implements ModuleDSP {
   }
 
   destroy(): void {
-    // ClockDividerNode cleanup if needed
-    // The node will be garbage collected when no longer referenced
+    this.clock?.free()
   }
 }

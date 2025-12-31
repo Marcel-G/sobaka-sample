@@ -65,6 +65,6 @@ export class QuantiserNode implements ModuleDSP {
   }
 
   destroy(): void {
-    // QuantiserNode cleanup if needed
+    this.quantiser?.free()
   }
 }

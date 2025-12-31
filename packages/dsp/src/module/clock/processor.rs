@@ -61,7 +61,7 @@ impl Processor for ClockDividerProcessor {
 
 #[wasm_bindgen]
 pub struct ClockDividerNode {
-    node: web_sys::AudioWorkletNode,
+    wrapper: waw::AudioWorkletNodeWrapper,
 }
 
 #[wasm_bindgen]
@@ -73,13 +73,13 @@ impl ClockDividerNode {
         options.set_number_of_inputs(0);
         options.set_number_of_outputs(4);
 
-        let node = ClockDividerProcessor::create_node(ctx, (), Some(&options))?;
-        Ok(ClockDividerNode { node })
+        let wrapper = ClockDividerProcessor::create_node(ctx, (), Some(&options))?;
+        Ok(ClockDividerNode { wrapper })
     }
 
     #[wasm_bindgen(getter)]
     pub fn node(&self) -> web_sys::AudioWorkletNode {
-        self.node.clone()
+        self.wrapper.node().clone()
     }
 }
 

@@ -46,7 +46,7 @@ impl Processor for QuantiserProcessor {
 
 #[wasm_bindgen]
 pub struct QuantiserNode {
-    node: web_sys::AudioWorkletNode,
+    wrapper: waw::AudioWorkletNodeWrapper,
     sender: Sender<Message>,
 }
 
@@ -64,8 +64,8 @@ impl QuantiserNode {
         options.set_number_of_inputs(1);
         options.set_number_of_outputs(1);
 
-        let node = QuantiserProcessor::create_node(ctx, data, Some(&options))?;
-        Ok(QuantiserNode { node, sender })
+        let wrapper = QuantiserProcessor::create_node(ctx, data, Some(&options))?;
+        Ok(QuantiserNode { wrapper, sender })
     }
 
     // TODO: better type for notes
@@ -85,7 +85,7 @@ impl QuantiserNode {
 
     #[wasm_bindgen(getter)]
     pub fn node(&self) -> web_sys::AudioWorkletNode {
-        self.node.clone()
+        self.wrapper.node().clone()
     }
 }
 

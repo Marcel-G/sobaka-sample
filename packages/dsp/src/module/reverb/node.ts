@@ -93,5 +93,6 @@ export class ReverbNode implements ModuleDSP {
 
   destroy(): void {
     this.cleanupHandler?.()
+    this.reverb?.free()
   }
 }
