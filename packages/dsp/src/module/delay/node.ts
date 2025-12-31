@@ -1,3 +1,5 @@
+import * as Y from 'yjs';
+import { getYjsValue } from "@syncedstore/core";
 import { DelayNode as _DelayNode } from '@sobaka/dsp/wasm'
 import { ModuleDSP, Route, RouteInfo } from '../../shared/types'
 import { PlugType } from '@sobaka/state'
@@ -20,10 +22,11 @@ export class DelayNode implements ModuleDSP {
   private delay?: _DelayNode
   private delayParam?: AudioParam
   public state: DelayState
+  private cleanupHandler: (() => void) | null = null
 
   constructor(
     public readonly id: string,
-    audioContext: AudioContext,
+    private audioContext: AudioContext,
     initialState: DelayState = INITIAL_STATE,
     skipInit: boolean = false
   ) {
@@ -32,6 +35,23 @@ export class DelayNode implements ModuleDSP {
     if (!skipInit) {
       this.delay = new _DelayNode(audioContext)
       this.delayParam = this.delay.node.parameters.get('delay')!
+      this.delayParam!.setValueAtTime(this.state.delay, this.audioContext.currentTime)
+
+      const state = getYjsValue(this.state);
+      if (state instanceof Y.Map) {
+        const handler = this.handleStateChange.bind(this)
+        state.observe(handler)
+        this.cleanupHandler = () => { state.unobserve(handler) }
+      }
+    }
+  }
+
+  handleStateChange(event: Y.YMapEvent<any>) {
+    if (!this.delay) return
+    
+    if (event.keysChanged.has('delay')) {
+      const value = event.target.get('delay');
+      this.delayParam!.setValueAtTime(value, this.audioContext.currentTime)
     }
   }
 
