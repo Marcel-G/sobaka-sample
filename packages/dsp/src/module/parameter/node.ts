@@ -1,3 +1,5 @@
+import * as Y from 'yjs';
+import { getYjsValue } from "@syncedstore/core";
 import { ModuleDSP, Route, RouteInfo } from '../../shared/types'
 import { PlugType } from '@sobaka/state'
 
@@ -18,10 +20,11 @@ export class ParameterNode implements ModuleDSP {
   public name = "parameter"
   private parameter?: ConstantSourceNode
   public state: ParameterState
+  private cleanupHandler: (() => void) | null = null
 
   constructor(
     public readonly id: string,
-    audioContext: AudioContext,
+    private audioContext: AudioContext,
     initialState: ParameterState = INITIAL_STATE,
     skipInit: boolean = false
   ) {
@@ -36,6 +39,22 @@ export class ParameterNode implements ModuleDSP {
         this.state.value ?? INITIAL_STATE.value,
         audioContext.currentTime
       )
+
+      const state = getYjsValue(this.state);
+      if (state instanceof Y.Map) {
+        const handler = this.handleStateChange.bind(this)
+        state.observe(handler)
+        this.cleanupHandler = () => { state.unobserve(handler) }
+      }
+    }
+  }
+
+  handleStateChange(event: Y.YMapEvent<any>) {
+    if (!this.parameter) return
+    
+    if (event.keysChanged.has('value')) {
+      const value = event.target.get('value');
+      this.parameter.offset.setValueAtTime(value, this.audioContext.currentTime)
     }
   }
 
@@ -59,6 +78,7 @@ export class ParameterNode implements ModuleDSP {
   }
 
   destroy(): void {
+    this.cleanupHandler?.()
     if (this.parameter) {
       try {
         this.parameter.stop()

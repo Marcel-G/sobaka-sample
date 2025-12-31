@@ -1,3 +1,5 @@
+import * as Y from 'yjs';
+import { getYjsValue } from "@syncedstore/core";
 import { EnvelopeNode as _EnvelopeNode } from '@sobaka/dsp/wasm'
 import { ModuleDSP, Route, RouteInfo } from '../../shared/types'
 import { PlugType } from '@sobaka/state'
@@ -23,10 +25,11 @@ export class EnvelopeNode implements ModuleDSP {
   private attackParam?: AudioParam
   private releaseParam?: AudioParam
   public state: EnvelopeState
+  private cleanupHandler: (() => void) | null = null
 
   constructor(
     public readonly id: string,
-    audioContext: AudioContext,
+    private audioContext: AudioContext,
     initialState: EnvelopeState = INITIAL_STATE,
     skipInit: boolean = false
   ) {
@@ -36,6 +39,29 @@ export class EnvelopeNode implements ModuleDSP {
       this.envelope = new _EnvelopeNode(audioContext)
       this.attackParam = this.envelope.node.parameters.get('attack')!
       this.releaseParam = this.envelope.node.parameters.get('release')!
+      
+      this.attackParam.setValueAtTime(this.state.attack, audioContext.currentTime)
+      this.releaseParam.setValueAtTime(this.state.release, audioContext.currentTime)
+
+      const state = getYjsValue(this.state);
+      if (state instanceof Y.Map) {
+        const handler = this.handleStateChange.bind(this)
+        state.observe(handler)
+        this.cleanupHandler = () => { state.unobserve(handler) }
+      }
+    }
+  }
+
+  handleStateChange(event: Y.YMapEvent<any>) {
+    if (!this.envelope) return
+    
+    if (event.keysChanged.has('attack')) {
+      const value = event.target.get('attack');
+      this.attackParam!.setValueAtTime(value, this.audioContext.currentTime)
+    }
+    if (event.keysChanged.has('release')) {
+      const value = event.target.get('release');
+      this.releaseParam!.setValueAtTime(value, this.audioContext.currentTime)
     }
   }
 
@@ -62,6 +88,7 @@ export class EnvelopeNode implements ModuleDSP {
   }
 
   destroy(): void {
+    this.cleanupHandler?.()
     this.envelope?.free()
   }
 }

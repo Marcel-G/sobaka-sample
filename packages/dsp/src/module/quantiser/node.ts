@@ -1,3 +1,5 @@
+import * as Y from 'yjs';
+import { getYjsValue } from "@syncedstore/core";
 import { QuantiserNode as _QuantiserNode } from '@sobaka/dsp/wasm'
 import { ModuleDSP, Route, RouteInfo } from '../../shared/types'
 import { PlugType } from '@sobaka/state'
@@ -19,6 +21,7 @@ export class QuantiserNode implements ModuleDSP {
   public name = "quantiser"
   private quantiser?: _QuantiserNode
   public state: QuantiserState
+  private cleanupHandler: (() => void) | null = null
 
   constructor(
     public readonly id: string,
@@ -31,7 +34,23 @@ export class QuantiserNode implements ModuleDSP {
     if (!skipInit) {
       this.quantiser = new _QuantiserNode(audioContext)
       // Set initial notes
-      this.updateNotes(this.state.notes)
+      this.quantiser.updateNotes(this.state.notes)
+
+      const state = getYjsValue(this.state);
+      if (state instanceof Y.Map) {
+        const handler = this.handleStateChange.bind(this)
+        state.observe(handler)
+        this.cleanupHandler = () => { state.unobserve(handler) }
+      }
+    }
+  }
+
+  handleStateChange(event: Y.YMapEvent<any>) {
+    if (!this.quantiser) return
+    
+    if (event.keysChanged.has('notes')) {
+      const notes = event.target.get('notes');
+      this.quantiser.updateNotes(notes)
     }
   }
 
@@ -57,14 +76,8 @@ export class QuantiserNode implements ModuleDSP {
     }
   }
 
-  updateNotes(notes: boolean[]) {
-    if (this.quantiser) {
-      this.quantiser.updateNotes(notes)
-    }
-    this.state.notes = [...notes]
-  }
-
   destroy(): void {
+    this.cleanupHandler?.()
     this.quantiser?.free()
   }
 }

@@ -81,6 +81,7 @@ export class DelayNode implements ModuleDSP {
   }
 
   destroy(): void {
+    this.cleanupHandler?.()
     this.delay?.free()
   }
 }

@@ -1,3 +1,5 @@
+import * as Y from 'yjs';
+import { getYjsValue } from "@syncedstore/core";
 import { ClockDividerNode as _ClockDividerNode } from '@sobaka/dsp/wasm'
 import { ModuleDSP, Route, RouteInfo } from '../../shared/types'
 import { PlugType } from '@sobaka/state'
@@ -18,10 +20,11 @@ export class ClockNode implements ModuleDSP {
   private clock?: _ClockDividerNode
   private bpmParam?: AudioParam
   public state: ClockState
+  private cleanupHandler: (() => void) | null = null
 
   constructor(
     public readonly id: string,
-    audioContext: AudioContext,
+    private audioContext: AudioContext,
     initialState: ClockState = INITIAL_STATE,
     skipInit: boolean = false
   ) {
@@ -30,6 +33,23 @@ export class ClockNode implements ModuleDSP {
     if (!skipInit) {
       this.clock = new _ClockDividerNode(audioContext)
       this.bpmParam = this.clock.node.parameters.get('bpm')!
+      this.bpmParam!.setValueAtTime(this.state.bpm, this.audioContext.currentTime)
+
+      const state = getYjsValue(this.state);
+      if (state instanceof Y.Map) {
+        const handler = this.handleStateChange.bind(this)
+        state.observe(handler)
+        this.cleanupHandler = () => { state.unobserve(handler) }
+      }
+    }
+  }
+
+  handleStateChange(event: Y.YMapEvent<any>) {
+    if (!this.clock) return
+    
+    if (event.keysChanged.has('bpm')) {
+      const value = event.target.get('bpm');
+      this.bpmParam!.setValueAtTime(value, this.audioContext.currentTime)
     }
   }
 
@@ -68,6 +88,7 @@ export class ClockNode implements ModuleDSP {
   }
 
   destroy(): void {
+    this.cleanupHandler?.()
     this.clock?.free()
   }
 }
