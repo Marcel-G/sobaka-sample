@@ -9,6 +9,7 @@ import Quantiser from './Quantiser.svelte'
 import SampleAndHold from './SampleAndHold.svelte'
 import Parameter from './Parameter.svelte'
 import Vca from './Vca.svelte'
+import Scope from './Scope/Scope.svelte'
 import { type Module } from '@sobaka/state/models/workspace'
 
 export const MODULES = {
@@ -22,6 +23,7 @@ export const MODULES = {
   Quantiser,
   Reverb,
   SampleAndHold,
+  Scope,
   Vca,
 } as const
 

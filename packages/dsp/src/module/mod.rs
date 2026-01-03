@@ -8,6 +8,7 @@ pub mod oscillator;
 pub mod quantiser;
 pub mod reverb;
 pub mod sample_and_hold;
+pub mod scope;
 
 // Re-export processor types for convenience
 pub use clock::processor::*;
@@ -19,3 +20,4 @@ pub use oscillator::processor::*;
 pub use quantiser::processor::*;
 pub use reverb::processor::*;
 pub use sample_and_hold::processor::*;
+pub use scope::processor::*;
