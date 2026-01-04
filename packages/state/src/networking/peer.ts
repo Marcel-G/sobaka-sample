@@ -1,4 +1,4 @@
-import SimplePeer from 'simple-peer'
+import SimplePeer from 'simple-peer-vendor'
 import { decodePacket, encodePacket, type DecodedPacket } from './encoder.ts'
 
 // Configuration constants for packet chunking and transmission

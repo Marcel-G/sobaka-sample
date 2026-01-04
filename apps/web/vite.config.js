@@ -35,11 +35,7 @@ const config = {
         __dirname,
         '../../packages/state/src/networking/peer.ts'
       ),
-      // Provide a way for our extended peer to import the real SimplePeer
-      'simple-peer$': path.resolve(
-        __dirname,
-        '../../node_modules/simple-peer/simplepeer.min.js'
-      )
+      'simple-peer-vendor': 'simple-peer/simplepeer.min.js'
     },
     extensions: ['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json', '.svelte']
   },
