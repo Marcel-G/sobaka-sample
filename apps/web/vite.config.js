@@ -41,6 +41,7 @@ const config = {
   },
   plugins: [crossOriginIsolation, tailwindcss(), sveltekit()],
   server: {
+    host: "127.0.0.1",
     fs: {
       // Allow serving files from workspace packages
       allow: ['../../packages/dsp', '../../packages/ui', '../../packages/state']
