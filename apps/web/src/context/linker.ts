@@ -288,7 +288,7 @@ export const linker = (
   plugPositions: Map<string, PlugPosition>,
   modulePositions: Map<string, ModulePosition>
 ) => {
-  const obstacles = Array.from(modulePositions.values().map(module => module.position))
+  const obstacles = Array.from(modulePositions.values()).map(module => module.position)
 
   const requests: PathRequest[] = links.flatMap(link => {
     const end = plugPositions.get(linkPointToKey(link.from))?.position
