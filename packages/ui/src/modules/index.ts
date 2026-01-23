@@ -1,55 +1,25 @@
 /**
  * UI Modules Package
  * 
- * Exports component definitions and registry.
- * App is responsible for creating registry and registering components.
+ * Exports Svelte components for each module type.
+ * App pairs these with DSP nodes via PluginRegistry.
  */
 
 // Types
 export type { ModuleComponent, BaseModuleProps } from '../types/props'
 
-// Registry system (deprecated - use PluginRegistry from @sobaka/dsp instead)
-export { UIModuleRegistry, type UIModuleDefinition } from './registry'
-
-// Component definitions (app registers these)
-export * from './definitions'
-
-// Legacy exports (deprecated - use registry instead)
-import { type Module } from '@sobaka/state/models/workspace'
-import {
-  Clock,
-  Oscillator,
-  Noise,
-  Filter,
-  Envelope,
-  Delay,
-  Reverb,
-  Quantiser,
-  Parameter,
-  Vca,
-  Scope,
-  Lfo,
-  Euclidean,
-} from './definitions'
-
-/** @deprecated Use UIModuleRegistry instead */
-export const MODULES = {
-  Clock,
-  Delay,
-  Envelope,
-  Euclidean,
-  Filter,
-  Lfo,
-  Noise,
-  Oscillator,
-  Parameter,
-  Quantiser,
-  Reverb,
-  Scope,
-  Vca,
-} as const
-
-/** @deprecated Use UIModuleRegistry.get() instead */
-export const getComponent = (module: Module) => {
-  return MODULES[module.type as keyof typeof MODULES]
-}
+// Module components - import these to register with PluginRegistry
+export { default as Clock } from './Clock.svelte'
+export { default as Oscillator } from './Oscillator/Oscillator.svelte'
+export { default as Noise } from './Noise.svelte'
+export { default as Filter } from './Filter.svelte'
+export { default as Envelope } from './Envelope/Envelope.svelte'
+export { default as Delay } from './Delay.svelte'
+export { default as Reverb } from './Reverb.svelte'
+export { default as Quantiser } from './Quantiser.svelte'
+export { default as Parameter } from './Parameter.svelte'
+export { default as Vca } from './Vca.svelte'
+export { default as Scope } from './Scope/Scope.svelte'
+export { default as Lfo } from './Lfo/Lfo.svelte'
+export { default as Euclidean } from './Euclidean/Euclidean.svelte'
+export { default as Mixer } from './Mixer.svelte'

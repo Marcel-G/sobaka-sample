@@ -39,7 +39,7 @@ export type ModuleComponent<TNode extends ModuleDSP> = Component<
  */
 export interface ModulePlugin<
   TType extends string = string,
-  TState extends Record<string, unknown> = Record<string, unknown>,
+  TState = Record<string, unknown>,
   TNode extends ModuleDSP = ModuleDSP
 > {
   /** Literal type identifier e.g. 'Oscillator' */
@@ -67,7 +67,7 @@ export interface ModulePlugin<
  */
 export function definePlugin<
   TType extends string,
-  TState extends Record<string, unknown>,
+  TState,
   TNode extends ModuleDSP
 >(plugin: ModulePlugin<TType, TState, TNode>): ModulePlugin<TType, TState, TNode> {
   return plugin
@@ -83,7 +83,7 @@ export class PluginRegistry {
   /**
    * Register a module plugin
    */
-  register<T extends string, S extends Record<string, unknown>, N extends ModuleDSP>(
+  register<T extends string, S, N extends ModuleDSP>(
     plugin: ModulePlugin<T, S, N>
   ): this {
     if (this.plugins.has(plugin.type)) {
@@ -97,7 +97,7 @@ export class PluginRegistry {
   /**
    * Register multiple plugins at once
    */
-  registerAll(plugins: ModulePlugin[]): this {
+  registerAll(plugins: readonly ModulePlugin<any, any, any>[]): this {
     for (const plugin of plugins) {
       this.register(plugin)
     }
