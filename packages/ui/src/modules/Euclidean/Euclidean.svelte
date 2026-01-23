@@ -98,7 +98,7 @@
           steps={$nodeState.steps}
           {pattern}
           {currentStep}
-          size={100}
+          size={80}
         />
       </div>
       <div class="knobs">
