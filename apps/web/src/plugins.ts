@@ -1,13 +1,6 @@
-/**
- * Module Plugin Registry
- * 
- * This file pairs DSP module definitions with their Svelte UI components.
- * The app controls which modules are available by registering them here.
- */
+import type { ModuleDSP, ModuleFactory } from '@sobaka/dsp'
+import type { ModuleComponent } from '@sobaka/ui/types'
 
-import { PluginRegistry, definePlugin } from '@sobaka/dsp'
-
-// Import DSP node classes with their state types
 import {
   ClockNode,
   OscillatorNode,
@@ -22,22 +15,8 @@ import {
   ScopeNode,
   LfoNode,
   EuclideanNode,
-  type ClockState,
-  type OscillatorState,
-  type NoiseState,
-  type FilterState,
-  type EnvelopeState,
-  type DelayState,
-  type ReverbState,
-  type QuantiserState,
-  type ParameterState,
-  type VcaState,
-  type ScopeState,
-  type LfoState,
-  type EuclideanState,
 } from '@sobaka/dsp'
 
-// Import UI components
 import {
   Clock,
   Oscillator,
@@ -53,6 +32,136 @@ import {
   Lfo,
   Euclidean,
 } from '@sobaka/ui/modules'
+
+// ============================================================================
+// Plugin Types
+// ============================================================================
+
+export type ModuleCategory = 'sources' | 'modifiers' | 'effects' | 'logic' | 'utilities'
+
+export interface ModulePlugin<
+  TType extends string = string,
+  TState = Record<string, unknown>,
+  TNode extends ModuleDSP = ModuleDSP
+> {
+  /** Literal type identifier e.g. 'Oscillator' */
+  readonly type: TType
+  
+  /** Display name for UI */
+  readonly name: string
+  
+  /** Category for module palette grouping */
+  readonly category: ModuleCategory
+  
+  /** Initial state for new instances */
+  readonly initialState: TState
+  
+  /** Factory to create DSP node */
+  readonly createNode: (id: string, ctx: AudioContext, state: TState) => TNode
+  
+  /** Svelte component that renders this module */
+  readonly component: ModuleComponent<TNode>
+}
+
+export function definePlugin<
+  TType extends string,
+  TState,
+  TNode extends ModuleDSP
+>(plugin: ModulePlugin<TType, TState, TNode>): ModulePlugin<TType, TState, TNode> {
+  return plugin
+}
+
+// ============================================================================
+// Plugin Registry
+// ============================================================================
+
+export class PluginRegistry implements ModuleFactory {
+  private plugins = new Map<string, ModulePlugin>()
+
+  /**
+   * Register a module plugin
+   */
+  register<T extends string, S, N extends ModuleDSP>(
+    plugin: ModulePlugin<T, S, N>
+  ): this {
+    if (this.plugins.has(plugin.type)) {
+      console.warn(`Plugin "${plugin.type}" already registered, overwriting`)
+    }
+    this.plugins.set(plugin.type, plugin as unknown as ModulePlugin)
+    return this
+  }
+
+  /**
+   * Register multiple plugins at once
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  registerAll(plugins: readonly ModulePlugin<string, any, any>[]): this {
+    for (const plugin of plugins) {
+      this.register(plugin)
+    }
+    return this
+  }
+
+  /**
+   * Get a plugin by type
+   */
+  get(type: string): ModulePlugin | undefined {
+    return this.plugins.get(type)
+  }
+
+  /**
+   * Check if a plugin is registered
+   */
+  has(type: string): boolean {
+    return this.plugins.has(type)
+  }
+
+  /**
+   * Create a DSP node for a module type (implements ModuleFactory)
+   */
+  createNode(type: string, id: string, ctx: AudioContext, state: Record<string, unknown>): ModuleDSP {
+    const plugin = this.plugins.get(type)
+    if (!plugin) {
+      throw new Error(`Unknown module type: ${type}. Did you forget to register the plugin?`)
+    }
+    return plugin.createNode(id, ctx, state)
+  }
+
+  /**
+   * Get the Svelte component for a module type
+   */
+  getComponent(type: string): ModuleComponent<ModuleDSP> | undefined {
+    return this.plugins.get(type)?.component
+  }
+
+  /**
+   * Get initial state for a module type (implements ModuleFactory)
+   */
+  getInitialState(type: string): Record<string, unknown> | null {
+    return this.plugins.get(type)?.initialState ?? null
+  }
+
+  /**
+   * Get all registered plugins
+   */
+  getAll(): ModulePlugin[] {
+    return Array.from(this.plugins.values())
+  }
+
+  /**
+   * Get all registered type identifiers
+   */
+  getTypes(): string[] {
+    return Array.from(this.plugins.keys())
+  }
+
+  /**
+   * Get plugins filtered by category
+   */
+  getByCategory(category: ModuleCategory): ModulePlugin[] {
+    return this.getAll().filter(p => p.category === category)
+  }
+}
 
 // ============================================================================
 // Plugin Definitions
@@ -180,37 +289,24 @@ export const ScopePlugin = definePlugin({
   component: Scope,
 })
 
-// ============================================================================
-// All Plugins
-// ============================================================================
-
 export const allPlugins = [
-  // Sources
   ClockPlugin,
   OscillatorPlugin,
   NoisePlugin,
   LfoPlugin,
-  // Modifiers
   FilterPlugin,
   VcaPlugin,
   EnvelopePlugin,
   QuantiserPlugin,
-  // Effects
   DelayPlugin,
   ReverbPlugin,
-  // Logic
   EuclideanPlugin,
-  // Utilities
   ParameterPlugin,
   ScopePlugin,
-] as const
-
-// ============================================================================
-// Registry Instance
-// ============================================================================
+]
 
 /**
  * The global plugin registry for this application.
  * All module plugins are registered here.
  */
-export const pluginRegistry = new PluginRegistry().registerAll([...allPlugins])
+export const pluginRegistry = new PluginRegistry().registerAll(allPlugins)

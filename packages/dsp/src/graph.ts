@@ -1,11 +1,12 @@
 import { ModuleDSP } from "./shared/types"
 import { Link, Module, PlugType } from "@sobaka/state";
 import { MixerDSP } from "./module/mixer/node";
-import { PluginRegistry } from "./plugin";
 
-/**
- * Audio graph reconciler - maintains the Web Audio graph based on state
- */
+export interface ModuleFactory {
+  createNode(type: string, id: string, ctx: AudioContext, state: Record<string, unknown>): ModuleDSP
+  getInitialState(type: string): Record<string, unknown> | null
+}
+
 export class AudioGraph {
   private dspModules: Map<string, ModuleDSP> = new Map()
   private staticModules: Map<string, ModuleDSP> = new Map()
@@ -13,7 +14,7 @@ export class AudioGraph {
 
   constructor(
     private audioContext: AudioContext,
-    private registry: PluginRegistry
+    private registry: ModuleFactory
   ) {
     // Initialize static modules (always present, not in workspace state)
     this.initializeStaticModules()
@@ -231,6 +232,6 @@ export class AudioGraph {
 /**
  * Create an AudioGraph instance
  */
-export const createAudioGraph = (audioContext: AudioContext, registry: PluginRegistry) => {
+export const createAudioGraph = (audioContext: AudioContext, registry: ModuleFactory) => {
   return new AudioGraph(audioContext, registry)
 }
