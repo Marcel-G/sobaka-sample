@@ -86,7 +86,7 @@
   {onClone}
   {onDrag}
   {bindElement}
-  height={10}
+  height={12}
   width={8}
   --color-module-accent="var(--color-pink)"
   --color-module-background="var(--color-pink-dark)"
@@ -152,24 +152,19 @@
     flex-direction: column;
     align-items: center;
     height: 100%;
-    overflow: hidden;
   }
 
   .circle-container {
-    flex: 1;
+    flex: 1 1 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: 0;
   }
 
   .knobs {
     display: flex;
-    gap: 0.25rem;
-    transform: scale(0.65);
-    transform-origin: center center;
+    gap: 0.125rem;
     flex-shrink: 0;
-    height: 2.5rem;
-    margin-bottom: -0.5rem;
+    padding-top: 0.25rem;
   }
 </style>
