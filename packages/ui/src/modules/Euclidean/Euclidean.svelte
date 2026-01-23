@@ -86,7 +86,7 @@
   {onClone}
   {onDrag}
   {bindElement}
-  height={12}
+  height={10}
   width={8}
   --color-module-accent="var(--color-pink)"
   --color-module-background="var(--color-pink-dark)"
@@ -101,25 +101,27 @@
           size={100}
         />
       </div>
-      <div class="knobs">
-        <Knob
-          {disabled}
-          bind:value={$nodeState.steps}
-          range={stepsRange}
-          label="len"
-        />
-        <Knob
-          {disabled}
-          bind:value={$nodeState.fills}
-          range={fillsRange}
-          label="fill"
-        />
-        <Knob
-          {disabled}
-          bind:value={$nodeState.rotation}
-          range={rotationRange}
-          label="rot"
-        />
+      <div class="knobs-wrapper">
+        <div class="knobs">
+          <Knob
+            {disabled}
+            bind:value={$nodeState.steps}
+            range={stepsRange}
+            label="len"
+          />
+          <Knob
+            {disabled}
+            bind:value={$nodeState.fills}
+            range={fillsRange}
+            label="fill"
+          />
+          <Knob
+            {disabled}
+            bind:value={$nodeState.rotation}
+            range={rotationRange}
+            label="rot"
+          />
+        </div>
       </div>
     </div>
   {/snippet}
@@ -156,15 +158,25 @@
 
   .circle-container {
     flex: 1 1 0;
+    min-height: 0;
     display: flex;
     align-items: center;
     justify-content: center;
   }
 
+  .knobs-wrapper {
+    flex-shrink: 0;
+    height: 2.75rem;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    overflow: hidden;
+  }
+
   .knobs {
     display: flex;
-    gap: 0.125rem;
-    flex-shrink: 0;
-    padding-top: 0.25rem;
+    gap: 0;
+    transform: scale(0.6);
+    transform-origin: top center;
   }
 </style>
