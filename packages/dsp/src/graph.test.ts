@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { AudioGraph } from './graph'
-import { ModuleDSP, ModuleRouting } from './shared/types'
-import type { Module, Link } from '@sobaka/state'
+import { ModuleDSP, Route, RouteInfo } from './shared/types'
+import { PlugType, type Module, type Link } from '@sobaka/state'
 
 // Mock AudioContext for testing
 class MockAudioContext {
@@ -27,12 +27,14 @@ class MockOscillatorDSP implements ModuleDSP {
     } as any
   }
 
-  getRoute(): ModuleRouting {
+  getRoutingDefinition(): Record<string, RouteInfo> {
     return {
-      outputs: [
-        { index: 0, label: 'Out', node: this.node, connectIndex: 0 }
-      ]
+      output: { name: 'output', type: PlugType.Output, label: 'Out' }
     }
+  }
+
+  getRoute(routeName: string): Route {
+    return { node: this.node, connectIndex: 0 }
   }
 
   destroy(): void {
@@ -58,17 +60,24 @@ class MockFilterDSP implements ModuleDSP {
     } as any
   }
 
-  getRoute(): ModuleRouting {
+  getRoutingDefinition(): Record<string, RouteInfo> {
     return {
-      inputs: [
-        { index: 0, label: 'Signal', node: this.node, connectIndex: 0 }
-      ],
-      params: [
-        { index: 1, label: 'Cutoff', param: this.param }
-      ],
-      outputs: [
-        { index: 0, label: 'Out', node: this.node, connectIndex: 0 }
-      ]
+      input: { name: 'input', type: PlugType.Input, label: 'Signal' },
+      cutoff: { name: 'cutoff', type: PlugType.Param, label: 'Cutoff' },
+      output: { name: 'output', type: PlugType.Output, label: 'Out' }
+    }
+  }
+
+  getRoute(routeName: string): Route {
+    switch (routeName) {
+      case 'input':
+        return { node: this.node, connectIndex: 0 }
+      case 'cutoff':
+        return { node: this.param }
+      case 'output':
+        return { node: this.node, connectIndex: 0 }
+      default:
+        throw new Error(`Unknown route: ${routeName}`)
     }
   }
 
@@ -110,16 +119,8 @@ describe('AudioGraph', () => {
     expect(() => graph.destroy()).not.toThrow()
   })
 
-  it('should get all plug contexts', () => {
-    const contexts = graph.getAllPlugContexts()
-    expect(contexts).toBeDefined()
-    expect(typeof contexts).toBe('object')
-  })
-})
-
-describe('routingToPlugContexts', () => {
-  it('should convert routing to plug contexts', () => {
-    // This is tested implicitly through the graph reconciliation
-    // We'll add more specific tests here once the implementation is complete
+  it('should get plug type for a static module', () => {
+    const plugType = graph.getPlugType('global-mixer', 'input')
+    expect(plugType).toBeDefined()
   })
 })

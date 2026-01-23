@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "moduleResolution": "bundler",
     "allowJs": true,
@@ -13,14 +13,16 @@
     "sourceMap": true,
     "strict": true,
     "isolatedModules": true,
-    "verbatimModuleSyntax": true,
+    "verbatimModuleSyntax": false,
     "allowImportingTsExtensions": true,
     "noEmit": true,
     "paths": {
       "@sobaka/state": ["../state/src"],
-      "@sobaka/state/*": ["../state/src/*"]
-    }
+      "@sobaka/state/*": ["../state/src/*"],
+      "simple-peer-vendor": ["../state/src/@types/simple-peer-vendor.d.ts"]
+    },
+    "typeRoots": ["./node_modules/@types", "../state/src/@types"]
   },
   "include": ["src/**/*.ts", "src/**/*.svelte"],
-  "exclude": ["node_modules", "dist", ".svelte-kit"]
+  "exclude": ["node_modules", "dist", ".svelte-kit", "src/**/*.stories.ts"]
 }

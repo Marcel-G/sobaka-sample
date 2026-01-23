@@ -30,7 +30,7 @@
   function onToggle(index: number) {
     const newNotes = [...$state.notes]
     newNotes[index] = !newNotes[index]
-    node.updateNotes(newNotes)
+    $state.notes = newNotes
   }
 </script>
 

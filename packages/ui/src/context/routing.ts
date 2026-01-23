@@ -1,8 +1,11 @@
 import { getContext, setContext } from 'svelte'
-import type { ModuleRouting } from '@sobaka/dsp/shared/types'
+import type { RouteInfo } from '@sobaka/dsp'
 import { writable, type Writable } from 'svelte/store'
 
 const ROUTING_KEY = Symbol('module-routing')
+
+/** Module routing definition - map of route names to route info */
+export type ModuleRouting = Record<string, RouteInfo>
 
 export interface RoutingContext {
   routing: Writable<ModuleRouting | null>

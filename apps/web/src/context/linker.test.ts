@@ -2,6 +2,10 @@ import { findPath, type PathRequest } from './linker'
 import { describe, it } from 'node:test'
 import { strict as assert } from 'assert'
 import type { Point, Rectangle } from './positions'
+import type { LinkPoint } from '@sobaka/state/models/links'
+
+// Helper to create mock LinkPoint
+const lp = (id: string): LinkPoint => ({ moduleId: id, routeName: 'out' })
 
 describe('findPath', () => {
   describe('simple cases', () => {
@@ -10,7 +14,7 @@ describe('findPath', () => {
       const end: Point = { x: 5, y: 0 }
       const obstacles: Rectangle[] = []
 
-      const [{ path }] = findPath([{ start, end, startId: 'A', endId: 'B' }], obstacles)
+      const [{ path }] = findPath([{ start, end, startId: lp('A'), endId: lp('B') }], obstacles)
       assert.deepEqual(path, [start, end])
     })
 
@@ -19,7 +23,7 @@ describe('findPath', () => {
       const end = { x: 148, y: 47 }
       const obstacles: Rectangle[] = []
 
-      const [{ path }] = findPath([{ start, end, startId: 'A', endId: 'B' }], obstacles)
+      const [{ path }] = findPath([{ start, end, startId: lp('A'), endId: lp('B') }], obstacles)
 
       assert.deepEqual(path, [start, { x: 148, y: 23 }, end])
     })
@@ -29,7 +33,7 @@ describe('findPath', () => {
       const end: Point = { x: 70, y: 0 }
       const obstacles: Rectangle[] = [{ x1: 20, y1: 0, x2: 50, y2: 10 }]
 
-      const [{ path }] = findPath([{ start, end, startId: 'A', endId: 'B' }], obstacles)
+      const [{ path }] = findPath([{ start, end, startId: lp('A'), endId: lp('B') }], obstacles)
       assert.deepEqual(path, [start, { x: 0, y: 15 }, { x: 70, y: 15 }, end])
     })
 
@@ -41,7 +45,7 @@ describe('findPath', () => {
         { x1: 60, y1: -1, x2: 80, y2: 10 }
       ]
 
-      const [{ path }] = findPath([{ start, end, startId: 'A', endId: 'B' }], obstacles)
+      const [{ path }] = findPath([{ start, end, startId: lp('A'), endId: lp('B') }], obstacles)
       JSON.stringify(path)
       assert.deepEqual(path, [
         start,
@@ -59,7 +63,7 @@ describe('findPath', () => {
       // Start and end points are inside an obstacle
       const obstacles: Rectangle[] = [{ x1: 0, y1: 0, x2: 30, y2: 30 }]
 
-      const [{ path }] = findPath([{ start, end, startId: 'A', endId: 'B' }], obstacles)
+      const [{ path }] = findPath([{ start, end, startId: lp('A'), endId: lp('B') }], obstacles)
       assert.deepEqual(path, [start, { x: 20, y: 10 }, end])
     })
 
@@ -67,14 +71,14 @@ describe('findPath', () => {
       const requestA: PathRequest = {
         start: { x: 0, y: 0 },
         end: { x: 50, y: 0 },
-        startId: 'A',
-        endId: 'B'
+        startId: lp('A'),
+        endId: lp('B')
       }
       const requestB: PathRequest = {
         start: { x: 20, y: 0 },
         end: { x: 100, y: 0 },
-        startId: 'C',
-        endId: 'D'
+        startId: lp('C'),
+        endId: lp('D')
       }
 
       const obstacles: Rectangle[] = [
@@ -103,7 +107,7 @@ describe('findPath', () => {
         { x1: 320, y1: 135, x2: 584, y2: 304 }
       ]
 
-      const [{ path }] = findPath([{ start, end, startId: 'A', endId: 'B' }], obstacles)
+      const [{ path }] = findPath([{ start, end, startId: lp('A'), endId: lp('B') }], obstacles)
       assert.deepEqual(path, [start, { x: 319, y: 199 }, end])
     })
 
@@ -112,14 +116,14 @@ describe('findPath', () => {
         {
           start: { x: 217, y: 199 },
           end: { x: 319, y: 167 },
-          startId: 'A',
-          endId: 'B'
+          startId: lp('A'),
+          endId: lp('B')
         },
         {
           start: { x: 217, y: 211 },
           end: { x: 319, y: 179 },
-          startId: 'C',
-          endId: 'D'
+          startId: lp('C'),
+          endId: lp('D')
         }
       ]
 
@@ -172,7 +176,7 @@ describe('findPath', () => {
         }
       ]
 
-      const [{ path }] = findPath([{ start, end, startId: 'A', endId: 'B' }], obstacles)
+      const [{ path }] = findPath([{ start, end, startId: lp('A'), endId: lp('B') }], obstacles)
 
       assert.deepEqual(path, [
         start,
@@ -198,7 +202,7 @@ describe('findPath', () => {
         { x1: 240, y1: 199, x2: 312, y2: 288 }
       ]
 
-      const [{ path }] = findPath([{ start, end, startId: 'A', endId: 'B' }], obstacles)
+      const [{ path }] = findPath([{ start, end, startId: lp('A'), endId: lp('B') }], obstacles)
       assert.deepEqual(path, [start, end])
     })
 
@@ -216,7 +220,7 @@ describe('findPath', () => {
         { x1: 432, y1: 247, x2: 504, y2: 336 }
       ]
 
-      const [{ path }] = findPath([{ start, end, startId: 'A', endId: 'B' }], obstacles)
+      const [{ path }] = findPath([{ start, end, startId: lp('A'), endId: lp('B') }], obstacles)
       assert.deepEqual(path, [start, { x: 430, y: 215 }, { x: 430, y: 279 }, end])
     })
   })
