@@ -101,27 +101,28 @@
           size={100}
         />
       </div>
-      <div class="knobs-wrapper">
-        <div class="knobs">
-          <Knob
-            {disabled}
-            bind:value={$nodeState.steps}
-            range={stepsRange}
-            label="len"
-          />
-          <Knob
-            {disabled}
-            bind:value={$nodeState.fills}
-            range={fillsRange}
-            label="fill"
-          />
-          <Knob
-            {disabled}
-            bind:value={$nodeState.rotation}
-            range={rotationRange}
-            label="rot"
-          />
-        </div>
+      <div class="knobs">
+        <Knob
+          {disabled}
+          bind:value={$nodeState.steps}
+          range={stepsRange}
+          label="len"
+          size="small"
+        />
+        <Knob
+          {disabled}
+          bind:value={$nodeState.fills}
+          range={fillsRange}
+          label="fill"
+          size="small"
+        />
+        <Knob
+          {disabled}
+          bind:value={$nodeState.rotation}
+          range={rotationRange}
+          label="rot"
+          size="small"
+        />
       </div>
     </div>
   {/snippet}
@@ -164,19 +165,8 @@
     justify-content: center;
   }
 
-  .knobs-wrapper {
-    flex-shrink: 0;
-    height: 2.75rem;
-    display: flex;
-    align-items: flex-start;
-    justify-content: center;
-    overflow: hidden;
-  }
-
   .knobs {
     display: flex;
-    gap: 0;
-    transform: scale(0.6);
-    transform-origin: top center;
+    flex-shrink: 0;
   }
 </style>

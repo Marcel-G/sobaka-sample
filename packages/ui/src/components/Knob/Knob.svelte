@@ -1,5 +1,8 @@
 <script context="module" lang="ts">
   import { type Range } from '../../range/range'
+  import { type KnobSize } from './Dial.svelte'
+
+  export type { KnobSize }
 </script>
 
 <script lang="ts">
@@ -13,6 +16,7 @@
   export let range: Range
   export let label: string
   export let disabled = false
+  export let size: KnobSize = 'normal'
 
   let focusInput: () => void
 
@@ -38,16 +42,16 @@
     focusInput()
   }
 
-  const classes = {
+  $: classes = {
     group: 'flex flex-col items-center pointer-events-auto cursor-pointer',
-    input: 'text-xs font-mono -mt-2',
-    divider: 'border-l border-zinc-200 dark:border-zinc-900 h-2 m-1'
+    input: size === 'small' ? 'text-2xs font-mono -mt-1' : 'text-xs font-mono -mt-2',
+    divider: size === 'small' ? 'border-l border-zinc-200 dark:border-zinc-900 h-1 m-0.5' : 'border-l border-zinc-200 dark:border-zinc-900 h-2 m-1'
   }
 </script>
 
 {#if disabled}
   <div class={classes.group}>
-    <Dial {value} {range} {label} />
+    <Dial {value} {range} {label} {size} />
     <div class={classes.input}>
       <Input disabled bind:value {range} />
     </div>
@@ -66,7 +70,7 @@
     use:useDrag={{ onDrag: handleDrag, onDragStart: captureStartValue }}
     use:useWheel={{ onWheel: handleWheel, onWheelStart: captureStartValue }}
   >
-    <Dial {value} {range} {label} />
+    <Dial {value} {range} {label} {size} />
     <div class={classes.input}>
       <Input bind:value bind:focus={focusInput} {range} />
     </div>

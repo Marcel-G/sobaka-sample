@@ -1,5 +1,7 @@
 <script context="module" lang="ts">
   import { type Range, RangeType } from '../../range/range'
+
+  export type KnobSize = 'small' | 'normal'
 </script>
 
 <script lang="ts">
@@ -10,15 +12,17 @@
   export let value = 0.0
   export let range: Range
   export let label: string
+  export let size: KnobSize = 'normal'
 
   const baseAngle = 135
 
   $: normalisedValue = toNormalised(range, value)
+  $: sizeClass = size === 'small' ? 'h-8' : 'h-12'
 </script>
 
 <div class="row-start-1 col-start-2">
   <Tooltip {label}>
-    <svg viewBox="0 0 100 100" class="h-12">
+    <svg viewBox="0 0 100 100" class={sizeClass}>
       <Arc
         x={50}
         y={50}
