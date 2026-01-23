@@ -1,6 +1,6 @@
 module "storage" {
   source  = "terraform-aws-modules/s3-bucket/aws"
-  version = "~> 3.0"
+  version = "~> 4.0"
 
   bucket        = "${var.name}-storage"
   force_destroy = true
