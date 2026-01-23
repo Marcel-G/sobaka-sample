@@ -1,24 +1,21 @@
-import { LfoNode as _LfoNode, LfoShape } from '@sobaka/dsp/wasm'
+import { LfoNode as _LfoNode } from '@sobaka/dsp/wasm'
 import * as Y from 'yjs';
 import { getYjsValue } from "@syncedstore/core";
 import { ModuleDSP, Route, RouteInfo } from '../../shared/types'
 import { PlugType } from '@sobaka/state'
 
-export { LfoShape } from '@sobaka/dsp/wasm'
-
 export interface LfoState {
   rate: number
-  shape: LfoShape
 }
 
 const INITIAL_STATE: LfoState = {
-  rate: 1.0,
-  shape: LfoShape.Sine
+  rate: 1.0
 }
 
 /**
  * DSP implementation for LFO (Low Frequency Oscillator) module
- * Outputs a slow oscillating signal for modulation purposes
+ * Outputs a sine wave for modulation purposes
+ * Supports reset input to sync phase to external clock/gate
  */
 export class LfoNode implements ModuleDSP {
   static initialState = INITIAL_STATE
@@ -37,7 +34,7 @@ export class LfoNode implements ModuleDSP {
     this.state = initialState
 
     if (!skipInit) {
-      this.lfo = new _LfoNode(audioContext, this.state.shape)
+      this.lfo = new _LfoNode(audioContext)
       this.rateParam = this.lfo.node.parameters.get('rate')!
       this.rateParam.setValueAtTime(this.state.rate, audioContext.currentTime)
 
@@ -53,10 +50,6 @@ export class LfoNode implements ModuleDSP {
   handleStateChange(event: Y.YMapEvent<any>) {
     if (!this.lfo) return
 
-    if (event.keysChanged.has('shape')) {
-      const shape = event.target.get('shape');
-      this.lfo.setShape(shape)
-    }
     if (event.keysChanged.has('rate')) {
       const value = event.target.get('rate');
       this.rateParam!.setValueAtTime(value, this.audioContext.currentTime)
@@ -66,6 +59,7 @@ export class LfoNode implements ModuleDSP {
   getRoutingDefinition() {
     return {
       rate: { name: "rate", type: PlugType.Param, label: 'Rate CV' },
+      reset: { name: "reset", type: PlugType.Input, label: 'Reset' },
       output: { name: "output", type: PlugType.Output, label: 'Out' },
     } satisfies Record<string, RouteInfo>
   }
@@ -78,6 +72,8 @@ export class LfoNode implements ModuleDSP {
     switch (routeName) {
       case "rate":
         return { node: this.rateParam! }
+      case "reset":
+        return { node: this.lfo.node, connectIndex: 0 }
       case "output":
         return { node: this.lfo.node, connectIndex: 0 }
       default:

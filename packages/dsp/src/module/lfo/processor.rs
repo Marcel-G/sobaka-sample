@@ -1,112 +1,119 @@
-use fundsp::{
-    hacker::*,
-    thingbuf::mpsc::{channel, Receiver, Sender},
-};
+use fundsp::prelude::*;
+use std::f32::consts::TAU;
 use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
 use waw::{register, AutomationRate, ParameterDescriptor, ParameterValuesRef, Processor};
 
 use crate::debug;
 
 const ZERO_BUFFER: [f32; 128] = [0.0; 128];
+const RESET_THRESHOLD: f32 = 0.5;
 
-#[wasm_bindgen]
-#[derive(Clone, PartialEq)]
-pub enum LfoShape {
-    Sine,
-    Triangle,
-    Square,
-    Saw,
-    ReverseSaw,
+/// Resettable sine LFO oscillator.
+/// Resets phase to zero on rising edge of reset input.
+#[derive(Clone)]
+pub struct ResettableSineLfo {
+    phase: f32,
+    sample_rate: f32,
+    prev_reset: f32,
 }
 
-pub struct LfoData {
-    shape: LfoShape,
-    receiver: Receiver<Message>,
-}
-
-#[derive(Default, Clone)]
-enum Message {
-    #[default]
-    None,
-    SetShape(LfoShape),
-}
-
-pub struct LfoProcessor {
-    current_shape: LfoShape,
-    net: Net,
-    lfo_id: NodeId,
-    inner: BigBlockAdapter,
-    receiver: Receiver<Message>,
-}
-
-impl LfoProcessor {
-    fn handle_messages(&mut self) {
-        while let Ok(message) = self.receiver.try_recv() {
-            match message {
-                Message::SetShape(shape) => {
-                    if self.current_shape != shape {
-                        self.current_shape = shape.clone();
-                        self.net.crossfade(
-                            self.lfo_id,
-                            Fade::Smooth,
-                            0.01, // 10ms crossfade
-                            create_lfo_oscillator(&shape),
-                        );
-                        self.net.commit();
-                    }
-                }
-                Message::None => {}
-            }
+impl ResettableSineLfo {
+    pub fn new() -> Self {
+        Self {
+            phase: 0.0,
+            sample_rate: 44100.0,
+            prev_reset: 0.0,
         }
     }
 }
 
-/// Create an LFO oscillator unit for the given shape.
-/// LFO oscillators output in the range [-1, 1].
-fn create_lfo_oscillator(shape: &LfoShape) -> Box<dyn AudioUnit> {
-    match shape {
-        LfoShape::Sine => Box::new(sine()),
-        LfoShape::Triangle => Box::new(triangle()),
-        LfoShape::Square => Box::new(square()),
-        LfoShape::Saw => Box::new(saw()),
-        LfoShape::ReverseSaw => Box::new(saw() * dc(-1.0)),
+impl AudioNode for ResettableSineLfo {
+    const ID: u64 = 1001;
+    type Inputs = U2;  // Input 0: frequency (Hz), Input 1: reset trigger
+    type Outputs = U1; // Output 0: sine wave [-1, 1]
+
+    fn reset(&mut self) {
+        self.phase = 0.0;
+        self.prev_reset = 0.0;
+    }
+
+    fn set_sample_rate(&mut self, sample_rate: f64) {
+        self.sample_rate = sample_rate as f32;
+    }
+
+    #[inline]
+    fn tick(&mut self, input: &Frame<f32, Self::Inputs>) -> Frame<f32, Self::Outputs> {
+        let freq = input[0];
+        let reset = input[1];
+
+        // Detect rising edge on reset input
+        if reset > RESET_THRESHOLD && self.prev_reset <= RESET_THRESHOLD {
+            self.phase = 0.0;
+        }
+        self.prev_reset = reset;
+
+        // Generate sine wave
+        let output = (self.phase * TAU).sin();
+
+        // Advance phase
+        self.phase += freq / self.sample_rate;
+        // Wrap phase to [0, 1) to prevent floating point issues
+        self.phase = self.phase.fract();
+        if self.phase < 0.0 {
+            self.phase += 1.0;
+        }
+
+        [output].into()
+    }
+
+    fn route(&mut self, input: &SignalFrame, _frequency: f64) -> SignalFrame {
+        // Output depends on input
+        Routing::Generator(0.0).route(input, self.outputs())
     }
 }
 
+pub struct LfoProcessor {
+    lfo: ResettableSineLfo,
+    sample_rate: f32,
+}
+
 impl Processor for LfoProcessor {
-    type Data = LfoData;
+    type Data = ();
 
-    fn new(data: Self::Data) -> Self {
-        let (mut net, lfo_id) = Net::wrap_id(create_lfo_oscillator(&data.shape));
-
-        // LFO output is already in [-1, 1] range, suitable for modulation
-        net = net >> shape(Tanh(0.9));
-
-        let inner = BigBlockAdapter::new(Box::new(net.backend()));
-
+    fn new(_data: Self::Data) -> Self {
         Self {
-            current_shape: data.shape,
-            net,
-            lfo_id,
-            inner,
-            receiver: data.receiver,
+            lfo: ResettableSineLfo::new(),
+            sample_rate: 44100.0,
         }
     }
 
     fn process(
         &mut self,
-        _inputs: &[&[f32]],
+        inputs: &[&[f32]],
         outputs: &mut [&mut [f32]],
         sample_rate: f32,
         params: &ParameterValuesRef,
     ) {
-        self.handle_messages();
-        self.inner.set_sample_rate(sample_rate.into());
+        if self.sample_rate != sample_rate {
+            self.sample_rate = sample_rate;
+            self.lfo.set_sample_rate(sample_rate as f64);
+        }
 
         // Rate is in Hz (0.01 to 30 Hz for LFO range)
         let rate = params.get("rate").unwrap_or(&ZERO_BUFFER);
+        
+        // Reset input from audio input 0
+        let reset_input = inputs.get(0).unwrap_or(&ZERO_BUFFER.as_slice());
 
-        self.inner.process_big(128, &[rate], outputs);
+        let output = outputs.get_mut(0);
+        if let Some(out) = output {
+            for i in 0..128 {
+                let freq = rate.get(i).copied().unwrap_or(1.0);
+                let reset = reset_input.get(i).copied().unwrap_or(0.0);
+                let frame = self.lfo.tick(&[freq, reset].into());
+                out[i] = frame[0];
+            }
+        }
 
         debug::log_buffer_stats("LFO", outputs);
     }
@@ -125,27 +132,19 @@ impl Processor for LfoProcessor {
 #[wasm_bindgen]
 pub struct LfoNode {
     wrapper: waw::AudioWorkletNodeWrapper,
-    sender: Sender<Message>,
 }
 
 #[wasm_bindgen]
 impl LfoNode {
     #[wasm_bindgen(constructor)]
-    pub fn new(ctx: &web_sys::AudioContext, shape: LfoShape) -> Result<LfoNode, JsValue> {
-        let (sender, receiver) = channel(1);
-        let data = LfoData { shape, receiver };
+    pub fn new(ctx: &web_sys::AudioContext) -> Result<LfoNode, JsValue> {
         let options = web_sys::AudioWorkletNodeOptions::new();
         options.set_channel_count(1);
-        options.set_number_of_inputs(0);
+        options.set_number_of_inputs(1);  // 1 input for reset signal
         options.set_number_of_outputs(1);
 
-        let wrapper = LfoProcessor::create_node(ctx, data, Some(&options))?;
-        Ok(LfoNode { wrapper, sender })
-    }
-
-    #[wasm_bindgen(js_name = "setShape")]
-    pub fn set_shape(&self, shape: LfoShape) {
-        if self.sender.try_send(Message::SetShape(shape)).is_ok() {};
+        let wrapper = LfoProcessor::create_node(ctx, (), Some(&options))?;
+        Ok(LfoNode { wrapper })
     }
 
     #[wasm_bindgen(getter)]
