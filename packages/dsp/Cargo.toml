@@ -13,8 +13,7 @@ debug-audio = []
 [dependencies]
 rustfft = { version = "6.0.1" }
 fundsp = "0.20.0"
-waw = { path = "../../../waw-rs/waw" }
-# waw = { git = "https://github.com/Marcel-G/waw-rs", rev="8aa1ed76deccafe3d9b169c773b0f6bacc466738" }
+waw = { git = "https://github.com/Marcel-G/waw-rs", rev="072db26227d84fae0591814b0f4ac236ca8d9cd4" }
 wasm-bindgen = { version = "0.2.98" }
 wasm-bindgen-futures = { version = "0.4.48" }
 getrandom = { version = "0.2", features = ["custom"] }
