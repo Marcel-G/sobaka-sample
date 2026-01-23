@@ -152,6 +152,7 @@
     flex-direction: column;
     align-items: center;
     height: 100%;
+    overflow: hidden;
   }
 
   .circle-container {
@@ -159,13 +160,16 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    min-height: 0;
   }
 
   .knobs {
     display: flex;
     gap: 0.25rem;
-    transform: scale(0.7);
-    transform-origin: top center;
+    transform: scale(0.65);
+    transform-origin: center center;
     flex-shrink: 0;
+    height: 2.5rem;
+    margin-bottom: -0.5rem;
   }
 </style>
