@@ -2,7 +2,7 @@
   import Panel from '../shared/Panel.svelte'
   import Plug from '../shared/Plug.svelte'
   import Knob from '../../components/Knob/Knob.svelte'
-  import { RangeType, Scale, type ContinuousRange } from '../../range/range'
+  import { createLfoRateRange } from '../../range/rangeCreators'
   import { LfoNode } from '@sobaka/dsp'
   import type { BaseModuleProps } from '../../types/props'
   import { intoReadable } from '@sobaka/state/util/store'
@@ -27,25 +27,7 @@
   const state = intoReadable(node.state)
   const routing = node.getRoutingDefinition()
 
-  // LFO rate range: 0.01 Hz to 30 Hz with logarithmic scaling
-  const rateRange: ContinuousRange = {
-    type: RangeType.Continuous,
-    start: 0.01,
-    end: 30,
-    scale: { type: Scale.Logarithmic },
-    valueToString: (v) => {
-      if (v < 1) {
-        return `${(v * 1000).toFixed(0)} mHz`
-      }
-      return `${v.toFixed(2)} Hz`
-    },
-    stringToValue: (v, unit) => {
-      if (unit === 'mhz') {
-        return v / 1000
-      }
-      return v
-    }
-  }
+  const rateRange = createLfoRateRange()
 </script>
 
 <Panel

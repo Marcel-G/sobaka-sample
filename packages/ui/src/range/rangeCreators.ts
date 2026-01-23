@@ -179,3 +179,29 @@ export const createBpmRange = (start = 0, end = 320): ContinuousRange => ({
     return value
   }
 })
+
+/**
+ * Creates a range for LFO rate values in Hz.
+ * Displays values < 1 Hz in mHz for readability.
+ *
+ * @param start The start value in Hz (default = 0.01).
+ * @param end The end value in Hz (default = 30).
+ */
+export const createLfoRateRange = (start = 0.01, end = 30): ContinuousRange => ({
+  type: RangeType.Continuous,
+  start,
+  end,
+  scale: { type: Scale.Logarithmic },
+  valueToString: (value: number) => {
+    if (value < 1) {
+      return `${(value * 1000).toFixed(0)} mHz`
+    }
+    return `${value.toFixed(2)} Hz`
+  },
+  stringToValue: (value: number, unit: string) => {
+    if (unit === 'mhz') {
+      return value / 1000
+    }
+    return value
+  }
+})
