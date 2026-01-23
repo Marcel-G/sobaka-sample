@@ -38,7 +38,7 @@
   {onClone}
   {onDrag}
   {bindElement}
-  height={6}
+  height={8}
   width={6}
   --color-module-accent="var(--color-cyan)"
   --color-module-background="var(--color-cyan-dark)"

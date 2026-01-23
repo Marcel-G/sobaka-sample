@@ -11,12 +11,14 @@ import Parameter from './Parameter.svelte'
 import Vca from './Vca.svelte'
 import Scope from './Scope/Scope.svelte'
 import Lfo from './Lfo/Lfo.svelte'
+import Euclidean from './Euclidean/Euclidean.svelte'
 import { type Module } from '@sobaka/state/models/workspace'
 
 export const MODULES = {
   Clock,
   Delay,
   Envelope,
+  Euclidean,
   Filter,
   Lfo,
   Noise,

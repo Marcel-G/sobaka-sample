@@ -103,7 +103,8 @@ impl Processor for LfoProcessor {
         let rate = params.get("rate").unwrap_or(&ZERO_BUFFER);
         
         // Reset input from audio input 0
-        let reset_input = inputs.get(0).unwrap_or(&ZERO_BUFFER.as_slice());
+        let zero_slice = ZERO_BUFFER.as_slice();
+        let reset_input = inputs.get(0).unwrap_or(&zero_slice);
 
         let output = outputs.get_mut(0);
         if let Some(out) = output {

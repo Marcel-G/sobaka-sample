@@ -11,6 +11,7 @@ import { ParameterNode } from "./parameter/node";
 import { VcaNode } from "./vca/node";
 import { ScopeNode } from "./scope/node";
 import { LfoNode } from "./lfo/node";
+import { EuclideanNode } from "./euclidean/node";
 import { Module } from "@sobaka/state";
 import { ModuleDSP } from "../shared";
 
@@ -34,6 +35,7 @@ export const createAudioModule = (module: Module, audioContext: AudioContext): M
   if (module.type === 'Vca') return new VcaNode(module.id, audioContext, module.state as any)
   if (module.type === 'Scope') return new ScopeNode(module.id, audioContext, module.state as any)
   if (module.type === 'Lfo') return new LfoNode(module.id, audioContext, module.state as any)
+  if (module.type === 'Euclidean') return new EuclideanNode(module.id, audioContext, module.state as any)
   throw new Error('not implemented: createAudioModule for type ' + module.type)
 }
 
@@ -52,5 +54,6 @@ export const createAudioModuleInitialState = (type: string): Record<string, any>
   if (type === 'Vca') return VcaNode.initialState
   if (type === 'Scope') return ScopeNode.initialState
   if (type === 'Lfo') return LfoNode.initialState
+  if (type === 'Euclidean') return EuclideanNode.initialState
   return null
 }
