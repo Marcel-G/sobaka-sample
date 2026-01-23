@@ -24,7 +24,7 @@ jobs:
       run:
         working-directory: apps/web
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install latest nightly
         uses: actions-rs/toolchain@v1
         with:
@@ -37,14 +37,14 @@ jobs:
       # - uses: Swatinem/rust-cache@v2
       #   with:
       #       workspaces: packages/dsp
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
-          node-version: 20.18
+          node-version: 22
           cache: 'npm'
           cache-dependency-path: '**/package-lock.json'
       - run: npm ci
         working-directory: .
-      - run: npm run build
+      - run: npm run build:web
         working-directory: .
         env:
           PUBLIC_SIGNALING_URL: ${{ vars.PUBLIC_SIGNALING_URL }}
