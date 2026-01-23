@@ -1,0 +1,246 @@
+---
+globs: packages/state/**,apps/signaling/**,apps/persistence/**
+---
+
+# Networking Expert Profile
+
+## Overview
+
+You are working on real-time collaborative infrastructure for a modular synthesizer. The system uses WebRTC for peer-to-peer sync, WebSockets for signaling, and CRDTs for conflict-free state management.
+
+## Architecture
+
+### Components
+```
+┌─────────────────────────────────────────────────────────────┐
+│                         Clients                              │
+│  ┌─────────┐  ┌─────────┐  ┌─────────┐                      │
+│  │ Browser │  │ Browser │  │ Browser │                      │
+│  │ (y-webrtc)│ │(y-webrtc)│ │(y-webrtc)│                     │
+│  └────┬────┘  └────┬────┘  └────┬────┘                      │
+│       │            │            │                            │
+│       └────────────┼────────────┘                            │
+│                    │ WebRTC P2P                              │
+└────────────────────┼────────────────────────────────────────┘
+                     │
+        ┌────────────┴────────────┐
+        │ WebSocket Signaling     │
+        ▼                         ▼
+┌──────────────┐         ┌──────────────────┐
+│  Signaling   │         │   Persistence    │
+│   Server     │◄───────►│     Worker       │
+│ (apps/signaling)       │ (apps/persistence)│
+└──────────────┘         └──────────────────┘
+        │                         │
+        │    Rust + Tokio         │
+        └─────────────────────────┘
+```
+
+### Key Packages
+- `packages/state` - Client-side state management and networking
+- `apps/signaling` - WebSocket signaling server (Rust/Warp)
+- `apps/persistence` - WebRTC persistence worker (Rust/str0m)
+
+## Client-Side Networking (`packages/state`)
+
+### Yjs + y-webrtc
+State synchronization uses Yjs CRDTs with WebRTC transport:
+
+```typescript
+import * as Y from 'yjs'
+import { VerifiedRTCProvider } from './networking/provider'
+
+const doc = new Y.Doc()
+const provider = new VerifiedRTCProvider(roomName, doc, {
+  signaling: ['wss://your-signaling-server/signaling'],
+  filterIncomingMessage: (from, data) => {
+    // Validate message origin
+    return isAuthorized(from)
+  }
+})
+```
+
+### VerifiedRTCProvider
+Extended WebRTC provider with identity verification:
+- Validates peer identities via signaling server
+- Filters messages from unauthorized peers
+- Distinguishes between client peers and worker peers
+- Read-only mode support (allows only sync requests)
+
+### SimplePeer Extension
+Custom peer class with chunking for large messages:
+
+```typescript
+// packages/state/src/networking/peer.ts
+const CHUNK_SIZE = 1024 * 16 - 512  // 16KB - header overhead
+const MAX_BUFFERED_AMOUNT = 64 * 1024
+
+class SimplePeerExtended extends SimplePeer {
+  // Splits large messages into chunks
+  // Reassembles on receive
+  // Handles flow control via bufferedamountlow
+}
+```
+
+### Packet Encoding
+Binary protocol for chunked transmission:
+```typescript
+interface DecodedPacket {
+  txOrd: number      // Transmission order
+  index: number      // Chunk index
+  length: number     // Total chunks
+  totalSize: number  // Original message size
+  chunkSize: number  // This chunk's size
+  chunk: Uint8Array  // Chunk data
+}
+```
+
+## Signaling Server (`apps/signaling`)
+
+### Technology
+- **Warp** - Async web framework
+- **Tokio** - Async runtime
+- **serde_json** - JSON serialization
+
+### Protocol (y-webrtc compatible)
+```typescript
+// Subscribe to rooms
+{ "type": "subscribe", "topics": ["room-id-1", "room-id-2"] }
+
+// Unsubscribe
+{ "type": "unsubscribe", "topics": ["room-id-1"] }
+
+// Publish to room (signaling messages, ICE candidates, SDP offers)
+{ "type": "publish", "topic": "room-id", "data": { ... } }
+
+// Ping/Pong for connection health
+{ "type": "ping" }
+{ "type": "pong" }
+```
+
+### Identity & Authentication
+```rust
+// apps/signaling/src/jwt.rs
+pub struct Token {
+    pub uuid: String,
+    pub kind: PeerKind,  // Client | Worker
+}
+```
+
+- JWT tokens stored in HTTP-only cookies
+- New tokens generated for unauthenticated connections
+- Identity attached to published messages for verification
+
+### Connection Management
+```rust
+// Key patterns from apps/signaling/src/signaling.rs
+
+// Topic subscription management
+type Topics = Arc<RwLock<HashMap<String, HashSet<WsSink>>>>;
+
+// Ping/pong with 30-second timeout
+const PING_TIMEOUT: Duration = Duration::from_secs(30);
+
+// Cleanup on disconnect
+for topic in state.subscribed_topics.drain() {
+    if let Some(subs) = topics.get_mut(&topic) {
+        subs.remove(&ws);
+    }
+}
+```
+
+## Persistence Worker (`apps/persistence`)
+
+### Purpose
+Dedicated server-side peer that:
+- Joins rooms as a "worker" peer
+- Persists document state
+- Provides initial sync for new clients
+- Ensures data survives when all clients disconnect
+
+### Technology
+- **str0m** - Pure Rust WebRTC implementation
+- **tokio** - Async runtime
+- **systemstat** - Network interface discovery
+
+### ICE/NAT Configuration
+```rust
+// Select non-loopback network interface
+fn select_host_address() -> IpAddr {
+    // Iterate network interfaces
+    // Skip loopback, link-local, broadcast
+    // Return first valid IPv4
+}
+
+// Use PUBLIC_IP env var in cloud deployments
+fn get_public_ip() -> IpAddr {
+    std::env::var("PUBLIC_IP").unwrap_or_else(|_| select_host_address())
+}
+```
+
+## Best Practices
+
+### Connection Handling
+1. Always implement heartbeat/ping-pong
+2. Handle connection drops gracefully
+3. Implement exponential backoff for reconnection
+4. Clean up subscriptions on disconnect
+
+### Message Flow
+1. Validate message origin before processing
+2. Filter read-only users to sync-only messages
+3. Use binary encoding for efficiency
+4. Implement chunking for large messages
+
+### Security
+1. Use JWT for identity, not authorization
+2. Validate peer identity via signaling server
+3. Filter incoming WebRTC data by verified identity
+4. Use HTTP-only cookies for tokens
+5. Implement message-level access control
+
+### Performance
+1. Use flow control (`bufferedamountlow` event)
+2. Chunk large messages (16KB default)
+3. Batch small updates when possible
+4. Use CRDT operations, not full state sync
+
+### y-protocols Message Types
+```typescript
+// From y-protocols, used for read-only filtering
+// [0, 0] = SyncStep1 (sync request) - allow
+// [1, *] = Awareness - allow
+// [0, 1] = SyncStep2 (sync response) - block from read-only
+// [0, 2] = Update - block from read-only
+```
+
+## Environment Variables
+
+### Signaling Server
+```bash
+RUST_LOG=info,signaling=debug  # Logging level
+```
+
+### Persistence Worker
+```bash
+SIGNAL_SERVER=wss://signaling.example.com/signaling
+PUBLIC_IP=1.2.3.4  # For cloud deployments
+PORT=3478          # UDP port for WebRTC
+JWT=<token>        # Pre-generated worker token
+```
+
+## Debugging
+
+### Enable Logging
+```rust
+env_logger::init();  // Respects RUST_LOG env var
+log::info!("message");
+log::debug!("detailed info");
+```
+
+### Common Issues
+1. **ICE failures** - Check firewall, STUN/TURN configuration
+2. **Signaling timeout** - Verify WebSocket connection, ping/pong
+3. **Sync conflicts** - Check CRDT operations, avoid non-CRDT mutations
+4. **Memory leaks** - Ensure peer cleanup on disconnect
+5. **Message ordering** - Use txOrd for reassembly, not arrival order

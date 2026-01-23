@@ -1,8 +1,10 @@
-# Cursor Rules for sobaka-sample
+---
+alwaysApply: true
+---
 
-## Git Workflow
+# Git Workflow
 
-### Commits
+## Commits
 - **ALWAYS** create git commits as you work
 - **ALWAYS** use Conventional Commit format for all commit messages
 - Commit format: `<type>(<scope>): <description>`
