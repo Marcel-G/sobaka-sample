@@ -5,12 +5,14 @@ on:
     branches: [master, next]
     paths:
       - '.github/workflows/backend.yml'
-      - 'backend/**'
+      - 'apps/signaling/**'
+      - 'apps/persistence/**'
   pull_request:
     branches: [master, next]
     paths:
       - '.github/workflows/backend.yml'
-      - 'backend/**'
+      - 'apps/signaling/**'
+      - 'apps/persistence/**'
 
 jobs:
   build-signaling:
@@ -18,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: backend/signaling
+        working-directory: apps/signaling
     steps:
       - uses: actions/checkout@v3
       - name: Set up Docker Buildx
@@ -26,7 +28,7 @@ jobs:
       - name: Build and export
         uses: docker/build-push-action@v5
         with:
-          context: backend/signaling
+          context: apps/signaling
           tags: signaling:latest
           outputs: type=docker,dest=/tmp/signaling.tar
       - name: Upload artifact
@@ -35,12 +37,12 @@ jobs:
           name: signaling
           path: /tmp/signaling.tar
 
-  build-worker:
-    name: "🧦 Build Worker"
+  build-persistence:
+    name: "🧦 Build Persistence"
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: backend/client
+        working-directory: apps/persistence
     steps:
       - uses: actions/checkout@v3
       - name: Set up Docker Buildx
@@ -48,19 +50,19 @@ jobs:
       - name: Build and export
         uses: docker/build-push-action@v5
         with:
-          context: backend/client
-          tags: worker:latest
-          outputs: type=docker,dest=/tmp/worker.tar
+          context: apps/persistence
+          tags: persistence:latest
+          outputs: type=docker,dest=/tmp/persistence.tar
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: worker
-          path: /tmp/worker.tar
+          name: persistence
+          path: /tmp/persistence.tar
 
   infrastructure:
     needs:
       - build-signaling
-      - build-worker
+      - build-persistence
     uses: ./.github/workflows/infrastructure.yml
     secrets: inherit
 
@@ -70,7 +72,7 @@ jobs:
     if: github.event_name == 'push'
     needs:
       - build-signaling
-      - build-worker
+      - build-persistence
       - infrastructure
     permissions:
       id-token: write
@@ -107,21 +109,21 @@ jobs:
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: worker
+          name: persistence
           path: /tmp
       - name: Tag and upload image to ECR
         env:
-          ECR_REPOSITORY: ${{ needs.infrastructure.outputs.worker_ecr_url }}
+          ECR_REPOSITORY: ${{ needs.infrastructure.outputs.persistence_ecr_url }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          docker load --input /tmp/worker.tar
-          docker tag worker:latest $ECR_REPOSITORY:$IMAGE_TAG
-          docker tag worker:latest $ECR_REPOSITORY:latest
+          docker load --input /tmp/persistence.tar
+          docker tag persistence:latest $ECR_REPOSITORY:$IMAGE_TAG
+          docker tag persistence:latest $ECR_REPOSITORY:latest
           docker push $ECR_REPOSITORY --all-tags
       - name: Deploy image to EC2
         run: |
           aws ssm send-command \
-            --document-name "${{ needs.infrastructure.outputs.worker_deploy_doc }}" \
+            --document-name "${{ needs.infrastructure.outputs.persistence_deploy_doc }}" \
             --instance-id "${{ needs.infrastructure.outputs.instance_id }}" 
 
 concurrency: 

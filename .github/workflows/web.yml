@@ -1,18 +1,18 @@
-name: "Frontend"
+name: "Web"
 
 on:
   push:
     branches: [master, next]
     paths:
-      - '.github/workflows/frontend.yml'
-      - 'frontend/**'
-      - 'sobaka-dsp/**'
+      - '.github/workflows/web.yml'
+      - 'apps/web/**'
+      - 'packages/**'
   pull_request:
     branches: [master, next]
     paths:
-      - '.github/workflows/frontend.yml'
-      - 'frontend/**'
-      - 'sobaka-dsp/**'
+      - '.github/workflows/web.yml'
+      - 'apps/web/**'
+      - 'packages/**'
 
 jobs:
   build:
@@ -22,7 +22,7 @@ jobs:
       name: next # TODO: move to cf function
     defaults:
       run:
-        working-directory: frontend
+        working-directory: apps/web
     steps:
       - uses: actions/checkout@v3
       - name: Install latest nightly
@@ -36,22 +36,24 @@ jobs:
       # https://github.com/Marcel-G/xtask-wasm/blob/main/src/wasm_opt.rs#L38
       # - uses: Swatinem/rust-cache@v2
       #   with:
-      #       workspaces: sobaka-dsp
+      #       workspaces: packages/dsp
       - uses: actions/setup-node@v3
         with:
           node-version: 20.18
           cache: 'npm'
           cache-dependency-path: '**/package-lock.json'
-      - run: npm ci 
+      - run: npm ci
+        working-directory: .
       - run: npm run build
+        working-directory: .
         env:
           PUBLIC_SIGNALING_URL: ${{ vars.PUBLIC_SIGNALING_URL }}
           PUBLIC_GLOBAL_LISTS: ${{ vars.PUBLIC_GLOBAL_LISTS }}
           METERED_API_KEY: ${{ secrets.METERED_API_KEY }}
       - uses: actions/upload-artifact@v4
         with:
-          name: frontend-build-output
-          path: frontend/build
+          name: web-build-output
+          path: apps/web/build
 
   infrastructure:
     needs:
@@ -78,15 +80,15 @@ jobs:
           role-session-name: DeploySession
       - uses: actions/download-artifact@v4
         with:
-          name: frontend-build-output
-          path: frontend/build
+          name: web-build-output
+          path: apps/web/build
       - name: "Deploy files to S3"
         run: |
-          aws s3 sync frontend/build s3://${{ needs.infrastructure.outputs.deploy_bucket }} \
+          aws s3 sync apps/web/build s3://${{ needs.infrastructure.outputs.deploy_bucket }} \
             --metadata-directive REPLACE \
             --cache-control 'max-age=31104000'
           
-           aws s3 cp frontend/build/index.html s3://${{ needs.infrastructure.outputs.deploy_bucket }} \
+           aws s3 cp apps/web/build/index.html s3://${{ needs.infrastructure.outputs.deploy_bucket }} \
             --metadata-directive REPLACE \
             --cache-control 'max-age=3600'
       - name: "Invalidate CloudFront Cache"
@@ -97,5 +99,5 @@ jobs:
 
 
 concurrency: 
-  group: "${{ github.ref }}-frontend"
+  group: "${{ github.ref }}-web"
   cancel-in-progress: true
