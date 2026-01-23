@@ -10,6 +10,7 @@ import SampleAndHold from './SampleAndHold.svelte'
 import Parameter from './Parameter.svelte'
 import Vca from './Vca.svelte'
 import Scope from './Scope/Scope.svelte'
+import Lfo from './Lfo/Lfo.svelte'
 import { type Module } from '@sobaka/state/models/workspace'
 
 export const MODULES = {
@@ -17,6 +18,7 @@ export const MODULES = {
   Delay,
   Envelope,
   Filter,
+  Lfo,
   Noise,
   Oscillator,
   Parameter,
