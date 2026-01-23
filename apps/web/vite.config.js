@@ -27,6 +27,10 @@ const config = {
   define: {
     global: 'globalThis'
   },
+  optimizeDeps: {
+    include: ['@sobaka/state', '@sobaka/dsp', '@sobaka/ui'],
+    force: false
+  },
   resolve: {
     alias: {
       // Path for max message length issue: https://github.com/yjs/y-webrtc/issues/20
