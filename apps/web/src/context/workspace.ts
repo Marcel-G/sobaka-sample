@@ -4,6 +4,7 @@ import { Workspace } from '@sobaka/state/models/workspace'
 import { createPositionStores, type PositionStore } from './positions'
 import { createAudioGraph, type AudioGraph } from '@sobaka/dsp'
 import { getGlobalCtx } from './global'
+import { pluginRegistry } from '../plugins'
 
 const WORKSPACE_CONTEXT = 'WORKSPACE_CONTEXT'
 
@@ -21,7 +22,7 @@ export const getWorkspace = () => getContext<WorkspaceContext>(WORKSPACE_CONTEXT
  * Cleans up automatically on component unmount
  */
 export const initWorkspaceContext = (workspace: Workspace) => {
-  const dsp = createAudioGraph(getGlobalCtx().audio)
+  const dsp = createAudioGraph(getGlobalCtx().audio, pluginRegistry)
   const positions = createPositionStores()
 
   // Set up reactive reconciliation

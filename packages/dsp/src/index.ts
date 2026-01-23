@@ -1,16 +1,26 @@
 /**
  * DSP Package Entry Point
  * 
- * Exports module definitions, registry, and node classes.
- * App is responsible for creating registry and registering modules.
+ * Exports plugin system, module definitions, and node classes.
+ * App is responsible for creating registry and registering plugins.
  */
 
 // Core types and utilities
 export * from './shared'
 export * from './graph'
 
-// Registry system
-export { ModuleRegistry, type ModuleDefinition, type ModuleCategory } from './registry'
+// Plugin system (preferred)
+export {
+  PluginRegistry,
+  definePlugin,
+  type ModulePlugin,
+  type ModuleComponent,
+  type ModuleCategory,
+  type BaseModuleProps,
+} from './plugin'
+
+// Legacy registry system (deprecated - use PluginRegistry instead)
+export { ModuleRegistry, type ModuleDefinition } from './registry'
 
 // Module definitions (app registers these)
 export * from './definitions'

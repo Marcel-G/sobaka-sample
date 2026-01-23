@@ -1,4 +1,6 @@
 import type { Readable } from 'svelte/store'
+import type { Component } from 'svelte'
+import type { ModuleDSP } from '@sobaka/dsp'
 
 /**
  * Props for Panel component - handles module container
@@ -49,3 +51,19 @@ export interface BaseModuleProps {
   onPlugClick?: ((routeName: string) => void) | null
   bindPlugElement?: ((routeName: string, element: HTMLElement) => (() => void) | void) | null
 }
+
+/**
+ * Type constraint for module Svelte components
+ * Ensures the component accepts a `node` prop of the correct DSP type
+ * 
+ * Usage:
+ * ```ts
+ * import Oscillator from './Oscillator.svelte'
+ * import type { OscillatorNode } from '@sobaka/dsp'
+ * 
+ * const component: ModuleComponent<OscillatorNode> = Oscillator
+ * ```
+ */
+export type ModuleComponent<TNode extends ModuleDSP> = Component<
+  BaseModuleProps & { node: TNode }
+>

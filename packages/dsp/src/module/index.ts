@@ -1,3 +1,11 @@
+/**
+ * @deprecated Legacy module factory functions
+ * Use PluginRegistry from @sobaka/dsp instead
+ * 
+ * These functions are kept for backwards compatibility but should not be used
+ * in new code. The plugin system provides type-safe module registration.
+ */
+
 import { ClockNode } from "./clock/node";
 import { OscillatorNode } from "./oscillator/node";
 import { NoiseNode } from "./noise/node";
@@ -14,11 +22,9 @@ import { EuclideanNode } from "./euclidean/node";
 import { Module } from "@sobaka/state";
 import { ModuleDSP } from "../shared";
 
-// TODO - refactor to be more of a plugin system
-
 /**
  * Creates a DSP instance for a given module
- * This should be implemented to instantiate the appropriate module type
+ * @deprecated Use PluginRegistry.createNode() instead
  */
 export const createAudioModule = (module: Module, audioContext: AudioContext): ModuleDSP => {
   if (module.type === 'Clock') return new ClockNode(module.id, audioContext, module.state as any)
@@ -37,7 +43,10 @@ export const createAudioModule = (module: Module, audioContext: AudioContext): M
   throw new Error('not implemented: createAudioModule for type ' + module.type)
 }
 
-// TODO: does the state need to be structured clone?
+/**
+ * Gets initial state for a module type
+ * @deprecated Use PluginRegistry.getInitialState() instead
+ */
 export const createAudioModuleInitialState = (type: string): Record<string, any> | null => {
   if (type === 'Clock') return ClockNode.initialState
   if (type === 'Oscillator') return OscillatorNode.initialState

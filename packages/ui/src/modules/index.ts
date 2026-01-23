@@ -5,7 +5,10 @@
  * App is responsible for creating registry and registering components.
  */
 
-// Registry system
+// Types
+export type { ModuleComponent, BaseModuleProps } from '../types/props'
+
+// Registry system (deprecated - use PluginRegistry from @sobaka/dsp instead)
 export { UIModuleRegistry, type UIModuleDefinition } from './registry'
 
 // Component definitions (app registers these)

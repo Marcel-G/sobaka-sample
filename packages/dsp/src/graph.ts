@@ -1,8 +1,7 @@
-import { derived } from "svelte/store";
 import { ModuleDSP } from "./shared/types"
-import { Link, Module, PlugType, Workspace } from "@sobaka/state";
+import { Link, Module, PlugType } from "@sobaka/state";
 import { MixerDSP } from "./module/mixer/node";
-import { createAudioModule } from "./module";
+import { PluginRegistry } from "./plugin";
 
 /**
  * Audio graph reconciler - maintains the Web Audio graph based on state
@@ -12,7 +11,10 @@ export class AudioGraph {
   private staticModules: Map<string, ModuleDSP> = new Map()
   private connections: Map<string, AudioNode> = new Map()
 
-  constructor(private audioContext: AudioContext) {
+  constructor(
+    private audioContext: AudioContext,
+    private registry: PluginRegistry
+  ) {
     // Initialize static modules (always present, not in workspace state)
     this.initializeStaticModules()
   }
@@ -38,7 +40,12 @@ export class AudioGraph {
     // Step 1: Add new modules
     for (const module of modules) {
       if (!this.dspModules.has(module.id)) {
-        const dsp = createAudioModule(module, this.audioContext)
+        const dsp = this.registry.createNode(
+          module.type,
+          module.id,
+          this.audioContext,
+          module.state as Record<string, unknown>
+        )
         this.dspModules.set(module.id, dsp)
       }
     }
@@ -224,6 +231,6 @@ export class AudioGraph {
 /**
  * Create an AudioGraph instance
  */
-export const createAudioGraph = (audioContext: AudioContext) => {
-  return new AudioGraph(audioContext)
+export const createAudioGraph = (audioContext: AudioContext, registry: PluginRegistry) => {
+  return new AudioGraph(audioContext, registry)
 }

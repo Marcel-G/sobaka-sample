@@ -11,6 +11,7 @@ import { EmptyDocument } from '@sobaka/state/models/docMeta'
 import { load } from './audio'
 import type { Config as ConfigApi } from '../routes/proxy+layout.server'
 import { SyncedDocFactory, type Config } from '@sobaka/state/models/syncedDoc'
+import { pluginRegistry } from '../plugins'
 
 // TODO: this is more like a context
 export const createGlobalCtx = async (config: ConfigApi) => {
@@ -77,7 +78,8 @@ export class Global {
   get config(): Config {
     return {
       ...this._config,
-      currentUser: this.user.uuid
+      currentUser: this.user.uuid,
+      getInitialState: (type: string) => pluginRegistry.getInitialState(type)
     }
   }
 

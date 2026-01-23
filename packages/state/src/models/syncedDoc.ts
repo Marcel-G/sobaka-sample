@@ -10,6 +10,12 @@ export interface Config {
   iceServers: IceServer[]
   signaling: string[]
   globalLists: string[]
+  
+  /**
+   * Function to get initial state for a module type.
+   * This is provided by the app's plugin registry.
+   */
+  getInitialState?: (type: string) => Record<string, unknown> | null
 }
 
 interface IceServer {

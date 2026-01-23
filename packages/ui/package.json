@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "type": "module",
   "exports": {
+    "./types": "./src/types/props.ts",
     "./modules": "./src/modules/index.ts",
     "./modules/registry": "./src/modules/registry.ts",
     "./modules/*": "./src/modules/*.svelte",

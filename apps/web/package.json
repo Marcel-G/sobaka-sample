@@ -9,8 +9,7 @@
     "preview": "vite preview",
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-check --tsconfig ./tsconfig.json --watch",
-    "test:run": "node --import tsx --test",
-    "test": "glob -c \"npm run test:run -- --watch\" src/*.test.ts src/**/*.test.ts",
+    "test": "node --import tsx --test 'src/**/*.test.ts'",
     "lint": "prettier --check . && eslint .",
     "format": "prettier --write ."
   },
@@ -38,7 +37,6 @@
     "eslint": "^9.7.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-svelte": "^2.36.0",
-    "glob": "^11.0.1",
     "globals": "^15.0.0",
     "prettier": "^3.3.2",
     "prettier-plugin-svelte": "^3.2.6",
