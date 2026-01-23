@@ -67,7 +67,7 @@
     r={(size / 2) - 10}
     fill="none"
     stroke="var(--color-dark)"
-    stroke-width="1"
+    stroke-width="2"
     opacity="0.5"
   />
 
@@ -89,10 +89,10 @@
     <circle
       cx={step.x}
       cy={step.y}
-      r={step.active ? 4 : 3}
+      r={step.active ? 5 : 4}
       fill={step.active ? 'var(--color-module-accent)' : 'none'}
       stroke={step.active ? 'none' : 'var(--color-light)'}
-      stroke-width="1.5"
+      stroke-width="2"
       opacity={step.isCurrent ? 1 : (step.active ? 0.9 : 0.4)}
     />
     
@@ -101,10 +101,10 @@
       <circle
         cx={step.x}
         cy={step.y}
-        r="6"
+        r="8"
         fill="none"
         stroke="var(--color-module-accent)"
-        stroke-width="2"
+        stroke-width="2.5"
       />
     {/if}
   {/each}
