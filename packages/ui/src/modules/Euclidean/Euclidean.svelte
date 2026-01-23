@@ -64,6 +64,17 @@
     valueToString: (v) => `${Math.round(v)}`
   })
 
+  // Clamp fills and rotation when steps decreases
+  $effect(() => {
+    const steps = $nodeState.steps
+    if ($nodeState.fills > steps) {
+      $nodeState.fills = steps
+    }
+    if ($nodeState.rotation > steps - 1) {
+      $nodeState.rotation = Math.max(0, steps - 1)
+    }
+  })
+
   // Listen for step events from DSP
   const handleStepEvent = (event: { step: number; triggered: boolean }) => {
     currentStep = event.step
@@ -86,7 +97,7 @@
   {onClone}
   {onDrag}
   {bindElement}
-  height={10}
+  height={11}
   width={8}
   --color-module-accent="var(--color-pink)"
   --color-module-background="var(--color-pink-dark)"
