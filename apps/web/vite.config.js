@@ -28,8 +28,8 @@ const config = {
     global: 'globalThis'
   },
   optimizeDeps: {
-    include: ['@sobaka/state', '@sobaka/dsp', '@sobaka/ui'],
-    force: false
+    // Exclude workspace packages from optimization - they're handled directly by Vite
+    exclude: ['@sobaka/state', '@sobaka/dsp', '@sobaka/ui']
   },
   resolve: {
     alias: {
