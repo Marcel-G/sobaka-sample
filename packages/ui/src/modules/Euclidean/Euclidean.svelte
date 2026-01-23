@@ -86,8 +86,8 @@
   {onClone}
   {onDrag}
   {bindElement}
-  height={8}
-  width={6}
+  height={10}
+  width={8}
   --color-module-accent="var(--color-pink)"
   --color-module-background="var(--color-pink-dark)"
 >
@@ -97,7 +97,7 @@
         steps={$nodeState.steps}
         {pattern}
         {currentStep}
-        size={64}
+        size={96}
       />
       <div class="knobs">
         <Knob
@@ -156,8 +156,8 @@
 
   .knobs {
     display: flex;
-    gap: 0.125rem;
-    transform: scale(0.85);
+    gap: 0.25rem;
+    transform: scale(0.7);
     transform-origin: top center;
   }
 </style>
