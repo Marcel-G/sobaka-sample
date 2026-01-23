@@ -41,13 +41,13 @@ module "global" {
 }
 
 module "backend" {
-  source             = "../backend/infrastructure"
+  source             = "./backend"
   name               = "sobaka-instance-${terraform.workspace}"
   global_deploy_role = module.global.global_deploy_role.name
 }
 
 module "signaling" {
-  source = "../backend/signaling/infrastructure"
+  source = "../apps/signaling/infrastructure"
 
   name               = "sobaka-signaling-${terraform.workspace}"
   global_deploy_role = module.global.global_deploy_role.name
@@ -55,19 +55,19 @@ module "signaling" {
   instance = module.backend.instance
 }
 
-module "worker" {
-  source = "../backend/client/infrastructure"
+module "persistence" {
+  source = "../apps/persistence/infrastructure"
 
-  name               = "sobaka-worker-${terraform.workspace}"
+  name               = "sobaka-persistence-${terraform.workspace}"
   global_deploy_role = module.global.global_deploy_role.name
 
   instance = module.backend.instance
 }
 
-module "frontend" {
-  source = "../frontend/infrastructure"
+module "web" {
+  source = "../apps/web/infrastructure"
 
-  name               = "sobaka-frontend-${terraform.workspace}"
+  name               = "sobaka-web-${terraform.workspace}"
   global_deploy_role = module.global.global_deploy_role.name
   cdn                = module.cdn
 

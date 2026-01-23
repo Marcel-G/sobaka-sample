@@ -100,7 +100,6 @@ jobs:
             --distribution-id ${{ needs.infrastructure.outputs.cdn_distribution_id }} \
             --paths "/index.html"
 
-
 concurrency: 
   group: "${{ github.ref }}-web"
   cancel-in-progress: true

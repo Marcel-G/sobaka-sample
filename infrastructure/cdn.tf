@@ -30,7 +30,7 @@ module "cdn" {
 
   origin = {
     storage = {
-      domain_name           = module.frontend.deploy_bucket_domain
+      domain_name           = module.web.deploy_bucket_domain
       origin_access_control = "storage"
     }
     websocket = {

@@ -1,6 +1,6 @@
 output "deploy_bucket" {
   description = "S3 bucket to deploy to"
-  value       = module.frontend.deploy_bucket
+  value       = module.web.deploy_bucket
 }
 
 output "cdn_distribution_id" {
@@ -21,12 +21,12 @@ output "signaling_deploy_doc" {
   value = module.signaling.deploy_doc
 }
 
-output "worker_ecr_url" {
-  value = module.worker.ecr_url
+output "persistence_ecr_url" {
+  value = module.persistence.ecr_url
 }
 
-output "worker_deploy_doc" {
-  value = module.worker.deploy_doc
+output "persistence_deploy_doc" {
+  value = module.persistence.deploy_doc
 }
 
 output "instance_id" {
