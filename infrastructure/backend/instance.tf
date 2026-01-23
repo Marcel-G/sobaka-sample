@@ -18,7 +18,7 @@ locals {
     sudo usermod -aG docker ec2-user
 
     # Configure AWS CLI
-    aws configure set default.region ${data.aws_region.current.name}
+    aws configure set default.region ${data.aws_region.current.id}
   EOT
 }
 
@@ -32,7 +32,7 @@ data "aws_availability_zones" "available" {}
 
 module "instance" {
   source  = "terraform-aws-modules/ec2-instance/aws"
-  version = "~> 4.0"
+  version = "~> 6.0"
 
   name = "${local.name}-ec2"
 
@@ -56,7 +56,7 @@ module "instance" {
 
 module "security_groups" {
   source  = "terraform-aws-modules/security-group/aws"
-  version = "~> 4.0"
+  version = "~> 5.0"
 
   for_each = { for idx, chunk in local.ip_chunks : idx => chunk }
 
@@ -87,7 +87,7 @@ module "security_groups" {
 
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
-  version = "~> 4.0"
+  version = "~> 5.0"
 
   name = "${local.name}-vpc"
   cidr = "10.0.0.0/16"

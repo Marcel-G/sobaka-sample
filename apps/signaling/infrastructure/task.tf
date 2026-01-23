@@ -11,7 +11,7 @@ module "jwt_secret" {
 }
 
 module "task" {
-  source             = "../../infrastructure/task"
+  source             = "../../../infrastructure/backend/task"
   name               = var.name
   repository_url     = module.container_image_ecr.repository_url
   instance           = var.instance
