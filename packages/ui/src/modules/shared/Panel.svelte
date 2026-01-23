@@ -1,4 +1,4 @@
-<script context="module" lang="ts">
+<script module lang="ts">
   export const intoGridCoords = (coords: {
     x: number
     y: number

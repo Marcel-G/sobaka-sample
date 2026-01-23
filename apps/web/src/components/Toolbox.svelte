@@ -1,19 +1,25 @@
 <script lang="ts">
   import clamp from 'lodash/clamp'
   import { getWorkspace } from '../context/workspace'
-  import { MODULES } from '@sobaka/ui/modules'
+  import { pluginRegistry } from '../plugins'
   import { intoGridCoords } from '@sobaka/ui/modules/shared/Panel.svelte'
   import { onMount } from 'svelte'
 
-  export let position = { x: 0, y: 0 }
-  export let onClose: () => void
+  interface Props {
+    position?: { x: number; y: number }
+    onClose: () => void
+  }
+
+  let { position = { x: 0, y: 0 }, onClose }: Props = $props()
 
   const { workspace } = getWorkspace()
 
-  let search = ''
-  let selectedIndex = 0
-  let selectionRefs: HTMLButtonElement[] = []
+  let search = $state('')
+  let selectedIndex = $state(0)
+  let selectionRefs: HTMLButtonElement[] = $state([])
   let inputRef: HTMLInputElement
+
+  const moduleTypes = pluginRegistry.getTypes()
 
   const dumbFuzzy =
     (query: string) =>
@@ -25,11 +31,14 @@
       return moduleName.toLowerCase().includes(query.trim().toLowerCase())
     }
 
-  $: list = Object.keys(MODULES).filter(dumbFuzzy(search))
-  $: selectedIndex = clamp(selectedIndex, 0, list.length - 1)
-  $: selectionRefs[selectedIndex]?.scrollIntoView({
-    block: 'nearest',
-    inline: 'nearest'
+  const list = $derived(moduleTypes.filter(dumbFuzzy(search)))
+  const clampedIndex = $derived(clamp(selectedIndex, 0, list.length - 1))
+
+  $effect(() => {
+    selectionRefs[clampedIndex]?.scrollIntoView({
+      block: 'nearest',
+      inline: 'nearest'
+    })
   })
 
   onMount(() => {
@@ -44,8 +53,8 @@
   const handleKeyDown = (event: KeyboardEvent) => {
     switch (event.code) {
       case 'Enter':
-        if (list[selectedIndex]) {
-          handleCreate(list[selectedIndex])
+        if (list[clampedIndex]) {
+          handleCreate(list[clampedIndex])
         } else {
           onClose()
         }
@@ -65,7 +74,7 @@
 
 <div
   aria-hidden="true"
-  on:click={onClose}
+  onclick={onClose}
   class="fixed inset-0 bg-black/30 z-300 animate-in fade-in duration-1000"
 ></div>
 
@@ -79,8 +88,8 @@
       <input
         bind:this={inputRef}
         bind:value={search}
-        on:blur={() => inputRef?.focus()}
-        on:keydown={handleKeyDown}
+        onblur={() => inputRef?.focus()}
+        onkeydown={handleKeyDown}
         class="w-full px-4 py-2 rounded-lg border-2 border-zinc-200 dark:border-zinc-800
                bg-white dark:bg-darker text-zinc-900 dark:text-zinc-100
                focus:outline-none focus:border-cyan-500 dark:focus:border-cyan-400
@@ -97,12 +106,12 @@
         {#each list as module, index}
           <button
             bind:this={selectionRefs[index]}
-            class:selected={index === selectedIndex}
-            on:click={() => handleCreate(module)}
+            class:selected={index === clampedIndex}
+            onclick={() => handleCreate(module)}
             class="w-full px-4 py-2 rounded-lg text-left font-mono mb-1
                    bg-zinc-100 dark:bg-dark hover:bg-zinc-200 dark:hover:bg-blue-900/20
                    text-zinc-900 dark:text-zinc-100 transition-colors
-                   {index === selectedIndex ? 'bg-zinc-200 dark:bg-blue-900/30' : ''}"
+                   {index === clampedIndex ? 'bg-zinc-200 dark:bg-blue-900/30' : ''}"
           >
             {module}
           </button>

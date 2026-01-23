@@ -32,7 +32,7 @@
 </script>
 
 <Tooltip label={ctx.label} position={ctx.type !== PlugType.Output ? 'left' : 'right'}>
-  <!-- svelte-ignore a11y-click-events-have-key-events -->
+  <!-- svelte-ignore a11y_click_events_have_key_events -->
   <div
     role="button"
     data-kind="plug"
@@ -40,6 +40,7 @@
     aria-label={ctx.label}
     class={twMerge(classes.plug, classes.hover)}
     bind:this={element}
-    on:click={handleClick}
+    onclick={handleClick}
+    onkeydown={(e) => e.key === 'Enter' && handleClick(e as unknown as MouseEvent)}
   ></div>
 </Tooltip>

@@ -54,7 +54,7 @@
           class:text-gray-400={!state.muted}
           class:hover:text-red-300={state.muted}
           class:hover:text-gray-300={!state.muted}
-          on:click={() => (state.muted = !state.muted)}
+          onclick={() => (state.muted = !state.muted)}
         >
           {state.muted ? 'Muted' : 'Mute'}
         </button>
