@@ -38,7 +38,7 @@
 
   // Calculate step data for rendering
   const stepData = $derived.by(() => {
-    const radius = (size / 2) - 10
+    const radius = (size / 2) - 12
     const center = size / 2
     
     return Array.from({ length: steps }, (_, i) => {
@@ -64,10 +64,10 @@
   <circle
     cx={size / 2}
     cy={size / 2}
-    r={(size / 2) - 10}
+    r={(size / 2) - 12}
     fill="none"
     stroke="var(--color-dark)"
-    stroke-width="2"
+    stroke-width="3"
     opacity="0.5"
   />
 
@@ -89,10 +89,10 @@
     <circle
       cx={step.x}
       cy={step.y}
-      r={step.active ? 5 : 4}
+      r={step.active ? 6 : 5}
       fill={step.active ? 'var(--color-module-accent)' : 'none'}
       stroke={step.active ? 'none' : 'var(--color-light)'}
-      stroke-width="2"
+      stroke-width="2.5"
       opacity={step.isCurrent ? 1 : (step.active ? 0.9 : 0.4)}
     />
     
@@ -101,10 +101,10 @@
       <circle
         cx={step.x}
         cy={step.y}
-        r="8"
+        r="10"
         fill="none"
         stroke="var(--color-module-accent)"
-        stroke-width="2.5"
+        stroke-width="3"
       />
     {/if}
   {/each}
