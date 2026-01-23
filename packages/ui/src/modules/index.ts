@@ -1,19 +1,35 @@
-import Clock from './Clock.svelte'
-import Oscillator from './Oscillator/Oscillator.svelte'
-import Noise from './Noise.svelte'
-import Filter from './Filter.svelte'
-import Envelope from './Envelope/Envelope.svelte'
-import Delay from './Delay.svelte'
-import Reverb from './Reverb.svelte'
-import Quantiser from './Quantiser.svelte'
-import SampleAndHold from './SampleAndHold.svelte'
-import Parameter from './Parameter.svelte'
-import Vca from './Vca.svelte'
-import Scope from './Scope/Scope.svelte'
-import Lfo from './Lfo/Lfo.svelte'
-import Euclidean from './Euclidean/Euclidean.svelte'
-import { type Module } from '@sobaka/state/models/workspace'
+/**
+ * UI Modules Package
+ * 
+ * Exports component definitions and registry.
+ * App is responsible for creating registry and registering components.
+ */
 
+// Registry system
+export { UIModuleRegistry, type UIModuleDefinition } from './registry'
+
+// Component definitions (app registers these)
+export * from './definitions'
+
+// Legacy exports (deprecated - use registry instead)
+import { type Module } from '@sobaka/state/models/workspace'
+import {
+  Clock,
+  Oscillator,
+  Noise,
+  Filter,
+  Envelope,
+  Delay,
+  Reverb,
+  Quantiser,
+  Parameter,
+  Vca,
+  Scope,
+  Lfo,
+  Euclidean,
+} from './definitions'
+
+/** @deprecated Use UIModuleRegistry instead */
 export const MODULES = {
   Clock,
   Delay,
@@ -26,11 +42,11 @@ export const MODULES = {
   Parameter,
   Quantiser,
   Reverb,
-  SampleAndHold,
   Scope,
   Vca,
 } as const
 
+/** @deprecated Use UIModuleRegistry.get() instead */
 export const getComponent = (module: Module) => {
   return MODULES[module.type as keyof typeof MODULES]
 }

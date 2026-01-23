@@ -6,7 +6,6 @@ import { EnvelopeNode } from "./envelope/node";
 import { DelayNode } from "./delay/node";
 import { ReverbNode } from "./reverb/node";
 import { QuantiserNode } from "./quantiser/node";
-import { SampleAndHoldNode } from "./sample_and_hold/node";
 import { ParameterNode } from "./parameter/node";
 import { VcaNode } from "./vca/node";
 import { ScopeNode } from "./scope/node";
@@ -30,7 +29,6 @@ export const createAudioModule = (module: Module, audioContext: AudioContext): M
   if (module.type === 'Delay') return new DelayNode(module.id, audioContext, module.state as any)
   if (module.type === 'Reverb') return new ReverbNode(module.id, audioContext, module.state as any)
   if (module.type === 'Quantiser') return new QuantiserNode(module.id, audioContext, module.state as any)
-  if (module.type === 'SampleAndHold') return new SampleAndHoldNode(module.id, audioContext, module.state as any)
   if (module.type === 'Parameter') return new ParameterNode(module.id, audioContext, module.state as any)
   if (module.type === 'Vca') return new VcaNode(module.id, audioContext, module.state as any)
   if (module.type === 'Scope') return new ScopeNode(module.id, audioContext, module.state as any)
@@ -49,7 +47,6 @@ export const createAudioModuleInitialState = (type: string): Record<string, any>
   if (type === 'Delay') return DelayNode.initialState
   if (type === 'Reverb') return ReverbNode.initialState
   if (type === 'Quantiser') return QuantiserNode.initialState
-  if (type === 'SampleAndHold') return SampleAndHoldNode.initialState
   if (type === 'Parameter') return ParameterNode.initialState
   if (type === 'Vca') return VcaNode.initialState
   if (type === 'Scope') return ScopeNode.initialState

@@ -21,7 +21,7 @@
   // Plug callbacks - get plug type and pass to tryMakeLink
   const handlePlugClick = (routeName: string) => {
     const plugType = dsp.getPlugType(moduleId, routeName)
-    if (plugType !== undefined) {
+    if (plugType !== null) {
       workspace.tryMakeLink(moduleId, routeName, plugType)
     }
   }

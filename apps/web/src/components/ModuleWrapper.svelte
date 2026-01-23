@@ -34,7 +34,7 @@
   // Plug callbacks - get plug type and pass to tryMakeLink
   const handlePlugClick = (routeName: string) => {
     const plugType = dsp.getPlugType(module.id, routeName)
-    if (plugType !== undefined) {
+    if (plugType !== null) {
       workspace.tryMakeLink(module.id, routeName, plugType)
     }
   }
@@ -45,15 +45,7 @@
   }
 </script>
 
-<svelte:component
-  this={component}
-  {node}
-  {disabled}
-  {position}
-  onClose={handleClose}
-  onClone={handleClone}
-  onDrag={handleDrag}
-  onPlugClick={handlePlugClick}
-  bindElement={handleBindElement}
-  bindPlugElement={handleBindPlugElement}
-/>
+{#if node}
+  {@const nodeProps = { node, disabled, position, onClose: handleClose, onClone: handleClone, onDrag: handleDrag, onPlugClick: handlePlugClick, bindElement: handleBindElement, bindPlugElement: handleBindPlugElement }}
+  <svelte:component this={component as any} {...nodeProps as any} />
+{/if}

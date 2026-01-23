@@ -46,7 +46,9 @@
         number = match[0]
         unit = element.value.replace(number, '')
       }
+      console.log('handleKeyDown', number, range, unit);
       value = limit(range, fromString(range, parseFloat(number), unit))
+      console.log('handleKeyDown', value);
       element.select()
     }
   }
@@ -54,7 +56,9 @@
   const handleBlur = (event: FocusEvent) => {
     const element = event.target as HTMLInputElement
     // @todo -- doesn't seem idiomatic
+    console.log('handleBlur', value);
     element.value = toString(range, value)
+    console.log('handleBlur', element.value);
     isMouseDown = false
   }
 </script>

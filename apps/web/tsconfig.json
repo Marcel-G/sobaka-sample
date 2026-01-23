@@ -1,6 +1,8 @@
 {
   "extends": "./.svelte-kit/tsconfig.json",
   "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "checkJs": false,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
@@ -8,10 +10,15 @@
     "allowJs": true,
     "esModuleInterop": true,
     "importHelpers": true,
-    "importsNotUsedAsValues": "remove",
     "moduleResolution": "bundler",
-    "preserveValueImports": false,
     "resolveJsonModule": true,
-    "strict": true
+    "strict": true,
+    "verbatimModuleSyntax": false,
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "paths": {
+      "simple-peer-vendor": ["../../packages/state/src/@types/simple-peer-vendor.d.ts"]
+    },
+    "typeRoots": ["./node_modules/@types", "../../packages/state/src/@types"]
   }
 }
