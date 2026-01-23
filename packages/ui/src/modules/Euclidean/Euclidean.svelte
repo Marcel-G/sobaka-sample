@@ -93,12 +93,14 @@
 >
   {#snippet children()}
     <div class="content">
-      <EuclideanCircle
-        steps={$nodeState.steps}
-        {pattern}
-        {currentStep}
-        size={96}
-      />
+      <div class="circle-container">
+        <EuclideanCircle
+          steps={$nodeState.steps}
+          {pattern}
+          {currentStep}
+          size={100}
+        />
+      </div>
       <div class="knobs">
         <Knob
           {disabled}
@@ -149,9 +151,14 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
     height: 100%;
-    gap: 0.25rem;
+  }
+
+  .circle-container {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .knobs {
@@ -159,5 +166,6 @@
     gap: 0.25rem;
     transform: scale(0.7);
     transform-origin: top center;
+    flex-shrink: 0;
   }
 </style>
