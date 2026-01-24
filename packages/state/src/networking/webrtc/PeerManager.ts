@@ -60,7 +60,9 @@ export interface PeerInfo {
   glareToken?: number
   // Chunking state
   txOrdinal: number
-  rxPackets: DecodedPacket[]
+  // Per-topic packet storage to prevent cross-topic mixing
+  // Key is "topic:txOrd" to isolate packets from different topics
+  rxPackets: Map<string, DecodedPacket[]>
 }
 
 export type PeerManagerEvents = {
@@ -269,8 +271,12 @@ export class PeerManager extends EventEmitter<PeerManagerEvents> {
 
   /**
    * Handle incoming packet: decode and reassemble multi-chunk messages
+   * 
+   * IMPORTANT: Topic is required to prevent cross-topic packet mixing.
+   * Since multiple topics share the same peer connection, packets from
+   * different topics could have the same txOrd value.
    */
-  private handleIncomingPacket(peer: PeerInfo, rawData: Uint8Array): Uint8Array | null {
+  private handleIncomingPacket(peer: PeerInfo, topic: string, rawData: Uint8Array): Uint8Array | null {
     const packet = decodePacket(rawData)
     
     // Single-chunk message - deliver immediately
@@ -278,8 +284,15 @@ export class PeerManager extends EventEmitter<PeerManagerEvents> {
       return packet.chunk
     }
     
+    // Use topic+txOrd as key to isolate packets from different topics
+    const key = `${topic}:${packet.txOrd}`
+    
     // Multi-chunk message - collect and reassemble
-    const existingPackets = peer.rxPackets.filter(p => p.txOrd === packet.txOrd)
+    let existingPackets = peer.rxPackets.get(key)
+    if (!existingPackets) {
+      existingPackets = []
+      peer.rxPackets.set(key, existingPackets)
+    }
     existingPackets.push(packet)
     
     const receivedIndices = new Set(existingPackets.map(p => p.index))
@@ -297,15 +310,12 @@ export class PeerManager extends EventEmitter<PeerManagerEvents> {
       }
       
       // Clean up after delay
-      const txOrd = packet.txOrd
       setTimeout(() => {
-        peer.rxPackets = peer.rxPackets.filter(p => p.txOrd !== txOrd)
+        peer.rxPackets.delete(key)
       }, TX_CLEANUP_DELAY)
       
       return reassembled
     } else {
-      // Store for later
-      peer.rxPackets.push(packet)
       return null
     }
   }
@@ -514,7 +524,7 @@ export class PeerManager extends EventEmitter<PeerManagerEvents> {
       channels: new Map(),
       connected: false,
       txOrdinal: 0,
-      rxPackets: []
+      rxPackets: new Map()
     }
     
     this.peers.set(remotePeerId, peer)
@@ -589,7 +599,8 @@ export class PeerManager extends EventEmitter<PeerManagerEvents> {
     
     channel.onmessage = (event) => {
       const rawData = new Uint8Array(event.data)
-      const reassembled = this.handleIncomingPacket(peer, rawData)
+      // Pass topic to prevent cross-topic packet mixing
+      const reassembled = this.handleIncomingPacket(peer, topic, rawData)
       if (reassembled) {
         this.emit('channel:data', topic, peer.peerId, reassembled)
       }

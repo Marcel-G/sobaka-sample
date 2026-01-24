@@ -383,7 +383,8 @@ impl PeerConnection {
             }
         };
 
-        if let Some(data) = self.packet_queue.process_packet(packet) {
+        // Pass topic to reassembler to prevent cross-topic packet mixing
+        if let Some(data) = self.packet_queue.process_packet(&topic, packet) {
             debug!(
                 client_id = %self.client_id,
                 topic = %topic,

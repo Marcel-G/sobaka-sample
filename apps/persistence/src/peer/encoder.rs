@@ -119,34 +119,39 @@ pub fn packet_array(data: &[u8], tx_ord: u64, chunk_size: usize) -> Vec<PacketDa
         .collect()
 }
 
-/// Manages packet reassembly for multi-chunk messages
+/// Manages packet reassembly for multi-chunk messages, keyed by topic
+/// 
+/// IMPORTANT: This must be per-topic aware because multiple topics can share
+/// the same peer connection, and tx_ord values are per-peer, not per-topic.
+/// Without topic separation, packets from different topics with the same tx_ord
+/// would get incorrectly mixed during reassembly.
 #[derive(Debug, Default)]
 pub struct PacketReassembler {
-    rx_packets: Vec<DecodedPacket>,
+    /// Packets keyed by (topic, tx_ord) to prevent cross-topic mixing
+    rx_packets: std::collections::HashMap<(String, u64), Vec<DecodedPacket>>,
 }
 
 impl PacketReassembler {
     pub fn new() -> Self {
         Self {
-            rx_packets: Vec::new(),
+            rx_packets: std::collections::HashMap::new(),
         }
     }
 
     /// Processes an incoming packet and returns the complete message if all chunks are received
-    pub fn process_packet(&mut self, packet: DecodedPacket) -> Option<Vec<u8>> {
+    /// 
+    /// The topic parameter is required to correctly separate packets from different topics
+    /// that may have the same tx_ord value.
+    pub fn process_packet(&mut self, topic: &str, packet: DecodedPacket) -> Option<Vec<u8>> {
         // If this is a single-chunk message, return it immediately
         if packet.chunk_size == packet.total_size {
             return Some(packet.chunk);
         }
 
-        // Find existing packets with the same transmission order
-        let mut existing_packets: Vec<_> = self
-            .rx_packets
-            .iter()
-            .filter(|p| p.tx_ord == packet.tx_ord)
-            .cloned()
-            .collect();
-
+        let key = (topic.to_string(), packet.tx_ord);
+        
+        // Get or create the packet list for this topic+tx_ord
+        let existing_packets = self.rx_packets.entry(key.clone()).or_insert_with(Vec::new);
         existing_packets.push(packet.clone());
 
         // Check if we have received all chunks for this message
@@ -162,17 +167,15 @@ impl PacketReassembler {
             let total_length: usize = existing_packets.iter().map(|p| p.chunk.len()).sum();
             let mut reassembled_data = Vec::with_capacity(total_length);
 
-            for p in &existing_packets {
+            for p in existing_packets {
                 reassembled_data.extend_from_slice(&p.chunk);
             }
 
-            // Clean up received packets for this transmission order
-            self.rx_packets.retain(|p| p.tx_ord != packet.tx_ord);
+            // Clean up received packets for this topic+tx_ord
+            self.rx_packets.remove(&key);
 
             Some(reassembled_data)
         } else {
-            // Store the packet for later reassembly
-            self.rx_packets.push(packet);
             None
         }
     }
@@ -226,19 +229,20 @@ mod tests {
         let mut reassembler = PacketReassembler::new();
         let original_data = vec![1u8; 100];
         let packets = packet_array(&original_data, 456, 30);
+        let topic = "test-topic";
 
         // Process all packets except the last one
         for packet in &packets[0..3] {
             let encoded = encode_packet(packet);
             let decoded = decode_packet(&encoded).unwrap();
-            let result = reassembler.process_packet(decoded);
+            let result = reassembler.process_packet(topic, decoded);
             assert!(result.is_none()); // Should not return data yet
         }
 
         // Process the last packet
         let encoded = encode_packet(&packets[3]);
         let decoded = decode_packet(&encoded).unwrap();
-        let result = reassembler.process_packet(decoded);
+        let result = reassembler.process_packet(topic, decoded);
 
         assert!(result.is_some());
         assert_eq!(result.unwrap(), original_data);
@@ -248,6 +252,7 @@ mod tests {
     fn test_single_chunk_message() {
         let mut reassembler = PacketReassembler::new();
         let data = vec![42u8; 10];
+        let topic = "test-topic";
         let packet = PacketData {
             chunk: data.clone(),
             tx_ord: 789,
@@ -259,9 +264,39 @@ mod tests {
 
         let encoded = encode_packet(&packet);
         let decoded = decode_packet(&encoded).unwrap();
-        let result = reassembler.process_packet(decoded);
+        let result = reassembler.process_packet(topic, decoded);
 
         assert!(result.is_some());
         assert_eq!(result.unwrap(), data);
+    }
+
+    #[test]
+    fn test_cross_topic_isolation() {
+        // This test verifies that packets from different topics with the same tx_ord
+        // don't get mixed up during reassembly
+        let mut reassembler = PacketReassembler::new();
+        
+        let data_a = vec![1u8; 100];
+        let data_b = vec![2u8; 100];
+        let packets_a = packet_array(&data_a, 1, 30); // Same tx_ord
+        let packets_b = packet_array(&data_b, 1, 30); // Same tx_ord
+        
+        // Interleave packets from both topics
+        for i in 0..4 {
+            let decoded_a = decode_packet(&encode_packet(&packets_a[i])).unwrap();
+            let decoded_b = decode_packet(&encode_packet(&packets_b[i])).unwrap();
+            
+            let result_a = reassembler.process_packet("topic-a", decoded_a);
+            let result_b = reassembler.process_packet("topic-b", decoded_b);
+            
+            if i < 3 {
+                assert!(result_a.is_none());
+                assert!(result_b.is_none());
+            } else {
+                // Last packet should complete both messages
+                assert_eq!(result_a.unwrap(), data_a);
+                assert_eq!(result_b.unwrap(), data_b);
+            }
+        }
     }
 }
