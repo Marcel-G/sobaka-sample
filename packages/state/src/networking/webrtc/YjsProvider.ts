@@ -162,8 +162,7 @@ export class YjsWebRTCProvider extends EventEmitter<YjsWebRTCProviderEvents> {
 
   private setupRoom(): void {
     // Handle room sync (our identity verified)
-    this.room.on('synced', () => {
-      const identity = this.room.getIdentity(this.room.peerId)
+    this.room.on('synced', (identity) => {
       if (identity && !this.currentUser) {
         this.currentUser = identity
         this.emit('user', identity)
@@ -171,7 +170,7 @@ export class YjsWebRTCProvider extends EventEmitter<YjsWebRTCProviderEvents> {
     })
     
     // Handle peer identity verification
-    this.room.on('peer:identity', (peerId, identity) => {
+    this.room.on('peer:identity', (peerId, identity, _kind) => {
       this.verifiedIdentities.set(peerId, identity)
     })
     

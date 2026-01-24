@@ -28,7 +28,7 @@
 
 // Core components
 export { WebRTCPeer, WEBRTC_SUPPORT, type WebRTCPeerOptions, type SignalData, type WebRTCPeerEvents } from './WebRTCPeer'
-export { SignalingClient, type SignalingClientOptions, type SignalingClientEvents, type SignalingMessage, type MessageData } from './SignalingClient'
+export { SignalingClient, type SignalingClientOptions, type SignalingClientEvents, type SignalingMessage, type MessageData, type PeerKind } from './SignalingClient'
 export { Room, type RoomOptions, type RoomEvents, type PeerConnection } from './Room'
 export { YjsWebRTCProvider, createYjsWebRTCProvider, type YjsWebRTCProviderOptions, type YjsWebRTCProviderEvents } from './YjsProvider'
 

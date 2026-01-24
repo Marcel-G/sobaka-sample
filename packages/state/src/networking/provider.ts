@@ -62,9 +62,12 @@ export class VerifiedRTCProvider extends EventEmitter<VerifiedRTCProviderEvents>
       iceServers: options.iceServers,
       filterIncomingMessage: options.filterIncomingMessage
         ? (identity, data) => {
-            // Check if it's a worker identity
-            if (this.verifiedWorkerIdentities.has(identity)) {
-              return true // Allow all worker messages
+            // Check if it's a worker identity (identity is the UUID)
+            // verifiedWorkerIdentities maps peerId -> identity, so check values
+            for (const workerIdentity of this.verifiedWorkerIdentities.values()) {
+              if (workerIdentity === identity) {
+                return true // Allow all worker messages
+              }
             }
             
             // Check if this is a read-only message
@@ -104,9 +107,13 @@ export class VerifiedRTCProvider extends EventEmitter<VerifiedRTCProviderEvents>
       this.emit('user', identity)
     })
     
-    // Track peer identities
-    this.provider.room.on('peer:identity', (peerId, identity) => {
-      this.verifiedPeerIdentities.set(peerId, identity)
+    // Track peer identities by kind
+    this.provider.room.on('peer:identity', (peerId, identity, kind) => {
+      if (kind === 'worker') {
+        this.verifiedWorkerIdentities.set(peerId, identity)
+      } else {
+        this.verifiedPeerIdentities.set(peerId, identity)
+      }
     })
   }
 

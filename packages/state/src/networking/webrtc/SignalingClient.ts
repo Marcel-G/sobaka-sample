@@ -42,6 +42,8 @@ export interface SignalingClientOptions {
   pingInterval?: number
 }
 
+export type PeerKind = 'client' | 'worker'
+
 export type SignalingClientEvents = {
   /** Connected to signaling server */
   connect: () => void
@@ -50,9 +52,9 @@ export type SignalingClientEvents = {
   /** Received a message */
   message: (message: SignalingMessage) => void
   /** Received an announce from a peer */
-  announce: (roomName: string, peerId: string, identity: string | undefined) => void
+  announce: (roomName: string, peerId: string, identity: string | undefined, kind: PeerKind | undefined) => void
   /** Received a signal from a peer */
-  signal: (roomName: string, from: string, to: string, signal: SignalData, identity: string | undefined) => void
+  signal: (roomName: string, from: string, to: string, signal: SignalData, identity: string | undefined, kind: PeerKind | undefined) => void
   /** Error occurred */
   error: (error: Error) => void
 }
@@ -229,9 +231,9 @@ export class SignalingClient extends EventEmitter<SignalingClientEvents> {
       // Handle specific message types
       if (message.type === 'publish' && message.data && message.topic) {
         if (message.data.type === 'announce') {
-          this.emit('announce', message.topic, message.data.from, message.identity)
+          this.emit('announce', message.topic, message.data.from, message.identity, message.kind)
         } else if (message.data.type === 'signal' && message.data.to && message.data.signal) {
-          this.emit('signal', message.topic, message.data.from, message.data.to, message.data.signal, message.identity)
+          this.emit('signal', message.topic, message.data.from, message.data.to, message.data.signal, message.identity, message.kind)
         }
       }
     } catch (err) {

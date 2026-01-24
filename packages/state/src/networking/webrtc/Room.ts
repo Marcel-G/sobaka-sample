@@ -10,7 +10,7 @@
 
 import { EventEmitter } from './EventEmitter'
 import { WebRTCPeer, type SignalData, type WebRTCPeerOptions } from './WebRTCPeer'
-import { SignalingClient } from './SignalingClient'
+import { SignalingClient, type PeerKind } from './SignalingClient'
 import { uuidv4 } from 'lib0/random'
 
 // ============================================================================
@@ -39,13 +39,15 @@ export interface RoomOptions {
   filterMessage?: (peerId: string, identity: string | undefined, data: Uint8Array) => boolean
 }
 
+export type { PeerKind }
+
 export type RoomEvents = {
   /** Peer list changed */
   peers: (peers: Map<string, PeerConnection>) => void
   /** Data received from a peer */
   data: (data: Uint8Array, peerId: string, identity: string | undefined) => void
-  /** Room synced (initial peer discovery complete) */
-  synced: () => void
+  /** Room synced (our identity verified by signaling server) */
+  synced: (identity: string) => void
   /** Error occurred */
   error: (error: Error) => void
   /** Connected to signaling */
@@ -53,7 +55,7 @@ export type RoomEvents = {
   /** Disconnected from signaling */
   'signaling:disconnect': () => void
   /** Identity verified for a peer */
-  'peer:identity': (peerId: string, identity: string) => void
+  'peer:identity': (peerId: string, identity: string, kind: PeerKind) => void
 }
 
 // ============================================================================
@@ -199,27 +201,27 @@ export class Room extends EventEmitter<RoomEvents> {
       this.emit('signaling:disconnect')
     })
     
-    client.on('announce', (roomName, remotePeerId, identity) => {
+    client.on('announce', (roomName, remotePeerId, identity, kind) => {
       if (roomName !== this.name) return
       if (remotePeerId === this.peerId) return
       
-      // Store identity
-      if (identity) {
+      // Store identity and emit event
+      if (identity && kind) {
         this.peerIdentities.set(remotePeerId, identity)
-        this.emit('peer:identity', remotePeerId, identity)
+        this.emit('peer:identity', remotePeerId, identity, kind)
       }
       
       this.handleAnnounce(remotePeerId, identity)
     })
     
-    client.on('signal', (roomName, from, to, signal, identity) => {
+    client.on('signal', (roomName, from, to, signal, identity, kind) => {
       if (roomName !== this.name) return
       if (to !== this.peerId) return
       
-      // Store identity
-      if (identity) {
+      // Store identity and emit event
+      if (identity && kind) {
         this.peerIdentities.set(from, identity)
-        this.emit('peer:identity', from, identity)
+        this.emit('peer:identity', from, identity, kind)
       }
       
       this.handleSignal(from, signal, identity)
@@ -236,7 +238,7 @@ export class Room extends EventEmitter<RoomEvents> {
           this.synced = true
           // Store our own identity
           this.peerIdentities.set(this.peerId, message.identity)
-          this.emit('synced')
+          this.emit('synced', message.identity)
         }
       }
     })
