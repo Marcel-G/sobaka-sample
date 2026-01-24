@@ -435,6 +435,17 @@ impl Client {
                             );
                         }
                     }
+                    (client_id, Propagated::Disconnected(topic)) => {
+                        info!(
+                            client_id = %client_id,
+                            topic = %topic,
+                            "Peer disconnected from topic (channel closed)"
+                        );
+                        
+                        // The channel is already removed from the connection,
+                        // so we just log it here. The connection cleanup will
+                        // happen when is_alive() returns false (if all channels closed).
+                    }
                     _ => {}
                 }
                 continue;

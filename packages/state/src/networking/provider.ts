@@ -159,6 +159,13 @@ export class VerifiedRTCProvider extends EventEmitter<VerifiedRTCProviderEvents>
     this.awareness.off('update', this.onAwarenessUpdate)
     this.doc.off('update', this.onDocUpdate)
     
+    // Remove window event listeners
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('beforeunload', this.onBeforeUnload)
+      window.removeEventListener('pagehide', this.onBeforeUnload)
+      document.removeEventListener('visibilitychange', this.onVisibilityChange)
+    }
+    
     this.disconnect()
     this.removeAllListeners()
   }
@@ -475,7 +482,14 @@ export class VerifiedRTCProvider extends EventEmitter<VerifiedRTCProviderEvents>
 
   private setupBeforeUnload(): void {
     if (typeof window !== 'undefined') {
+      // beforeunload is the traditional event but doesn't always fire
       window.addEventListener('beforeunload', this.onBeforeUnload)
+      
+      // pagehide is more reliable, especially on mobile
+      window.addEventListener('pagehide', this.onBeforeUnload)
+      
+      // visibilitychange with hidden state can catch some edge cases
+      document.addEventListener('visibilitychange', this.onVisibilityChange)
     }
   }
 
@@ -486,6 +500,15 @@ export class VerifiedRTCProvider extends EventEmitter<VerifiedRTCProviderEvents>
       'window unload'
     )
     this.disconnect()
+  }
+  
+  private onVisibilityChange = (): void => {
+    // When page becomes hidden and is being discarded, clean up
+    // Note: We don't disconnect on every hide, just ensure cleanup happens
+    if (document.visibilityState === 'hidden') {
+      // Use sendBeacon or similar to ensure awareness is removed
+      // For now, we rely on beforeunload/pagehide for actual cleanup
+    }
   }
 }
 

@@ -181,6 +181,18 @@ impl PeerConnection {
             return false;
         }
         
+        // If all channels have been closed, the connection is effectively dead
+        // (but only after the connection was established - i.e., we had channels)
+        // We check if channels is empty AND we've been alive for more than a few seconds
+        // to avoid killing connections that are still being set up
+        if self.channels.is_empty() && self.last_activity.elapsed() > Duration::from_secs(5) {
+            debug!(
+                client_id = %self.client_id,
+                "Connection has no open channels"
+            );
+            return false;
+        }
+        
         true
     }
 
@@ -377,6 +389,28 @@ impl PeerConnection {
                     Propagated::Connected(topic)
                 }
                 Event::ChannelData(data) => self.handle_channel_data(data),
+                Event::ChannelClose(cid) => {
+                    // Channel has been closed by the remote peer
+                    if let Some(topic) = self.channel_topics.remove(&cid) {
+                        self.channels.remove(&topic);
+                        self.topics.remove(&topic);
+                        
+                        info!(
+                            client_id = %self.client_id,
+                            topic = %topic,
+                            "Data channel closed by remote peer"
+                        );
+                        
+                        Propagated::Disconnected(topic)
+                    } else {
+                        debug!(
+                            client_id = %self.client_id,
+                            channel_id = ?cid,
+                            "Unknown channel closed"
+                        );
+                        Propagated::Noop
+                    }
+                }
                 other => {
                     trace!(
                         client_id = %self.client_id,
@@ -502,10 +536,15 @@ pub enum Propagated {
     /// Poll client has reached timeout.
     Timeout(Instant),
 
-    /// Client successfuly connected
+    /// Client successfully connected to a topic
     Connected(String),
 
+    /// Client disconnected from a topic (channel closed)
+    Disconnected(String),
+
+    /// Data received on a topic
     Data(String, Vec<u8>),
 
+    /// Signaling message to send
     Signal(String, Signal),
 }

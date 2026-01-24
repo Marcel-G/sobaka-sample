@@ -3,12 +3,11 @@
 # Development script for running the persistence worker
 #
 # This script:
-# 1. Generates a worker JWT token
+# 1. Generates a worker JWT token using the signaling scripts
 # 2. Starts the persistence service with proper configuration
 #
 # Prerequisites:
 # - The signaling server must be running first
-# - JWT_PRIVATE_KEY must be set (or use default dev secret)
 #
 # Usage:
 #   ./scripts/dev.sh              # Run with defaults
@@ -25,23 +24,12 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
-log_info() {
-    echo -e "${BLUE}[INFO]${NC} $1"
-}
-
-log_success() {
-    echo -e "${GREEN}[OK]${NC} $1"
-}
-
-log_warn() {
-    echo -e "${YELLOW}[WARN]${NC} $1"
-}
-
-log_error() {
-    echo -e "${RED}[ERROR]${NC} $1"
-}
+log_info() { echo -e "${BLUE}[INFO]${NC} $1"; }
+log_success() { echo -e "${GREEN}[OK]${NC} $1"; }
+log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
+log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
 # Parse arguments
 VERBOSE=false
@@ -69,9 +57,6 @@ for arg in "$@"; do
     esac
 done
 
-# Default development secret (NEVER use in production!)
-export JWT_PRIVATE_KEY="${JWT_PRIVATE_KEY:-dev-secret-do-not-use-in-production}"
-
 # Default signaling server
 export SIGNAL_SERVER="${SIGNAL_SERVER:-ws://localhost:8000/signaling}"
 
@@ -91,27 +76,10 @@ echo "║           Sobaka Persistence Worker (Development)         ║"
 echo "╚═══════════════════════════════════════════════════════════╝"
 echo ""
 
-# Check if signaling server is reachable
-log_info "Checking signaling server at $SIGNAL_SERVER..."
-
-# Build the JWT generator if needed
-log_info "Building JWT generator..."
-if ! cargo build --bin generate-jwt --manifest-path "$SIGNALING_DIR/Cargo.toml" --quiet 2>/dev/null; then
-    log_error "Failed to build JWT generator"
-    log_info "Make sure you're in the right directory and dependencies are installed"
-    exit 1
-fi
-
-# Generate worker JWT
+# Generate worker JWT using the consolidated script
 log_info "Generating worker JWT token..."
-GENERATE_JWT="$SIGNALING_DIR/target/debug/generate-jwt"
 
-if [ ! -f "$GENERATE_JWT" ]; then
-    log_error "JWT generator not found at $GENERATE_JWT"
-    exit 1
-fi
-
-export JWT=$("$GENERATE_JWT" --worker --uuid "persistence-dev-worker" 2>/dev/null)
+export JWT=$("$SIGNALING_DIR/scripts/generate-jwt.sh" --role worker --env dev --uuid "persistence-dev-worker" -q)
 
 if [ -z "$JWT" ]; then
     log_error "Failed to generate JWT token"
