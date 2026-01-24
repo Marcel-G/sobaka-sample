@@ -292,18 +292,30 @@ impl PeerConnection {
                     Propagated::Noop
                 }
                 Event::IceConnectionStateChange(state) => {
-                    info!(
-                        client_id = %self.client_id,
-                        state = ?state,
-                        "ICE connection state changed"
-                    );
-
-                    if state == IceConnectionState::Disconnected {
-                        warn!(
-                            client_id = %self.client_id,
-                            "ICE disconnected, closing connection"
-                        );
-                        self.rtc.disconnect();
+                    // Log state changes, but don't forcibly disconnect
+                    // In ICE-lite mode, we may temporarily be in Disconnected state
+                    // while waiting for the remote peer to send us traffic
+                    // The connection will recover when we receive a STUN request
+                    match state {
+                        IceConnectionState::Disconnected => {
+                            debug!(
+                                client_id = %self.client_id,
+                                "ICE disconnected - waiting for peer traffic"
+                            );
+                        }
+                        IceConnectionState::Completed => {
+                            info!(
+                                client_id = %self.client_id,
+                                "ICE connection completed"
+                            );
+                        }
+                        _ => {
+                            debug!(
+                                client_id = %self.client_id,
+                                state = ?state,
+                                "ICE connection state changed"
+                            );
+                        }
                     }
                     Propagated::Noop
                 }

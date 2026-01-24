@@ -1,6 +1,10 @@
 /// Configuration constants for packet chunking and transmission
 pub const CHUNK_SIZE: usize = 1024 * 16 - 512; // 16KB - 512 bytes reserved for packet headers
 
+/// Header size in bytes (5 x u32 = 20 bytes)
+/// Must match the browser's chunking.ts format
+const HEADER_SIZE: usize = 20;
+
 /// Packet data structure containing chunk and metadata
 #[derive(Debug, Clone)]
 pub struct PacketData {
@@ -25,22 +29,24 @@ pub struct DecodedPacket {
 
 /// Encodes a data chunk with metadata into a packet for transmission
 ///
-/// Packet structure (40 bytes header + chunk data):
-/// - bytes 0-7:   tx_ord (transmission order)
-/// - bytes 8-15:  index (chunk index within message)
-/// - bytes 16-23: length (total number of chunks in message)
-/// - bytes 24-31: total_size (original message size in bytes)
-/// - bytes 32-39: chunk_size (size of this specific chunk)
-/// - bytes 40+:   chunk (the actual data)
+/// Packet structure (20 bytes header + chunk data):
+/// - bytes 0-3:   tx_ord (transmission order, u32 little-endian)
+/// - bytes 4-7:   index (chunk index within message, u32 little-endian)
+/// - bytes 8-11:  length (total number of chunks in message, u32 little-endian)
+/// - bytes 12-15: total_size (original message size in bytes, u32 little-endian)
+/// - bytes 16-19: chunk_size (size of this specific chunk, u32 little-endian)
+/// - bytes 20+:   chunk (the actual data)
+///
+/// This format matches the browser's chunking.ts for interoperability.
 pub fn encode_packet(packet_data: &PacketData) -> Vec<u8> {
-    let mut encoded = Vec::with_capacity(40 + packet_data.chunk.len());
+    let mut encoded = Vec::with_capacity(HEADER_SIZE + packet_data.chunk.len());
 
-    // Write header fields as big-endian u64
-    encoded.extend_from_slice(&packet_data.tx_ord.to_be_bytes());
-    encoded.extend_from_slice(&packet_data.index.to_be_bytes());
-    encoded.extend_from_slice(&packet_data.length.to_be_bytes());
-    encoded.extend_from_slice(&packet_data.total_size.to_be_bytes());
-    encoded.extend_from_slice(&packet_data.chunk_size.to_be_bytes());
+    // Write header fields as little-endian u32 (matching browser format)
+    encoded.extend_from_slice(&(packet_data.tx_ord as u32).to_le_bytes());
+    encoded.extend_from_slice(&(packet_data.index as u32).to_le_bytes());
+    encoded.extend_from_slice(&(packet_data.length as u32).to_le_bytes());
+    encoded.extend_from_slice(&(packet_data.total_size as u32).to_le_bytes());
+    encoded.extend_from_slice(&(packet_data.chunk_size as u32).to_le_bytes());
 
     // Write the chunk data
     encoded.extend_from_slice(&packet_data.chunk);
@@ -50,32 +56,26 @@ pub fn encode_packet(packet_data: &PacketData) -> Vec<u8> {
 
 /// Decodes a received packet to extract metadata and chunk data
 pub fn decode_packet(data: &[u8]) -> Result<DecodedPacket, &'static str> {
-    if data.len() < 40 {
+    if data.len() < HEADER_SIZE {
         return Err("Packet too short");
     }
 
-    // Read header fields as big-endian u64
-    // These are safe because we've verified length >= 40
-    let tx_ord = u64::from_be_bytes(data[0..8].try_into().map_err(|_| "Invalid tx_ord bytes")?);
-    let index = u64::from_be_bytes(data[8..16].try_into().map_err(|_| "Invalid index bytes")?);
-    let length = u64::from_be_bytes(
-        data[16..24]
-            .try_into()
-            .map_err(|_| "Invalid length bytes")?,
-    );
-    let total_size = u64::from_be_bytes(
-        data[24..32]
-            .try_into()
-            .map_err(|_| "Invalid total_size bytes")?,
-    );
-    let chunk_size = u64::from_be_bytes(
-        data[32..40]
-            .try_into()
-            .map_err(|_| "Invalid chunk_size bytes")?,
-    );
+    // Read header fields as little-endian u32 (matching browser format)
+    let tx_ord =
+        u32::from_le_bytes(data[0..4].try_into().map_err(|_| "Invalid tx_ord bytes")?) as u64;
+    let index =
+        u32::from_le_bytes(data[4..8].try_into().map_err(|_| "Invalid index bytes")?) as u64;
+    let length =
+        u32::from_le_bytes(data[8..12].try_into().map_err(|_| "Invalid length bytes")?) as u64;
+    let total_size =
+        u32::from_le_bytes(data[12..16].try_into().map_err(|_| "Invalid total_size bytes")?)
+            as u64;
+    let chunk_size =
+        u32::from_le_bytes(data[16..20].try_into().map_err(|_| "Invalid chunk_size bytes")?)
+            as u64;
 
     // Read the remaining data as the chunk
-    let chunk = data[40..].to_vec();
+    let chunk = data[HEADER_SIZE..].to_vec();
 
     Ok(DecodedPacket {
         tx_ord,
