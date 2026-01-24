@@ -1,22 +1,25 @@
 /**
  * Type-safe EventEmitter for TypeScript
  * 
- * A minimal event emitter with full TypeScript type inference
+ * A minimal event emitter with full TypeScript type inference.
+ * Uses a more flexible type system that accepts any function signature.
  */
 
-export type EventMap = Record<string, (...args: unknown[]) => void>
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type EventMap = Record<string, (...args: any[]) => void>
 
 export class EventEmitter<Events extends EventMap> {
-  private listeners = new Map<keyof Events, Set<Events[keyof Events]>>()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private _listeners = new Map<keyof Events, Set<(...args: any[]) => void>>()
 
   /**
    * Add an event listener
    */
   on<K extends keyof Events>(event: K, listener: Events[K]): this {
-    if (!this.listeners.has(event)) {
-      this.listeners.set(event, new Set())
+    if (!this._listeners.has(event)) {
+      this._listeners.set(event, new Set())
     }
-    this.listeners.get(event)!.add(listener)
+    this._listeners.get(event)!.add(listener)
     return this
   }
 
@@ -24,23 +27,24 @@ export class EventEmitter<Events extends EventMap> {
    * Add a one-time event listener
    */
   once<K extends keyof Events>(event: K, listener: Events[K]): this {
-    const onceWrapper = ((...args: Parameters<Events[K]>) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const onceWrapper = (...args: any[]) => {
       this.off(event, onceWrapper as Events[K])
-      ;(listener as (...args: Parameters<Events[K]>) => void)(...args)
-    }) as Events[K]
+      listener(...args)
+    }
     
-    return this.on(event, onceWrapper)
+    return this.on(event, onceWrapper as Events[K])
   }
 
   /**
    * Remove an event listener
    */
   off<K extends keyof Events>(event: K, listener: Events[K]): this {
-    const eventListeners = this.listeners.get(event)
+    const eventListeners = this._listeners.get(event)
     if (eventListeners) {
       eventListeners.delete(listener)
       if (eventListeners.size === 0) {
-        this.listeners.delete(event)
+        this._listeners.delete(event)
       }
     }
     return this
@@ -50,14 +54,14 @@ export class EventEmitter<Events extends EventMap> {
    * Emit an event
    */
   emit<K extends keyof Events>(event: K, ...args: Parameters<Events[K]>): boolean {
-    const eventListeners = this.listeners.get(event)
+    const eventListeners = this._listeners.get(event)
     if (!eventListeners || eventListeners.size === 0) {
       return false
     }
     
     for (const listener of eventListeners) {
       try {
-        (listener as (...args: Parameters<Events[K]>) => void)(...args)
+        listener(...args)
       } catch (err) {
         console.error(`[EventEmitter] Error in listener for "${String(event)}":`, err)
       }
@@ -71,9 +75,9 @@ export class EventEmitter<Events extends EventMap> {
    */
   removeAllListeners<K extends keyof Events>(event?: K): this {
     if (event !== undefined) {
-      this.listeners.delete(event)
+      this._listeners.delete(event)
     } else {
-      this.listeners.clear()
+      this._listeners.clear()
     }
     return this
   }
@@ -82,14 +86,14 @@ export class EventEmitter<Events extends EventMap> {
    * Get listener count for an event
    */
   listenerCount<K extends keyof Events>(event: K): number {
-    return this.listeners.get(event)?.size ?? 0
+    return this._listeners.get(event)?.size ?? 0
   }
 
   /**
    * Get all listeners for an event
    */
-  listeners<K extends keyof Events>(event: K): Events[K][] {
-    const eventListeners = this.listeners.get(event)
-    return eventListeners ? Array.from(eventListeners) : []
+  getListeners<K extends keyof Events>(event: K): Events[K][] {
+    const eventListeners = this._listeners.get(event)
+    return eventListeners ? Array.from(eventListeners) as Events[K][] : []
   }
 }

@@ -260,10 +260,31 @@ export class Room extends EventEmitter<RoomEvents> {
   private handleSignal(from: string, signal: SignalData, identity?: string): void {
     let conn = this.peers.get(from)
     
-    // Create peer if this is a new connection
-    if (!conn && signal.type === 'offer') {
-      if (this.peers.size >= this.maxConns) return
-      conn = this.createPeerConnection(from, false, identity)
+    // Handle glare resolution for offers (from y-webrtc)
+    if (signal.type === 'offer') {
+      if (conn) {
+        // We have an existing connection and received an offer
+        // This is a "glare" situation - both peers tried to connect simultaneously
+        const remoteToken = signal.token ?? 0
+        const localToken = conn.peer.glareToken
+        
+        if (localToken && localToken > remoteToken) {
+          // Our token is higher - reject the remote offer
+          return
+        }
+        
+        // Accept their offer, reset our glare token
+        conn.peer.glareToken = undefined
+      } else {
+        // No existing connection - create one if we have room
+        if (this.peers.size >= this.maxConns) return
+        conn = this.createPeerConnection(from, false, identity)
+      }
+    }
+    
+    // Handle answer - clear glare token
+    if (signal.type === 'answer' && conn) {
+      conn.peer.glareToken = undefined
     }
     
     if (conn) {
