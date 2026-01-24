@@ -195,7 +195,7 @@ pub struct Db {
 impl Db {
     pub fn new() -> Self {
         const DB_PATH: &str = ".db";
-        const DB_SIZE: usize = 4 * 1024 * 1024 * 1024; // 4 GiB
+        const DB_SIZE: u64 = 4 * 1024 * 1024 * 1024; // 4 GiB
 
         info!(
             path = DB_PATH,

@@ -120,12 +120,12 @@ impl PeerConnection {
 
         let Some(cid) = self.cid else {
             error!(client_id = %self.client_id, "No channel available for sending");
-            return Err(RtcError::Other("No channel available".into()));
+            return Ok(0); // No channel to send on
         };
 
-        let Some(channel) = self.rtc.channel(cid) else {
+        let Some(mut channel) = self.rtc.channel(cid) else {
             error!(client_id = %self.client_id, "Channel not found");
-            return Err(RtcError::Other("Channel not found".into()));
+            return Ok(0); // Channel not found
         };
 
         let mut sent = 0;

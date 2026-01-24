@@ -30,3 +30,8 @@ yrs-lmdb = { git = "https://github.com/Marcel-G/yrs-persistence" }
 liblmdb-sys = { git = "https://github.com/tari-project/lmdb-rs" }
 lmdb-rs = { git = "https://github.com/tari-project/lmdb-rs" }
 
+# Patch sha1-asm with a fixed version that works on Apple Silicon
+# The 0.5.3 version has buggy ARM64 assembly (mixes ELF and Mach-O syntax)
+# This version uses pure Rust compress function instead
+sha1-asm = { path = "patches/sha1-asm" }
+

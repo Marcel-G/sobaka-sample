@@ -1,0 +1,8 @@
+[package]
+name = "sha1-asm"
+version = "0.5.3"
+edition = "2021"
+description = "Pure Rust stub to replace buggy sha1-asm assembly on Apple Silicon"
+license = "MIT"
+
+# No build dependencies needed - we're not compiling assembly
