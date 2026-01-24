@@ -20,14 +20,12 @@ This Rust-based server provides:
 ## How It Works
 
 1. Server acts as a persistent WebRTC peer
-2. Connects to signaling server
+2. Connects to signaling server as a **worker** (receives all document updates)
 3. Stores Yjs document updates in LMDB
 4. Syncs with clients when they connect
 5. Ensures documents aren't lost if all clients disconnect
 
 ## Development
-
-The persistence worker needs to connect to the signaling server as a **Worker** peer (not a regular client). This requires a JWT token with `kind: "worker"`.
 
 ### Quick Start
 
@@ -41,33 +39,53 @@ JWT_PRIVATE_KEY=dev-secret cargo run
 ```
 
 The dev script automatically:
-- Generates a worker JWT token
+- Generates a worker JWT token using the signaling scripts
 - Configures the correct environment
 - Builds and runs the service
+
+### Verbose Mode
+
+```bash
+./scripts/dev.sh --verbose
+```
 
 ### Manual Setup
 
 If you prefer manual configuration:
 
 ```bash
-# Generate a worker JWT (from the signaling directory)
-cd ../signaling
-JWT_PRIVATE_KEY=dev-secret cargo run --bin generate-jwt -- --worker
+# Generate a worker JWT
+../signaling/scripts/generate-jwt.sh --role worker --uuid persistence-dev
 
 # Copy the output token and set it as JWT env var
-cd ../persistence
 JWT=<paste-token-here> SIGNAL_SERVER=ws://localhost:8000/signaling cargo run
 ```
 
-### Verbose Mode
+## JWT Rotation (Staging/Production)
+
+For deployed environments, use the rotation script:
 
 ```bash
-# Run with debug logging
-./scripts/dev.sh --verbose
+# Rotate JWT for staging
+./scripts/rotate-jwt.sh --env next
 
-# Or manually
-RUST_LOG=debug,sobaka_client=trace cargo run
+# Rotate JWT for production
+./scripts/rotate-jwt.sh --env prod
+
+# Rotate and restart the container
+./scripts/rotate-jwt.sh --env prod --restart
+
+# Preview what would happen
+./scripts/rotate-jwt.sh --env next --dry-run
 ```
+
+The rotation script:
+1. Fetches the JWT signing secret from AWS Secrets Manager
+2. Generates a new worker JWT
+3. Stores it in AWS Secrets Manager
+4. Optionally triggers a container restart via SSM
+
+See `../signaling/scripts/README.md` for full documentation on JWT scripts.
 
 ## Environment Variables
 
@@ -79,23 +97,21 @@ RUST_LOG=debug,sobaka_client=trace cargo run
 | `PORT` | UDP port for WebRTC traffic | `3478` |
 | `RUST_LOG` | Log level filter | `info` |
 | `LOG_FORMAT` | Log output format (`json` or `pretty`) | `pretty` |
-| `JWT_PRIVATE_KEY` | JWT signing secret (for dev script) | Required |
 
 ## Storage
 
-Documents are stored in LMDB with the following structure:
+Documents are stored in LMDB:
 
 ```
-data/
-├── documents/    # Yjs document updates
-└── metadata/     # Document metadata
+.db/
+├── data.mdb     # Main data file
+└── lock.mdb     # Lock file
 ```
 
 ### Document Keys
 
 - Workspace documents: `workspace:{uuid}`
 - User lists: `list:{uuid}`
-- Root documents: `root:{uuid}`
 
 ## Building
 
@@ -103,7 +119,7 @@ data/
 # Debug build
 cargo build
 
-# Release build (with optimizations disabled due to LMDB)
+# Release build
 cargo build --release
 ```
 
@@ -114,15 +130,15 @@ cargo build --release
 docker build -t sobaka-persistence .
 
 # Run container with volume
-docker run -v ./data:/data -p 8001:8001 sobaka-persistence
+docker run -v ./data:/data -p 3478:3478/udp sobaka-persistence
 ```
 
 ## Deployment
 
 Infrastructure defined in `infrastructure/`:
-- AWS ECS Fargate
+- AWS ECS on EC2 (for UDP support)
 - EBS volume for persistent storage
-- Auto-recovery
+- SSM for container management
 
 ## Data Flow
 
@@ -137,21 +153,17 @@ Client ←→ WebRTC ←→ Persistence Server ←→ LMDB
 LMDB files can be backed up while server is running:
 
 ```bash
-# Copy data directory
-cp -r data/ backup/$(date +%Y%m%d)/
+cp -r .db/ backup/$(date +%Y%m%d)/
 ```
 
-For production, use:
-- EBS snapshots (AWS)
-- Scheduled backups
-- Replication to S3
+For production, use EBS snapshots.
 
 ## Recovery
 
 To restore from backup:
 
 1. Stop server
-2. Replace `data/` directory
+2. Replace `.db/` directory
 3. Start server
 
 ## Performance
@@ -161,37 +173,21 @@ To restore from backup:
 - Handles thousands of documents
 - Low memory footprint
 
-## Monitoring
-
-Metrics logged:
-- Document count
-- Storage size
-- Active connections
-- Sync operations
-
-## Testing
-
-```bash
-cargo test
-```
-
 ## Troubleshooting
 
-### Database corruption
+### Connection Issues
 
-```bash
-# Compact database
-mdb_copy -c data/documents data/documents.compact
-mv data/documents.compact data/documents
-```
+Check that:
+1. Signaling server is running
+2. JWT token is valid and has `kind: "worker"`
+3. UDP port is accessible
 
-### High memory usage
+### High Memory Usage
 
-LMDB uses memory mapping - this is normal. OS manages memory efficiently.
+LMDB uses memory mapping - this is normal. The OS manages memory efficiently.
 
 ## Notes
 
 - One instance per deployment (stateful)
 - Not designed for horizontal scaling
 - For multiple regions, use separate instances
-- Consider document sharding for very large deployments

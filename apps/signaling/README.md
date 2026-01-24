@@ -7,23 +7,24 @@ WebRTC signaling server for peer-to-peer connections in Sobaka.
 This Rust-based WebSocket server facilitates WebRTC peer connections for real-time collaboration. It handles:
 - WebRTC signaling (SDP exchange)
 - ICE candidate relay
-- Room management
-- User identity verification
+- Topic/room management
+- User identity verification via JWT
 
 ## Stack
 
 - **Language**: Rust
-- **Framework**: Custom WebSocket server
+- **Framework**: Warp (WebSocket server)
 - **Deployment**: Docker + AWS ECS
 
 ## How It Works
 
 1. Clients connect via WebSocket
-2. Server assigns verified user UUIDs
-3. Clients exchange SDP offers/answers through server
-4. ICE candidates are relayed
-5. Direct peer-to-peer connection established
-6. Server no longer needed (peers communicate directly)
+2. Server verifies JWT and assigns identity
+3. Server sends `welcome` message with identity and role
+4. Clients exchange SDP offers/answers through server
+5. ICE candidates are relayed
+6. Direct peer-to-peer connection established
+7. Server continues to relay signaling for new peers
 
 ## Development
 
@@ -31,41 +32,79 @@ This Rust-based WebSocket server facilitates WebRTC peer connections for real-ti
 # Start the signaling server
 JWT_PRIVATE_KEY=dev-secret cargo run
 
-# Or with debug logging
+# With debug logging
 JWT_PRIVATE_KEY=dev-secret RUST_LOG=debug cargo run
 ```
 
 Runs on port 8000 by default.
 
-## JWT Token Generator
+## JWT Scripts
 
-The signaling server includes a CLI tool for generating JWT tokens. This is used to create **worker** tokens for the persistence service.
+The `scripts/` directory contains consolidated tools for JWT management:
+
+### Generate Tokens
 
 ```bash
-# Generate a worker token (for persistence service)
-JWT_PRIVATE_KEY=dev-secret cargo run --bin generate-jwt -- --worker
+# Generate tokens for development (uses local secret)
+./scripts/generate-jwt.sh --role worker
+./scripts/generate-jwt.sh --role admin
+./scripts/generate-jwt.sh --role client
 
-# Generate with a custom UUID
-JWT_PRIVATE_KEY=dev-secret cargo run --bin generate-jwt -- --worker --uuid my-worker
+# Generate tokens for staging/production (fetches secret from AWS)
+./scripts/generate-jwt.sh --role worker --env next
+./scripts/generate-jwt.sh --role admin --env prod
 
-# Generate a client token (for testing)
-JWT_PRIVATE_KEY=dev-secret cargo run --bin generate-jwt -- --client
+# With custom UUID
+./scripts/generate-jwt.sh --role worker --uuid my-worker-id
 
-# See all options
-cargo run --bin generate-jwt -- --help
+# Quiet mode (just the token, for scripting)
+TOKEN=$(./scripts/generate-jwt.sh --role worker -q)
 ```
 
-### Token Types
+### Deploy Tokens
 
-| Type | Purpose |
+```bash
+# Store token in AWS Secrets Manager
+./scripts/generate-jwt.sh --role worker --env next | \
+  ./scripts/deploy-jwt.sh --env next --service persistence
+
+# Store and restart container
+./scripts/generate-jwt.sh --role worker --env prod | \
+  ./scripts/deploy-jwt.sh --env prod --service persistence --restart
+```
+
+See `scripts/README.md` for full documentation.
+
+### Token Roles
+
+| Role | Purpose |
 |------|---------|
 | `client` | Regular browser clients (default) |
-| `worker` | Persistence service and other backend workers |
+| `worker` | Persistence service and backend workers |
+| `admin` | Administrative access (can edit global workspace lists) |
 
-Workers receive special treatment:
-- They receive `announce` messages for all topics
-- They can persist and sync documents
-- They're tracked separately from regular clients
+**Workers** receive special treatment:
+- Receive `announce` messages for all topics
+- Can persist and sync all documents
+- Tracked separately from regular clients
+
+**Admins** have elevated permissions:
+- Can modify global workspace lists
+- Treated like workers for signaling purposes
+
+### Rust Binary
+
+The JWT generator is also available as a Rust binary:
+
+```bash
+# Build
+cargo build --bin generate-jwt
+
+# Use directly
+JWT_PRIVATE_KEY=dev-secret ./target/debug/generate-jwt --worker
+JWT_PRIVATE_KEY=dev-secret ./target/debug/generate-jwt --admin --uuid admin-1
+JWT_PRIVATE_KEY=dev-secret ./target/debug/generate-jwt --help
+```
 
 ## Building
 
@@ -87,7 +126,7 @@ cargo build --bin generate-jwt
 docker build -t sobaka-signaling .
 
 # Run container
-docker run -p 8000:8000 sobaka-signaling
+docker run -p 8000:8000 -e JWT_PRIVATE_KEY=your-secret sobaka-signaling
 ```
 
 ## Deployment
@@ -109,30 +148,41 @@ Infrastructure defined in `infrastructure/`:
 
 ## Protocol
 
-WebSocket messages are JSON:
+### Message Types
 
-```json
-// Client → Server: Join room
-{"type": "join", "room": "workspace-uuid"}
+```typescript
+// Server → Client: Welcome (sent immediately after connection)
+{ type: "welcome", identity: "uuid", kind: "client" | "worker" | "admin" }
 
-// Server → Client: Peer joined
-{"type": "peer-joined", "peer": "peer-uuid"}
+// Client → Server: Subscribe to topics
+{ type: "subscribe", topics: ["workspace-uuid"] }
 
-// Client → Server: Send offer
-{"type": "offer", "to": "peer-uuid", "sdp": "..."}
+// Client → Server: Publish to topic
+{ type: "publish", topic: "workspace-uuid", data: { type: "announce" | "signal", ... } }
 
-// Server → Client: Receive offer
-{"type": "offer", "from": "peer-uuid", "sdp": "..."}
+// Server → Client: Publish with verified identity
+{ type: "publish", topic: "...", identity: "uuid", kind: "client", data: { ... } }
+
+// Ping/Pong for keepalive
+{ type: "ping" }
+{ type: "pong" }
 ```
 
-See `src/` for full protocol implementation.
+### Signaling Data Types
+
+```typescript
+// Announce presence in a topic
+{ type: "announce", from: "peer-id" }
+
+// WebRTC signaling
+{ type: "signal", from: "peer-id", to: "peer-id", signal: { ... } }
+```
 
 ## Security
 
-- Verifies user identity
-- Prevents message spoofing
-- Rate limiting (TODO)
-- CORS configuration
+- JWT-based identity verification
+- Prevents message spoofing (identity added server-side)
+- Role-based access control
 
 ## Monitoring
 
