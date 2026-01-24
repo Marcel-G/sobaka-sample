@@ -36,5 +36,19 @@ export interface ModuleDSP {
   
   /** Clean up audio nodes and resources */
   destroy(): void
+
+  /**
+   * Fade in the module's output (optional)
+   * Called after the module is connected to avoid pops
+   * @returns Promise that resolves when fade is complete
+   */
+  fadeIn?(): Promise<void>
+
+  /**
+   * Fade out the module's output (optional)
+   * Called before disconnecting/destroying to avoid pops
+   * @returns Promise that resolves when fade is complete
+   */
+  fadeOut?(): Promise<void>
 }
 

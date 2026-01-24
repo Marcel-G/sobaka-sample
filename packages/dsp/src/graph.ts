@@ -48,7 +48,8 @@ export class AudioGraph {
     const moduleIds = new Set(modules.map(m => m.id))
     const linkIds = new Set(links.map(l => l.id))
     
-    // Step 1: Add new modules
+    // Step 1: Add new modules (start muted, will fade in after connecting)
+    const newModuleIds: string[] = []
     for (const module of modules) {
       if (!this.dspModules.has(module.id)) {
         const dsp = this.registry.createNode(
@@ -58,6 +59,7 @@ export class AudioGraph {
           module.state as Record<string, unknown>
         )
         this.dspModules.set(module.id, dsp)
+        newModuleIds.push(module.id)
       }
     }
 
@@ -84,12 +86,39 @@ export class AudioGraph {
       }
     }
 
-    // Step 4: Remove deleted modules (after disconnecting their links)
-    for (const [id, dsp] of this.dspModules.entries()) {
+    // Step 4: Fade in new modules (after they're connected)
+    await Promise.all(
+      newModuleIds.map(async (id) => {
+        const dsp = this.dspModules.get(id)
+        if (dsp?.fadeIn) {
+          await dsp.fadeIn()
+        }
+      })
+    )
+
+    // Step 5: Fade out and remove deleted modules
+    const modulesToRemove: string[] = []
+    for (const [id] of this.dspModules.entries()) {
       if (!moduleIds.has(id)) {
-        dsp.destroy()
-        this.dspModules.delete(id)
+        modulesToRemove.push(id)
       }
+    }
+    
+    // Fade out all modules being removed in parallel
+    await Promise.all(
+      modulesToRemove.map(async (id) => {
+        const dsp = this.dspModules.get(id)
+        if (dsp?.fadeOut) {
+          await dsp.fadeOut()
+        }
+      })
+    )
+    
+    // Now destroy the modules
+    for (const id of modulesToRemove) {
+      const dsp = this.dspModules.get(id)
+      dsp?.destroy()
+      this.dspModules.delete(id)
     }
   }
   /**
@@ -238,8 +267,8 @@ export class AudioGraph {
   }
 
   /**
-   * Clean up all resources
-   * Disconnects immediately without fade since we're tearing down
+   * Clean up all resources immediately without fading
+   * Use destroyWithFade() for a graceful teardown
    */
   destroy() {
     // Disconnect all connections
@@ -262,6 +291,32 @@ export class AudioGraph {
       dsp.destroy()
     }
     this.staticModules.clear()
+  }
+
+  /**
+   * Clean up all resources with a graceful fade out
+   * Use this for teardown during normal operation to avoid pops
+   */
+  async destroyWithFade(): Promise<void> {
+    // Fade out all modules in parallel
+    const fadePromises: Promise<void>[] = []
+    
+    for (const dsp of this.dspModules.values()) {
+      if (dsp.fadeOut) {
+        fadePromises.push(dsp.fadeOut())
+      }
+    }
+    
+    for (const dsp of this.staticModules.values()) {
+      if (dsp.fadeOut) {
+        fadePromises.push(dsp.fadeOut())
+      }
+    }
+    
+    await Promise.all(fadePromises)
+    
+    // Now do the immediate cleanup
+    this.destroy()
   }
 
   /**

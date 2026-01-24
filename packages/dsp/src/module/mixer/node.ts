@@ -1,5 +1,5 @@
 import { ModuleDSP, Route, RouteInfo } from '../../shared/types'
-import { safeSetValueAtTime, safeSetTargetAtTime, sanitizeValue } from '../../shared/audioUtils'
+import { safeSetValueAtTime, safeSetTargetAtTime, sanitizeValue, DEFAULT_FADE_DURATION } from '../../shared/audioUtils'
 import { PlugType } from '@sobaka/state'
 
 export interface MixerState {
@@ -19,6 +19,7 @@ export class MixerDSP implements ModuleDSP {
   private mixer?: GainNode
   private volumeParam?: AudioParam
   public state: MixerState
+  private targetVolume: number
 
   constructor(
     public readonly id: string,
@@ -27,6 +28,7 @@ export class MixerDSP implements ModuleDSP {
     skipInit: boolean = false
   ) {
     this.state = initialState
+    this.targetVolume = initialState.muted ? 0 : sanitizeValue(initialState.volume, INITIAL_STATE.volume)
     
     if (!skipInit) {
       this.mixer = new GainNode(audioContext)
@@ -36,8 +38,7 @@ export class MixerDSP implements ModuleDSP {
       this.mixer.connect(audioContext.destination)
       
       // Set initial volume with safe setter
-      const targetVolume = initialState.muted ? 0 : sanitizeValue(initialState.volume, INITIAL_STATE.volume)
-      safeSetValueAtTime(this.volumeParam, targetVolume, audioContext.currentTime, INITIAL_STATE.volume)
+      safeSetValueAtTime(this.volumeParam, this.targetVolume, audioContext.currentTime, INITIAL_STATE.volume)
     }
   }
 
@@ -65,16 +66,38 @@ export class MixerDSP implements ModuleDSP {
     
     if (!this.mixer || !this.volumeParam) return
     
-    const targetVolume = state.muted ? 0 : sanitizeValue(state.volume, INITIAL_STATE.volume)
+    this.targetVolume = state.muted ? 0 : sanitizeValue(state.volume, INITIAL_STATE.volume)
     
     // Smooth volume changes to avoid clicks, using safe setter
     safeSetTargetAtTime(
       this.volumeParam,
-      targetVolume,
+      this.targetVolume,
       this.audioContext.currentTime,
       0.01,
       INITIAL_STATE.volume
     )
+  }
+
+  async fadeIn(): Promise<void> {
+    if (!this.volumeParam) return
+    
+    const now = this.audioContext.currentTime
+    this.volumeParam.cancelScheduledValues(now)
+    this.volumeParam.setValueAtTime(0, now)
+    this.volumeParam.linearRampToValueAtTime(this.targetVolume, now + DEFAULT_FADE_DURATION)
+    
+    await new Promise(resolve => setTimeout(resolve, DEFAULT_FADE_DURATION * 1000))
+  }
+
+  async fadeOut(): Promise<void> {
+    if (!this.volumeParam) return
+    
+    const now = this.audioContext.currentTime
+    this.volumeParam.cancelScheduledValues(now)
+    this.volumeParam.setValueAtTime(this.volumeParam.value, now)
+    this.volumeParam.linearRampToValueAtTime(0, now + DEFAULT_FADE_DURATION)
+    
+    await new Promise(resolve => setTimeout(resolve, DEFAULT_FADE_DURATION * 1000))
   }
 
   destroy(): void {

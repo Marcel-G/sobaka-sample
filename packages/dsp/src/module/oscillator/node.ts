@@ -2,7 +2,7 @@ import { OscillatorNode as _OscillatorNode, OscillatorShape } from '@sobaka/dsp/
 import * as Y from 'yjs';
 import { getYjsValue } from "@syncedstore/core";
 import { ModuleDSP, Route, RouteInfo } from '../../shared/types'
-import { safeSetValueAtTime, isValidNumber } from '../../shared/audioUtils'
+import { safeSetValueAtTime, isValidNumber, createFadeableOutput } from '../../shared/audioUtils'
 import { PlugType } from '@sobaka/state'
 
 export interface OscillatorState {
@@ -26,6 +26,13 @@ export class OscillatorNode implements ModuleDSP {
   private pitchParam?: AudioParam
   public state: OscillatorState
   private cleanupHandler: (() => void) | null = null
+  
+  // Fadeable output for smooth add/remove
+  private outputFade?: {
+    gainNode: GainNode
+    fadeIn: (duration?: number) => Promise<void>
+    fadeOut: (duration?: number) => Promise<void>
+  }
 
   constructor(
     public readonly id: string,
@@ -40,6 +47,10 @@ export class OscillatorNode implements ModuleDSP {
       this.pitchParam = this.oscillator.node.parameters.get('pitch')!
       // Use safe setter with default value
       safeSetValueAtTime(this.pitchParam, this.state.pitch, audioContext.currentTime, INITIAL_STATE.pitch)
+
+      // Create fadeable output wrapper (starts muted for fade-in)
+      this.outputFade = createFadeableOutput(audioContext, true)
+      this.oscillator.node.connect(this.outputFade.gainNode)
 
       const state = getYjsValue(this.state);
       if (state instanceof Y.Map) {
@@ -75,7 +86,7 @@ export class OscillatorNode implements ModuleDSP {
   }
 
   getRoute(routeName: string): Route {
-    if (!this.oscillator) {
+    if (!this.oscillator || !this.outputFade) {
       return { node: new GainNode(new AudioContext()) }
     }
     
@@ -83,14 +94,24 @@ export class OscillatorNode implements ModuleDSP {
       case "pitch":
         return { node: this.pitchParam! }
       case "output":
-        return { node: this.oscillator.node, connectIndex: 0 }
+        // Route through the fadeable output gain node
+        return { node: this.outputFade.gainNode, connectIndex: 0 }
       default:
         throw new Error(`Unknown routeName ${routeName}`)
     }
   }
 
+  async fadeIn(): Promise<void> {
+    await this.outputFade?.fadeIn()
+  }
+
+  async fadeOut(): Promise<void> {
+    await this.outputFade?.fadeOut()
+  }
+
   destroy(): void {
     this.cleanupHandler?.()
+    this.outputFade?.gainNode.disconnect()
     this.oscillator?.free()
   }
 }

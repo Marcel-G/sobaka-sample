@@ -1,5 +1,6 @@
 import { NoiseNode as _NoiseNode } from '@sobaka/dsp/wasm'
 import { ModuleDSP, Route, RouteInfo } from '../../shared/types'
+import { createFadeableOutput } from '../../shared/audioUtils'
 import { PlugType } from '@sobaka/state'
 
 export interface NoiseState {
@@ -17,10 +18,17 @@ export class NoiseNode implements ModuleDSP {
   public name = "noise"
   private noise?: _NoiseNode
   public state: NoiseState
+  
+  // Fadeable output for smooth add/remove
+  private outputFade?: {
+    gainNode: GainNode
+    fadeIn: (duration?: number) => Promise<void>
+    fadeOut: (duration?: number) => Promise<void>
+  }
 
   constructor(
     public readonly id: string,
-    audioContext: AudioContext,
+    private audioContext: AudioContext,
     initialState: NoiseState = INITIAL_STATE,
     skipInit: boolean = false
   ) {
@@ -28,6 +36,10 @@ export class NoiseNode implements ModuleDSP {
     
     if (!skipInit) {
       this.noise = new _NoiseNode(audioContext)
+      
+      // Create fadeable output wrapper (starts muted for fade-in)
+      this.outputFade = createFadeableOutput(audioContext, true)
+      this.noise.node.connect(this.outputFade.gainNode)
     }
   }
 
@@ -38,19 +50,29 @@ export class NoiseNode implements ModuleDSP {
   }
 
   getRoute(routeName: string): Route {
-    if (!this.noise) {
+    if (!this.noise || !this.outputFade) {
       return { node: new GainNode(new AudioContext()) }
     }
     
     switch (routeName) {
       case "output":
-        return { node: this.noise.node, connectIndex: 0 }
+        // Route through the fadeable output gain node
+        return { node: this.outputFade.gainNode, connectIndex: 0 }
       default:
         throw new Error(`Unknown routeName ${routeName}`)
     }
   }
 
+  async fadeIn(): Promise<void> {
+    await this.outputFade?.fadeIn()
+  }
+
+  async fadeOut(): Promise<void> {
+    await this.outputFade?.fadeOut()
+  }
+
   destroy(): void {
+    this.outputFade?.gainNode.disconnect()
     this.noise?.free()
   }
 }

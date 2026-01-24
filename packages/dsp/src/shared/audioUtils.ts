@@ -143,3 +143,50 @@ export function safeClamp(value: unknown, min: number, max: number, defaultValue
   }
   return Math.min(Math.max(min, value), max)
 }
+
+/**
+ * Default fade duration in seconds
+ * Short enough to be imperceptible but long enough to avoid clicks
+ */
+export const DEFAULT_FADE_DURATION = 0.015 // 15ms
+
+/**
+ * Create a fadeable output gain node wrapper
+ * This provides smooth fade in/out to avoid audio pops when adding/removing modules
+ * 
+ * @param audioContext The audio context
+ * @param startMuted If true, gain starts at 0 (for fade in), otherwise starts at 1
+ * @returns Object with the gain node and fade methods
+ */
+export function createFadeableOutput(
+  audioContext: AudioContext,
+  startMuted: boolean = true
+): {
+  gainNode: GainNode
+  fadeIn: (duration?: number) => Promise<void>
+  fadeOut: (duration?: number) => Promise<void>
+} {
+  const gainNode = new GainNode(audioContext, { gain: startMuted ? 0 : 1 })
+  
+  const fadeIn = async (duration: number = DEFAULT_FADE_DURATION): Promise<void> => {
+    const now = audioContext.currentTime
+    gainNode.gain.cancelScheduledValues(now)
+    gainNode.gain.setValueAtTime(gainNode.gain.value, now)
+    gainNode.gain.linearRampToValueAtTime(1, now + duration)
+    
+    // Wait for the fade to complete
+    await new Promise(resolve => setTimeout(resolve, duration * 1000))
+  }
+  
+  const fadeOut = async (duration: number = DEFAULT_FADE_DURATION): Promise<void> => {
+    const now = audioContext.currentTime
+    gainNode.gain.cancelScheduledValues(now)
+    gainNode.gain.setValueAtTime(gainNode.gain.value, now)
+    gainNode.gain.linearRampToValueAtTime(0, now + duration)
+    
+    // Wait for the fade to complete
+    await new Promise(resolve => setTimeout(resolve, duration * 1000))
+  }
+  
+  return { gainNode, fadeIn, fadeOut }
+}

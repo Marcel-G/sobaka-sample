@@ -33,10 +33,12 @@ export const initWorkspaceContext = (workspace: Workspace) => {
     dsp.reconcile(modules, links)
   })
 
-  // Clean up on unmount
+  // Clean up on unmount with fade to avoid pops
   onDestroy(() => {
     unsubscribe()
-    dsp.destroy()
+    // Use destroyWithFade for graceful audio teardown
+    // The fade is scheduled in the audio context, so it completes even if we don't await
+    void dsp.destroyWithFade()
   })
 
   const ctx: WorkspaceContext = {
