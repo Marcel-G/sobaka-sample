@@ -15,6 +15,7 @@
 import { EventEmitter } from './EventEmitter'
 import { SignalingClient, type SignalingMessage, type PeerKind } from './SignalingClient'
 import { createLogger } from '../../util/logger'
+import { encodePacket, decodePacket, type DecodedPacket } from './chunking'
 
 const logger = createLogger('PeerManager')
 
@@ -28,6 +29,9 @@ const DEFAULT_ICE_SERVERS: RTCIceServer[] = [
 
 const ICE_GATHERING_TIMEOUT = 5_000
 const CHANNEL_CLOSING_TIMEOUT = 5_000
+const CHUNK_SIZE = 16 * 1024 - 512 // 16KB minus header space (matches WebRTCPeer)
+const MAX_BUFFERED_AMOUNT = 64 * 1024
+const TX_CLEANUP_DELAY = 30_000 // 30 seconds
 
 // ============================================================================
 // Types
@@ -54,6 +58,9 @@ export interface PeerInfo {
   channels: Map<string, RTCDataChannel>  // topic -> channel
   connected: boolean
   glareToken?: number
+  // Chunking state
+  txOrdinal: number
+  rxPackets: DecodedPacket[]
 }
 
 export type PeerManagerEvents = {
@@ -215,11 +222,91 @@ export class PeerManager extends EventEmitter<PeerManagerEvents> {
     if (!channel || channel.readyState !== 'open') return false
     
     try {
-      channel.send(data as unknown as ArrayBuffer)
+      // Chunk the data with proper headers
+      const packets = this.chunkData(peer, data)
+      for (const packet of packets) {
+        channel.send(packet as unknown as ArrayBuffer)
+      }
       return true
     } catch (err) {
       logger.warn('Failed to send to', peerId, 'on topic', topic, err)
       return false
+    }
+  }
+
+  /**
+   * Chunk data into packets with headers for transmission
+   */
+  private chunkData(peer: PeerInfo, data: Uint8Array): Uint8Array[] {
+    const txOrd = peer.txOrdinal++
+    const totalSize = data.length
+    const chunks: Uint8Array[] = []
+    
+    let offset = 0
+    while (offset < totalSize) {
+      const chunkData = data.slice(offset, offset + CHUNK_SIZE)
+      chunks.push(chunkData)
+      offset += CHUNK_SIZE
+    }
+    
+    // Handle empty data case
+    if (chunks.length === 0) {
+      chunks.push(new Uint8Array(0))
+    }
+    
+    // Encode each chunk with metadata
+    return chunks.map((chunk, index) => 
+      encodePacket({
+        chunk,
+        txOrd,
+        index,
+        length: chunks.length,
+        totalSize,
+        chunkSize: chunk.byteLength
+      })
+    )
+  }
+
+  /**
+   * Handle incoming packet: decode and reassemble multi-chunk messages
+   */
+  private handleIncomingPacket(peer: PeerInfo, rawData: Uint8Array): Uint8Array | null {
+    const packet = decodePacket(rawData)
+    
+    // Single-chunk message - deliver immediately
+    if (packet.chunkSize === packet.totalSize) {
+      return packet.chunk
+    }
+    
+    // Multi-chunk message - collect and reassemble
+    const existingPackets = peer.rxPackets.filter(p => p.txOrd === packet.txOrd)
+    existingPackets.push(packet)
+    
+    const receivedIndices = new Set(existingPackets.map(p => p.index))
+    
+    // Check if we have all chunks
+    if (receivedIndices.size === packet.length) {
+      // Sort by index and reassemble
+      existingPackets.sort((a, b) => a.index - b.index)
+      
+      const reassembled = new Uint8Array(packet.totalSize)
+      let offset = 0
+      for (const p of existingPackets) {
+        reassembled.set(p.chunk, offset)
+        offset += p.chunk.length
+      }
+      
+      // Clean up after delay
+      const txOrd = packet.txOrd
+      setTimeout(() => {
+        peer.rxPackets = peer.rxPackets.filter(p => p.txOrd !== txOrd)
+      }, TX_CLEANUP_DELAY)
+      
+      return reassembled
+    } else {
+      // Store for later
+      peer.rxPackets.push(packet)
+      return null
     }
   }
 
@@ -425,7 +512,9 @@ export class PeerManager extends EventEmitter<PeerManagerEvents> {
       peerId: remotePeerId,
       connection,
       channels: new Map(),
-      connected: false
+      connected: false,
+      txOrdinal: 0,
+      rxPackets: []
     }
     
     this.peers.set(remotePeerId, peer)
@@ -499,8 +588,11 @@ export class PeerManager extends EventEmitter<PeerManagerEvents> {
     }
     
     channel.onmessage = (event) => {
-      const data = new Uint8Array(event.data)
-      this.emit('channel:data', topic, peer.peerId, data)
+      const rawData = new Uint8Array(event.data)
+      const reassembled = this.handleIncomingPacket(peer, rawData)
+      if (reassembled) {
+        this.emit('channel:data', topic, peer.peerId, reassembled)
+      }
     }
     
     channel.onerror = (event) => {
