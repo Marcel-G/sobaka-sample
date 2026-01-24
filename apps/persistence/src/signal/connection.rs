@@ -143,6 +143,7 @@ async fn send_messages(
         tokio::select! {
             Some(message) = rx_out.recv() => {
                 let msg_type = match &message {
+                    Message::Welcome { .. } => "welcome",
                     Message::Subscribe { .. } => "subscribe",
                     Message::Unsubscribe { .. } => "unsubscribe",
                     Message::Publish { .. } => "publish",

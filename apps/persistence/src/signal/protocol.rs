@@ -18,6 +18,12 @@ pub enum PeerKind {
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum Message {
+    /// Welcome message from signaling server with our identity and role
+    #[serde(rename = "welcome")]
+    Welcome {
+        identity: String,
+        kind: PeerKind,
+    },
     #[serde(rename = "publish")]
     Publish {
         topic: String,
