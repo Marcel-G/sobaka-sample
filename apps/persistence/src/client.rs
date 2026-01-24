@@ -188,7 +188,11 @@ impl Client {
     }
 
     pub fn join_topic(&mut self, topic: String) {
-        info!(topic = %topic, "Joining topic");
+        info!(
+            topic = %topic,
+            peer_id = %self.peer_id,
+            "Joining topic and announcing presence"
+        );
 
         let subscribe = Message::Subscribe {
             topics: [topic.clone()].to_vec(),
@@ -198,6 +202,8 @@ impl Client {
             error!(topic = %topic, error = ?e, "Failed to send subscribe message");
             return;
         }
+
+        debug!(topic = %topic, "Subscribe message sent");
 
         if !self.workspaces.contains_key(&topic) {
             debug!(topic = %topic, "Creating new workspace");
@@ -216,6 +222,12 @@ impl Client {
 
         if let Err(e) = self.ws_handle.send(announce) {
             error!(topic = %topic, error = ?e, "Failed to send announce message");
+        } else {
+            debug!(
+                topic = %topic,
+                peer_id = %self.peer_id,
+                "Announce message sent"
+            );
         }
     }
 
@@ -257,28 +269,53 @@ impl Client {
                     topic,
                     data,
                     identity,
-                    ..
-                }) => match data {
-                    MessageData::Announce { from } if identity.is_some() => {
-                        self.handle_peer_discovered(topic, from);
-                        continue;
+                    kind,
+                }) => {
+                    debug!(
+                        topic = %topic,
+                        has_identity = identity.is_some(),
+                        kind = ?kind,
+                        data_type = %match &data {
+                            MessageData::Announce { .. } => "announce",
+                            MessageData::Signal { .. } => "signal",
+                        },
+                        "Received publish message"
+                    );
+
+                    match data {
+                        MessageData::Announce { from } if identity.is_some() => {
+                            self.handle_peer_discovered(topic, from);
+                            continue;
+                        }
+                        MessageData::Signal { from, to, signal } if identity.is_some() => {
+                            self.handle_incoming_signal(
+                                topic,
+                                identity.expect("valid identity"),
+                                from,
+                                to,
+                                signal,
+                            );
+                            continue;
+                        }
+                        MessageData::Announce { from } => {
+                            debug!(
+                                topic = %topic,
+                                from = %from,
+                                "Ignoring announce without identity (likely our own)"
+                            );
+                        }
+                        MessageData::Signal { from, to, .. } => {
+                            warn!(
+                                topic = %topic,
+                                from = %from,
+                                to = %to,
+                                "Ignoring signal without identity - this may indicate a problem"
+                            );
+                        }
                     }
-                    MessageData::Signal { from, to, signal } if identity.is_some() => {
-                        self.handle_incoming_signal(
-                            topic,
-                            identity.expect("valid identity"),
-                            from,
-                            to,
-                            signal,
-                        );
-                        continue;
-                    }
-                    _ => {
-                        trace!("Ignoring message without identity");
-                    }
-                },
+                }
                 Some(other) => {
-                    trace!(message = ?other, "Ignoring non-publish message");
+                    debug!(message = ?other, "Received non-publish message");
                 }
                 None => {}
             }
