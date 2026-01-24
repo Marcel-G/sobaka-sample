@@ -41,8 +41,12 @@
         <CurrentWorkspaceSummary {workspace} />
       </div>
     {:else}
-      <div class="sidebar-loading">
-        <div class="loading-placeholder"></div>
+      <!-- Show New button while loading, but not Fork -->
+      <div class="sidebar-loading mb-6 border-b border-dark pb-4">
+        <div class="loading-title"></div>
+        <a href="/workspace/new" class="new-button-wrapper">
+          <button class="new-button">New</button>
+        </a>
       </div>
     {/if}
   </svelte:fragment>
@@ -72,14 +76,37 @@
 
 <style>
   .sidebar-loading {
-    padding: 1rem 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
   }
   
-  .loading-placeholder {
-    height: 60px;
+  .loading-title {
+    height: 2.5rem;
     background: var(--color-dark);
     border-radius: 4px;
-    opacity: 0.5;
+    opacity: 0.3;
+    margin-bottom: 0.5rem;
+  }
+  
+  .new-button-wrapper {
+    display: block;
+  }
+  
+  .new-button {
+    background: var(--blue);
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--color-light);
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+    width: 100%;
+    border: none;
+  }
+  
+  .new-button:hover {
+    opacity: 0.9;
   }
   
   .error-container {

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import Spinner from './Spinner.svelte'
+  import RingSpinner from './RingSpinner.svelte'
 
   interface Props {
     /** Main message to display */
@@ -21,11 +21,13 @@
   <div class="content">
     {#if showSpinner}
       <div class="spinner-wrapper">
-        <Spinner />
+        <RingSpinner size="xl" color="purple" bg="text-gray-700" />
       </div>
     {/if}
     
-    <h2 class="message">{message}</h2>
+    {#if message}
+      <p class="message">{message}</p>
+    {/if}
     
     {#if status}
       <p class="status">{status}</p>
@@ -40,24 +42,23 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    background: var(--color-darker);
   }
 
   .content {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 1.5rem;
+    gap: 1rem;
     text-align: center;
     padding: 2rem;
   }
 
   .spinner-wrapper {
-    transform: scale(1.5);
+    margin-bottom: 0.5rem;
   }
 
   .message {
-    font-size: 1.25rem;
+    font-size: 1rem;
     font-weight: 500;
     color: var(--color-light);
     margin: 0;
