@@ -45,9 +45,7 @@ export class SyncedDoc<K extends string> {
       // Ignore updates from non-collaborators
       filterIncomingMessage: from => this.filterIncomingMessage(from),
       signaling: config.signaling,
-      peerOpts: {
-        config: { iceServers: config.iceServers }
-      }
+      iceServers: config.iceServers
     })
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

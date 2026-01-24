@@ -1,4 +1,3 @@
-import path from 'node:path'
 import { sveltekit } from '@sveltejs/kit/vite'
 import tailwindcss from '@tailwindcss/vite'
 
@@ -32,15 +31,6 @@ const config = {
     exclude: ['@sobaka/state', '@sobaka/dsp', '@sobaka/ui']
   },
   resolve: {
-    alias: {
-      // Path for max message length issue: https://github.com/yjs/y-webrtc/issues/20
-      // Redirect y-webrtc's import to our extended version
-      'simple-peer/simplepeer.min.js': path.resolve(
-        __dirname,
-        '../../packages/state/src/networking/peer.ts'
-      ),
-      'simple-peer-vendor': 'simple-peer/simplepeer.min.js'
-    },
     extensions: ['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json', '.svelte']
   },
   plugins: [crossOriginIsolation, tailwindcss(), sveltekit()],

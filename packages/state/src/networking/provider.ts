@@ -1,108 +1,219 @@
-import * as Y from 'yjs'
-import { WebrtcConn, WebrtcProvider, type ProviderOptions } from 'y-webrtc'
+/**
+ * VerifiedRTCProvider - WebRTC provider with identity verification
+ * 
+ * This module provides Yjs document synchronization over WebRTC with
+ * verified peer identities from the signaling server.
+ */
 
-type SignalingMessage = {
-  type: string
-  identity: string
-  kind: 'client' | 'worker'
-  data: { from: string }
+import * as Y from 'yjs'
+import { YjsWebRTCProvider, type YjsWebRTCProviderOptions, type PeerConnection } from './webrtc/index.ts'
+import { EventEmitter } from './webrtc/EventEmitter.ts'
+
+export interface VerifiedRTCProviderOptions {
+  /** Maximum number of WebRTC connections */
+  maxConns?: number
+  /** Signaling server URL(s) */
+  signaling: string[]
+  /** ICE servers for WebRTC */
+  iceServers?: RTCIceServer[]
+  /** Filter for incoming messages based on verified identity */
+  filterIncomingMessage?: (identity: string, data: Uint8Array) => boolean
 }
 
-type MessageFilter = (from: string, data: Uint8Array) => boolean
+export type VerifiedRTCProviderEvents = {
+  /** Peer list changed */
+  peers: (peers: Map<string, PeerConnection>) => void
+  /** User identity verified */
+  user: (identity: string) => void
+  /** Synced with peers */
+  synced: (synced: boolean) => void
+  /** Connection status changed */
+  status: (status: { connected: boolean }) => void
+  /** Error occurred */
+  error: (error: Error) => void
+}
 
-export class VerifiedRTCProvider extends WebrtcProvider {
-  private peers = new WeakSet<WebrtcConn>()
+/**
+ * WebRTC provider with verified peer identities
+ * 
+ * Extends YjsWebRTCProvider to:
+ * - Track verified peer identities from signaling server
+ * - Filter messages based on identity for access control
+ * - Emit user identity when verified by signaling server
+ */
+export class VerifiedRTCProvider extends EventEmitter<VerifiedRTCProviderEvents> {
+  readonly provider: YjsWebRTCProvider
+  private currentUser: string | null = null
   private verifiedPeerIdentities = new Map<string, string>()
   private verifiedWorkerIdentities = new Map<string, string>()
-  private filterIncomingMessage: MessageFilter
-  private currentUser: null | string = null
 
   constructor(
     name: string,
     doc: Y.Doc,
-    options: ProviderOptions & { filterIncomingMessage?: MessageFilter }
+    options: VerifiedRTCProviderOptions
   ) {
-    super(name, doc, options)
+    super()
+    
+    this.provider = new YjsWebRTCProvider({
+      roomName: name,
+      doc,
+      signaling: options.signaling,
+      maxConns: options.maxConns,
+      iceServers: options.iceServers,
+      filterIncomingMessage: options.filterIncomingMessage
+        ? (identity, data) => {
+            // Check if it's a worker identity
+            if (this.verifiedWorkerIdentities.has(identity)) {
+              return true // Allow all worker messages
+            }
+            
+            // Check if this is a read-only message
+            if (isReadOnlyMessage(data)) {
+              return true
+            }
+            
+            return options.filterIncomingMessage!(identity, data)
+          }
+        : undefined
+    })
+    
+    this.setupProvider()
+  }
 
-    this.filterIncomingMessage = options.filterIncomingMessage || (() => true)
-
-    for (const signal of this.signalingConns) {
-      signal.on('message', (message: SignalingMessage) =>
-        this.handleSignalMessage(message)
-      )
-    }
-
-    this.on('peers', () => {
-      this.handlePeerChange()
+  private setupProvider(): void {
+    // Forward events
+    this.provider.on('peers', (peers) => {
+      this.emit('peers', peers)
+    })
+    
+    this.provider.on('synced', (synced) => {
+      this.emit('synced', synced)
+    })
+    
+    this.provider.on('status', (status) => {
+      this.emit('status', status)
+    })
+    
+    this.provider.on('error', (err) => {
+      this.emit('error', err)
+    })
+    
+    // Handle user identity
+    this.provider.on('user', (identity) => {
+      this.currentUser = identity
+      this.emit('user', identity)
+    })
+    
+    // Track peer identities
+    this.provider.room.on('peer:identity', (peerId, identity) => {
+      this.verifiedPeerIdentities.set(peerId, identity)
     })
   }
 
-  private handlePeerChange() {
-    for (const conn of this.room?.webrtcConns?.values() || []) {
-      if (this.peers.has(conn)) continue
-
-      const existingListeners: Array<(data: Uint8Array) => void> =
-        conn.peer.listeners('data')
-      existingListeners.forEach(listener => conn.peer.off('data', listener))
-
-      conn.peer.on('data', (data: Uint8Array) => {
-        const workerIdentity = this.verifiedWorkerIdentities.get(conn.remotePeerId)
-        if (workerIdentity) {
-          existingListeners.forEach(listener => listener(data))
-          return
-        }
-
-        const peerIdentity = this.verifiedPeerIdentities.get(conn.remotePeerId)
-        if (!peerIdentity) return
-
-        if (
-          this.filterIncomingMessage(peerIdentity, data) ||
-          isReadOnlyMessage(data)
-        ) {
-          existingListeners.forEach(listener => listener(data))
-        } else {
-          console.warn(`Received message from unauthorized peer: ${peerIdentity}`)
-        }
-      })
-
-      this.peers.add(conn)
-    }
+  /**
+   * Connect to the room
+   */
+  connect(): void {
+    this.provider.connect()
   }
 
-  private handleSignalMessage(message: SignalingMessage) {
-    if (message.type === 'publish') {
-      const { data, identity, kind } = message
-      if (kind === 'client' && !this.verifiedPeerIdentities.has(data.from)) {
-        this.verifiedPeerIdentities.set(data.from, identity)
-        // TODO: cleanup after we loose connection to peer
+  /**
+   * Disconnect from the room
+   */
+  disconnect(): void {
+    this.provider.disconnect()
+  }
 
-        if (
-          this.room &&
-          !this.currentUser &&
-          this.verifiedPeerIdentities.has(this.room.peerId)
-        ) {
-          this.currentUser = this.verifiedPeerIdentities.get(this.room.peerId) || null
-          // @ts-expect-error - TODO: user event isn't part of type definition
-          this.emit('user', [this.currentUser])
+  /**
+   * Destroy the provider
+   */
+  destroy(): void {
+    this.provider.destroy()
+    this.removeAllListeners()
+  }
 
-          // TODO: assign user as owner before sharing
+  /**
+   * Get the Yjs document
+   */
+  get doc(): Y.Doc {
+    return this.provider.doc
+  }
+
+  /**
+   * Get the awareness instance
+   */
+  get awareness() {
+    return this.provider.awareness
+  }
+
+  /**
+   * Get the room instance
+   */
+  get room() {
+    return this.provider.room
+  }
+
+  /**
+   * Get the peer ID
+   */
+  get peerId(): string {
+    return this.provider.peerId
+  }
+
+  /**
+   * Get current user's verified identity
+   */
+  get userIdentity(): string | null {
+    return this.currentUser
+  }
+
+  /**
+   * Get verified identity for a peer
+   */
+  getVerifiedIdentity(peerId: string): string | undefined {
+    return this.verifiedPeerIdentities.get(peerId)
+  }
+
+  /**
+   * Check if connected
+   */
+  get connected(): boolean {
+    return this.provider.connected
+  }
+
+  /**
+   * Get signaling connections (for compatibility)
+   */
+  get signalingConns(): Array<{ on: (event: string, handler: (...args: unknown[]) => void) => void }> {
+    // Return a wrapper that exposes signaling events
+    return [{
+      on: (event: string, handler: (...args: unknown[]) => void) => {
+        if (event === 'connect') {
+          this.provider.room.on('signaling:connect', handler as () => void)
+        } else if (event === 'disconnect') {
+          this.provider.room.on('signaling:disconnect', handler as () => void)
         }
       }
-      if (kind === 'worker' && !this.verifiedWorkerIdentities.has(data.from)) {
-        this.verifiedWorkerIdentities.set(data.from, identity)
-      }
-    }
+    }]
   }
 }
 
-function isReadOnlyMessage(data: Uint8Array) {
+/**
+ * Check if a message is read-only (should be allowed from any peer)
+ */
+function isReadOnlyMessage(data: Uint8Array): boolean {
+  if (data.length < 2) return false
+  
   const [byte1, byte2] = data
-  // It suffices to read the first two bytes in order to determine whether a message should be accepted from a read-only user.
+  
+  // Allow SyncStep1 messages ([0, 0, ...])
   // https://github.com/yjs/y-protocols/blob/40dbe4eebb1e53a7e86932ef3232f9abd5037569/PROTOCOL.md?plain=1#L100-L111
-
-  // Allow only SyncStep1 messages ([0, 0, ...])
   if (byte1 === 0 && byte2 === 0) return true
+  
   // Allow awareness messages
   if (byte1 === 1) return true
+  
   return false
 }
+
+export default VerifiedRTCProvider

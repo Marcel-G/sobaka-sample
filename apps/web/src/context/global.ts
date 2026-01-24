@@ -48,7 +48,6 @@ export class Global {
       signaling: _config.signaling
     })
 
-    // @ts-expect-error - TODO: user event isn't part of type definition
     this.rtc.once('user', (uuid: string) => {
       this.handleIdentityChange(uuid)
     })

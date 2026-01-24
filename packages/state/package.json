@@ -8,7 +8,8 @@
     ".": "./src/index.ts",
     "./models/*": "./src/models/*.ts",
     "./util/*": "./src/util/*.ts",
-    "./networking/*": "./src/networking/*.ts"
+    "./networking/*": "./src/networking/*.ts",
+    "./networking/webrtc": "./src/networking/webrtc/index.ts"
   },
   "files": [
     "src"
@@ -21,13 +22,11 @@
     "@syncedstore/core": "^0.6.0",
     "@syncedstore/svelte": "^0.6.0",
     "lib0": "^0.2.108",
-    "simple-peer": "^9.11.1",
     "y-indexeddb": "^9.0.9",
-    "y-webrtc": "^10.2.4",
+    "y-protocols": "^1.0.6",
     "yjs": "^13.5.48"
   },
   "devDependencies": {
-    "@types/simple-peer": "^9.11.8",
     "typescript": "^5.0.0"
   }
 }
