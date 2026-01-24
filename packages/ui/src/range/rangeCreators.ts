@@ -9,10 +9,12 @@ export const createVolumeRange = (start = 0, end = 1): ContinuousRange => ({
     exp: 1.5
   },
   stringToValue: (value: number, _unit: string) => {
+    if (typeof value !== 'number' || !Number.isFinite(value)) return start
     return Math.pow(10, value / 20)
   },
   valueToString: (value: number) => {
-    if (value === 0) {
+    if (typeof value !== 'number' || !Number.isFinite(value)) return '---'
+    if (value <= 0) {
       return '-inf'
     }
     if (value < 0.2) {
@@ -32,8 +34,12 @@ export const createPercentageRange = (start = 0, end = 1): ContinuousRange => ({
   type: RangeType.Continuous,
   start,
   end,
-  stringToValue: value => +value / 100,
+  stringToValue: value => {
+    if (typeof value !== 'number' || !Number.isFinite(value)) return start
+    return +value / 100
+  },
   valueToString(value) {
+    if (typeof value !== 'number' || !Number.isFinite(value)) return '---'
     return Math.round(value * 100) + '%'
   }
 })
@@ -49,8 +55,12 @@ export const createBipolarPercentageRange = (start = 0, end = 1): ContinuousRang
   start,
   end,
   bipolar: true,
-  stringToValue: value => +value / 100,
+  stringToValue: value => {
+    if (typeof value !== 'number' || !Number.isFinite(value)) return start
+    return +value / 100
+  },
   valueToString(value) {
+    if (typeof value !== 'number' || !Number.isFinite(value)) return '---'
     return (value > 0 ? '+' : '') + Math.round(value * 100) + '%'
   }
 })
@@ -68,8 +78,12 @@ export const createAccuratePercentageRange = (
   type: RangeType.Continuous,
   start,
   end,
-  stringToValue: value => +value / 100,
+  stringToValue: value => {
+    if (typeof value !== 'number' || !Number.isFinite(value)) return start
+    return +value / 100
+  },
   valueToString: (value: number) => {
+    if (typeof value !== 'number' || !Number.isFinite(value)) return '---'
     const strValue = (value * 100).toFixed(1)
     if (strValue === '100.0') return '100%'
     return strValue + '%'
@@ -93,14 +107,15 @@ export const createToggleRange = (offLabel = 'Off', onLabel = 'On'): ChoiceRange
 /**
  * Creates a range that displays time in ms.
  *
- * @param offLabel The label for when the value is 0.
- * @param onLabel The label for when the value is 1.
+ * @param start The start value (default = 0).
+ * @param end The end value (default = 1).
  */
 export const createTimeRange = (start = 0, end = 1): ContinuousRange => ({
   type: RangeType.Continuous,
   start,
   end,
   stringToValue: (value, unit) => {
+    if (typeof value !== 'number' || !Number.isFinite(value)) return start
     if (unit === 's') {
       return value
     } else if (unit === 'ms') {
@@ -109,6 +124,7 @@ export const createTimeRange = (start = 0, end = 1): ContinuousRange => ({
     return value / 1000
   },
   valueToString: (value: number) => {
+    if (typeof value !== 'number' || !Number.isFinite(value)) return '---'
     const strValue = (value * 1000).toFixed(0)
     return strValue + 'ms'
   }
@@ -146,6 +162,7 @@ const noteToVoltage = (note: string): number => {
     'Bb',
     'B'
   ].indexOf(noteName.toUpperCase())
+  if (isNaN(octave) || noteIndex === -1) return 0
   return octave + noteIndex / 12
 }
 
@@ -155,11 +172,15 @@ export const createVoltPerOctaveRange = (start = 0, end = 8): ContinuousRange =>
   end,
   stringMatcher: value => Boolean(value.match(/^[A-g]#?[0-9]+/g)),
   stringToValue: (value: number, unit: string) => {
+    if (typeof value !== 'number' || !Number.isFinite(value)) return start
     if (unit.match(/^[A-g]#?[0-9]+/g)) {
       return noteToVoltage(unit)
     } else if (unit === 'hz') {
+      // Guard against log of zero or negative
+      if (value <= 0) return start
       return Math.log2(value / 16.35)
     } else if (unit === 'khz') {
+      if (value <= 0) return start
       return Math.log2((value * 1000) / 16.35)
     }
 
@@ -173,7 +194,9 @@ export const createBpmRange = (start = 0, end = 320): ContinuousRange => ({
   end,
   step: 1,
   stringToValue: (value: number, unit: string) => {
+    if (typeof value !== 'number' || !Number.isFinite(value)) return start
     if (unit === 'hz') {
+      if (value <= 0) return start
       return 60 / value
     }
     return value
@@ -193,12 +216,14 @@ export const createLfoRateRange = (start = 0.01, end = 30): ContinuousRange => (
   end,
   scale: { type: Scale.Logarithmic },
   valueToString: (value: number) => {
+    if (typeof value !== 'number' || !Number.isFinite(value)) return '---'
     if (value < 1) {
       return `${(value * 1000).toFixed(0)} mHz`
     }
     return `${value.toFixed(2)} Hz`
   },
   stringToValue: (value: number, unit: string) => {
+    if (typeof value !== 'number' || !Number.isFinite(value)) return start
     if (unit === 'mhz') {
       return value / 1000
     }

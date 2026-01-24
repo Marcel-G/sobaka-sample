@@ -6,11 +6,20 @@ import { type ContinuousRange, type Range, RangeType, Scale } from './range'
 
 /**
  * Converts `value` to a normalised value (ranging from 0 to 1) and returns it.
+ * Returns 0 if value is undefined or invalid.
  */
-export function toNormalised(range: Range, value: number): number {
+export function toNormalised(range: Range, value: number | undefined | null): number {
+  // Guard against undefined/null values
+  if (value === undefined || value === null || !isValidNumber(value)) {
+    return 0
+  }
+  
   switch (range.type) {
-    case RangeType.Choice:
-      return range.choices.findIndex(c => c.value === value) / (range.choices.length - 1)
+    case RangeType.Choice: {
+      const index = range.choices.findIndex(c => c.value === value)
+      if (index === -1 || range.choices.length <= 1) return 0
+      return index / (range.choices.length - 1)
+    }
     case RangeType.Continuous: {
       const interpolatedStart = interpolate(range, range.start)
       const interpolatedEnd = interpolate(range, range.end)
@@ -27,8 +36,14 @@ export function toNormalised(range: Range, value: number): number {
 
 /**
  * Converts a normalised `value` (ranging from 0 to 1) to it's natural range and returns it.
+ * Returns the range start if value is undefined or invalid.
  */
-export function fromNormalised(range: Range, normalisedValue: number): number {
+export function fromNormalised(range: Range, normalisedValue: number | undefined | null): number {
+  // Guard against undefined/null values
+  if (normalisedValue === undefined || normalisedValue === null || !isValidNumber(normalisedValue)) {
+    return getStart(range)
+  }
+  
   switch (range.type) {
     case RangeType.Continuous: {
       const interpolatedStart = interpolate(range, range.start)
@@ -58,6 +73,7 @@ export function fromNormalised(range: Range, normalisedValue: number): number {
     }
     case RangeType.Choice: {
       normalisedValue = limitValue(normalisedValue, 0, 1)
+      if (range.choices.length === 0) return 0
       return range.choices[Math.round(normalisedValue * (range.choices.length - 1))].value
     }
   }
@@ -65,11 +81,17 @@ export function fromNormalised(range: Range, normalisedValue: number): number {
 
 /**
  * Parses `value` from a value and a unit and returns the value as a number.
+ * Returns the range start if parsing fails.
  */
-export function fromString(range: Range, value: number, unit: string): number {
+export function fromString(range: Range, value: number | undefined | null, unit: string): number {
+  // Guard against undefined/null/NaN values
+  if (value === undefined || value === null || !isValidNumber(value)) {
+    return getStart(range)
+  }
+  
   switch (range.type) {
     case RangeType.Choice: {
-      unit = unit.toLowerCase()
+      unit = (unit || '').toLowerCase()
       return (
         range.choices.find(c => {
           const label = c.label.toLowerCase()
@@ -82,19 +104,32 @@ export function fromString(range: Range, value: number, unit: string): number {
             idx = newIdx
           }
           return idx > -1
-        })?.value || 0
+        })?.value ?? getStart(range)
       )
     }
     case RangeType.Continuous: {
-      return range.stringToValue ? range.stringToValue(value, unit) : Number(value)
+      const result = range.stringToValue ? range.stringToValue(value, unit) : Number(value)
+      // Ensure the result is valid
+      return isValidNumber(result) ? result : getStart(range)
     }
   }
 }
 
 /**
  * Converts an unnormalised `value` to a user-friendly string representation.
+ * Returns a fallback string if value is undefined or invalid.
  */
-export function toString(range: Range, value: number): string {
+export function toString(range: Range, value: number | undefined | null): string {
+  // Guard against undefined/null values
+  if (value === undefined || value === null) {
+    return '---'
+  }
+  
+  // Guard against NaN/Infinity
+  if (!isValidNumber(value)) {
+    return '---'
+  }
+  
   switch (range.type) {
     case RangeType.Continuous: {
       return range.valueToString ? range.valueToString(value) : value.toFixed(1)
