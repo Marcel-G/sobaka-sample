@@ -2,13 +2,14 @@
  * VerifiedRTCProvider - Yjs document synchronization over WebRTC with identity verification
  * 
  * This is a unified provider that combines:
- * - Yjs document synchronization (replaces y-webrtc)
+ * - Yjs document synchronization
  * - Awareness protocol for presence
  * - Verified peer identities from signaling server
  * - Message filtering for access control
  * 
- * The signaling server assigns identities via JWT cookies and includes
- * identity/kind in all publish messages for verification.
+ * Uses the optimized PeerManager/Topic architecture where:
+ * - Multiple topics share the same RTCPeerConnection to each peer
+ * - Each topic has its own data channel on the shared connection
  */
 
 import * as Y from 'yjs'
@@ -17,7 +18,9 @@ import * as syncProtocol from 'y-protocols/sync'
 import * as encoding from 'lib0/encoding'
 import * as decoding from 'lib0/decoding'
 import { EventEmitter } from './webrtc/EventEmitter.ts'
-import { Room, type PeerConnection, type PeerKind } from './webrtc/Room.ts'
+import { Topic, type TopicPeer } from './webrtc/Topic.ts'
+import { PeerManager } from './webrtc/PeerManager.ts'
+import type { PeerKind, SignalingMessage } from './webrtc/SignalingClient.ts'
 
 // ============================================================================
 // Protocol message types (from y-protocols)
@@ -46,7 +49,7 @@ export interface VerifiedRTCProviderOptions {
 
 export type VerifiedRTCProviderEvents = {
   /** Peer list changed */
-  peers: (peers: Map<string, PeerConnection>) => void
+  peers: (peers: Map<string, TopicPeer>) => void
   /** User identity verified by signaling server */
   user: (identity: string) => void
   /** Synced with at least one peer */
@@ -64,7 +67,7 @@ export type VerifiedRTCProviderEvents = {
 export class VerifiedRTCProvider extends EventEmitter<VerifiedRTCProviderEvents> {
   readonly doc: Y.Doc
   readonly awareness: awarenessProtocol.Awareness
-  readonly room: Room
+  readonly topic: Topic
   readonly roomName: string
   
   private _synced = false
@@ -77,6 +80,9 @@ export class VerifiedRTCProvider extends EventEmitter<VerifiedRTCProviderEvents>
   private verifiedWorkerIdentities = new Map<string, string>()
   
   private readonly _filterIncomingMessage: VerifiedRTCProviderOptions['filterIncomingMessage']
+  
+  // Track which peers we've synced with
+  private syncedPeers = new Set<string>()
 
   constructor(
     roomName: string,
@@ -90,22 +96,23 @@ export class VerifiedRTCProvider extends EventEmitter<VerifiedRTCProviderEvents>
     this.awareness = options.awareness ?? new awarenessProtocol.Awareness(doc)
     this._filterIncomingMessage = options.filterIncomingMessage
     
-    // Create room for peer discovery and WebRTC connections
-    this.room = new Room({
+    // Create topic using shared PeerManager
+    this.topic = new Topic({
       name: roomName,
-      signaling: options.signaling,
-      maxConns: options.maxConns,
-      iceServers: options.iceServers,
+      peerManager: {
+        signaling: options.signaling,
+        iceServers: options.iceServers
+      },
       filterMessage: this.createMessageFilter()
     })
     
-    this.setupRoom()
+    this.setupTopic()
     this.setupDoc()
     this.setupAwareness()
     this.setupBeforeUnload()
     
     // Auto-connect (like the original y-webrtc)
-    console.debug('[VerifiedRTCProvider] Created for room:', roomName, 'signaling:', options.signaling)
+    console.debug('[VerifiedRTCProvider] Created for topic:', roomName, 'signaling:', options.signaling)
     this.connect()
   }
 
@@ -114,19 +121,19 @@ export class VerifiedRTCProvider extends EventEmitter<VerifiedRTCProviderEvents>
   // ============================================================================
 
   /**
-   * Connect to the room and start syncing
+   * Connect to the topic and start syncing
    */
   connect(): void {
     this._shouldConnect = true
-    this.room.connect()
+    this.topic.connect()
   }
 
   /**
-   * Disconnect from the room
+   * Disconnect from the topic
    */
   disconnect(): void {
     this._shouldConnect = false
-    this.room.disconnect()
+    this.topic.disconnect()
     
     // Remove our awareness state
     awarenessProtocol.removeAwarenessStates(
@@ -155,14 +162,14 @@ export class VerifiedRTCProvider extends EventEmitter<VerifiedRTCProviderEvents>
    * Check if connected to signaling and looking for peers
    */
   get connected(): boolean {
-    return this.room.isConnected && this._shouldConnect
+    return this.topic.isConnected && this._shouldConnect
   }
 
   /**
    * Get the peer ID (used for signaling)
    */
   get peerId(): string {
-    return this.room.peerId
+    return this.topic.peerId
   }
 
   /**
@@ -188,6 +195,13 @@ export class VerifiedRTCProvider extends EventEmitter<VerifiedRTCProviderEvents>
   }
 
   /**
+   * Get the topic (replaces old 'room' property)
+   */
+  get room(): Topic {
+    return this.topic
+  }
+
+  /**
    * Get signaling connections (for compatibility with old API)
    */
   get signalingConns(): Array<{ 
@@ -196,23 +210,23 @@ export class VerifiedRTCProvider extends EventEmitter<VerifiedRTCProviderEvents>
     return [{
       on: (event: string, handler: (...args: unknown[]) => void) => {
         if (event === 'connect') {
-          this.room.on('signaling:connect', handler as () => void)
+          this.topic.on('signaling:connect', handler as () => void)
         } else if (event === 'disconnect') {
-          this.room.on('signaling:disconnect', handler as () => void)
+          this.topic.on('signaling:disconnect', handler as () => void)
         } else if (event === 'message') {
-          this.room.on('signaling:message', handler as (message: unknown) => void)
+          this.topic.on('signaling:message', handler as (message: SignalingMessage) => void)
         }
       }
     }]
   }
 
   // ============================================================================
-  // Private: Room setup
+  // Private: Topic setup
   // ============================================================================
 
-  private setupRoom(): void {
+  private setupTopic(): void {
     // Handle identity verification (our own identity confirmed by signaling)
-    this.room.on('synced', (identity) => {
+    this.topic.on('synced', (identity) => {
       if (identity && !this.currentUser) {
         this.currentUser = identity
         this.emit('user', identity)
@@ -220,7 +234,7 @@ export class VerifiedRTCProvider extends EventEmitter<VerifiedRTCProviderEvents>
     })
     
     // Track peer identities by kind
-    this.room.on('peer:identity', (peerId, identity, kind) => {
+    this.topic.on('peer:identity', (peerId, identity, kind) => {
       if (kind === 'worker') {
         this.verifiedWorkerIdentities.set(peerId, identity)
       } else {
@@ -229,33 +243,41 @@ export class VerifiedRTCProvider extends EventEmitter<VerifiedRTCProviderEvents>
     })
     
     // Handle peer connections
-    this.room.on('peers', (peers) => {
+    this.topic.on('peers', (peers) => {
       this.emit('peers', peers)
       
       // Initiate sync with newly connected peers
-      for (const conn of peers.values()) {
-        if (conn.connected) {
-          this.syncWithPeer(conn.remotePeerId)
+      for (const peer of peers.values()) {
+        if (peer.connected && !this.syncedPeers.has(peer.peerId)) {
+          this.syncWithPeer(peer.peerId)
+          this.syncedPeers.add(peer.peerId)
+        }
+      }
+      
+      // Clean up synced peers that disconnected
+      for (const peerId of this.syncedPeers) {
+        if (!peers.has(peerId)) {
+          this.syncedPeers.delete(peerId)
         }
       }
     })
     
     // Handle incoming data from peers
-    this.room.on('data', (data, peerId, identity) => {
+    this.topic.on('data', (data, peerId, identity) => {
       this.handleMessage(data, peerId, identity)
     })
     
     // Handle signaling connection status
-    this.room.on('signaling:connect', () => {
+    this.topic.on('signaling:connect', () => {
       this.emit('status', { connected: true })
     })
     
-    this.room.on('signaling:disconnect', () => {
+    this.topic.on('signaling:disconnect', () => {
       this.emit('status', { connected: false })
     })
     
     // Forward errors
-    this.room.on('error', (err) => {
+    this.topic.on('error', (err) => {
       this.emit('error', err)
     })
   }
@@ -277,7 +299,7 @@ export class VerifiedRTCProvider extends EventEmitter<VerifiedRTCProviderEvents>
     encoding.writeVarUint(encoder, MESSAGE_SYNC)
     syncProtocol.writeUpdate(encoder, update)
     
-    this.room.broadcast(encoding.toUint8Array(encoder))
+    this.topic.broadcast(encoding.toUint8Array(encoder))
   }
 
   private syncWithPeer(peerId: string): void {
@@ -285,12 +307,12 @@ export class VerifiedRTCProvider extends EventEmitter<VerifiedRTCProviderEvents>
     const syncEncoder = encoding.createEncoder()
     encoding.writeVarUint(syncEncoder, MESSAGE_SYNC)
     syncProtocol.writeSyncStep1(syncEncoder, this.doc)
-    this.room.sendTo(peerId, encoding.toUint8Array(syncEncoder))
+    this.topic.sendTo(peerId, encoding.toUint8Array(syncEncoder))
     
     // Send awareness query
     const awarenessEncoder = encoding.createEncoder()
     encoding.writeVarUint(awarenessEncoder, MESSAGE_QUERY_AWARENESS)
-    this.room.sendTo(peerId, encoding.toUint8Array(awarenessEncoder))
+    this.topic.sendTo(peerId, encoding.toUint8Array(awarenessEncoder))
   }
 
   // ============================================================================
@@ -315,7 +337,7 @@ export class VerifiedRTCProvider extends EventEmitter<VerifiedRTCProviderEvents>
       awarenessProtocol.encodeAwarenessUpdate(this.awareness, changedClients)
     )
     
-    this.room.broadcast(encoding.toUint8Array(encoder))
+    this.topic.broadcast(encoding.toUint8Array(encoder))
   }
 
   // ============================================================================
@@ -356,7 +378,7 @@ export class VerifiedRTCProvider extends EventEmitter<VerifiedRTCProviderEvents>
     
     // Send response if we have one
     if (encoding.length(encoder) > 1) {
-      this.room.sendTo(peerId, encoding.toUint8Array(encoder))
+      this.topic.sendTo(peerId, encoding.toUint8Array(encoder))
     }
     
     // Mark as synced after receiving sync step 2 from a peer
@@ -382,7 +404,7 @@ export class VerifiedRTCProvider extends EventEmitter<VerifiedRTCProviderEvents>
       )
     )
     
-    this.room.sendTo(peerId, encoding.toUint8Array(encoder))
+    this.topic.sendTo(peerId, encoding.toUint8Array(encoder))
   }
 
   // ============================================================================

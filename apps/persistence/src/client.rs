@@ -124,11 +124,22 @@ impl Client {
         self.stats.messages_received += 1;
 
         // Get or create the peer connection
+        // We reuse existing connections to the same client, just adding new topics
         if let Some(connection) = self
             .connections
             .iter_mut()
             .find(|con| con.client_id() == from)
         {
+            // Add topic to existing connection if not already present
+            if !connection.has_topic(&topic) {
+                debug!(
+                    client_id = %from,
+                    topic = %topic,
+                    "Adding topic to existing peer connection"
+                );
+                connection.add_topic(topic.clone());
+            }
+            
             trace!(
                 client_id = %from,
                 topic = %topic,
@@ -149,8 +160,8 @@ impl Client {
                 self.candidate.clone(),
                 identity.clone(),
                 from.clone(),
-                topic.clone(),
             );
+            connection.add_topic(topic.clone());
             connection.handle_signal(parsed_signal);
             self.connections.push(connection);
         }

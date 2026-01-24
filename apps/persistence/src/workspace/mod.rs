@@ -74,7 +74,7 @@ impl Workspace {
             "Sending initial sync to client"
         );
 
-        if let Err(e) = conn.send(self.uuid.clone(), sync_data) {
+        if let Err(e) = conn.send(&self.uuid, sync_data) {
             error!(
                 workspace_id = %self.uuid,
                 client_id = %conn.client_id(),
@@ -159,7 +159,7 @@ impl Workspace {
                     "Sending sync reply"
                 );
 
-                if let Err(e) = conn.send(self.uuid.clone(), reply_data) {
+                if let Err(e) = conn.send(&self.uuid, reply_data) {
                     error!(
                         workspace_id = %self.uuid,
                         client_id = %conn.client_id(),
