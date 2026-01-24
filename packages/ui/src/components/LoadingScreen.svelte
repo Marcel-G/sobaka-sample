@@ -1,6 +1,4 @@
 <script lang="ts">
-  import RingSpinner from './RingSpinner.svelte'
-
   interface Props {
     /** Main message to display */
     message?: string
@@ -20,9 +18,7 @@
 <div class="loading-screen">
   <div class="content">
     {#if showSpinner}
-      <div class="spinner-wrapper">
-        <RingSpinner size="xl" color="purple" bg="text-gray-700" />
-      </div>
+      <div class="spinner"></div>
     {/if}
     
     {#if message}
@@ -53,8 +49,20 @@
     padding: 2rem;
   }
 
-  .spinner-wrapper {
+  .spinner {
+    width: 48px;
+    height: 48px;
+    border: 4px solid var(--color-dark);
+    border-top-color: var(--color-purple);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
     margin-bottom: 0.5rem;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
   }
 
   .message {
@@ -66,7 +74,7 @@
 
   .status {
     font-size: 0.875rem;
-    color: var(--color-medium);
+    color: var(--color-blue);
     margin: 0;
     max-width: 300px;
   }

@@ -1,5 +1,7 @@
 <script lang="ts">
   import type { PageData } from './$types'
+  import { goto } from '$app/navigation'
+  import { onMount } from 'svelte'
 
   import WorkspaceContainer from '../../../workspace/WorkspaceContainer.svelte'
   import { getGlobalCtx } from '../../../context/global'
@@ -9,6 +11,8 @@
   import CurrentWorkspaceSummary from '../../../components/CurrentWorkspaceSummary.svelte'
   import AppLayout from '../../../components/AppLayout.svelte'
   import LoadingScreen from '@sobaka/ui/components/LoadingScreen.svelte'
+
+  const FINAL_TIMEOUT = 30_000 // 30 seconds
 
   let { data }: { data: PageData } = $props()
 
@@ -32,6 +36,17 @@
     })
     return unsubscribe
   })
+
+  // Final timeout - redirect to homepage if still not loaded after 30s
+  onMount(() => {
+    const timeout = setTimeout(() => {
+      if (currentState.status !== 'loaded') {
+        goto('/')
+      }
+    }, FINAL_TIMEOUT)
+    
+    return () => clearTimeout(timeout)
+  })
 </script>
 
 <AppLayout>
@@ -42,10 +57,12 @@
       </div>
     {:else}
       <!-- Show New button while loading, but not Fork -->
-      <div class="sidebar-loading mb-6 border-b border-dark pb-4">
+      <div class="flex flex-col gap-2 mb-6 border-b border-dark pb-4">
         <div class="loading-title"></div>
-        <a href="/workspace/new" class="new-button-wrapper">
-          <button class="new-button">New</button>
+        <a href="/workspace/new">
+          <button class="bg-blue cursor-pointer font-semibold text-light px-3 py-2 rounded text-sm w-full">
+            New
+          </button>
         </a>
       </div>
     {/if}
@@ -75,38 +92,11 @@
 </AppLayout>
 
 <style>
-  .sidebar-loading {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-  
   .loading-title {
     height: 2.5rem;
     background: var(--color-dark);
     border-radius: 4px;
     opacity: 0.3;
-    margin-bottom: 0.5rem;
-  }
-  
-  .new-button-wrapper {
-    display: block;
-  }
-  
-  .new-button {
-    background: var(--blue);
-    cursor: pointer;
-    font-weight: 600;
-    color: var(--color-light);
-    padding: 0.5rem 0.75rem;
-    border-radius: 0.25rem;
-    font-size: 0.875rem;
-    width: 100%;
-    border: none;
-  }
-  
-  .new-button:hover {
-    opacity: 0.9;
   }
   
   .error-container {
@@ -126,7 +116,7 @@
   }
   
   .error-container p {
-    color: var(--color-medium);
+    color: var(--color-blue);
     margin: 0;
   }
 </style>
