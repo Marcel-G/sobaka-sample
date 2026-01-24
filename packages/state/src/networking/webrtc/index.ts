@@ -6,17 +6,16 @@
  * - WebRTCPeer: Low-level WebRTC connection wrapper with chunking
  * - SignalingClient: WebSocket client for signaling server communication
  * - Room: Manages peer discovery and connections within a room
- * - YjsWebRTCProvider: Yjs document synchronization over WebRTC
+ * 
+ * The main provider (VerifiedRTCProvider) is exported from the parent module.
  * 
  * @example
  * ```typescript
- * import { YjsWebRTCProvider } from '@sobaka/state/networking/webrtc'
+ * import { VerifiedRTCProvider } from '@sobaka/state'
  * import * as Y from 'yjs'
  * 
  * const doc = new Y.Doc()
- * const provider = new YjsWebRTCProvider({
- *   roomName: 'my-room',
- *   doc,
+ * const provider = new VerifiedRTCProvider('my-room', doc, {
  *   signaling: ['wss://signaling.example.com']
  * })
  * 
@@ -30,7 +29,6 @@
 export { WebRTCPeer, WEBRTC_SUPPORT, type WebRTCPeerOptions, type SignalData, type WebRTCPeerEvents } from './WebRTCPeer'
 export { SignalingClient, type SignalingClientOptions, type SignalingClientEvents, type SignalingMessage, type MessageData, type PeerKind } from './SignalingClient'
 export { Room, type RoomOptions, type RoomEvents, type PeerConnection } from './Room'
-export { YjsWebRTCProvider, createYjsWebRTCProvider, type YjsWebRTCProviderOptions, type YjsWebRTCProviderEvents } from './YjsProvider'
 
 // Utilities
 export { EventEmitter, type EventMap } from './EventEmitter'
