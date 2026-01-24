@@ -198,7 +198,8 @@ async fn receive_messages(
                 Err(err) => {
                     warn!(
                         error = ?err,
-                        json_preview = %json.chars().take(100).collect::<String>(),
+                        json_len = json.len(),
+                        json_preview = %json.chars().take(500).collect::<String>(),
                         "Failed to parse received message"
                     );
                 }

@@ -386,7 +386,8 @@ async fn process_msg(
             warn!(
                 uuid = %state.token.uuid,
                 error = %e,
-                message_preview = %msg.chars().take(100).collect::<String>(),
+                message_len = msg.len(),
+                message_preview = %msg.chars().take(500).collect::<String>(),
                 "Failed to parse signaling message"
             );
             return Ok(()); // Don't disconnect on parse errors
