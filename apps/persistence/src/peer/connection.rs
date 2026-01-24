@@ -54,19 +54,34 @@ impl Deref for ConnId {
 impl PeerConnection {
     /// Create a new peer connection for a client.
     /// Topics are added via `add_topic()` after creation.
+    ///
+    /// The connection uses ICE-lite mode since the persistence node runs on a
+    /// public IP in AWS. ICE-lite means we won't initiate STUN binding requests,
+    /// only respond to them. Clients behind NAT will use their TURN servers
+    /// to relay traffic to us.
     pub fn new(candidate: Candidate, identity: String, client_id: String) -> Self {
         static ID_COUNTER: AtomicU64 = AtomicU64::new(0);
         let next_id = ID_COUNTER.fetch_add(1, Ordering::SeqCst);
-        let mut rtc = Rtc::new();
+
+        // Use ICE-lite mode for server with public IP
+        // This tells peers we have a known public address and won't be behind NAT
+        let mut rtc = Rtc::builder().set_ice_lite(true).build();
 
         debug!(
             conn_id = next_id,
             client_id = %client_id,
             identity = %identity,
-            "Creating new peer connection"
+            ice_lite = true,
+            "Creating new peer connection (ICE-lite mode)"
         );
 
-        rtc.add_local_candidate(candidate);
+        rtc.add_local_candidate(candidate.clone());
+
+        info!(
+            client_id = %client_id,
+            candidate = %candidate,
+            "Added local ICE candidate"
+        );
 
         PeerConnection {
             _id: ConnId(next_id),
@@ -193,8 +208,10 @@ impl PeerConnection {
                 );
             }
             Signal::Candidate(candidate) => {
-                debug!(
+                info!(
                     client_id = %self.client_id,
+                    candidate_type = ?candidate.kind(),
+                    candidate_addr = %candidate.addr(),
                     candidate = ?candidate,
                     "Adding remote ICE candidate"
                 );
@@ -275,14 +292,14 @@ impl PeerConnection {
                     Propagated::Noop
                 }
                 Event::IceConnectionStateChange(state) => {
-                    debug!(
+                    info!(
                         client_id = %self.client_id,
                         state = ?state,
                         "ICE connection state changed"
                     );
 
                     if state == IceConnectionState::Disconnected {
-                        info!(
+                        warn!(
                             client_id = %self.client_id,
                             "ICE disconnected, closing connection"
                         );
