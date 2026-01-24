@@ -14,13 +14,10 @@ import { SyncedDocFactory, type Config } from '@sobaka/state/models/syncedDoc'
 import { pluginRegistry } from '../plugins'
 
 // TODO: this is more like a context
-export const createGlobalCtx = async (
-  config: ConfigApi, 
-  onStatusChange?: (status: string) => void
-) => {
+export const createGlobalCtx = async (config: ConfigApi) => {
   const global = new Global(config)
   setContext('Global', global)
-  await global.load(onStatusChange)
+  await global.load()
   return global
 }
 
@@ -105,19 +102,15 @@ export class Global {
     return this._isOnline
   }
 
-  async load(onStatusChange?: (status: string) => void) {
-    onStatusChange?.('Initializing audio...')
+  async load() {
     await load(this.audio)
 
     if (!this._user) {
-      onStatusChange?.('Connecting to network...')
       await new Promise<void>(resolve => {
         // @ts-expect-error - TODO: user event isn't part of type definition
         this.rtc.once('user', resolve)
       })
     }
-    
-    onStatusChange?.('Verifying identity...')
 
     this._root = Root.fromRef(
       { guid: this.user.uuid } as SubDocReference<Root>,
@@ -130,8 +123,6 @@ export class Global {
         lists: this.lists
       })
     })
-
-    onStatusChange?.('Loading your data...')
 
     try {
       await this._root.load({ localOnly: true })

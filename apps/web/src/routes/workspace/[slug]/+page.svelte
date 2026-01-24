@@ -7,12 +7,11 @@
   import { getGlobalCtx } from '../../../context/global'
   import { type SubDocReference } from '@sobaka/state/util/subdoc'
   import type { Workspace } from '@sobaka/state/models/workspace'
-  import type { LoadingState } from '@sobaka/state/models/syncedDoc'
   import CurrentWorkspaceSummary from '../../../components/CurrentWorkspaceSummary.svelte'
   import AppLayout from '../../../components/AppLayout.svelte'
   import LoadingScreen from '@sobaka/ui/components/LoadingScreen.svelte'
 
-  const FINAL_TIMEOUT = 30_000 // 30 seconds
+  const TIMEOUT = 30_000 // 30 seconds
 
   let { data }: { data: PageData } = $props()
 
@@ -24,26 +23,27 @@
     } as SubDocReference<Workspace>)
   )
 
-  // Use the new loadWithRetry for better UX
-  const loadingState = $derived(workspace.loadWithRetry())
+  // Simple loading promise
+  const loading = $derived(workspace.load())
   
-  // Reactive loading state
-  let currentState: LoadingState = $state({ status: 'loading', message: 'Looking for workspace...' })
+  // Track if loaded
+  let isLoaded = $state(false)
   
   $effect(() => {
-    const unsubscribe = loadingState.subscribe(state => {
-      currentState = state
+    loading.then(() => {
+      isLoaded = true
+    }).catch(() => {
+      // Will be handled by timeout
     })
-    return unsubscribe
   })
 
-  // Final timeout - redirect to homepage if still not loaded after 30s
+  // Timeout - redirect to homepage if not loaded after 30s
   onMount(() => {
     const timeout = setTimeout(() => {
-      if (currentState.status !== 'loaded') {
+      if (!isLoaded) {
         goto('/')
       }
-    }, FINAL_TIMEOUT)
+    }, TIMEOUT)
     
     return () => clearTimeout(timeout)
   })
@@ -51,7 +51,7 @@
 
 <AppLayout>
   <svelte:fragment slot="sidebar-top">
-    {#if currentState.status === 'loaded'}
+    {#if isLoaded}
       <div class="mb-6 border-b border-dark pb-4">
         <CurrentWorkspaceSummary {workspace} />
       </div>
@@ -68,26 +68,12 @@
     {/if}
   </svelte:fragment>
 
-  {#if currentState.status === 'loading'}
-    <LoadingScreen 
-      message="Loading workspace" 
-      status={currentState.message} 
-    />
-  {:else if currentState.status === 'not_found'}
-    <LoadingScreen 
-      message={currentState.message}
-      status={currentState.retrying ? "Still searching the network..." : ""}
-      showSpinner={currentState.retrying}
-    />
-  {:else if currentState.status === 'error'}
-    <div class="error-container">
-      <h2>Something went wrong</h2>
-      <p>{currentState.message}</p>
-    </div>
-  {:else}
+  {#if isLoaded}
     {#key workspace.id}
       <WorkspaceContainer {workspace} />
     {/key}
+  {:else}
+    <LoadingScreen message="Looking for workspace..." />
   {/if}
 </AppLayout>
 
@@ -97,26 +83,5 @@
     background: var(--color-dark);
     border-radius: 4px;
     opacity: 0.3;
-  }
-  
-  .error-container {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    gap: 1rem;
-    color: var(--color-light);
-  }
-  
-  .error-container h2 {
-    font-size: 1.25rem;
-    font-weight: 500;
-    margin: 0;
-  }
-  
-  .error-container p {
-    color: var(--color-blue);
-    margin: 0;
   }
 </style>

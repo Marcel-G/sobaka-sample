@@ -10,14 +10,10 @@
 
   let { data }: { data: PageData } = $props()
   let global: Global | null = $state(null)
-  let loadingStatus = $state('Initializing...')
 
   if (browser) {
     onMount(async () => {
-      loadingStatus = 'Connecting to network...'
-      global = await createGlobalCtx(data.config, (status) => {
-        loadingStatus = status
-      })
+      global = await createGlobalCtx(data.config)
     })
 
     onDestroy(() => {
@@ -27,10 +23,7 @@
 </script>
 
 {#if !global}
-  <LoadingScreen 
-    message="Starting up" 
-    status={loadingStatus} 
-  />
+  <LoadingScreen message="Starting up..." />
 {:else}
   <slot />
 {/if}
