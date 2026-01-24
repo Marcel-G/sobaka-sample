@@ -1,12 +1,14 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub enum PeerKind {
     #[serde(rename = "worker")]
     Worker,
     #[serde(rename = "client")]
     Client,
+    #[serde(rename = "admin")]
+    Admin,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

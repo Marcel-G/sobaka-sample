@@ -17,6 +17,7 @@ use super::{
     encoder::{decode_packet, encode_packet, packet_array, PacketReassembler, CHUNK_SIZE},
     signal::Signal,
 };
+use crate::signal::protocol::PeerKind;
 
 /// A peer connection that supports multiple data channels (one per topic).
 ///
@@ -26,6 +27,7 @@ use super::{
 pub struct PeerConnection {
     _id: ConnId,
     identity: String,
+    kind: PeerKind,
     client_id: String,
     rtc: Rtc,
     tx_ordinal: u64,
@@ -59,7 +61,7 @@ impl PeerConnection {
     /// public IP in AWS. ICE-lite means we won't initiate STUN binding requests,
     /// only respond to them. Clients behind NAT will use their TURN servers
     /// to relay traffic to us.
-    pub fn new(candidate: Candidate, identity: String, client_id: String) -> Self {
+    pub fn new(candidate: Candidate, identity: String, client_id: String, kind: PeerKind) -> Self {
         static ID_COUNTER: AtomicU64 = AtomicU64::new(0);
         let next_id = ID_COUNTER.fetch_add(1, Ordering::SeqCst);
 
@@ -71,6 +73,7 @@ impl PeerConnection {
             conn_id = next_id,
             client_id = %client_id,
             identity = %identity,
+            kind = ?kind,
             ice_lite = true,
             "Creating new peer connection (ICE-lite mode)"
         );
@@ -86,6 +89,7 @@ impl PeerConnection {
         PeerConnection {
             _id: ConnId(next_id),
             identity,
+            kind,
             tx_ordinal: 0,
             packet_queue: PacketReassembler::new(),
             signals_to_propagate: VecDeque::default(),
@@ -125,6 +129,10 @@ impl PeerConnection {
 
     pub fn identity(&self) -> &str {
         &self.identity
+    }
+
+    pub fn kind(&self) -> &PeerKind {
+        &self.kind
     }
 
     pub fn handle_input(&mut self, input: Input) {

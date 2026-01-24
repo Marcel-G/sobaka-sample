@@ -1,12 +1,18 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+/// Well-known UUID for the global root workspace.
+/// This workspace contains the "Intro" list visible to all users.
+pub const GLOBAL_ROOT_UUID: &str = "00000000-0000-0000-0000-000000000000";
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub enum PeerKind {
     #[serde(rename = "worker")]
     Worker,
     #[serde(rename = "client")]
     Client,
+    #[serde(rename = "admin")]
+    Admin,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

@@ -29,6 +29,8 @@ enum PeerKind {
     Worker,
     #[serde(rename = "client")]
     Client,
+    #[serde(rename = "admin")]
+    Admin,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -54,6 +56,7 @@ USAGE:
 
 OPTIONS:
     --worker        Generate a worker token (for persistence service)
+    --admin         Generate an admin token (can edit global workspace lists)
     --client        Generate a client token (default)
     --uuid <UUID>   Use a specific UUID instead of generating one
     --help          Print this help message
@@ -65,6 +68,9 @@ ENVIRONMENT:
 EXAMPLES:
     # Generate a worker token for development
     JWT_PRIVATE_KEY=dev-secret generate-jwt --worker
+
+    # Generate an admin token
+    JWT_PRIVATE_KEY=dev-secret generate-jwt --admin
 
     # Generate a worker token with a specific ID
     JWT_PRIVATE_KEY=dev-secret generate-jwt --worker --uuid persistence-worker-1
@@ -79,14 +85,15 @@ fn main() {
     let args: Vec<String> = env::args().collect();
 
     // Parse arguments
-    let mut is_worker = false;
+    let mut kind = PeerKind::Client;
     let mut custom_uuid: Option<String> = None;
     let mut i = 1;
 
     while i < args.len() {
         match args[i].as_str() {
-            "--worker" => is_worker = true,
-            "--client" => is_worker = false,
+            "--worker" => kind = PeerKind::Worker,
+            "--admin" => kind = PeerKind::Admin,
+            "--client" => kind = PeerKind::Client,
             "--uuid" => {
                 i += 1;
                 if i >= args.len() {
@@ -125,11 +132,7 @@ fn main() {
 
     let token = Token {
         uuid: custom_uuid.unwrap_or_else(|| Uuid::new_v4().to_string()),
-        kind: if is_worker {
-            PeerKind::Worker
-        } else {
-            PeerKind::Client
-        },
+        kind: kind.clone(),
         exp: (now + 60 * 60 * 24 * 365) as usize, // 1 year
     };
 
@@ -145,10 +148,7 @@ fn main() {
 
     // Print info to stderr so it doesn't interfere with piping
     eprintln!();
-    eprintln!(
-        "Generated {} token:",
-        if is_worker { "WORKER" } else { "CLIENT" }
-    );
+    eprintln!("Generated {:?} token:", kind);
     eprintln!("  UUID: {}", token.uuid);
     eprintln!("  Kind: {:?}", token.kind);
     eprintln!("  Expires: {} (1 year)", token.exp);

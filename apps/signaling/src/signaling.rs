@@ -241,6 +241,12 @@ pub async fn signaling_conn(
                 "Client peer connected"
             );
         }
+        PeerKind::Admin => {
+            info!(
+                uuid = %state.token.uuid,
+                "Admin peer connected"
+            );
+        }
     }
 
     let result = loop {
@@ -496,8 +502,8 @@ async fn process_msg(
                         }
                     };
 
-                    // Notify workers about announce messages from clients
-                    if matches!(state.token.kind, PeerKind::Client) {
+                    // Notify workers about announce messages from clients and admins
+                    if matches!(state.token.kind, PeerKind::Client | PeerKind::Admin) {
                         if let MessageData::Announce { .. } = data {
                             let workers_guard = workers.read().await;
                             let worker_count = workers_guard.len();

@@ -21,7 +21,13 @@ const ROOT_STORE_SHAPE = {
 }
 
 /**
- * Top level document storage
+ * Top level document storage for a user.
+ * 
+ * Each user has their own root document (UUID = user's identity).
+ * The root contains workspace lists that the user has created or has access to.
+ * 
+ * There is also a special "global root" (GLOBAL_ROOT_UUID) that contains
+ * the "Intro" workspace list visible to all users. Only admins can edit it.
  */
 export class Root extends SyncedDoc<'root'> {
   private store: ReturnType<typeof syncedStore<RootStore>>
@@ -35,30 +41,18 @@ export class Root extends SyncedDoc<'root'> {
     return new Root(new Y.Doc(ref), config)
   }
 
-  migrate(ctx: GlobalContext) {
-    // Add user list if missing
+  /**
+   * Migrate the root document to ensure it has required structure.
+   * For user roots: creates "My Workspaces" list if missing.
+   * For global root: creates "Intro" list if missing (admin only).
+   */
+  migrate(ctx: GlobalContext, listName?: string) {
+    // Add workspace list if missing
     if (!this.store.workspaceLists.at(0)) {
       const list = ctx.lists.get()
-      list.create(this.config.currentUser)
+      list.create(this.config.currentUser, listName)
       this.store.workspaceLists.push(list.intoRef())
     }
-    // Add or update globally shared lists
-    this.config.globalLists.forEach((guid, index) => {
-      const targetIndex = index + 1
-      const ref = { guid } as SubDocReference<WorkspaceList>
-      const current = this.store.workspaceLists.at(targetIndex)
-
-      if (this.store.workspaceLists.at(0)?.guid === guid) {
-        if (current) {
-          this.store.workspaceLists.splice(targetIndex, 1)
-        }
-      } else if (!current) {
-        this.store.workspaceLists.push(ref)
-      } else if (current.guid !== guid) {
-        // Replace or insert at correct position
-        this.store.workspaceLists.splice(targetIndex, 1, ref)
-      }
-    })
   }
 
   userList() {

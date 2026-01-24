@@ -89,6 +89,21 @@ export class DocMeta<K extends string> {
     return collaborators
   }
 
+  get name(): string | undefined {
+    const name = this.doc.get('name')
+    if (name === undefined) return undefined
+    if (typeof name !== 'string') return undefined
+    return name
+  }
+
+  set name(value: string | undefined) {
+    if (value === undefined) {
+      this.doc.delete('name')
+    } else {
+      this.doc.set('name', value)
+    }
+  }
+
   synced(fn: () => void) {
     const handler = () => {
       if (this.isEmpty) return

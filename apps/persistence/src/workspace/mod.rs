@@ -14,6 +14,7 @@ use yrs_kvstore::DocOps;
 use yrs_lmdb::LmdbStore;
 
 use crate::peer::connection::PeerConnection;
+use crate::signal::protocol::{PeerKind, GLOBAL_ROOT_UUID};
 
 pub struct Workspace {
     doc: Awareness,
@@ -127,23 +128,43 @@ impl Workspace {
             "Processing message"
         );
 
-        // Allow only read-only messages for non-collaborators
-        // https://github.com/yjs/y-protocols/blob/40dbe4eebb1e53a7e86932ef3232f9abd5037569/PROTOCOL.md?plain=1#L100-L111
+        // Access control for write operations
+        // - Global root and its subdocs: only Admins can write
+        // - Other workspaces: collaborators can write, or anyone if no collaborators set
         match &message {
             Message::Sync(SyncMessage::SyncStep2(_))
             | Message::Sync(SyncMessage::Update(_))
             | Message::Awareness(_) => {
-                if !collaborators.is_empty() && !collaborators.iter().any(|i| i == conn.identity())
-                {
+                let is_global_root = self.uuid == GLOBAL_ROOT_UUID;
+                let is_admin = matches!(conn.kind(), PeerKind::Admin);
+                
+                // For global root, only admins can write
+                if is_global_root && !is_admin {
                     warn!(
                         workspace_id = %self.uuid,
                         client_id = %conn.client_id(),
                         identity = %conn.identity(),
+                        kind = ?conn.kind(),
                         message_type = msg_type,
-                        collaborator_count = collaborators.len(),
-                        "Rejecting write message from non-collaborator"
+                        "Rejecting write to global root from non-admin"
                     );
                     return;
+                }
+                
+                // For other workspaces, check collaborators (unless user is admin)
+                if !is_global_root && !is_admin {
+                    if !collaborators.is_empty() && !collaborators.iter().any(|i| i == conn.identity())
+                    {
+                        warn!(
+                            workspace_id = %self.uuid,
+                            client_id = %conn.client_id(),
+                            identity = %conn.identity(),
+                            message_type = msg_type,
+                            collaborator_count = collaborators.len(),
+                            "Rejecting write message from non-collaborator"
+                        );
+                        return;
+                    }
                 }
             }
             _ => {}

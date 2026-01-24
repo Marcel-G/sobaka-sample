@@ -5,11 +5,17 @@ import { DocMeta } from './docMeta.ts'
 import { writable, type Readable } from 'svelte/store'
 import type { SubDocReference } from '../util/subdoc.ts'
 
+/**
+ * Well-known UUID for the global root workspace.
+ * This workspace contains the "Intro" list visible to all users (readonly).
+ * Admins can edit the global root and its workspaces.
+ */
+export const GLOBAL_ROOT_UUID = '00000000-0000-0000-0000-000000000000'
+
 export interface Config {
   currentUser: string
   iceServers: IceServer[]
   signaling: string[]
-  globalLists: string[]
   
   /**
    * Function to get initial state for a module type.
@@ -149,13 +155,16 @@ export class SyncedDoc<K extends string> {
     this._isEditable.set(this.meta.isCollaborator(this.config.currentUser))
   }
 
-  create(owner: string) {
+  create(owner: string, name?: string) {
     if (!this.meta.isEmpty) {
       throw new Error('Document already exists')
     }
     this.doc.transact(() => {
       this.meta.populate()
       this.meta.addCollaborator(owner)
+      if (name) {
+        this.meta.name = name
+      }
     }, this)
   }
 

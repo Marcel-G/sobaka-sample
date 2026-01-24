@@ -95,6 +95,7 @@ impl Client {
         &mut self,
         topic: String,
         identity: String,
+        kind: Option<crate::signal::protocol::PeerKind>,
         from: String,
         to: String,
         signal: Value,
@@ -165,8 +166,9 @@ impl Client {
 
             self.stats.connections_total += 1;
 
+            let peer_kind = kind.unwrap_or(crate::signal::protocol::PeerKind::Client);
             let mut connection =
-                PeerConnection::new(self.candidate.clone(), identity.clone(), from.clone());
+                PeerConnection::new(self.candidate.clone(), identity.clone(), from.clone(), peer_kind);
             connection.add_topic(topic.clone());
             connection.handle_signal(parsed_signal);
             self.connections.push(connection);
@@ -300,6 +302,7 @@ impl Client {
                             self.handle_incoming_signal(
                                 topic,
                                 identity.expect("valid identity"),
+                                kind,
                                 from,
                                 to,
                                 signal,

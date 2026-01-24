@@ -10,7 +10,7 @@ import { WorkspaceList } from '@sobaka/state/models/workspaceList'
 import { EmptyDocument } from '@sobaka/state/models/docMeta'
 import { load } from './audio'
 import type { Config as ConfigApi } from '../routes/proxy+layout.server'
-import { SyncedDocFactory, type Config } from '@sobaka/state/models/syncedDoc'
+import { SyncedDocFactory, GLOBAL_ROOT_UUID, type Config } from '@sobaka/state/models/syncedDoc'
 import { pluginRegistry } from '../plugins'
 
 // TODO: this is more like a context
@@ -31,6 +31,7 @@ export class Global {
   private rtc: VerifiedRTCProvider
   private _user: User | null = readLocalUser()
   private _root: Root | null = null
+  private _globalRoot: Root | null = null
   private _isOnline = writable(false)
   private lastPong: number = 0
 
@@ -98,20 +99,33 @@ export class Global {
     return root
   }
 
+  get globalRoot(): Root {
+    const globalRoot = this._globalRoot
+    if (!globalRoot) {
+      throw new Error('Global root not initialized')
+    }
+    return globalRoot
+  }
+
   get isOnline(): Readable<boolean> {
     return this._isOnline
   }
 
-  async load() {
+  async load(onStatusChange?: (status: string) => void) {
+    onStatusChange?.('Initializing audio...')
     await load(this.audio)
 
     if (!this._user) {
+      onStatusChange?.('Connecting to network...')
       await new Promise<void>(resolve => {
         // @ts-expect-error - TODO: user event isn't part of type definition
         this.rtc.once('user', resolve)
       })
     }
 
+    onStatusChange?.('Verifying identity...')
+
+    // Load user's personal root
     this._root = Root.fromRef(
       { guid: this.user.uuid } as SubDocReference<Root>,
       this.config
@@ -121,8 +135,10 @@ export class Global {
       this.root.migrate({
         workspaces: this.workspaces,
         lists: this.lists
-      })
+      }, 'My Workspaces')
     })
+
+    onStatusChange?.('Loading your data...')
 
     try {
       await this._root.load({ localOnly: true })
@@ -131,6 +147,25 @@ export class Global {
         this._root.create(this.user.uuid)
       } else {
         throw error
+      }
+    }
+
+    // Load global root (readonly for non-admins, contains "Intro" list)
+    onStatusChange?.('Loading shared workspaces...')
+    
+    this._globalRoot = Root.fromRef(
+      { guid: GLOBAL_ROOT_UUID } as SubDocReference<Root>,
+      this.config
+    )
+
+    // Don't migrate global root - only admins can do that
+    // Just load it and display whatever is there
+    try {
+      await this._globalRoot.load({ localOnly: false })
+    } catch (error: unknown) {
+      // Global root may not exist yet - that's OK, admin will create it
+      if (!(error instanceof EmptyDocument)) {
+        console.warn('Failed to load global root:', error)
       }
     }
   }
@@ -159,6 +194,7 @@ export class Global {
   cleanup() {
     this.audio.close()
     this._root?.destroy()
+    this._globalRoot?.destroy()
     this.workspaces.clear()
     this.lists.clear()
   }
