@@ -9,7 +9,6 @@
   import type { Workspace } from '@sobaka/state/models/workspace'
   import CurrentWorkspaceSummary from '../../../components/CurrentWorkspaceSummary.svelte'
   import AppLayout from '../../../components/AppLayout.svelte'
-  import LoadingScreen from '@sobaka/ui/components/LoadingScreen.svelte'
 
   const TIMEOUT = 30_000 // 30 seconds
 
@@ -73,7 +72,22 @@
       <WorkspaceContainer {workspace} />
     {/key}
   {:else}
-    <LoadingScreen message="Looking for workspace..." />
+    <div class="min-h-screen flex flex-col items-center justify-center p-8 bg-grid">
+      <div class="max-w-2xl text-center space-y-8">
+        <div class="spinner"></div>
+        
+        <p class="text-xl text-gray-300">Looking for workspace...</p>
+        
+        <a href="/workspace/new">
+          <button
+            class="bg-blue text-light px-8 py-4 rounded-lg cursor-pointer
+            font-semibold text-lg transition-colors duration-200 shadow-lg"
+          >
+            Create New Workspace
+          </button>
+        </a>
+      </div>
+    </div>
   {/if}
 </AppLayout>
 
@@ -83,5 +97,26 @@
     background: var(--color-dark);
     border-radius: 4px;
     opacity: 0.3;
+  }
+
+  .bg-grid {
+    background: conic-gradient(from 90deg at 1px 1px, #0000 90deg, var(--color-dark) 0) 0
+      0 / 1rem 1rem;
+  }
+
+  .spinner {
+    width: 48px;
+    height: 48px;
+    border: 4px solid var(--color-dark);
+    border-top-color: var(--color-purple);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
   }
 </style>
