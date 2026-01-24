@@ -1,4 +1,5 @@
 import init, { registerContext } from '@sobaka/dsp/wasm'
+import shimUrl from '@sobaka/dsp/wasm?url'
 
 export const load = async (ctx: AudioContext) => {
   const handleInteraction = () => {
@@ -9,5 +10,5 @@ export const load = async (ctx: AudioContext) => {
   document?.addEventListener('click', handleInteraction, { once: true })
 
   await init()
-  await registerContext(ctx)
+  await registerContext(ctx, new URL(shimUrl, import.meta.url).href)
 }

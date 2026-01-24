@@ -22,10 +22,10 @@ async fn polyfill(ctx: &AudioContext) {
 
 #[wasm_bindgen(js_name = registerContext)]
 /// Create audio context with waw-rs worklets registered
-pub async fn register_context(ctx: Option<AudioContext>) -> AudioContext {
+pub async fn register_context(ctx: Option<AudioContext>, shim_url: &str) -> AudioContext {
     let ctx = ctx.unwrap_or(AudioContext::new().unwrap());
     polyfill(&ctx).await;
-    waw::register_all(&ctx).await.unwrap();
+    waw::register_all(&ctx, Some(shim_url)).await.unwrap();
 
     ctx
 }
