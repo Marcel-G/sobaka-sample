@@ -8,8 +8,8 @@
   import { type PageData } from './$types'
   import LoadingScreen from '@sobaka/ui/components/LoadingScreen.svelte'
 
-  export let data: PageData
-  let global: Global | null = null
+  let { data }: { data: PageData } = $props()
+  let global: Global | null = $state(null)
   let loadingStatus = $state('Initializing...')
 
   if (browser) {
