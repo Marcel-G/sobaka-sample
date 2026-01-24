@@ -102,10 +102,12 @@ locals {
       --restart always \
       --network host \
       --detach \
-      ${join(" ", [for env_name, value in var.env : "-e ${env_name}=${value}"])} \
-      ${join(" ", [for port in var.ports : "-p ${port}"])} \
-      ${join(" ", [for env_name, _ in var.secrets : "-e ${env_name}"])} \
-      ${join(" ", [for volume in var.volumes : "-v ${volume}"])} \
+      ${join(" ", compact([
+  join(" ", [for env_name, value in var.env : "-e ${env_name}=${value}"]),
+  join(" ", [for port in var.ports : "-p ${port}"]),
+  join(" ", [for env_name, _ in var.secrets : "-e ${env_name}"]),
+  join(" ", [for volume in var.volumes : "-v ${volume}"])
+]))} \
       ${var.repository_url}:latest
   EOT
 
