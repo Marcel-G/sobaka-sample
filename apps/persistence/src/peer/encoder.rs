@@ -1,7 +1,5 @@
 /// Configuration constants for packet chunking and transmission
 pub const CHUNK_SIZE: usize = 1024 * 16 - 512; // 16KB - 512 bytes reserved for packet headers
-pub const TX_SEND_TTL_MS: u64 = 1000 * 30; // 30 seconds - timeout for cleaning up received packet buffers
-pub const MAX_BUFFERED_AMOUNT: usize = 64 * 1024; // Maximum buffered amount before pausing transmission
 
 /// Packet data structure containing chunk and metadata
 #[derive(Debug, Clone)]
@@ -57,11 +55,24 @@ pub fn decode_packet(data: &[u8]) -> Result<DecodedPacket, &'static str> {
     }
 
     // Read header fields as big-endian u64
-    let tx_ord = u64::from_be_bytes(data[0..8].try_into().unwrap());
-    let index = u64::from_be_bytes(data[8..16].try_into().unwrap());
-    let length = u64::from_be_bytes(data[16..24].try_into().unwrap());
-    let total_size = u64::from_be_bytes(data[24..32].try_into().unwrap());
-    let chunk_size = u64::from_be_bytes(data[32..40].try_into().unwrap());
+    // These are safe because we've verified length >= 40
+    let tx_ord = u64::from_be_bytes(data[0..8].try_into().map_err(|_| "Invalid tx_ord bytes")?);
+    let index = u64::from_be_bytes(data[8..16].try_into().map_err(|_| "Invalid index bytes")?);
+    let length = u64::from_be_bytes(
+        data[16..24]
+            .try_into()
+            .map_err(|_| "Invalid length bytes")?,
+    );
+    let total_size = u64::from_be_bytes(
+        data[24..32]
+            .try_into()
+            .map_err(|_| "Invalid total_size bytes")?,
+    );
+    let chunk_size = u64::from_be_bytes(
+        data[32..40]
+            .try_into()
+            .map_err(|_| "Invalid chunk_size bytes")?,
+    );
 
     // Read the remaining data as the chunk
     let chunk = data[40..].to_vec();
@@ -164,11 +175,6 @@ impl PacketReassembler {
             self.rx_packets.push(packet);
             None
         }
-    }
-
-    /// Cleanup old packets (should be called periodically)
-    pub fn cleanup_old_packets(&mut self, tx_ord_threshold: u64) {
-        self.rx_packets.retain(|p| p.tx_ord > tx_ord_threshold);
     }
 }
 

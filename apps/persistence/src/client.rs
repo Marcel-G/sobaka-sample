@@ -139,7 +139,7 @@ impl Client {
                 );
                 connection.add_topic(topic.clone());
             }
-            
+
             trace!(
                 client_id = %from,
                 topic = %topic,
@@ -156,11 +156,8 @@ impl Client {
 
             self.stats.connections_total += 1;
 
-            let mut connection = PeerConnection::new(
-                self.candidate.clone(),
-                identity.clone(),
-                from.clone(),
-            );
+            let mut connection =
+                PeerConnection::new(self.candidate.clone(), identity.clone(), from.clone());
             connection.add_topic(topic.clone());
             connection.handle_signal(parsed_signal);
             self.connections.push(connection);
@@ -219,23 +216,6 @@ impl Client {
 
         if let Err(e) = self.ws_handle.send(announce) {
             error!(topic = %topic, error = ?e, "Failed to send announce message");
-        }
-    }
-
-    fn leave_workspace(&mut self, workspace_id: String) {
-        let Some(_workspace) = self.workspaces.get_mut(&workspace_id) else {
-            warn!(workspace_id = %workspace_id, "Attempted to leave unknown workspace");
-            return;
-        };
-
-        info!(workspace_id = %workspace_id, "Leaving workspace");
-
-        let unsubscribe = Message::Unsubscribe {
-            topics: [workspace_id.clone()].to_vec(),
-        };
-
-        if let Err(e) = self.ws_handle.send(unsubscribe) {
-            error!(workspace_id = %workspace_id, error = ?e, "Failed to send unsubscribe message");
         }
     }
 

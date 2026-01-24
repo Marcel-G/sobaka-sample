@@ -18,6 +18,7 @@ const PING_TIMEOUT: Duration = Duration::from_secs(30);
 
 /// Metrics for monitoring the signaling service health.
 #[derive(Debug, Default)]
+#[allow(dead_code)]
 struct Metrics {
     total_connections: std::sync::atomic::AtomicU64,
     active_connections: std::sync::atomic::AtomicU64,
@@ -45,12 +46,14 @@ impl SignalingService {
     }
 
     /// Get current service statistics for monitoring.
+    #[allow(dead_code)]
     pub async fn stats(&self) -> (usize, usize) {
         let topics = self.topics.read().await;
         let workers = self.workers.read().await;
         (topics.len(), workers.len())
     }
 
+    #[allow(dead_code)]
     pub async fn publish(&self, topic: &str, msg: Message) -> Result<(), Error> {
         let mut failed = Vec::new();
         {
@@ -70,12 +73,16 @@ impl SignalingService {
                             error = %e,
                             "Failed to send message to subscriber"
                         );
-                        self.metrics.messages_failed.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                        self.metrics
+                            .messages_failed
+                            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
                         failed.push(sub.clone());
                     }
                 }
 
-                self.metrics.messages_published.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                self.metrics
+                    .messages_published
+                    .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
             }
         }
 
@@ -97,6 +104,7 @@ impl SignalingService {
         Ok(())
     }
 
+    #[allow(dead_code)]
     pub async fn close_topic(&self, topic: &str) -> Result<(), Error> {
         let mut topics = self.topics.write().await;
         if let Some(subs) = topics.remove(topic) {
@@ -120,6 +128,8 @@ impl SignalingService {
         Ok(())
     }
 
+    #[allow(dead_code)]
+    #[allow(clippy::mutable_key_type)]
     pub async fn close(self) -> Result<(), Error> {
         info!("Shutting down signaling service");
 
@@ -208,8 +218,14 @@ pub async fn signaling_conn(
     let mut state = ConnState::new(token);
 
     // Track connection in metrics
-    service.metrics.total_connections.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-    service.metrics.active_connections.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    service
+        .metrics
+        .total_connections
+        .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    service
+        .metrics
+        .active_connections
+        .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
 
     match state.token.kind {
         PeerKind::Worker => {
@@ -264,7 +280,16 @@ pub async fn signaling_conn(
                         break Err(e);
                     },
                     Some(Ok(msg)) if msg.is_text() => {
-                        let json = msg.to_str().unwrap();
+                        let json = match msg.to_str() {
+                            Ok(s) => s,
+                            Err(_) => {
+                                warn!(
+                                    uuid = %state.token.uuid,
+                                    "Received invalid UTF-8 text message"
+                                );
+                                continue;
+                            }
+                        };
                         if let Err(e) = process_msg(json, &ws, &mut state, &mut topics, &mut workers).await {
                             error!(
                                 uuid = %state.token.uuid,
@@ -316,7 +341,10 @@ pub async fn signaling_conn(
     }
 
     // Update metrics
-    service.metrics.active_connections.fetch_sub(1, std::sync::atomic::Ordering::Relaxed);
+    service
+        .metrics
+        .active_connections
+        .fetch_sub(1, std::sync::atomic::Ordering::Relaxed);
 
     let _ = ws.close().await;
     result
@@ -338,15 +366,13 @@ async fn cleanup_subscriptions(ws: &WsSink, state: &mut ConnState, topics: &mut 
     }
 
     if topic_count > 0 {
-        debug!(
-            topic_count = topic_count,
-            "Cleaned up topic subscriptions"
-        );
+        debug!(topic_count = topic_count, "Cleaned up topic subscriptions");
     }
 }
 
 const PONG_MSG: &str = r#"{"type":"pong"}"#;
 
+#[allow(clippy::mutable_key_type)]
 async fn process_msg(
     msg: &str,
     ws: &WsSink,
@@ -368,7 +394,9 @@ async fn process_msg(
     };
 
     match signal {
-        Signal::Subscribe { topics: topic_names } => {
+        Signal::Subscribe {
+            topics: topic_names,
+        } => {
             if topic_names.is_empty() {
                 return Ok(());
             }
@@ -383,9 +411,8 @@ async fn process_msg(
 
             let mut topics_guard = topics.write().await;
             for topic in topic_names {
-                if let Some((key, _)) = topics_guard.get_key_value(&topic) {
-                    state.subscribed_topics.insert(key.clone());
-                    let subs = topics_guard.get_mut(&topic).unwrap();
+                if let Some(subs) = topics_guard.get_mut(&topic) {
+                    state.subscribed_topics.insert(topic.clone());
                     let sub_count = subs.len();
                     subs.insert(ws.clone());
                     trace!(
@@ -407,7 +434,9 @@ async fn process_msg(
             }
         }
 
-        Signal::Unsubscribe { topics: topic_names } => {
+        Signal::Unsubscribe {
+            topics: topic_names,
+        } => {
             if topic_names.is_empty() {
                 return Ok(());
             }
@@ -481,10 +510,7 @@ async fn process_msg(
                             }
 
                             for receiver in workers_guard.iter() {
-                                if let Err(e) = receiver
-                                    .try_send(Message::text(&out_json))
-                                    .await
-                                {
+                                if let Err(e) = receiver.try_send(Message::text(&out_json)).await {
                                     warn!(
                                         topic = %topic,
                                         error = %e,
@@ -504,10 +530,7 @@ async fn process_msg(
                     );
 
                     for receiver in receivers.iter() {
-                        if let Err(e) = receiver
-                            .try_send(Message::text(&out_json))
-                            .await
-                        {
+                        if let Err(e) = receiver.try_send(Message::text(&out_json)).await {
                             warn!(
                                 topic = %topic,
                                 error = %e,

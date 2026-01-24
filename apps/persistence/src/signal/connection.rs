@@ -16,16 +16,19 @@ use url::Url;
 
 use super::protocol::Message;
 
+/// Internal errors for WebSocket connection handling.
+/// Fields are used via Debug derive for logging.
 #[derive(Debug)]
+#[allow(dead_code)]
 pub enum InternalError {
-    WebSocketError(WsError),
+    WebSocketError(Box<WsError>),
     ConnectionError(String),
     InvalidUrl,
 }
 
 impl From<WsError> for InternalError {
     fn from(err: WsError) -> Self {
-        InternalError::WebSocketError(err)
+        InternalError::WebSocketError(Box::new(err))
     }
 }
 
@@ -236,23 +239,19 @@ async fn create_and_connect_websocket(
 ) -> Result<WebSocket, InternalError> {
     debug!(url = %url, has_token = token.is_some(), "Creating WebSocket connection");
 
-    let mut request = url
-        .to_string()
-        .into_client_request()
-        .map_err(|e| {
-            error!(error = ?e, "Failed to create client request");
-            InternalError::InvalidUrl
-        })?;
+    let mut request = url.to_string().into_client_request().map_err(|e| {
+        error!(error = ?e, "Failed to create client request");
+        InternalError::InvalidUrl
+    })?;
 
     if let Some(token) = token {
         trace!("Adding JWT cookie to request");
         request.headers_mut().insert(
             COOKIE,
-            HeaderValue::from_str(&format!("jwt={}; HttpOnly; Path=/", token))
-                .map_err(|e| {
-                    error!(error = ?e, "Failed to create cookie header");
-                    InternalError::InvalidUrl
-                })?,
+            HeaderValue::from_str(&format!("jwt={}; HttpOnly; Path=/", token)).map_err(|e| {
+                error!(error = ?e, "Failed to create cookie header");
+                InternalError::InvalidUrl
+            })?,
         );
     }
 

@@ -19,7 +19,7 @@ use super::{
 };
 
 /// A peer connection that supports multiple data channels (one per topic).
-/// 
+///
 /// This allows reusing a single RTCPeerConnection for multiple topics,
 /// with each topic having its own data channel. The channel name is the topic name.
 #[derive(Debug)]
@@ -89,24 +89,19 @@ impl PeerConnection {
         if self.topics.contains(&topic) {
             return;
         }
-        
+
         debug!(
             client_id = %self.client_id,
             topic = %topic,
             "Adding topic to peer connection"
         );
-        
+
         self.topics.insert(topic);
     }
 
     /// Check if this connection has a specific topic
     pub fn has_topic(&self, topic: &str) -> bool {
         self.topics.contains(topic)
-    }
-
-    /// Get all topics this connection is subscribed to
-    pub fn topics(&self) -> impl Iterator<Item = &String> {
-        self.topics.iter()
     }
 
     pub fn accepts(&self, input: &Input) -> bool {
@@ -211,9 +206,10 @@ impl PeerConnection {
             }
             Signal::SdpOffer(sdp) => {
                 debug!(client_id = %self.client_id, "Processing SDP offer");
-                let answer = self.handle_offer(sdp);
-                self.signals_to_propagate
-                    .push_back(Signal::SdpAnswer(answer));
+                if let Some(answer) = self.handle_offer(sdp) {
+                    self.signals_to_propagate
+                        .push_back(Signal::SdpAnswer(answer));
+                }
             }
             _ => {
                 trace!(client_id = %self.client_id, "Ignoring unknown signal type");
@@ -297,18 +293,18 @@ impl PeerConnection {
                 Event::ChannelOpen(cid, channel_name) => {
                     // Channel name is the topic name
                     let topic = channel_name.clone();
-                    
+
                     info!(
                         client_id = %self.client_id,
                         topic = %topic,
                         "Data channel opened for topic"
                     );
-                    
+
                     // Register the channel for this topic
                     self.channels.insert(topic.clone(), cid);
                     self.channel_topics.insert(cid, topic.clone());
                     self.topics.insert(topic.clone());
-                    
+
                     Propagated::Connected(topic)
                 }
                 Event::ChannelData(data) => self.handle_channel_data(data),
@@ -399,19 +395,29 @@ impl PeerConnection {
         true
     }
 
-    fn handle_offer(&mut self, offer: SdpOffer) -> SdpAnswer {
-        self.rtc
-            .sdp_api()
-            .accept_offer(offer)
-            .expect("offer to be accepted")
+    fn handle_offer(&mut self, offer: SdpOffer) -> Option<SdpAnswer> {
+        match self.rtc.sdp_api().accept_offer(offer) {
+            Ok(answer) => Some(answer),
+            Err(e) => {
+                error!(
+                    client_id = %self.client_id,
+                    error = ?e,
+                    "Failed to accept SDP offer"
+                );
+                None
+            }
+        }
     }
 
     fn handle_answer(&mut self, answer: SdpAnswer) {
         if let Some(pending) = self.pending.take() {
-            self.rtc
-                .sdp_api()
-                .accept_answer(pending, answer)
-                .expect("answer to be accepted");
+            if let Err(e) = self.rtc.sdp_api().accept_answer(pending, answer) {
+                error!(
+                    client_id = %self.client_id,
+                    error = ?e,
+                    "Failed to accept SDP answer"
+                );
+            }
         }
     }
 }

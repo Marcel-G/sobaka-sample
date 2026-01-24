@@ -145,7 +145,10 @@ fn main() {
 
     // Print info to stderr so it doesn't interfere with piping
     eprintln!();
-    eprintln!("Generated {} token:", if is_worker { "WORKER" } else { "CLIENT" });
+    eprintln!(
+        "Generated {} token:",
+        if is_worker { "WORKER" } else { "CLIENT" }
+    );
     eprintln!("  UUID: {}", token.uuid);
     eprintln!("  Kind: {:?}", token.kind);
     eprintln!("  Expires: {} (1 year)", token.exp);
