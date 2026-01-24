@@ -257,6 +257,30 @@ impl Client {
         self.join_topic(topic);
     }
 
+    /// Remove workspaces that have no active connections.
+    /// This frees memory while the data remains persisted in LMDB.
+    fn cleanup_unused_workspaces(&mut self) {
+        // Collect all topics that have active connections
+        let active_topics: std::collections::HashSet<String> = self
+            .connections
+            .iter()
+            .flat_map(|conn| conn.topics().iter().cloned())
+            .collect();
+
+        // Remove workspaces that aren't in any active connection
+        let before_count = self.workspaces.len();
+        self.workspaces.retain(|topic, _| active_topics.contains(topic));
+        let removed = before_count - self.workspaces.len();
+
+        if removed > 0 {
+            debug!(
+                removed_count = removed,
+                remaining = self.workspaces.len(),
+                "Cleaned up unused workspaces"
+            );
+        }
+    }
+
     pub fn run(&mut self) {
         loop {
             // Periodic statistics logging
@@ -272,6 +296,9 @@ impl Client {
                     remaining = self.connections.len(),
                     "Cleaned up dead connections"
                 );
+                
+                // Also cleanup workspaces that have no active connections
+                self.cleanup_unused_workspaces();
             }
 
             // Process signaling messages

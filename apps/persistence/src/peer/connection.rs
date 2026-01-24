@@ -3,7 +3,7 @@ use std::{
     net::UdpSocket,
     ops::Deref,
     sync::atomic::{AtomicU64, Ordering},
-    time::Instant,
+    time::{Duration, Instant},
 };
 
 use str0m::{
@@ -18,6 +18,10 @@ use super::{
     signal::Signal,
 };
 use crate::signal::protocol::PeerKind;
+
+/// How long to wait without any activity before considering a connection dead.
+/// WebRTC STUN keepalives happen every ~15-25 seconds, so 60s is generous.
+const CONNECTION_TIMEOUT: Duration = Duration::from_secs(60);
 
 /// A peer connection that supports multiple data channels (one per topic).
 ///
@@ -40,6 +44,8 @@ pub struct PeerConnection {
     channels: HashMap<String, ChannelId>,
     /// Map of channel ID -> topic (for incoming data routing)
     channel_topics: HashMap<ChannelId, String>,
+    /// Last time we saw any activity on this connection
+    last_activity: Instant,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -99,6 +105,7 @@ impl PeerConnection {
             channel_topics: HashMap::new(),
             rtc,
             pending: None,
+            last_activity: Instant::now(),
         }
     }
 
@@ -123,6 +130,11 @@ impl PeerConnection {
         self.topics.contains(topic)
     }
 
+    /// Get all topics this connection is subscribed to
+    pub fn topics(&self) -> &HashSet<String> {
+        &self.topics
+    }
+
     pub fn accepts(&self, input: &Input) -> bool {
         self.rtc.accepts(input)
     }
@@ -140,6 +152,9 @@ impl PeerConnection {
             return;
         }
 
+        // Update activity timestamp on any input (STUN, DTLS, SCTP, etc.)
+        self.last_activity = Instant::now();
+
         if let Err(e) = self.rtc.handle_input(input) {
             warn!(
                 client_id = %self.client_id,
@@ -151,7 +166,22 @@ impl PeerConnection {
     }
 
     pub fn is_alive(&self) -> bool {
-        self.rtc.is_alive()
+        // Connection is dead if str0m says so
+        if !self.rtc.is_alive() {
+            return false;
+        }
+        
+        // Also consider dead if no activity for too long
+        if self.last_activity.elapsed() > CONNECTION_TIMEOUT {
+            debug!(
+                client_id = %self.client_id,
+                elapsed_secs = self.last_activity.elapsed().as_secs(),
+                "Connection timed out due to inactivity"
+            );
+            return false;
+        }
+        
+        true
     }
 
     pub fn client_id(&self) -> &str {
@@ -300,15 +330,17 @@ impl PeerConnection {
                     Propagated::Noop
                 }
                 Event::IceConnectionStateChange(state) => {
-                    // Log state changes, but don't forcibly disconnect
-                    // In ICE-lite mode, we may temporarily be in Disconnected state
-                    // while waiting for the remote peer to send us traffic
-                    // The connection will recover when we receive a STUN request
                     match state {
                         IceConnectionState::Disconnected => {
+                            // In ICE-lite mode, we may temporarily be in Disconnected state
+                            // while waiting for the remote peer to send us traffic.
+                            // The connection will recover when we receive a STUN request.
+                            // If no traffic arrives within CONNECTION_TIMEOUT, is_alive() 
+                            // will return false and the connection will be cleaned up.
                             debug!(
                                 client_id = %self.client_id,
-                                "ICE disconnected - waiting for peer traffic"
+                                "ICE disconnected - waiting for peer traffic (timeout: {}s)",
+                                CONNECTION_TIMEOUT.as_secs()
                             );
                         }
                         IceConnectionState::Completed => {
