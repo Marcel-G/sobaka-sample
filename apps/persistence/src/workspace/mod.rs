@@ -268,7 +268,8 @@ impl Db {
         db
     }
 
-    /// Check if a document exists in the database
+    /// Check if a document exists in the database by verifying it has content.
+    /// A document "exists" if after loading, the state vector is non-empty.
     fn doc_exists(&self, topic: &str) -> bool {
         let db_txn = match self.env.get_reader() {
             Ok(r) => r,
@@ -277,10 +278,21 @@ impl Db {
 
         let db = LmdbStore::from(db_txn.bind(&self.handle));
         
-        // Try to get the document state - if it fails, doc doesn't exist
+        // Load the document and check if it has any state
         let doc = Doc::new();
-        let mut txn = doc.transact_mut();
-        db.load_doc(topic, &mut txn).is_ok()
+        {
+            let mut txn = doc.transact_mut();
+            if db.load_doc(topic, &mut txn).is_err() {
+                return false;
+            }
+        }
+        
+        // Check if the document has any content by looking at its state vector
+        let txn = doc.transact();
+        let state_vector = txn.state_vector();
+        
+        // State vector is empty (no client IDs have ever written) means doc doesn't exist
+        !state_vector.is_empty()
     }
 
     /// Bootstrap the global root document with the "Intro" workspace list.

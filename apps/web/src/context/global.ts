@@ -160,11 +160,21 @@ export class Global {
 
     // Don't migrate global root - only admins can do that
     // Just load it and display whatever is there
+    // Use a timeout to prevent hanging if persistence hasn't created it yet
     try {
-      await this._globalRoot.load({ localOnly: false })
+      await Promise.race([
+        this._globalRoot.load({ localOnly: false }),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Global root load timeout')), 5000)
+        )
+      ])
     } catch (error: unknown) {
-      // Global root may not exist yet - that's OK, admin will create it
-      if (!(error instanceof EmptyDocument)) {
+      // Global root may not exist yet or timed out - that's OK
+      if (error instanceof EmptyDocument) {
+        console.debug('Global root is empty, waiting for admin to populate')
+      } else if (error instanceof Error && error.message === 'Global root load timeout') {
+        console.debug('Global root load timed out, continuing without it')
+      } else {
         console.warn('Failed to load global root:', error)
       }
     }
