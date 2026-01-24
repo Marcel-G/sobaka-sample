@@ -52,13 +52,15 @@ export interface SignalingClientOptions {
   pingInterval?: number
 }
 
-export type PeerKind = 'client' | 'worker'
+export type PeerKind = 'client' | 'worker' | 'admin'
 
 export type SignalingClientEvents = {
   /** Connected to signaling server */
   connect: () => void
   /** Disconnected from signaling server */
   disconnect: () => void
+  /** Received welcome message with our identity and role */
+  welcome: (identity: string, kind: PeerKind) => void
   /** Received a message */
   message: (message: SignalingMessage) => void
   /** Received an announce from a peer */
@@ -252,7 +254,10 @@ export class SignalingClient extends EventEmitter<SignalingClientEvents> {
       this.emit('message', message)
       
       // Handle specific message types
-      if (message.type === 'publish' && message.data && message.topic) {
+      if (message.type === 'welcome' && message.identity && message.kind) {
+        // Welcome message from server with our identity and role
+        this.emit('welcome', message.identity, message.kind as PeerKind)
+      } else if (message.type === 'publish' && message.data && message.topic) {
         if (message.data.type === 'announce') {
           this.emit('announce', message.topic, message.data.from, message.identity, message.kind)
         } else if (message.data.type === 'signal' && message.data.to && message.data.signal) {

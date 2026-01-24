@@ -33,6 +33,7 @@ export class Global {
   private _root: Root | null = null
   private _globalRoot: Root | null = null
   private _isOnline = writable(false)
+  private _isAdmin = writable(false)
   private lastPong: number = 0
 
   audio = new AudioContext()
@@ -51,6 +52,10 @@ export class Global {
 
     this.rtc.once('user', (uuid: string) => {
       this.handleIdentityChange(uuid)
+    })
+
+    this.rtc.once('welcome', (_identity: string, kind: string) => {
+      this._isAdmin.set(kind === 'admin')
     })
 
     for (const signal of this.rtc.signalingConns) {
@@ -109,6 +114,10 @@ export class Global {
 
   get isOnline(): Readable<boolean> {
     return this._isOnline
+  }
+
+  get isAdmin(): Readable<boolean> {
+    return this._isAdmin
   }
 
   async load(onStatusChange?: (status: string) => void) {

@@ -249,6 +249,27 @@ pub async fn signaling_conn(
         }
     }
 
+    // Send welcome message with identity and role
+    let welcome = Signal::Welcome {
+        identity: state.token.uuid.clone(),
+        kind: state.token.kind.clone(),
+    };
+    if let Ok(welcome_json) = welcome.to_json() {
+        if let Err(e) = ws.try_send(Message::text(welcome_json)).await {
+            warn!(
+                uuid = %state.token.uuid,
+                error = %e,
+                "Failed to send welcome message"
+            );
+        } else {
+            debug!(
+                uuid = %state.token.uuid,
+                kind = ?state.token.kind,
+                "Sent welcome message"
+            );
+        }
+    }
+
     let result = loop {
         select! {
             _ = ping_interval.tick() => {
@@ -572,6 +593,11 @@ async fn process_msg(
 
         Signal::Pong => {
             trace!(uuid = %state.token.uuid, "Received application-level pong");
+        }
+
+        Signal::Welcome { .. } => {
+            // Welcome is server-to-client only, ignore if received
+            warn!(uuid = %state.token.uuid, "Received unexpected welcome message from client");
         }
     }
 

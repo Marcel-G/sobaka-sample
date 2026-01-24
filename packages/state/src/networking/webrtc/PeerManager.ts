@@ -72,6 +72,8 @@ export type PeerManagerEvents = {
   'signaling:disconnect': () => void
   /** Raw signaling message received */
   'signaling:message': (message: SignalingMessage) => void
+  /** Welcome message with our identity and role */
+  'welcome': (identity: string, kind: PeerKind) => void
   /** Our identity verified by signaling server */
   'identity': (identity: string) => void
   /** Peer identity verified */
@@ -394,6 +396,13 @@ export class PeerManager extends EventEmitter<PeerManagerEvents> {
     client.on('disconnect', () => {
       logger.log('Signaling disconnected')
       this.emit('signaling:disconnect')
+    })
+    
+    client.on('welcome', (identity, kind) => {
+      logger.log('Received welcome:', identity, kind)
+      this.emit('welcome', identity, kind)
+      // Also emit identity for backwards compat
+      this.emit('identity', identity)
     })
     
     client.on('announce', (topic, remotePeerId, identity, kind) => {

@@ -55,6 +55,8 @@ export type VerifiedRTCProviderEvents = {
   peers: (peers: Map<string, TopicPeer>) => void
   /** User identity verified by signaling server */
   user: (identity: string) => void
+  /** Welcome message with identity and role */
+  welcome: (identity: string, kind: PeerKind) => void
   /** Synced with at least one peer */
   synced: (synced: boolean) => void
   /** Connection status changed */
@@ -228,7 +230,17 @@ export class VerifiedRTCProvider extends EventEmitter<VerifiedRTCProviderEvents>
   // ============================================================================
 
   private setupTopic(): void {
+    // Handle welcome message with identity and role
+    this.topic.on('welcome', (identity, kind) => {
+      if (!this.currentUser) {
+        this.currentUser = identity
+        this.emit('user', identity)
+      }
+      this.emit('welcome', identity, kind)
+    })
+    
     // Handle identity verification (our own identity confirmed by signaling)
+    // This is a fallback for older signaling servers
     this.topic.on('synced', (identity) => {
       if (identity && !this.currentUser) {
         this.currentUser = identity

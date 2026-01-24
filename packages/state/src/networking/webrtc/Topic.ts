@@ -42,6 +42,8 @@ export type TopicEvents = {
   data: (data: Uint8Array, peerId: string, identity: string | undefined) => void
   /** Topic synced (our identity verified by signaling server) */
   synced: (identity: string) => void
+  /** Welcome message with our identity and role */
+  welcome: (identity: string, kind: PeerKind) => void
   /** Connected peers changed */
   peers: (peers: Map<string, TopicPeer>) => void
   /** Peer identity verified */
@@ -174,6 +176,10 @@ export class Topic extends EventEmitter<TopicEvents> {
     
     this.peerManager.on('signaling:message', (message) => {
       this.emit('signaling:message', message)
+    })
+    
+    this.peerManager.on('welcome', (identity, kind) => {
+      this.emit('welcome', identity, kind)
     })
     
     // Identity events

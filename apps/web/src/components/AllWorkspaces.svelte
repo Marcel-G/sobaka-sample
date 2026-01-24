@@ -14,13 +14,13 @@
 </script>
 
 <div>
-  <!-- Global workspace lists (Intro) -->
+  <!-- Global workspace lists (Intro) - admins can edit -->
   {#if $globalListRefs.length}
     {#each globalLists as list (list.id)}
       {#await list.load()}
         <!-- TODO: skeleton loading UI -->
       {:then}
-        <WorkspaceList workspaceList={list} />
+        <WorkspaceList workspaceList={list} allowAdminEdit={true} />
       {/await}
     {/each}
   {/if}

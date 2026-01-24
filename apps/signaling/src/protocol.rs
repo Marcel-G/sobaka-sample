@@ -14,6 +14,13 @@ pub enum PeerKind {
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum Message {
+    /// Sent by server to client immediately after connection.
+    /// Contains the client's verified identity and role.
+    #[serde(rename = "welcome")]
+    Welcome {
+        identity: String,
+        kind: PeerKind,
+    },
     #[serde(rename = "publish")]
     Publish {
         topic: String,
