@@ -21,6 +21,9 @@ import { EventEmitter } from './webrtc/EventEmitter.ts'
 import { Topic, type TopicPeer } from './webrtc/Topic.ts'
 import { PeerManager } from './webrtc/PeerManager.ts'
 import type { PeerKind, SignalingMessage } from './webrtc/SignalingClient.ts'
+import { createLogger } from '../util/logger'
+
+const logger = createLogger('VerifiedRTCProvider')
 
 // ============================================================================
 // Protocol message types (from y-protocols)
@@ -363,10 +366,10 @@ export class VerifiedRTCProvider extends EventEmitter<VerifiedRTCProviderEvents>
           break
           
         default:
-          console.warn(`[VerifiedRTCProvider] Unknown message type: ${messageType}`)
+          logger.warn(`Unknown message type: ${messageType}`)
       }
     } catch (err) {
-      console.error('[VerifiedRTCProvider] Error handling message:', err)
+      logger.error('Error handling message:', err)
     }
   }
 

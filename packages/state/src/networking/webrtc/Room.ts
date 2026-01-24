@@ -12,6 +12,9 @@ import { EventEmitter } from './EventEmitter'
 import { WebRTCPeer, type SignalData, type WebRTCPeerOptions } from './WebRTCPeer'
 import { SignalingClient, type PeerKind, type SignalingMessage } from './SignalingClient'
 import { uuidv4 } from 'lib0/random'
+import { createLogger } from '../../util/logger'
+
+const logger = createLogger('Room')
 
 // ============================================================================
 // Types
@@ -105,11 +108,11 @@ export class Room extends EventEmitter<RoomEvents> {
    */
   connect(): void {
     if (this.destroyed) {
-      console.debug('[Room] Cannot connect - destroyed')
+      logger.log('Cannot connect - destroyed')
       return
     }
     
-    console.debug('[Room] Connecting to room:', this.name, 'with', this.signalingClients.length, 'signaling servers')
+    logger.log('Connecting to room:', this.name, 'with', this.signalingClients.length, 'signaling servers')
     
     for (const client of this.signalingClients) {
       client.connect()
@@ -151,7 +154,7 @@ export class Room extends EventEmitter<RoomEvents> {
         try {
           conn.peer.send(data)
         } catch (err) {
-          console.warn(`[Room] Failed to send to peer ${conn.remotePeerId}:`, err)
+          logger.warn(`Failed to send to peer ${conn.remotePeerId}:`, err)
         }
       }
     }
@@ -167,7 +170,7 @@ export class Room extends EventEmitter<RoomEvents> {
         conn.peer.send(data)
         return true
       } catch (err) {
-        console.warn(`[Room] Failed to send to peer ${peerId}:`, err)
+        logger.warn(`Failed to send to peer ${peerId}:`, err)
       }
     }
     return false
@@ -355,7 +358,7 @@ export class Room extends EventEmitter<RoomEvents> {
     
     // Handle error
     peer.on('error', (err) => {
-      console.warn(`[Room] Peer ${remotePeerId} error:`, err)
+      logger.warn(`Peer ${remotePeerId} error:`, err)
       this.peers.delete(remotePeerId)
       this.emit('peers', this.peers)
     })

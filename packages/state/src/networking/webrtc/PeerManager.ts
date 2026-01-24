@@ -14,6 +14,9 @@
 
 import { EventEmitter } from './EventEmitter'
 import { SignalingClient, type SignalingMessage, type PeerKind } from './SignalingClient'
+import { createLogger } from '../../util/logger'
+
+const logger = createLogger('PeerManager')
 
 // ============================================================================
 // Configuration
@@ -108,7 +111,7 @@ export class PeerManager extends EventEmitter<PeerManagerEvents> {
       this.signalingClients.push(client)
     }
     
-    console.debug('[PeerManager] Created with peerId:', this.peerId)
+    logger.log('Created with peerId:', this.peerId)
   }
 
   /**
@@ -156,7 +159,7 @@ export class PeerManager extends EventEmitter<PeerManagerEvents> {
     if (this.destroyed) return
     if (this.subscribedTopics.has(topic)) return
     
-    console.debug('[PeerManager] Subscribing to topic:', topic)
+    logger.log('Subscribing to topic:', topic)
     this.subscribedTopics.add(topic)
     
     for (const client of this.signalingClients) {
@@ -173,7 +176,7 @@ export class PeerManager extends EventEmitter<PeerManagerEvents> {
   unsubscribe(topic: string): void {
     if (!this.subscribedTopics.has(topic)) return
     
-    console.debug('[PeerManager] Unsubscribing from topic:', topic)
+    logger.log('Unsubscribing from topic:', topic)
     this.subscribedTopics.delete(topic)
     
     // Close all channels for this topic
@@ -215,7 +218,7 @@ export class PeerManager extends EventEmitter<PeerManagerEvents> {
       channel.send(data as unknown as ArrayBuffer)
       return true
     } catch (err) {
-      console.warn('[PeerManager] Failed to send to', peerId, 'on topic', topic, err)
+      logger.warn('Failed to send to', peerId, 'on topic', topic, err)
       return false
     }
   }
@@ -281,7 +284,7 @@ export class PeerManager extends EventEmitter<PeerManagerEvents> {
 
   private setupSignalingClient(client: SignalingClient): void {
     client.on('connect', () => {
-      console.debug('[PeerManager] Signaling connected')
+      logger.log('Signaling connected')
       this.emit('signaling:connect')
       
       // Resubscribe to all topics
@@ -292,7 +295,7 @@ export class PeerManager extends EventEmitter<PeerManagerEvents> {
     })
     
     client.on('disconnect', () => {
-      console.debug('[PeerManager] Signaling disconnected')
+      logger.log('Signaling disconnected')
       this.emit('signaling:disconnect')
     })
     
@@ -328,7 +331,7 @@ export class PeerManager extends EventEmitter<PeerManagerEvents> {
       if (!this.myIdentity && message.type === 'publish' && message.identity) {
         if (message.data?.from === this.peerId) {
           this.myIdentity = message.identity
-          console.debug('[PeerManager] Identity verified:', this.myIdentity)
+          logger.log('Identity verified:', this.myIdentity)
           this.emit('identity', this.myIdentity)
         }
       }
@@ -372,7 +375,7 @@ export class PeerManager extends EventEmitter<PeerManagerEvents> {
         if (peer?.glareToken) {
           const remoteToken = (signal as { token?: number }).token ?? 0
           if (peer.glareToken > remoteToken) {
-            console.debug('[PeerManager] Rejecting offer due to glare')
+            logger.log('Rejecting offer due to glare')
             return
           }
           peer.glareToken = undefined
@@ -410,7 +413,7 @@ export class PeerManager extends EventEmitter<PeerManagerEvents> {
   }
 
   private createPeerConnection(remotePeerId: string, initiator: boolean): PeerInfo {
-    console.debug('[PeerManager] Creating peer connection to', remotePeerId, 'initiator:', initiator)
+    logger.log('Creating peer connection to', remotePeerId, 'initiator:', initiator)
     
     const connection = new RTCPeerConnection({
       iceServers: this.iceServers,
@@ -447,7 +450,7 @@ export class PeerManager extends EventEmitter<PeerManagerEvents> {
     
     connection.oniceconnectionstatechange = () => {
       const state = connection.iceConnectionState
-      console.debug('[PeerManager] ICE state for', peerId, ':', state)
+      logger.log('ICE state for', peerId, ':', state)
       
       if (state === 'connected' || state === 'completed') {
         if (!peer.connected) {
@@ -462,13 +465,13 @@ export class PeerManager extends EventEmitter<PeerManagerEvents> {
     connection.ondatachannel = (event) => {
       const channel = event.channel
       const topic = channel.label
-      console.debug('[PeerManager] Received data channel for topic:', topic, 'from', peerId)
+      logger.log('Received data channel for topic:', topic, 'from', peerId)
       this.setupDataChannel(peer, topic, channel)
     }
   }
 
   private createDataChannel(peer: PeerInfo, topic: string): RTCDataChannel {
-    console.debug('[PeerManager] Creating data channel for topic:', topic, 'to', peer.peerId)
+    logger.log('Creating data channel for topic:', topic, 'to', peer.peerId)
     
     const channel = peer.connection.createDataChannel(topic, { ordered: true })
     this.setupDataChannel(peer, topic, channel)
@@ -485,12 +488,12 @@ export class PeerManager extends EventEmitter<PeerManagerEvents> {
     peer.channels.set(topic, channel)
     
     channel.onopen = () => {
-      console.debug('[PeerManager] Channel opened for topic:', topic, 'to', peer.peerId)
+      logger.log('Channel opened for topic:', topic, 'to', peer.peerId)
       this.emit('channel:open', topic, peer.peerId)
     }
     
     channel.onclose = () => {
-      console.debug('[PeerManager] Channel closed for topic:', topic, 'to', peer.peerId)
+      logger.log('Channel closed for topic:', topic, 'to', peer.peerId)
       peer.channels.delete(topic)
       this.emit('channel:close', topic, peer.peerId)
     }
@@ -501,7 +504,7 @@ export class PeerManager extends EventEmitter<PeerManagerEvents> {
     }
     
     channel.onerror = (event) => {
-      console.error('[PeerManager] Channel error on topic:', topic, event)
+      logger.error('Channel error on topic:', topic, event)
     }
   }
 
@@ -509,7 +512,7 @@ export class PeerManager extends EventEmitter<PeerManagerEvents> {
     const peer = this.peers.get(peerId)
     if (!peer) return
     
-    console.debug('[PeerManager] Peer disconnected:', peerId)
+    logger.log('Peer disconnected:', peerId)
     
     // Close all channels
     for (const [topic, channel] of peer.channels) {
@@ -540,7 +543,7 @@ export class PeerManager extends EventEmitter<PeerManagerEvents> {
         token: peer.glareToken
       }, topic)
     } catch (err) {
-      console.error('[PeerManager] Failed to create offer:', err)
+      logger.error('Failed to create offer:', err)
     }
   }
 
@@ -555,7 +558,7 @@ export class PeerManager extends EventEmitter<PeerManagerEvents> {
         sdp: answer.sdp
       }, topic)
     } catch (err) {
-      console.error('[PeerManager] Failed to handle offer:', err)
+      logger.error('Failed to handle offer:', err)
     }
   }
 
@@ -563,7 +566,7 @@ export class PeerManager extends EventEmitter<PeerManagerEvents> {
     try {
       await peer.connection.setRemoteDescription(answer)
     } catch (err) {
-      console.error('[PeerManager] Failed to handle answer:', err)
+      logger.error('Failed to handle answer:', err)
     }
   }
 
@@ -571,7 +574,7 @@ export class PeerManager extends EventEmitter<PeerManagerEvents> {
     peer.connection.addIceCandidate(new RTCIceCandidate(candidate))
       .catch((err) => {
         if (!candidate.candidate?.includes('.local')) {
-          console.error('[PeerManager] Failed to add ICE candidate:', err)
+          logger.error('Failed to add ICE candidate:', err)
         }
       })
   }

@@ -5,6 +5,10 @@
  * Uses a more flexible type system that accepts any function signature.
  */
 
+import { createLogger } from '../../util/logger'
+
+const logger = createLogger('EventEmitter')
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type EventMap = Record<string, (...args: any[]) => void>
 
@@ -63,7 +67,7 @@ export class EventEmitter<Events extends EventMap> {
       try {
         listener(...args)
       } catch (err) {
-        console.error(`[EventEmitter] Error in listener for "${String(event)}":`, err)
+        logger.error(`Error in listener for "${String(event)}":`, err)
       }
     }
     

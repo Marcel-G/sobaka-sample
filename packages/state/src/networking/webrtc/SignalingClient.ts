@@ -10,6 +10,9 @@
 
 import { EventEmitter } from './EventEmitter'
 import type { SignalData } from './WebRTCPeer'
+import { createLogger } from '../../util/logger'
+
+const logger = createLogger('SignalingClient')
 
 // ============================================================================
 // Types
@@ -90,21 +93,21 @@ export class SignalingClient extends EventEmitter<SignalingClientEvents> {
    */
   connect(): void {
     if (this.destroyed) {
-      console.debug('[SignalingClient] Cannot connect - destroyed')
+      logger.log('Cannot connect - destroyed')
       return
     }
     if (this.ws?.readyState === WebSocket.OPEN) {
-      console.debug('[SignalingClient] Already connected')
+      logger.log('Already connected')
       return
     }
     
-    console.debug('[SignalingClient] Connecting to', this.url)
+    logger.log('Connecting to', this.url)
     
     try {
       this.ws = new WebSocket(this.url)
       this.setupWebSocket()
     } catch (err) {
-      console.error('[SignalingClient] Connection error:', err)
+      logger.error('Connection error:', err)
       this.emit('error', err as Error)
       this.scheduleReconnect()
     }
@@ -198,13 +201,13 @@ export class SignalingClient extends EventEmitter<SignalingClientEvents> {
     if (!this.ws) return
     
     this.ws.onopen = () => {
-      console.debug('[SignalingClient] Connected to', this.url)
+      logger.log('Connected to', this.url)
       this.reconnectAttempts = 0
       this.startPingInterval()
       
       // Resubscribe to rooms
       if (this.subscribedRooms.size > 0) {
-        console.debug('[SignalingClient] Resubscribing to rooms:', Array.from(this.subscribedRooms))
+        logger.log('Resubscribing to rooms:', Array.from(this.subscribedRooms))
         this.send({
           type: 'subscribe',
           topics: Array.from(this.subscribedRooms)
@@ -215,7 +218,7 @@ export class SignalingClient extends EventEmitter<SignalingClientEvents> {
     }
     
     this.ws.onclose = (event) => {
-      console.debug('[SignalingClient] Disconnected from', this.url, 'code:', event.code, 'reason:', event.reason)
+      logger.log('Disconnected from', this.url, 'code:', event.code, 'reason:', event.reason)
       this.cleanup()
       this.emit('disconnect')
       
@@ -225,7 +228,7 @@ export class SignalingClient extends EventEmitter<SignalingClientEvents> {
     }
     
     this.ws.onerror = (event) => {
-      console.error('[SignalingClient] WebSocket error:', event)
+      logger.error('WebSocket error:', event)
       this.emit('error', new Error('WebSocket error'))
     }
     
@@ -250,7 +253,7 @@ export class SignalingClient extends EventEmitter<SignalingClientEvents> {
         }
       }
     } catch (err) {
-      console.warn('[SignalingClient] Failed to parse message:', err)
+      logger.warn('Failed to parse message:', err)
     }
   }
 
@@ -260,7 +263,7 @@ export class SignalingClient extends EventEmitter<SignalingClientEvents> {
     try {
       this.ws!.send(JSON.stringify(message))
     } catch (err) {
-      console.warn('[SignalingClient] Send error:', err)
+      logger.warn('Send error:', err)
     }
   }
 
