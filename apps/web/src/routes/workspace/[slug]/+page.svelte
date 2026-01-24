@@ -1,7 +1,6 @@
 <script lang="ts">
   import type { PageData } from './$types'
   import { goto } from '$app/navigation'
-  import { onMount } from 'svelte'
 
   import WorkspaceContainer from '../../../workspace/WorkspaceContainer.svelte'
   import { getGlobalCtx } from '../../../context/global'
@@ -9,8 +8,6 @@
   import type { Workspace } from '@sobaka/state/models/workspace'
   import CurrentWorkspaceSummary from '../../../components/CurrentWorkspaceSummary.svelte'
   import AppLayout from '../../../components/AppLayout.svelte'
-
-  const TIMEOUT = 30_000 // 30 seconds
 
   let { data }: { data: PageData } = $props()
 
@@ -22,29 +19,19 @@
     } as SubDocReference<Workspace>)
   )
 
-  // Simple loading promise
-  const loading = $derived(workspace.load())
-  
   // Track if loaded
   let isLoaded = $state(false)
   
+  // Load workspace - redirects home on timeout (30s)
   $effect(() => {
-    loading.then(() => {
-      isLoaded = true
-    }).catch(() => {
-      // Will be handled by timeout
-    })
-  })
-
-  // Timeout - redirect to homepage if not loaded after 30s
-  onMount(() => {
-    const timeout = setTimeout(() => {
-      if (!isLoaded) {
+    workspace.load()
+      .then(() => {
+        isLoaded = true
+      })
+      .catch(() => {
+        // Timeout hit - redirect to homepage
         goto('/')
-      }
-    }, TIMEOUT)
-    
-    return () => clearTimeout(timeout)
+      })
   })
 </script>
 
