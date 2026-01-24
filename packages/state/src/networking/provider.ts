@@ -105,6 +105,7 @@ export class VerifiedRTCProvider extends EventEmitter<VerifiedRTCProviderEvents>
     this.setupBeforeUnload()
     
     // Auto-connect (like the original y-webrtc)
+    console.debug('[VerifiedRTCProvider] Created for room:', roomName, 'signaling:', options.signaling)
     this.connect()
   }
 
@@ -199,8 +200,7 @@ export class VerifiedRTCProvider extends EventEmitter<VerifiedRTCProviderEvents>
         } else if (event === 'disconnect') {
           this.room.on('signaling:disconnect', handler as () => void)
         } else if (event === 'message') {
-          // Forward raw signaling messages for legacy compatibility
-          // Note: This requires updating SignalingClient to expose raw messages
+          this.room.on('signaling:message', handler as (message: unknown) => void)
         }
       }
     }]

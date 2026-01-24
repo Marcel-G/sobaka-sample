@@ -89,13 +89,22 @@ export class SignalingClient extends EventEmitter<SignalingClientEvents> {
    * Connect to the signaling server
    */
   connect(): void {
-    if (this.destroyed) return
-    if (this.ws?.readyState === WebSocket.OPEN) return
+    if (this.destroyed) {
+      console.debug('[SignalingClient] Cannot connect - destroyed')
+      return
+    }
+    if (this.ws?.readyState === WebSocket.OPEN) {
+      console.debug('[SignalingClient] Already connected')
+      return
+    }
+    
+    console.debug('[SignalingClient] Connecting to', this.url)
     
     try {
       this.ws = new WebSocket(this.url)
       this.setupWebSocket()
     } catch (err) {
+      console.error('[SignalingClient] Connection error:', err)
       this.emit('error', err as Error)
       this.scheduleReconnect()
     }
@@ -189,11 +198,13 @@ export class SignalingClient extends EventEmitter<SignalingClientEvents> {
     if (!this.ws) return
     
     this.ws.onopen = () => {
+      console.debug('[SignalingClient] Connected to', this.url)
       this.reconnectAttempts = 0
       this.startPingInterval()
       
       // Resubscribe to rooms
       if (this.subscribedRooms.size > 0) {
+        console.debug('[SignalingClient] Resubscribing to rooms:', Array.from(this.subscribedRooms))
         this.send({
           type: 'subscribe',
           topics: Array.from(this.subscribedRooms)
@@ -203,7 +214,8 @@ export class SignalingClient extends EventEmitter<SignalingClientEvents> {
       this.emit('connect')
     }
     
-    this.ws.onclose = () => {
+    this.ws.onclose = (event) => {
+      console.debug('[SignalingClient] Disconnected from', this.url, 'code:', event.code, 'reason:', event.reason)
       this.cleanup()
       this.emit('disconnect')
       
@@ -213,6 +225,7 @@ export class SignalingClient extends EventEmitter<SignalingClientEvents> {
     }
     
     this.ws.onerror = (event) => {
+      console.error('[SignalingClient] WebSocket error:', event)
       this.emit('error', new Error('WebSocket error'))
     }
     

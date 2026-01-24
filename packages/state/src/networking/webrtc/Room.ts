@@ -10,7 +10,7 @@
 
 import { EventEmitter } from './EventEmitter'
 import { WebRTCPeer, type SignalData, type WebRTCPeerOptions } from './WebRTCPeer'
-import { SignalingClient, type PeerKind } from './SignalingClient'
+import { SignalingClient, type PeerKind, type SignalingMessage } from './SignalingClient'
 import { uuidv4 } from 'lib0/random'
 
 // ============================================================================
@@ -54,6 +54,8 @@ export type RoomEvents = {
   'signaling:connect': () => void
   /** Disconnected from signaling */
   'signaling:disconnect': () => void
+  /** Raw message from signaling (for legacy compatibility) */
+  'signaling:message': (message: SignalingMessage) => void
   /** Identity verified for a peer */
   'peer:identity': (peerId: string, identity: string, kind: PeerKind) => void
 }
@@ -102,7 +104,12 @@ export class Room extends EventEmitter<RoomEvents> {
    * Connect to the room
    */
   connect(): void {
-    if (this.destroyed) return
+    if (this.destroyed) {
+      console.debug('[Room] Cannot connect - destroyed')
+      return
+    }
+    
+    console.debug('[Room] Connecting to room:', this.name, 'with', this.signalingClients.length, 'signaling servers')
     
     for (const client of this.signalingClients) {
       client.connect()
@@ -232,6 +239,9 @@ export class Room extends EventEmitter<RoomEvents> {
     })
     
     client.on('message', (message) => {
+      // Forward raw message for legacy compatibility
+      this.emit('signaling:message', message)
+      
       // First message with our identity confirms we're synced
       if (!this.synced && message.type === 'publish' && message.identity) {
         if (message.data?.from === this.peerId) {
