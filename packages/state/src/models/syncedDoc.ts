@@ -2,7 +2,7 @@ import * as Y from 'yjs'
 import { IndexeddbPersistence } from 'y-indexeddb'
 import { VerifiedRTCProvider } from '../networking/provider.ts'
 import { DocMeta } from './docMeta.ts'
-import { writable, type Readable } from 'svelte/store'
+import { writable, readonly, type Readable } from 'svelte/store'
 import type { SubDocReference } from '../util/subdoc.ts'
 
 export interface Config {
@@ -23,6 +23,15 @@ interface IceServer {
   username?: string
   credential?: string
 }
+
+/**
+ * Loading state for documents fetched from the network
+ */
+export type LoadingState = 
+  | { status: 'loading'; message: string }
+  | { status: 'not_found'; message: string; retrying: boolean }
+  | { status: 'loaded' }
+  | { status: 'error'; message: string }
 
 export class SyncedDoc<K extends string> {
   meta: DocMeta<K>
@@ -143,6 +152,110 @@ export class SyncedDoc<K extends string> {
       signal.addEventListener('abort', () => reject(new Error('Not found')))
       this.synced(resolve)
     })
+  }
+
+  /**
+   * Load the document with retry logic and exponential backoff.
+   * Returns a readable store with the current loading state.
+   * 
+   * @param options.initialTimeout - Initial timeout before showing "not found" (default: 3000ms)
+   * @param options.maxRetryDelay - Maximum delay between retries (default: 30000ms)
+   * @param options.onLoaded - Callback when document is successfully loaded
+   */
+  loadWithRetry(options: {
+    initialTimeout?: number
+    maxRetryDelay?: number
+    onLoaded?: () => void
+  } = {}): Readable<LoadingState> {
+    const { 
+      initialTimeout = 3000, 
+      maxRetryDelay = 30000,
+      onLoaded 
+    } = options
+
+    const state = writable<LoadingState>({ 
+      status: 'loading', 
+      message: 'Looking for workspace...' 
+    })
+    
+    let cancelled = false
+    let retryCount = 0
+    
+    const attemptLoad = async (): Promise<boolean> => {
+      if (cancelled) return false
+      
+      this.doc.load()
+      
+      // Already have data
+      if (!this.meta.isEmpty) {
+        state.set({ status: 'loaded' })
+        onLoaded?.()
+        return true
+      }
+      
+      // Wait for sync with timeout
+      const timeout = retryCount === 0 ? initialTimeout : Math.min(
+        1000 * Math.pow(2, retryCount),
+        maxRetryDelay
+      )
+      
+      return new Promise<boolean>((resolve) => {
+        let resolved = false
+        
+        const timeoutId = setTimeout(() => {
+          if (resolved || cancelled) return
+          resolved = true
+          resolve(false)
+        }, timeout)
+        
+        this.synced(() => {
+          if (resolved || cancelled) return
+          resolved = true
+          clearTimeout(timeoutId)
+          
+          if (!this.meta.isEmpty) {
+            state.set({ status: 'loaded' })
+            onLoaded?.()
+            resolve(true)
+          } else {
+            resolve(false)
+          }
+        })
+      })
+    }
+    
+    const retryLoop = async () => {
+      // Initial attempt
+      const initialSuccess = await attemptLoad()
+      if (initialSuccess || cancelled) return
+      
+      // Show not found state and start retrying
+      state.set({ 
+        status: 'not_found', 
+        message: "Couldn't find this workspace", 
+        retrying: true 
+      })
+      
+      // Retry with exponential backoff
+      while (!cancelled) {
+        retryCount++
+        const delay = Math.min(1000 * Math.pow(2, retryCount - 1), maxRetryDelay)
+        
+        await new Promise(resolve => setTimeout(resolve, delay))
+        if (cancelled) return
+        
+        const success = await attemptLoad()
+        if (success) return
+      }
+    }
+    
+    // Start the loading process
+    void retryLoop()
+    
+    // Return a readable store that cleans up on unsubscribe
+    // Note: We can't easily cancel on unsubscribe with Svelte stores,
+    // but the document will clean up when destroyed
+    return readonly(state)
   }
 
   private handleCollaboratorChange() {

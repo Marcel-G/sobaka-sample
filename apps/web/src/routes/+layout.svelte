@@ -6,14 +6,18 @@
   import { browser } from '$app/environment'
   import { createGlobalCtx, type Global } from '../context/global'
   import { type PageData } from './$types'
-  import Loading from '@sobaka/ui/components/Loading.svelte'
+  import LoadingScreen from '@sobaka/ui/components/LoadingScreen.svelte'
 
   export let data: PageData
   let global: Global | null = null
+  let loadingStatus = $state('Initializing...')
 
   if (browser) {
     onMount(async () => {
-      global = await createGlobalCtx(data.config)
+      loadingStatus = 'Connecting to network...'
+      global = await createGlobalCtx(data.config, (status) => {
+        loadingStatus = status
+      })
     })
 
     onDestroy(() => {
@@ -23,7 +27,10 @@
 </script>
 
 {#if !global}
-  <Loading />
+  <LoadingScreen 
+    message="Starting up" 
+    status={loadingStatus} 
+  />
 {:else}
   <slot />
 {/if}
