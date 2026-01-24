@@ -12,3 +12,9 @@ variable "instance" {
   description = "Instance to deploy to"
   type        = any
 }
+
+variable "data_volume_mount" {
+  description = "Host path for persistent data volume"
+  type        = string
+  default     = "/data"
+}

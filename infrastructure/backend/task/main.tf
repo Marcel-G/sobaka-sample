@@ -17,7 +17,7 @@ variable "secrets" {
   description = "Map of environment variable names to secret resources"
   type = map(object({
     name = string
-    arn = string
+    arn  = string
   }))
 
   default = {}
@@ -26,7 +26,13 @@ variable "secrets" {
 variable "env" {
   description = "Map of environment variable names to values"
   type        = map(string)
-  default = {}
+  default     = {}
+}
+
+variable "volumes" {
+  description = "List of volume mounts in the format 'host_path:container_path'"
+  type        = list(string)
+  default     = []
 }
 
 variable "global_deploy_role" {
@@ -41,7 +47,7 @@ variable "instance" {
 
 data "aws_iam_policy_document" "secret_access" {
   count = length(var.secrets) > 0 ? 1 : 0
-  
+
   statement {
     effect = "Allow"
     actions = [
@@ -99,6 +105,7 @@ locals {
       ${join(" ", [for env_name, value in var.env : "-e ${env_name}=${value}"])} \
       ${join(" ", [for port in var.ports : "-p ${port}"])} \
       ${join(" ", [for env_name, _ in var.secrets : "-e ${env_name}"])} \
+      ${join(" ", [for volume in var.volumes : "-v ${volume}"])} \
       ${var.repository_url}:latest
   EOT
 

@@ -1,8 +1,12 @@
 locals {
-  name = var.name
-  azs  = slice(data.aws_availability_zones.available.names, 0, 3)
+  name       = var.name
+  azs        = slice(data.aws_availability_zones.available.names, 0, 3)
   chunk_size = 50
   ip_chunks  = chunklist(data.aws_ip_ranges.cloudfront.cidr_blocks, local.chunk_size)
+
+  # Data volume configuration
+  data_volume_device = "/dev/xvdf"
+  data_volume_mount  = "/data"
 
   user_data = <<-EOT
     #!/bin/bash
@@ -19,6 +23,35 @@ locals {
 
     # Configure AWS CLI
     aws configure set default.region ${data.aws_region.current.id}
+
+    # Mount data volume for persistence
+    DATA_DEVICE="${local.data_volume_device}"
+    DATA_MOUNT="${local.data_volume_mount}"
+
+    # Wait for the EBS volume to be attached
+    while [ ! -e "$DATA_DEVICE" ]; do
+      echo "Waiting for EBS volume to attach..."
+      sleep 1
+    done
+
+    # Check if the volume has a filesystem, if not create one
+    if ! file -s "$DATA_DEVICE" | grep -q "filesystem"; then
+      echo "Creating ext4 filesystem on $DATA_DEVICE"
+      sudo mkfs -t ext4 "$DATA_DEVICE"
+    fi
+
+    # Create mount point and mount the volume
+    sudo mkdir -p "$DATA_MOUNT"
+    sudo mount "$DATA_DEVICE" "$DATA_MOUNT"
+
+    # Add to fstab for persistence across reboots
+    if ! grep -q "$DATA_DEVICE" /etc/fstab; then
+      echo "$DATA_DEVICE $DATA_MOUNT ext4 defaults,nofail 0 2" | sudo tee -a /etc/fstab
+    fi
+
+    # Ensure proper permissions for docker
+    sudo chown -R ec2-user:ec2-user "$DATA_MOUNT"
+    echo "Data volume mounted at $DATA_MOUNT"
   EOT
 }
 
@@ -36,10 +69,11 @@ module "instance" {
 
   name = "${local.name}-ec2"
 
-  ami                         = data.aws_ami.amazon_linux.id
-  instance_type               = "t3.micro"
-  subnet_id                   = element(module.vpc.public_subnets, 0)
-  vpc_security_group_ids      = [for sg in module.security_groups : sg.security_group_id]
+  ami                    = data.aws_ami.amazon_linux.id
+  instance_type          = "t3.micro"
+  subnet_id              = element(module.vpc.public_subnets, 0)
+  vpc_security_group_ids = [for sg in module.security_groups : sg.security_group_id]
+  availability_zone      = element(local.azs, 0)
 
   associate_public_ip_address = true
 
@@ -52,6 +86,31 @@ module "instance" {
 
   user_data_base64            = base64encode(local.user_data)
   user_data_replace_on_change = true
+}
+
+# Persistent data volume for LMDB storage
+resource "aws_ebs_volume" "data" {
+  availability_zone = element(local.azs, 0)
+  size              = 1 # 1 GB - can be resized later
+  type              = "gp3"
+
+  tags = {
+    Name = "${local.name}-data"
+  }
+
+  # Prevent accidental deletion of data
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
+resource "aws_volume_attachment" "data" {
+  device_name = local.data_volume_device
+  volume_id   = aws_ebs_volume.data.id
+  instance_id = module.instance.id
+
+  # Don't destroy the volume when detaching
+  force_detach = false
 }
 
 module "security_groups" {
@@ -133,4 +192,8 @@ resource "aws_iam_role_policy_attachment" "deploy_ecr" {
 
 output "instance" {
   value = module.instance
+}
+
+output "data_volume_mount" {
+  value = local.data_volume_mount
 }

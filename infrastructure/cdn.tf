@@ -60,15 +60,15 @@ module "cdn" {
   ordered_cache_behavior = [
     {
       # Reuse static root layout data for dynamic routes
-      path_pattern           = "/workspace/*/__data.json"
-      target_origin_id       = "storage"
-      viewer_protocol_policy = "redirect-to-https"
-      allowed_methods        = ["GET", "HEAD", "OPTIONS"]
-      cached_methods         = ["GET", "HEAD"]
-      compress               = true
-      min_ttl                = "0"
-      default_ttl            = "300"
-      max_ttl                = "1200"
+      path_pattern               = "/workspace/*/__data.json"
+      target_origin_id           = "storage"
+      viewer_protocol_policy     = "redirect-to-https"
+      allowed_methods            = ["GET", "HEAD", "OPTIONS"]
+      cached_methods             = ["GET", "HEAD"]
+      compress                   = true
+      min_ttl                    = "0"
+      default_ttl                = "300"
+      max_ttl                    = "1200"
       response_headers_policy_id = aws_cloudfront_response_headers_policy.cross_origin_isolation.id
 
       function_association = {
@@ -79,25 +79,25 @@ module "cdn" {
     },
     {
       # Route WebSocket signaling to ec2
-      path_pattern           = "/signaling*"
-      target_origin_id       = "websocket"
-      viewer_protocol_policy = "redirect-to-https"
-      allowed_methods        = ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
-      cached_methods         = ["GET", "HEAD"],
+      path_pattern              = "/signaling*"
+      target_origin_id          = "websocket"
+      viewer_protocol_policy    = "redirect-to-https"
+      allowed_methods           = ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
+      cached_methods            = ["GET", "HEAD"],
       cookies_forward           = "whitelist"
       cookies_whitelisted_names = ["jwt"]
     },
     {
       # Increase cache duration for immutable assets
-      path_pattern           = "/_app/immutable*"
-      target_origin_id       = "storage"
-      viewer_protocol_policy = "redirect-to-https"
-      allowed_methods        = ["GET", "HEAD", "OPTIONS"]
-      cached_methods         = ["GET", "HEAD"]
-      compress               = true
-      min_ttl                = 31536000 # 1 year
-      default_ttl            = 31536000 # 1 year
-      max_ttl                = 31536000 # 1 year
+      path_pattern               = "/_app/immutable*"
+      target_origin_id           = "storage"
+      viewer_protocol_policy     = "redirect-to-https"
+      allowed_methods            = ["GET", "HEAD", "OPTIONS"]
+      cached_methods             = ["GET", "HEAD"]
+      compress                   = true
+      min_ttl                    = 31536000 # 1 year
+      default_ttl                = 31536000 # 1 year
+      max_ttl                    = 31536000 # 1 year
       response_headers_policy_id = aws_cloudfront_response_headers_policy.cross_origin_isolation.id
     }
   ]

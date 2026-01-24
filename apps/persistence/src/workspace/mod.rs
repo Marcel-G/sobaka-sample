@@ -194,20 +194,30 @@ pub struct Db {
 
 impl Db {
     pub fn new() -> Self {
-        const DB_PATH: &str = ".db";
+        let db_path = std::env::var("DB_PATH").unwrap_or_else(|_| ".db".to_string());
         const DB_SIZE: u64 = 4 * 1024 * 1024 * 1024; // 4 GiB
 
         info!(
-            path = DB_PATH,
+            path = %db_path,
             size_bytes = DB_SIZE,
             "Initializing LMDB database"
         );
 
-        let env = match EnvBuilder::new().map_size(DB_SIZE).open(DB_PATH, 0o777) {
+        // Ensure the database directory exists
+        if let Err(e) = std::fs::create_dir_all(&db_path) {
+            error!(
+                path = %db_path,
+                error = ?e,
+                "Failed to create database directory"
+            );
+            panic!("Failed to create database directory: {:?}", e);
+        }
+
+        let env = match EnvBuilder::new().map_size(DB_SIZE).open(&db_path, 0o777) {
             Ok(e) => e,
             Err(e) => {
                 error!(
-                    path = DB_PATH,
+                    path = %db_path,
                     error = ?e,
                     "Failed to open LMDB database"
                 );
@@ -223,7 +233,7 @@ impl Db {
             }
         };
 
-        info!("LMDB database initialized successfully");
+        info!(path = %db_path, "LMDB database initialized successfully");
 
         Self { env, handle }
     }
