@@ -13,6 +13,7 @@
     "./components/Led.svelte": "./src/components/Led.svelte",
     "./components/LevelIndicator.svelte": "./src/components/LevelIndicator.svelte",
     "./components/Loading.svelte": "./src/components/Loading.svelte",
+    "./components/LoadingScreen.svelte": "./src/components/LoadingScreen.svelte",
     "./components/RingSpinner.svelte": "./src/components/RingSpinner.svelte",
     "./components/Spinner.svelte": "./src/components/Spinner.svelte",
     "./components/Switch.svelte": "./src/components/Switch.svelte",
