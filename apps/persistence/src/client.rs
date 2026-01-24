@@ -113,13 +113,22 @@ impl Client {
         };
 
         if to != self.peer_id.to_string() {
-            trace!(
+            debug!(
                 to = %to,
+                from = %from,
                 peer_id = %self.peer_id,
+                topic = %topic,
                 "Signal not addressed to us, ignoring"
             );
             return;
         }
+
+        debug!(
+            from = %from,
+            to = %to,
+            topic = %topic,
+            "Processing incoming signal addressed to us"
+        );
 
         self.stats.messages_received += 1;
 
