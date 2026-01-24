@@ -47,6 +47,16 @@
 </script>
 
 {#if node && component}
-  {@const nodeProps = { node, disabled, position, onClose: handleClose, onClone: handleClone, onDrag: handleDrag, onPlugClick: handlePlugClick, bindElement: handleBindElement, bindPlugElement: handleBindPlugElement }}
+  {@const nodeProps = {
+    node,
+    disabled,
+    position,
+    onClose: handleClose,
+    onClone: handleClone,
+    onDrag: handleDrag,
+    onPlugClick: handlePlugClick,
+    bindElement: handleBindElement,
+    bindPlugElement: handleBindPlugElement
+  }}
   <svelte:component this={component} {...nodeProps} />
 {/if}
