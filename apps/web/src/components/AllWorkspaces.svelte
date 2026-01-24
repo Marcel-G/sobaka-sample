@@ -20,7 +20,7 @@
       {#await list.load()}
         <!-- TODO: skeleton loading UI -->
       {:then}
-        <WorkspaceList workspaceList={list} allowAdminEdit={true} />
+        <WorkspaceList workspaceList={list} isGlobalList={true} />
       {/await}
     {/each}
   {/if}
