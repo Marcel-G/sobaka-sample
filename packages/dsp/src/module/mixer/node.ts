@@ -1,4 +1,5 @@
 import { ModuleDSP, Route, RouteInfo } from '../../shared/types'
+import { safeSetValueAtTime, safeSetTargetAtTime, sanitizeValue } from '../../shared/audioUtils'
 import { PlugType } from '@sobaka/state'
 
 export interface MixerState {
@@ -34,9 +35,9 @@ export class MixerDSP implements ModuleDSP {
       // Connect to audio destination (speakers)
       this.mixer.connect(audioContext.destination)
       
-      // Set initial volume
-      const targetVolume = initialState.muted ? 0 : initialState.volume
-      this.volumeParam.setValueAtTime(targetVolume, audioContext.currentTime)
+      // Set initial volume with safe setter
+      const targetVolume = initialState.muted ? 0 : sanitizeValue(initialState.volume, INITIAL_STATE.volume)
+      safeSetValueAtTime(this.volumeParam, targetVolume, audioContext.currentTime, INITIAL_STATE.volume)
     }
   }
 
@@ -64,13 +65,15 @@ export class MixerDSP implements ModuleDSP {
     
     if (!this.mixer || !this.volumeParam) return
     
-    const targetVolume = state.muted ? 0 : state.volume
+    const targetVolume = state.muted ? 0 : sanitizeValue(state.volume, INITIAL_STATE.volume)
     
-    // Smooth volume changes to avoid clicks
-    this.volumeParam.setTargetAtTime(
+    // Smooth volume changes to avoid clicks, using safe setter
+    safeSetTargetAtTime(
+      this.volumeParam,
       targetVolume,
       this.audioContext.currentTime,
-      0.01
+      0.01,
+      INITIAL_STATE.volume
     )
   }
 

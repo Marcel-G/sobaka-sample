@@ -1,6 +1,6 @@
 <script lang="ts">
   import { RangeType, type Range } from '../range/range'
-  import { fromString, limit, toString } from '../range/rangeFunctions'
+  import { fromString, limit, toString, isValidNumber } from '../range/rangeFunctions'
 
   export let value = 0.0
   export let range: Range
@@ -41,24 +41,37 @@
       } else {
         const match = element.value.match(/^-?[0-9]+(\.[0-9]+)?/g)
         if (!match) {
+          // Invalid input - reset to current value
+          element.value = toString(range, value)
+          element.select()
           return
         }
         number = match[0]
         unit = element.value.replace(number, '')
       }
-      console.log('handleKeyDown', number, range, unit);
-      value = limit(range, fromString(range, parseFloat(number), unit))
-      console.log('handleKeyDown', value);
+      
+      const parsedNumber = parseFloat(number)
+      // Guard against NaN from parseFloat
+      if (!isValidNumber(parsedNumber)) {
+        // Invalid number - reset to current value
+        element.value = toString(range, value)
+        element.select()
+        return
+      }
+      
+      const newValue = limit(range, fromString(range, parsedNumber, unit))
+      // Final safety check before assignment
+      if (isValidNumber(newValue)) {
+        value = newValue
+      }
       element.select()
     }
   }
 
   const handleBlur = (event: FocusEvent) => {
     const element = event.target as HTMLInputElement
-    // @todo -- doesn't seem idiomatic
-    console.log('handleBlur', value);
+    // Reset display to current value on blur
     element.value = toString(range, value)
-    console.log('handleBlur', element.value);
     isMouseDown = false
   }
 </script>

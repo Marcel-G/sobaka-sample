@@ -137,15 +137,21 @@ export function getRandom(range: Range): number {
 
 /**
  * Limits an un-normalised value to be within the range.
+ * Returns the range start if the value is NaN or invalid.
  */
 export function limit(range: Range, value: number): number {
+  // Guard against NaN and Infinity
+  if (!isValidNumber(value)) {
+    return getStart(range)
+  }
+  
   switch (range.type) {
     case RangeType.Choice: {
       value = Math.round(value)
       if (range.choices.some(c => c.value === value)) {
         return value
       }
-      return -1
+      return range.choices.length > 0 ? range.choices[0].value : -1
     }
     case RangeType.Continuous: {
       if (range.bipolar) {
@@ -206,20 +212,56 @@ export function getEnd(range: Range) {
   }
 }
 
+/**
+ * Minimum value for logarithmic calculations to prevent -Infinity
+ */
+const LOG_MIN = 1e-10
+
+/**
+ * Check if a value is a valid finite number
+ */
+export function isValidNumber(value: number): boolean {
+  return typeof value === 'number' && Number.isFinite(value)
+}
+
+/**
+ * Sanitize a value, returning a safe default if it's NaN or Infinity
+ */
+export function sanitizeValue(value: number, defaultValue: number): number {
+  if (!isValidNumber(value)) {
+    if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'development') {
+      console.warn(`[Range] Invalid value detected: ${value}, using default: ${defaultValue}`)
+    }
+    return defaultValue
+  }
+  return value
+}
+
 function interpolate(range: ContinuousRange, value: number) {
+  // Guard against invalid input
+  if (!isValidNumber(value)) {
+    return range.start
+  }
+  
   switch (range.scale?.type) {
     case Scale.Exponential:
-      return Math.pow(value, 1 / (range.scale.exp || 1))
+      return Math.pow(Math.max(0, value), 1 / (range.scale.exp || 1))
     case Scale.Logarithmic:
-      return Math.log(value)
+      // Prevent log(0) = -Infinity and log(negative) = NaN
+      return Math.log(Math.max(LOG_MIN, value))
   }
   return value
 }
 
 function inverseInterpolate(range: ContinuousRange, value: number) {
+  // Guard against invalid input
+  if (!isValidNumber(value)) {
+    return range.start
+  }
+  
   switch (range.scale?.type) {
     case Scale.Exponential:
-      return Math.pow(value, range.scale.exp || 1)
+      return Math.pow(Math.max(0, value), range.scale.exp || 1)
     case Scale.Logarithmic:
       return Math.exp(value)
   }
@@ -235,8 +277,12 @@ function limitToStep(range: ContinuousRange, value: number) {
 
 /**
  * Clamps `value` to at least `min` and at most `max`.
+ * Returns `min` if value is NaN.
  */
 export function limitValue(value: number, min: number, max: number) {
+  if (!isValidNumber(value)) {
+    return min
+  }
   return Math.min(Math.max(min, value), max)
 }
 

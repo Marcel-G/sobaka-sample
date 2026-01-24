@@ -1,5 +1,6 @@
 import * as Y from 'yjs';
 import { ModuleDSP, Route, RouteInfo } from '../../shared/types'
+import { safeSetValueAtTime } from '../../shared/audioUtils'
 import { getYjsValue } from "@syncedstore/core";
 import { PlugType } from '@sobaka/state'
 
@@ -32,9 +33,12 @@ export class VcaNode implements ModuleDSP {
     
     if (!skipInit) {
       this.vca = new GainNode(audioContext)
-      this.vca.gain.setValueAtTime(
+      // Use safe setter with default value
+      safeSetValueAtTime(
+        this.vca.gain,
         this.state.value,
-        audioContext.currentTime
+        audioContext.currentTime,
+        INITIAL_STATE.value
       )
 
       const state = getYjsValue(this.state);
@@ -51,7 +55,8 @@ export class VcaNode implements ModuleDSP {
     
     if (event.keysChanged.has('value')) {
       const value = event.target.get('value');
-      this.vca.gain!.setValueAtTime(value, this.audioContext.currentTime)
+      // Use safe setter to prevent NaN from breaking audio
+      safeSetValueAtTime(this.vca.gain, value, this.audioContext.currentTime, INITIAL_STATE.value)
     }
   }
 

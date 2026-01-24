@@ -2,6 +2,7 @@ import { OscillatorNode as _OscillatorNode, OscillatorShape } from '@sobaka/dsp/
 import * as Y from 'yjs';
 import { getYjsValue } from "@syncedstore/core";
 import { ModuleDSP, Route, RouteInfo } from '../../shared/types'
+import { safeSetValueAtTime, isValidNumber } from '../../shared/audioUtils'
 import { PlugType } from '@sobaka/state'
 
 export interface OscillatorState {
@@ -37,7 +38,8 @@ export class OscillatorNode implements ModuleDSP {
     if (!skipInit) {
       this.oscillator = new _OscillatorNode(audioContext, this.state.shape)
       this.pitchParam = this.oscillator.node.parameters.get('pitch')!
-      this.pitchParam.setValueAtTime(this.state.pitch, audioContext.currentTime)
+      // Use safe setter with default value
+      safeSetValueAtTime(this.pitchParam, this.state.pitch, audioContext.currentTime, INITIAL_STATE.pitch)
 
       const state = getYjsValue(this.state);
       if (state instanceof Y.Map) {
@@ -53,11 +55,15 @@ export class OscillatorNode implements ModuleDSP {
     
     if (event.keysChanged.has('shape')) {
       const shape = event.target.get('shape');
-      this.oscillator.setShape(shape)
+      // Validate shape is a valid enum value
+      if (Object.values(OscillatorShape).includes(shape)) {
+        this.oscillator.setShape(shape)
+      }
     }
     if (event.keysChanged.has('pitch')) {
       const value = event.target.get('pitch');
-      this.pitchParam!.setValueAtTime(value, this.audioContext.currentTime)
+      // Use safe setter to prevent NaN from breaking audio
+      safeSetValueAtTime(this.pitchParam, value, this.audioContext.currentTime, INITIAL_STATE.pitch)
     }
   }
 

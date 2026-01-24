@@ -1,6 +1,9 @@
 // Export types
 export * from './types'
 
+// Export utilities
+export * from './audioUtils'
+
 // Export all DSP modules to register their factories
 import '../module/clock/node'
 import '../module/oscillator/node'

@@ -1,6 +1,7 @@
 import * as Y from 'yjs';
 import { getYjsValue } from "@syncedstore/core";
 import { ModuleDSP, Route, RouteInfo } from '../../shared/types'
+import { safeSetValueAtTime } from '../../shared/audioUtils'
 import { PlugType } from '@sobaka/state'
 
 export interface ParameterState {
@@ -34,10 +35,12 @@ export class ParameterNode implements ModuleDSP {
       this.parameter = new ConstantSourceNode(audioContext)
       this.parameter.start()
       
-      // Set initial value
-      this.parameter.offset.setValueAtTime(
-        this.state.value ?? INITIAL_STATE.value,
-        audioContext.currentTime
+      // Set initial value with safe setter
+      safeSetValueAtTime(
+        this.parameter.offset,
+        this.state.value,
+        audioContext.currentTime,
+        INITIAL_STATE.value
       )
 
       const state = getYjsValue(this.state);
@@ -54,7 +57,8 @@ export class ParameterNode implements ModuleDSP {
     
     if (event.keysChanged.has('value')) {
       const value = event.target.get('value');
-      this.parameter.offset.setValueAtTime(value, this.audioContext.currentTime)
+      // Use safe setter to prevent NaN from breaking audio
+      safeSetValueAtTime(this.parameter.offset, value, this.audioContext.currentTime, INITIAL_STATE.value)
     }
   }
 

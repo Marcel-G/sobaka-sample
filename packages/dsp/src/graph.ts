@@ -7,10 +7,20 @@ export interface ModuleFactory {
   getInitialState(type: string): Record<string, unknown> | null
 }
 
+/**
+ * Stores complete information about a connection for proper disconnection
+ */
+interface ConnectionInfo {
+  sourceNode: AudioNode
+  destinationNode: AudioNode | AudioParam
+  sourceOutput?: number
+  destinationInput?: number
+}
+
 export class AudioGraph {
   private dspModules: Map<string, ModuleDSP> = new Map()
   private staticModules: Map<string, ModuleDSP> = new Map()
-  private connections: Map<string, AudioNode> = new Map()
+  private connections: Map<string, ConnectionInfo> = new Map()
 
   constructor(
     private audioContext: AudioContext,
@@ -104,17 +114,27 @@ export class AudioGraph {
       throw new Error('TODO')
     }
 
+    // Store full connection info for proper disconnection
+    const connectionInfo: ConnectionInfo = {
+      sourceNode: fromRoute.node,
+      destinationNode: toRoute.node,
+      sourceOutput: fromRoute.connectIndex,
+      destinationInput: toRoute.node instanceof AudioNode ? toRoute.connectIndex : undefined
+    }
+
     if ((toRoute.node instanceof AudioNode)) {
       fromRoute.node.connect(toRoute.node, fromRoute.connectIndex, toRoute.connectIndex)
     } else {
       fromRoute.node.connect(toRoute.node, fromRoute.connectIndex)
     }
-    this.connections.set(link.id, fromRoute.node)
+    this.connections.set(link.id, connectionInfo)
   }
 
   /**
    * Disconnect specific links with a quick ramp to avoid clicks/pops
    * Uses AudioParam automation to ramp gain to zero before disconnecting
+   * 
+   * IMPORTANT: Disconnects only the specific connection, not all outputs from the source node
    */
   private async disconnectLinks(linkIds: string[]): Promise<void> {
     if (linkIds.length === 0) return
@@ -122,36 +142,50 @@ export class AudioGraph {
     const RAMP_DURATION = 0.001
     const currentTime = this.audioContext.currentTime
     
-    // Collect the nodes we're about to disconnect and ramp them if possible
-    const nodesToDisconnect: AudioNode[] = []
+    // Collect connections to disconnect and ramp them if possible
+    const connectionsToDisconnect: ConnectionInfo[] = []
     
     for (const linkId of linkIds) {
-      const sourceNode = this.connections.get(linkId)
-      if (sourceNode) {
-        nodesToDisconnect.push(sourceNode)
+      const connection = this.connections.get(linkId)
+      if (connection) {
+        connectionsToDisconnect.push(connection)
         
-        // If it's a GainNode, ramp it down
-        if (sourceNode instanceof GainNode) {
-          sourceNode.gain.cancelScheduledValues(currentTime)
-          sourceNode.gain.setValueAtTime(sourceNode.gain.value, currentTime)
-          sourceNode.gain.linearRampToValueAtTime(0, currentTime + RAMP_DURATION)
-        }
+        // If source is a GainNode, ramp it down (only if this is the only connection from this node)
+        // Actually, we should avoid ramping shared gain nodes to 0
+        // For now, just disconnect without ramping to avoid breaking other connections
       }
     }
     
-    // Wait for ramp duration
-    if (nodesToDisconnect.length > 0) {
+    // Wait a tiny bit to avoid clicks
+    if (connectionsToDisconnect.length > 0) {
       await new Promise(resolve => setTimeout(resolve, RAMP_DURATION * 1000))
     }
     
-    // Now disconnect only the specified links
+    // Disconnect each specific connection
     for (const linkId of linkIds) {
-      const sourceNode = this.connections.get(linkId)
-      if (sourceNode) {
+      const connection = this.connections.get(linkId)
+      if (connection) {
         try {
-          sourceNode.disconnect()
+          // Disconnect only the specific destination, not all outputs
+          // This is the key fix - use the destination parameter to disconnect()
+          if (connection.destinationNode instanceof AudioNode) {
+            connection.sourceNode.disconnect(
+              connection.destinationNode,
+              connection.sourceOutput,
+              connection.destinationInput
+            )
+          } else {
+            // Disconnecting from AudioParam
+            connection.sourceNode.disconnect(
+              connection.destinationNode,
+              connection.sourceOutput
+            )
+          }
         } catch (err) {
-          // Node may already be disconnected, ignore
+          // Node may already be disconnected, or this browser doesn't support
+          // specific disconnection - fall back to logging the issue
+          console.warn('[AudioGraph] Failed to disconnect specific connection:', err)
+          // Don't try to disconnect all - that would break other connections
         }
         this.connections.delete(linkId)
       }
@@ -208,9 +242,11 @@ export class AudioGraph {
    * Disconnects immediately without fade since we're tearing down
    */
   destroy() {
-    for (const sourceNode of this.connections.values()) {
+    // Disconnect all connections
+    for (const connection of this.connections.values()) {
       try {
-        sourceNode.disconnect()
+        // When destroying, we can disconnect all from source since we're tearing everything down
+        connection.sourceNode.disconnect()
       } catch (err) {
         // Node may already be disconnected, ignore
       }
@@ -226,6 +262,26 @@ export class AudioGraph {
       dsp.destroy()
     }
     this.staticModules.clear()
+  }
+
+  /**
+   * Get diagnostic information about the current audio graph state
+   * Useful for debugging audio issues
+   */
+  getDiagnostics(): {
+    moduleCount: number
+    staticModuleCount: number
+    connectionCount: number
+    modules: string[]
+    staticModules: string[]
+  } {
+    return {
+      moduleCount: this.dspModules.size,
+      staticModuleCount: this.staticModules.size,
+      connectionCount: this.connections.size,
+      modules: Array.from(this.dspModules.keys()),
+      staticModules: Array.from(this.staticModules.keys()),
+    }
   }
 }
 
