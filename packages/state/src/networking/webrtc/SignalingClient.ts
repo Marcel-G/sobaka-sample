@@ -9,7 +9,6 @@
  */
 
 import { EventEmitter } from './EventEmitter'
-import type { SignalData } from './WebRTCPeer'
 import { createLogger } from '../../util/logger'
 
 const logger = createLogger('SignalingClient')
@@ -17,6 +16,14 @@ const logger = createLogger('SignalingClient')
 // ============================================================================
 // Types
 // ============================================================================
+
+export interface SignalData {
+  type: 'offer' | 'answer' | 'candidate' | 'renegotiate'
+  sdp?: string
+  candidate?: RTCIceCandidateInit
+  /** Glare resolution token */
+  token?: number
+}
 
 export interface SignalingMessage {
   type: 'publish' | 'subscribe' | 'unsubscribe' | 'ping' | 'pong'

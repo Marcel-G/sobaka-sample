@@ -1,15 +1,11 @@
 /**
  * WebRTC networking stack for Sobaka
  * 
- * This module provides a complete replacement for simple-peer and y-webrtc:
+ * This module provides WebRTC-based peer-to-peer communication:
  * 
- * ## New Architecture (recommended):
  * - PeerManager: Singleton managing all WebRTC connections (one per peer)
  * - Topic: Lightweight wrapper for a communication channel (uses shared connections)
- * 
- * ## Legacy Architecture (deprecated):
- * - Room: Old approach with separate connections per room
- * - WebRTCPeer: Low-level peer wrapper (still used internally)
+ * - SignalingClient: WebSocket client for WebRTC signaling
  * 
  * The main provider (VerifiedRTCProvider) is exported from the parent module.
  * 
@@ -29,14 +25,10 @@
  * ```
  */
 
-// New architecture (recommended)
+// Core components
 export { PeerManager, type PeerManagerOptions, type PeerManagerEvents, type PeerInfo, type TopicChannel } from './PeerManager'
 export { Topic, type TopicOptions, type TopicEvents, type TopicPeer } from './Topic'
-
-// Legacy components (for backwards compatibility)
-export { WebRTCPeer, WEBRTC_SUPPORT, type WebRTCPeerOptions, type SignalData, type WebRTCPeerEvents } from './WebRTCPeer'
-export { SignalingClient, type SignalingClientOptions, type SignalingClientEvents, type SignalingMessage, type MessageData, type PeerKind } from './SignalingClient'
-export { Room, type RoomOptions, type RoomEvents, type PeerConnection } from './Room'
+export { SignalingClient, type SignalingClientOptions, type SignalingClientEvents, type SignalingMessage, type MessageData, type PeerKind, type SignalData } from './SignalingClient'
 
 // Utilities
 export { EventEmitter, type EventMap } from './EventEmitter'
