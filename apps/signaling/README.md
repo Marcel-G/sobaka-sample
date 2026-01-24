@@ -28,20 +28,56 @@ This Rust-based WebSocket server facilitates WebRTC peer connections for real-ti
 ## Development
 
 ```bash
-# From this directory
-cargo run
+# Start the signaling server
+JWT_PRIVATE_KEY=dev-secret cargo run
+
+# Or with debug logging
+JWT_PRIVATE_KEY=dev-secret RUST_LOG=debug cargo run
 ```
 
 Runs on port 8000 by default.
 
+## JWT Token Generator
+
+The signaling server includes a CLI tool for generating JWT tokens. This is used to create **worker** tokens for the persistence service.
+
+```bash
+# Generate a worker token (for persistence service)
+JWT_PRIVATE_KEY=dev-secret cargo run --bin generate-jwt -- --worker
+
+# Generate with a custom UUID
+JWT_PRIVATE_KEY=dev-secret cargo run --bin generate-jwt -- --worker --uuid my-worker
+
+# Generate a client token (for testing)
+JWT_PRIVATE_KEY=dev-secret cargo run --bin generate-jwt -- --client
+
+# See all options
+cargo run --bin generate-jwt -- --help
+```
+
+### Token Types
+
+| Type | Purpose |
+|------|---------|
+| `client` | Regular browser clients (default) |
+| `worker` | Persistence service and other backend workers |
+
+Workers receive special treatment:
+- They receive `announce` messages for all topics
+- They can persist and sync documents
+- They're tracked separately from regular clients
+
 ## Building
 
 ```bash
-# Debug build
+# Debug build (both binaries)
 cargo build
 
 # Release build
 cargo build --release
+
+# Build just the JWT generator
+cargo build --bin generate-jwt
 ```
 
 ## Docker
@@ -63,8 +99,13 @@ Infrastructure defined in `infrastructure/`:
 
 ## Environment Variables
 
-- `PORT` - Server port (default: 8000)
-- `RUST_LOG` - Log level (e.g., `info`, `debug`)
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `JWT_PRIVATE_KEY` | Secret key for signing JWT tokens | **Required** |
+| `RUST_LOG` | Log level filter | `info,signaling=debug` |
+| `LOG_FORMAT` | Log output format (`json` or `pretty`) | `pretty` |
+
+> **Security Note**: Use a strong, random secret for `JWT_PRIVATE_KEY` in production. The same secret must be used by all services (signaling, persistence) to validate tokens.
 
 ## Protocol
 

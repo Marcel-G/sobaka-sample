@@ -27,17 +27,59 @@ This Rust-based server provides:
 
 ## Development
 
+The persistence worker needs to connect to the signaling server as a **Worker** peer (not a regular client). This requires a JWT token with `kind: "worker"`.
+
+### Quick Start
+
 ```bash
-# From this directory
-cargo run
+# 1. Start the signaling server first (in another terminal)
+cd ../signaling
+JWT_PRIVATE_KEY=dev-secret cargo run
+
+# 2. Run the persistence worker with the dev script
+./scripts/dev.sh
+```
+
+The dev script automatically:
+- Generates a worker JWT token
+- Configures the correct environment
+- Builds and runs the service
+
+### Manual Setup
+
+If you prefer manual configuration:
+
+```bash
+# Generate a worker JWT (from the signaling directory)
+cd ../signaling
+JWT_PRIVATE_KEY=dev-secret cargo run --bin generate-jwt -- --worker
+
+# Copy the output token and set it as JWT env var
+cd ../persistence
+JWT=<paste-token-here> SIGNAL_SERVER=ws://localhost:8000/signaling cargo run
+```
+
+### Verbose Mode
+
+```bash
+# Run with debug logging
+./scripts/dev.sh --verbose
+
+# Or manually
+RUST_LOG=debug,sobaka_client=trace cargo run
 ```
 
 ## Environment Variables
 
-- `SIGNAL_SERVER` - Signaling server URL (default: ws://localhost:8000/signaling)
-- `PUBLIC_IP` - Public IP for WebRTC (auto-detected if not set)
-- `RUST_LOG` - Log level (e.g., `info`, `debug`)
-- `LMDB_PATH` - Database path (default: ./data)
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `SIGNAL_SERVER` | Signaling server WebSocket URL | `ws://localhost:8000/signaling` |
+| `JWT` | Worker JWT token (required for worker identity) | None |
+| `PUBLIC_IP` | Public IP for WebRTC candidates | Auto-detected |
+| `PORT` | UDP port for WebRTC traffic | `3478` |
+| `RUST_LOG` | Log level filter | `info` |
+| `LOG_FORMAT` | Log output format (`json` or `pretty`) | `pretty` |
+| `JWT_PRIVATE_KEY` | JWT signing secret (for dev script) | Required |
 
 ## Storage
 

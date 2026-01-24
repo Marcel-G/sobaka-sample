@@ -3,6 +3,14 @@ name = "signaling"
 version = "0.1.0"
 edition = "2021"
 
+[[bin]]
+name = "signaling"
+path = "src/main.rs"
+
+[[bin]]
+name = "generate-jwt"
+path = "src/bin/generate_jwt.rs"
+
 [dependencies]
 futures-util = { version = "0.3", features = ["sink"] }
 jsonwebtoken = "8"
