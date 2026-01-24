@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use lmdb_rs::{DbFlags, DbHandle, EnvBuilder, Environment};
 use tracing::{debug, error, info, trace, warn};
@@ -9,12 +10,15 @@ use yrs::{
     updates::{decoder::Decode, encoder::Encode},
     Subscription,
 };
-use yrs::{Array, Map, Out, ReadTxn, Transact, UpdateEvent};
+use yrs::{Array, ArrayPrelim, Doc, Map, MapPrelim, Out, ReadTxn, Transact, UpdateEvent, WriteTxn};
 use yrs_kvstore::DocOps;
 use yrs_lmdb::LmdbStore;
 
 use crate::peer::connection::PeerConnection;
 use crate::signal::protocol::{PeerKind, GLOBAL_ROOT_UUID};
+
+/// UUID for the "Intro" workspace list within the global root
+const INTRO_LIST_UUID: &str = "00000000-0000-0000-0000-000000000001";
 
 pub struct Workspace {
     doc: Awareness,
@@ -256,7 +260,139 @@ impl Db {
 
         info!(path = %db_path, "LMDB database initialized successfully");
 
-        Self { env, handle }
+        let db = Self { env, handle };
+        
+        // Bootstrap global root if it doesn't exist
+        db.bootstrap_global_root();
+        
+        db
+    }
+
+    /// Check if a document exists in the database
+    fn doc_exists(&self, topic: &str) -> bool {
+        let db_txn = match self.env.get_reader() {
+            Ok(r) => r,
+            Err(_) => return false,
+        };
+
+        let db = LmdbStore::from(db_txn.bind(&self.handle));
+        
+        // Try to get the document state - if it fails, doc doesn't exist
+        let doc = Doc::new();
+        let mut txn = doc.transact_mut();
+        db.load_doc(topic, &mut txn).is_ok()
+    }
+
+    /// Bootstrap the global root document with the "Intro" workspace list.
+    /// This is called on startup to ensure the global root exists.
+    fn bootstrap_global_root(&self) {
+        if self.doc_exists(GLOBAL_ROOT_UUID) {
+            debug!("Global root already exists, skipping bootstrap");
+            return;
+        }
+
+        info!("Bootstrapping global root document");
+
+        // Create the Intro workspace list document first
+        self.create_workspace_list(INTRO_LIST_UUID, "Intro");
+        
+        // Create the global root document
+        self.create_root_document(GLOBAL_ROOT_UUID, INTRO_LIST_UUID);
+        
+        info!("Global root bootstrapped successfully");
+    }
+
+    /// Create a workspace list document with the given UUID and name
+    fn create_workspace_list(&self, uuid: &str, name: &str) {
+        let doc = Doc::new();
+        
+        {
+            let mut txn = doc.transact_mut();
+            
+            // Create meta map
+            let meta = txn.get_or_insert_map("meta");
+            let now = SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .expect("Time went backwards")
+                .as_millis() as f64;
+            
+            meta.insert(&mut txn, "kind", "workspaceList");
+            meta.insert(&mut txn, "createdAt", now);
+            meta.insert(&mut txn, "updatedAt", now);
+            meta.insert(&mut txn, "name", name);
+            
+            // Create empty collaborators array (anyone can read, admins can write)
+            let collaborators = ArrayPrelim::from(Vec::<String>::new());
+            meta.insert(&mut txn, "collaborators", collaborators);
+            
+            // Create empty workspaces array
+            let _workspaces = txn.get_or_insert_array("workspaces");
+        }
+        
+        // Save to database
+        let update = doc.transact().encode_state_as_update_v1(&Default::default());
+        self.save_update(uuid, &update);
+        
+        debug!(uuid = %uuid, name = %name, "Created workspace list document");
+    }
+
+    /// Create a root document with the given UUID and a reference to a workspace list
+    fn create_root_document(&self, uuid: &str, list_uuid: &str) {
+        let doc = Doc::new();
+        
+        {
+            let mut txn = doc.transact_mut();
+            
+            let now = SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .expect("Time went backwards")
+                .as_millis() as f64;
+            
+            // Create meta map
+            let meta = txn.get_or_insert_map("meta");
+            meta.insert(&mut txn, "kind", "root");
+            meta.insert(&mut txn, "createdAt", now);
+            meta.insert(&mut txn, "updatedAt", now);
+            
+            // Create empty collaborators array
+            let collaborators = ArrayPrelim::from(Vec::<String>::new());
+            meta.insert(&mut txn, "collaborators", collaborators);
+            
+            // Create workspaceLists array with reference to the Intro list
+            let workspace_lists = txn.get_or_insert_array("workspaceLists");
+            
+            // Add reference to the Intro list (as a map with guid field)
+            let list_ref = MapPrelim::from([("guid", list_uuid)]);
+            workspace_lists.insert(&mut txn, 0, list_ref);
+        }
+        
+        // Save to database
+        let update = doc.transact().encode_state_as_update_v1(&Default::default());
+        self.save_update(uuid, &update);
+        
+        debug!(uuid = %uuid, "Created root document");
+    }
+
+    /// Save an update to the database
+    fn save_update(&self, topic: &str, update: &[u8]) {
+        let txn = match self.env.new_transaction() {
+            Ok(t) => t,
+            Err(e) => {
+                error!(topic = %topic, error = ?e, "Failed to start transaction for save");
+                return;
+            }
+        };
+
+        let db = LmdbStore::from(txn.bind(&self.handle));
+
+        if let Err(e) = db.push_update(topic, update) {
+            error!(topic = %topic, error = ?e, "Failed to save document");
+            return;
+        }
+
+        if let Err(e) = txn.commit() {
+            error!(topic = %topic, error = ?e, "Failed to commit save transaction");
+        }
     }
 
     pub fn update(&self, topic: &str, event: &UpdateEvent) {
