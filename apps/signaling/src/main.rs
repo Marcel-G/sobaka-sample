@@ -2,16 +2,18 @@ use std::error::Error;
 
 use jwt::Token;
 use signaling::{signaling_conn, SignalingService};
+use tracing::{debug, error, info, info_span, warn, Instrument};
 use warp::ws::{WebSocket, Ws};
 use warp::{Filter, Rejection, Reply};
 
 mod jwt;
+mod logging;
 mod protocol;
 mod signaling;
 
-// TODO: The signaling server has with ping to resolve
-//       try https://github.com/ngryman/signaling
-//       In any case signaling server will need to handle auth
+/// Start the signaling WebSocket server.
+///
+/// Listens on all interfaces (0.0.0.0) port 8000.
 pub async fn signaling_server() {
     let signaling = SignalingService::new();
 
@@ -21,7 +23,14 @@ pub async fn signaling_server() {
         .and(warp::any().map(move || signaling.clone()))
         .and_then(ws_handler);
 
-    warp::serve(ws).run(([0, 0, 0, 0], 8000)).await;
+    let addr = ([0, 0, 0, 0], 8000);
+    info!(
+        host = %"0.0.0.0",
+        port = 8000,
+        "Starting signaling server"
+    );
+
+    warp::serve(ws).run(addr).await;
 }
 
 async fn ws_handler(
@@ -29,20 +38,34 @@ async fn ws_handler(
     jwt_cookie: Option<String>,
     svc: SignalingService,
 ) -> Result<impl Reply, Rejection> {
-    let token = match jwt_cookie {
+    let (token, is_new) = match jwt_cookie {
         Some(token_str) => {
             // Try to validate the existing token
             match Token::decode(&token_str) {
-                Ok(t) => t,
-                Err(_) => Token::new(), // Generate a new token if invalid
+                Ok(t) => {
+                    debug!(uuid = %t.uuid, "Validated existing JWT token");
+                    (t, false)
+                }
+                Err(e) => {
+                    warn!(error = %e, "Invalid JWT token, generating new one");
+                    (Token::new(), true)
+                }
             }
         }
-        None => Token::new(), // No cookie; generate a new token
+        None => {
+            debug!("No JWT cookie present, generating new token");
+            (Token::new(), true)
+        }
     };
 
-    let jwt = token.encode(); // Encode the token into a JWT string
+    let jwt = token.encode();
 
-    println!("uuid: {} kind: {:?}", token.uuid, token.kind);
+    info!(
+        uuid = %token.uuid,
+        kind = ?token.kind,
+        is_new_token = is_new,
+        "WebSocket connection initiated"
+    );
 
     Ok(ws.on_upgrade(move |socket| peer(socket, svc, token)))
         .map(|reply| {
@@ -56,15 +79,31 @@ async fn ws_handler(
 }
 
 async fn peer(ws: WebSocket, svc: SignalingService, token: Token) {
-    match signaling_conn(ws, svc, token).await {
-        Ok(_) => println!("signaling connection stopped"),
-        Err(e) => eprintln!("signaling connection failed: {}", e),
+    let span = info_span!(
+        "peer_connection",
+        uuid = %token.uuid,
+        kind = ?token.kind
+    );
+
+    async move {
+        match signaling_conn(ws, svc, token.clone()).await {
+            Ok(_) => {
+                info!("Connection closed gracefully");
+            }
+            Err(e) => {
+                error!(error = %e, "Connection failed");
+            }
+        }
     }
+    .instrument(span)
+    .await
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    env_logger::init();
+    logging::init();
+
+    info!("Signaling server starting up");
 
     tokio::spawn(signaling_server()).await?;
 

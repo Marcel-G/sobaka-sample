@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use lmdb_rs::{DbFlags, DbHandle, EnvBuilder, Environment};
+use tracing::{debug, error, info, trace, warn};
 use yrs::sync::{Awareness, SyncMessage};
 use yrs::updates::encoder::{Encoder, EncoderV1};
 use yrs::{
@@ -22,6 +23,8 @@ pub struct Workspace {
 
 impl Workspace {
     pub fn new(uuid: &str, db: Arc<Db>) -> Self {
+        info!(workspace_id = %uuid, "Creating workspace");
+
         let mut doc: Awareness = Default::default();
 
         let subscription = {
@@ -29,13 +32,19 @@ impl Workspace {
             let uuid = uuid.to_string();
             doc.doc()
                 .observe_update_v1(move |_, e| {
-                    log::debug!("Workspace {} updated", uuid);
+                    trace!(
+                        workspace_id = %uuid,
+                        update_size = e.update.len(),
+                        "Workspace document updated"
+                    );
                     db.update(&uuid, e)
                 })
                 .unwrap()
         };
 
-        db.load(&uuid, doc.doc_mut());
+        db.load(uuid, doc.doc_mut());
+
+        debug!(workspace_id = %uuid, "Workspace loaded from database");
 
         Self {
             _subscription: subscription,
@@ -46,17 +55,37 @@ impl Workspace {
 
     pub fn handle_connection(&self, conn: &mut PeerConnection) {
         let mut encoder = EncoderV1::new();
-        DefaultProtocol
-            .start(&self.doc, &mut encoder)
-            .expect("start failed");
 
-        conn.send(self.uuid.clone(), encoder.to_vec())
-            .expect("send failed");
+        if let Err(e) = DefaultProtocol.start(&self.doc, &mut encoder) {
+            error!(
+                workspace_id = %self.uuid,
+                client_id = %conn.client_id(),
+                error = ?e,
+                "Failed to start sync protocol"
+            );
+            return;
+        }
+
+        let sync_data = encoder.to_vec();
+        debug!(
+            workspace_id = %self.uuid,
+            client_id = %conn.client_id(),
+            bytes = sync_data.len(),
+            "Sending initial sync to client"
+        );
+
+        if let Err(e) = conn.send(self.uuid.clone(), sync_data) {
+            error!(
+                workspace_id = %self.uuid,
+                client_id = %conn.client_id(),
+                error = ?e,
+                "Failed to send initial sync"
+            );
+        }
     }
 
     fn collaborators(&self) -> Vec<String> {
         let txn = self.doc.doc().transact();
-        // TODO: serde into struct?
         match txn
             .get_map("meta")
             .and_then(|meta| meta.get(&txn, "collaborators"))
@@ -68,18 +97,51 @@ impl Workspace {
 
     pub fn handle_input(&self, input: &[u8], conn: &mut PeerConnection) {
         let collaborators = self.collaborators();
-        let message = Message::decode_v1(input).expect("decode failed");
 
-        // Allow only read-only messages for non collaborators
+        let message = match Message::decode_v1(input) {
+            Ok(m) => m,
+            Err(e) => {
+                error!(
+                    workspace_id = %self.uuid,
+                    client_id = %conn.client_id(),
+                    error = ?e,
+                    "Failed to decode Yjs message"
+                );
+                return;
+            }
+        };
+
+        let msg_type = match &message {
+            Message::Sync(SyncMessage::SyncStep1(_)) => "sync_step1",
+            Message::Sync(SyncMessage::SyncStep2(_)) => "sync_step2",
+            Message::Sync(SyncMessage::Update(_)) => "update",
+            Message::Awareness(_) => "awareness",
+            _ => "other",
+        };
+
+        trace!(
+            workspace_id = %self.uuid,
+            client_id = %conn.client_id(),
+            identity = %conn.identity(),
+            message_type = msg_type,
+            "Processing message"
+        );
+
+        // Allow only read-only messages for non-collaborators
         // https://github.com/yjs/y-protocols/blob/40dbe4eebb1e53a7e86932ef3232f9abd5037569/PROTOCOL.md?plain=1#L100-L111
-        match message {
+        match &message {
             Message::Sync(SyncMessage::SyncStep2(_))
             | Message::Sync(SyncMessage::Update(_))
             | Message::Awareness(_) => {
-                if collaborators.len() > 0 && !collaborators.iter().any(|i| i == conn.identity()) {
-                    log::warn!(
-                        "Rejecting message {:?} is not a collaborator",
-                        conn.identity()
+                if !collaborators.is_empty() && !collaborators.iter().any(|i| i == conn.identity())
+                {
+                    warn!(
+                        workspace_id = %self.uuid,
+                        client_id = %conn.client_id(),
+                        identity = %conn.identity(),
+                        message_type = msg_type,
+                        collaborator_count = collaborators.len(),
+                        "Rejecting write message from non-collaborator"
                     );
                     return;
                 }
@@ -89,13 +151,38 @@ impl Workspace {
 
         match DefaultProtocol.handle_message(&self.doc, message) {
             Ok(Some(reply)) => {
-                conn.send(self.uuid.clone(), reply.encode_v1())
-                    .expect("send failed");
+                let reply_data = reply.encode_v1();
+                trace!(
+                    workspace_id = %self.uuid,
+                    client_id = %conn.client_id(),
+                    reply_size = reply_data.len(),
+                    "Sending sync reply"
+                );
+
+                if let Err(e) = conn.send(self.uuid.clone(), reply_data) {
+                    error!(
+                        workspace_id = %self.uuid,
+                        client_id = %conn.client_id(),
+                        error = ?e,
+                        "Failed to send sync reply"
+                    );
+                }
+            }
+            Ok(None) => {
+                trace!(
+                    workspace_id = %self.uuid,
+                    client_id = %conn.client_id(),
+                    "Message handled, no reply needed"
+                );
             }
             Err(e) => {
-                log::error!("Failed to handle message: {e:?}");
+                error!(
+                    workspace_id = %self.uuid,
+                    client_id = %conn.client_id(),
+                    error = ?e,
+                    "Failed to handle Yjs message"
+                );
             }
-            _ => {}
         }
     }
 }
@@ -107,31 +194,131 @@ pub struct Db {
 
 impl Db {
     pub fn new() -> Self {
-        let env = EnvBuilder::new()
-            .map_size(4 * 1024 * 1024 * 1024) // 4 GiB
-            .open(".db", 0o777)
-            .unwrap();
+        const DB_PATH: &str = ".db";
+        const DB_SIZE: usize = 4 * 1024 * 1024 * 1024; // 4 GiB
 
-        let handle = env.get_default_db(DbFlags::empty()).unwrap();
+        info!(
+            path = DB_PATH,
+            size_bytes = DB_SIZE,
+            "Initializing LMDB database"
+        );
+
+        let env = match EnvBuilder::new().map_size(DB_SIZE).open(DB_PATH, 0o777) {
+            Ok(e) => e,
+            Err(e) => {
+                error!(
+                    path = DB_PATH,
+                    error = ?e,
+                    "Failed to open LMDB database"
+                );
+                panic!("Failed to open LMDB database: {:?}", e);
+            }
+        };
+
+        let handle = match env.get_default_db(DbFlags::empty()) {
+            Ok(h) => h,
+            Err(e) => {
+                error!(error = ?e, "Failed to get default database handle");
+                panic!("Failed to get database handle: {:?}", e);
+            }
+        };
+
+        info!("LMDB database initialized successfully");
 
         Self { env, handle }
     }
 
     pub fn update(&self, topic: &str, event: &UpdateEvent) {
-        let txn = self.env.new_transaction().unwrap();
+        let txn = match self.env.new_transaction() {
+            Ok(t) => t,
+            Err(e) => {
+                error!(
+                    topic = %topic,
+                    error = ?e,
+                    "Failed to start database transaction"
+                );
+                return;
+            }
+        };
+
         let db = LmdbStore::from(txn.bind(&self.handle));
-        let i = db.push_update(topic, &event.update).unwrap();
-        if i % 128 == 0 {
-            // compact updates into document
-            db.flush_doc(topic).unwrap();
+
+        let update_index = match db.push_update(topic, &event.update) {
+            Ok(i) => i,
+            Err(e) => {
+                error!(
+                    topic = %topic,
+                    error = ?e,
+                    "Failed to push update to database"
+                );
+                return;
+            }
+        };
+
+        // Compact updates periodically to prevent unbounded growth
+        if update_index % 128 == 0 {
+            debug!(
+                topic = %topic,
+                update_index = update_index,
+                "Compacting document updates"
+            );
+
+            if let Err(e) = db.flush_doc(topic) {
+                error!(
+                    topic = %topic,
+                    error = ?e,
+                    "Failed to compact document"
+                );
+            }
         }
-        txn.commit().unwrap();
+
+        if let Err(e) = txn.commit() {
+            error!(
+                topic = %topic,
+                error = ?e,
+                "Failed to commit database transaction"
+            );
+        } else {
+            trace!(
+                topic = %topic,
+                update_size = event.update.len(),
+                update_index = update_index,
+                "Update persisted to database"
+            );
+        }
     }
 
     pub fn load(&self, topic: &str, doc: &mut yrs::Doc) {
+        debug!(topic = %topic, "Loading document from database");
+
         let mut txn = doc.transact_mut();
-        let db_txn = self.env.get_reader().unwrap();
+
+        let db_txn = match self.env.get_reader() {
+            Ok(r) => r,
+            Err(e) => {
+                error!(
+                    topic = %topic,
+                    error = ?e,
+                    "Failed to get database reader"
+                );
+                return;
+            }
+        };
+
         let db = LmdbStore::from(db_txn.bind(&self.handle));
-        db.load_doc(topic, &mut txn).unwrap();
+
+        match db.load_doc(topic, &mut txn) {
+            Ok(_) => {
+                debug!(topic = %topic, "Document loaded successfully");
+            }
+            Err(e) => {
+                // This is normal for new documents
+                debug!(
+                    topic = %topic,
+                    error = ?e,
+                    "No existing document found (may be new)"
+                );
+            }
+        }
     }
 }

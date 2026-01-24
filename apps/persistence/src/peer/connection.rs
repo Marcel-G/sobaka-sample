@@ -11,6 +11,7 @@ use str0m::{
     channel::{ChannelData, ChannelId},
     Candidate, Event, IceConnectionState, Input, Output, Rtc, RtcError,
 };
+use tracing::{debug, error, info, trace, warn};
 
 use super::{
     encoder::{decode_packet, encode_packet, packet_array, PacketReassembler, CHUNK_SIZE},
@@ -49,8 +50,14 @@ impl PeerConnection {
         let next_id = ID_COUNTER.fetch_add(1, Ordering::SeqCst);
         let mut rtc = Rtc::new();
 
-        // Add the shared UDP socket as a host candidate
-        log::debug!("Client ({}) created", client_id);
+        debug!(
+            conn_id = next_id,
+            client_id = %client_id,
+            identity = %identity,
+            topic = %topic,
+            "Creating new peer connection"
+        );
+
         rtc.add_local_candidate(candidate);
 
         PeerConnection {
@@ -81,7 +88,11 @@ impl PeerConnection {
         }
 
         if let Err(e) = self.rtc.handle_input(input) {
-            log::warn!("Client ({}) disconnected: {:?}", self.client_id, e);
+            warn!(
+                client_id = %self.client_id,
+                error = ?e,
+                "Client disconnected due to input error"
+            );
             self.rtc.disconnect();
         }
     }
@@ -89,25 +100,45 @@ impl PeerConnection {
     pub fn is_alive(&self) -> bool {
         self.rtc.is_alive()
     }
+
     pub fn client_id(&self) -> &str {
         &self.client_id
     }
 
     pub fn send(&mut self, _topic: String, data: Vec<u8>) -> Result<usize, RtcError> {
-        log::debug!("Client ({}) sending {} bytes", self.client_id, data.len());
-
+        let data_len = data.len();
         self.tx_ordinal += 1;
         let packets = packet_array(&data, self.tx_ordinal, CHUNK_SIZE);
 
+        trace!(
+            client_id = %self.client_id,
+            bytes = data_len,
+            chunks = packets.len(),
+            tx_ord = self.tx_ordinal,
+            "Sending data to client"
+        );
+
+        let Some(cid) = self.cid else {
+            error!(client_id = %self.client_id, "No channel available for sending");
+            return Err(RtcError::Other("No channel available".into()));
+        };
+
+        let Some(channel) = self.rtc.channel(cid) else {
+            error!(client_id = %self.client_id, "Channel not found");
+            return Err(RtcError::Other("Channel not found".into()));
+        };
+
         let mut sent = 0;
         for packet in packets.iter() {
-            let data = encode_packet(packet);
-            sent += self
-                .rtc
-                .channel(self.cid.expect("channel to exist"))
-                .expect("channel to exist")
-                .write(true, &data)?;
+            let encoded = encode_packet(packet);
+            sent += channel.write(true, &encoded)?;
         }
+
+        debug!(
+            client_id = %self.client_id,
+            bytes_sent = sent,
+            "Data sent successfully"
+        );
 
         Ok(sent)
     }
@@ -115,25 +146,32 @@ impl PeerConnection {
     pub fn handle_signal(&mut self, signal: Signal) {
         match signal {
             Signal::Renegotiate(renegotiate) if renegotiate => {
-                // TODO: not sure what this means
-                log::warn!("Renegotiate not implemented");
+                warn!(
+                    client_id = %self.client_id,
+                    "Renegotiate requested but not implemented"
+                );
             }
             Signal::Candidate(candidate) => {
-                log::debug!("Received candidate ({})", self.client_id);
+                debug!(
+                    client_id = %self.client_id,
+                    candidate = ?candidate,
+                    "Adding remote ICE candidate"
+                );
                 self.rtc.add_remote_candidate(candidate);
             }
             Signal::SdpAnswer(sdp) => {
-                log::debug!("Received answer ({})", self.client_id);
+                debug!(client_id = %self.client_id, "Processing SDP answer");
                 self.handle_answer(sdp);
             }
             Signal::SdpOffer(sdp) => {
-                log::debug!("Received offer ({})", self.client_id);
+                debug!(client_id = %self.client_id, "Processing SDP offer");
                 let answer = self.handle_offer(sdp);
-
                 self.signals_to_propagate
                     .push_back(Signal::SdpAnswer(answer));
             }
-            _ => {}
+            _ => {
+                trace!(client_id = %self.client_id, "Ignoring unknown signal type");
+            }
         }
     }
 
@@ -143,6 +181,7 @@ impl PeerConnection {
         }
 
         while let Some(signal) = self.signals_to_propagate.pop_front() {
+            trace!(client_id = %self.client_id, "Propagating signal");
             return Propagated::Signal(self.topic.clone(), signal);
         }
 
@@ -155,7 +194,11 @@ impl PeerConnection {
         match self.rtc.poll_output() {
             Ok(output) => self.handle_output(output, socket),
             Err(e) => {
-                log::warn!("Client ({}) poll_output failed: {:?}", self.client_id, e);
+                warn!(
+                    client_id = %self.client_id,
+                    error = ?e,
+                    "poll_output failed, disconnecting"
+                );
                 self.rtc.disconnect();
                 Propagated::Noop
             }
@@ -165,49 +208,96 @@ impl PeerConnection {
     fn handle_output(&mut self, output: Output, socket: &UdpSocket) -> Propagated {
         match output {
             Output::Transmit(transmit) => {
-                socket
-                    .send_to(&transmit.contents, transmit.destination)
-                    .expect("sending UDP data");
+                if let Err(e) = socket.send_to(&transmit.contents, transmit.destination) {
+                    error!(
+                        client_id = %self.client_id,
+                        destination = %transmit.destination,
+                        error = %e,
+                        "Failed to send UDP data"
+                    );
+                }
                 Propagated::Noop
             }
             Output::Timeout(t) => Propagated::Timeout(t),
             Output::Event(e) => match e {
                 Event::Connected => {
-                    log::info!("Client ({}) connected", self.client_id);
+                    info!(
+                        client_id = %self.client_id,
+                        identity = %self.identity,
+                        topic = %self.topic,
+                        "WebRTC connection established"
+                    );
                     Propagated::Noop
                 }
-                Event::IceConnectionStateChange(v) => {
-                    if v == IceConnectionState::Disconnected {
-                        // Ice disconnect could result in trying to establish a new connection,
-                        // but this impl just disconnects directly.
+                Event::IceConnectionStateChange(state) => {
+                    debug!(
+                        client_id = %self.client_id,
+                        state = ?state,
+                        "ICE connection state changed"
+                    );
+
+                    if state == IceConnectionState::Disconnected {
+                        info!(
+                            client_id = %self.client_id,
+                            "ICE disconnected, closing connection"
+                        );
                         self.rtc.disconnect();
                     }
                     Propagated::Noop
                 }
-                Event::ChannelOpen(cid, topic) => {
-                    log::info!("Client ({}) opened channel: {:?}", self.client_id, topic);
+                Event::ChannelOpen(cid, channel_name) => {
+                    info!(
+                        client_id = %self.client_id,
+                        channel_name = ?channel_name,
+                        "Data channel opened"
+                    );
                     self.cid = Some(cid);
                     Propagated::Connected(self.topic.clone())
                 }
                 Event::ChannelData(data) => self.handle_channel_data(data),
-                _ => Propagated::Noop,
+                other => {
+                    trace!(
+                        client_id = %self.client_id,
+                        event = ?other,
+                        "Ignoring RTC event"
+                    );
+                    Propagated::Noop
+                }
             },
         }
     }
 
     fn handle_channel_data(&mut self, d: ChannelData) -> Propagated {
-        log::debug!(
-            "Client ({}) received {} bytes",
-            self.client_id,
-            d.data.len()
+        trace!(
+            client_id = %self.client_id,
+            bytes = d.data.len(),
+            "Received channel data"
         );
-        let packet = decode_packet(&d.data).expect("failed to parse packet");
+
+        let packet = match decode_packet(&d.data) {
+            Ok(p) => p,
+            Err(e) => {
+                error!(
+                    client_id = %self.client_id,
+                    error = %e,
+                    "Failed to decode packet"
+                );
+                return Propagated::Noop;
+            }
+        };
 
         if let Some(data) = self.packet_queue.process_packet(packet) {
-            // TODO: Accept a data-channel per topic, and let the channel name determine the topic
+            debug!(
+                client_id = %self.client_id,
+                bytes = data.len(),
+                "Complete message reassembled"
+            );
             Propagated::Data(self.topic.clone(), data)
         } else {
-            // TODO: setup timer to cleanup_old_packets
+            trace!(
+                client_id = %self.client_id,
+                "Packet queued for reassembly"
+            );
             Propagated::Noop
         }
     }

@@ -7,6 +7,7 @@ use std::time::Duration;
 use tokio::select;
 use tokio::sync::{Mutex, RwLock};
 use tokio::time::interval;
+use tracing::{debug, error, info, trace, warn};
 use warp::ws::{Message, WebSocket};
 use warp::Error;
 
@@ -15,21 +16,39 @@ use crate::protocol::{Message as Signal, MessageData, PeerKind};
 
 const PING_TIMEOUT: Duration = Duration::from_secs(30);
 
+/// Metrics for monitoring the signaling service health.
+#[derive(Debug, Default)]
+struct Metrics {
+    total_connections: std::sync::atomic::AtomicU64,
+    active_connections: std::sync::atomic::AtomicU64,
+    messages_published: std::sync::atomic::AtomicU64,
+    messages_failed: std::sync::atomic::AtomicU64,
+}
+
 /// Signaling service is used by y-webrtc protocol in order to exchange WebRTC offerings between
 /// clients subscribing to particular rooms.
-// TODO: Arc the entire struct?
 #[derive(Debug, Clone)]
 pub struct SignalingService {
     topics: Topics,
     workers: Workers,
+    metrics: Arc<Metrics>,
 }
 
 impl SignalingService {
     pub fn new() -> Self {
+        info!("Initializing signaling service");
         SignalingService {
             topics: Arc::new(RwLock::new(Default::default())),
             workers: Arc::new(RwLock::new(Default::default())),
+            metrics: Arc::new(Metrics::default()),
         }
+    }
+
+    /// Get current service statistics for monitoring.
+    pub async fn stats(&self) -> (usize, usize) {
+        let topics = self.topics.read().await;
+        let workers = self.workers.read().await;
+        (topics.len(), workers.len())
     }
 
     pub async fn publish(&self, topic: &str, msg: Message) -> Result<(), Error> {
@@ -38,32 +57,63 @@ impl SignalingService {
             let topics = self.topics.read().await;
             if let Some(subs) = topics.get(topic) {
                 let client_count = subs.len();
-                tracing::info!("publishing message to {client_count} clients: {msg:?}");
+                debug!(
+                    topic = %topic,
+                    subscriber_count = client_count,
+                    "Publishing message to subscribers"
+                );
+
                 for sub in subs {
                     if let Err(e) = sub.try_send(msg.clone()).await {
-                        tracing::info!("failed to send {msg:?}: {e}");
+                        warn!(
+                            topic = %topic,
+                            error = %e,
+                            "Failed to send message to subscriber"
+                        );
+                        self.metrics.messages_failed.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
                         failed.push(sub.clone());
                     }
                 }
+
+                self.metrics.messages_published.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
             }
         }
+
         if !failed.is_empty() {
             let mut topics = self.topics.write().await;
             if let Some(subs) = topics.get_mut(topic) {
+                let removed_count = failed.len();
                 for f in failed {
                     subs.remove(&f);
                 }
+                warn!(
+                    topic = %topic,
+                    removed_count = removed_count,
+                    "Removed failed subscribers from topic"
+                );
             }
         }
+
         Ok(())
     }
 
     pub async fn close_topic(&self, topic: &str) -> Result<(), Error> {
         let mut topics = self.topics.write().await;
         if let Some(subs) = topics.remove(topic) {
+            let sub_count = subs.len();
+            info!(
+                topic = %topic,
+                subscriber_count = sub_count,
+                "Closing topic and disconnecting all subscribers"
+            );
+
             for sub in subs {
                 if let Err(e) = sub.close().await {
-                    tracing::warn!("failed to close connection on topic '{topic}': {e}");
+                    warn!(
+                        topic = %topic,
+                        error = %e,
+                        "Failed to close subscriber connection"
+                    );
                 }
             }
         }
@@ -71,6 +121,8 @@ impl SignalingService {
     }
 
     pub async fn close(self) -> Result<(), Error> {
+        info!("Shutting down signaling service");
+
         let mut topics = self.topics.write_owned().await;
         let mut all_conns = HashSet::new();
         for (_, subs) in topics.drain() {
@@ -79,12 +131,16 @@ impl SignalingService {
             }
         }
 
+        let conn_count = all_conns.len();
+        info!(connection_count = conn_count, "Closing all connections");
+
         for conn in all_conns {
             if let Err(e) = conn.close().await {
-                tracing::warn!("failed to close connection: {e}");
+                warn!(error = %e, "Failed to close connection during shutdown");
             }
         }
 
+        info!("Signaling service shutdown complete");
         Ok(())
     }
 }
@@ -150,67 +206,146 @@ pub async fn signaling_conn(
     let ws = WsSink::new(sink);
     let mut ping_interval = interval(PING_TIMEOUT);
     let mut state = ConnState::new(token);
+
+    // Track connection in metrics
+    service.metrics.total_connections.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    service.metrics.active_connections.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+
     match state.token.kind {
         PeerKind::Worker => {
             workers.write().await.insert(ws.clone());
+            info!(
+                uuid = %state.token.uuid,
+                "Worker peer registered"
+            );
         }
-        PeerKind::Client => {}
+        PeerKind::Client => {
+            debug!(
+                uuid = %state.token.uuid,
+                "Client peer connected"
+            );
+        }
     }
-    loop {
+
+    let result = loop {
         select! {
             _ = ping_interval.tick() => {
                 if !state.pong_received {
-                    ws.close().await?;
-                    drop(ping_interval);
-                    return Ok(());
+                    warn!(
+                        uuid = %state.token.uuid,
+                        "Ping timeout - closing connection"
+                    );
+                    break Ok(());
                 } else {
                     state.pong_received = false;
+                    trace!(uuid = %state.token.uuid, "Sending ping");
                     if let Err(e) = ws.try_send(Message::ping(Vec::default())).await {
-                        ws.close().await?;
-                        return Err(e);
+                        error!(
+                            uuid = %state.token.uuid,
+                            error = %e,
+                            "Failed to send ping"
+                        );
+                        break Err(e);
                     }
                 }
             },
             res = stream.next() => {
                 match res {
                     None => {
-                        ws.close().await?;
-                        return Ok(());
+                        debug!(uuid = %state.token.uuid, "Stream ended");
+                        break Ok(());
                     },
                     Some(Err(e)) => {
-                        ws.close().await?;
-                        return Err(e);
+                        error!(
+                            uuid = %state.token.uuid,
+                            error = %e,
+                            "WebSocket error"
+                        );
+                        break Err(e);
                     },
                     Some(Ok(msg)) if msg.is_text() => {
                         let json = msg.to_str().unwrap();
-                        process_msg(json, &ws, &mut state, &mut topics, &mut workers).await?;
+                        if let Err(e) = process_msg(json, &ws, &mut state, &mut topics, &mut workers).await {
+                            error!(
+                                uuid = %state.token.uuid,
+                                error = %e,
+                                "Failed to process message"
+                            );
+                            break Err(e);
+                        }
                     },
                     Some(Ok(msg)) if msg.is_close() => {
-                        let mut topics = topics.write().await;
-                        for topic in state.subscribed_topics.drain() {
-                            if let Some(subs) = topics.get_mut(&topic) {
-                                subs.remove(&ws);
-                                if subs.is_empty() {
-                                    topics.remove(&topic);
-                                }
-                            }
-                        }
+                        info!(
+                            uuid = %state.token.uuid,
+                            subscribed_topics = state.subscribed_topics.len(),
+                            "Client initiated close"
+                        );
+                        cleanup_subscriptions(&ws, &mut state, &mut topics).await;
                         state.closed = true;
+                        break Ok(());
                     },
                     Some(Ok(msg)) if msg.is_pong() => {
+                        trace!(uuid = %state.token.uuid, "Received pong");
                         state.pong_received = true;
                     },
                     Some(Ok(msg)) if msg.is_ping() => {
-                        ws.try_send(Message::pong(Vec::default())).await?;
+                        trace!(uuid = %state.token.uuid, "Received ping, sending pong");
+                        if let Err(e) = ws.try_send(Message::pong(Vec::default())).await {
+                            warn!(
+                                uuid = %state.token.uuid,
+                                error = %e,
+                                "Failed to send pong"
+                            );
+                        }
                     },
                     _ => {}
                 }
             }
         }
+    };
+
+    // Cleanup on exit
+    if !state.closed {
+        cleanup_subscriptions(&ws, &mut state, &mut topics).await;
+    }
+
+    // Cleanup worker registration
+    if matches!(state.token.kind, PeerKind::Worker) {
+        workers.write().await.remove(&ws);
+        info!(uuid = %state.token.uuid, "Worker peer unregistered");
+    }
+
+    // Update metrics
+    service.metrics.active_connections.fetch_sub(1, std::sync::atomic::Ordering::Relaxed);
+
+    let _ = ws.close().await;
+    result
+}
+
+/// Clean up topic subscriptions when a peer disconnects.
+async fn cleanup_subscriptions(ws: &WsSink, state: &mut ConnState, topics: &mut Topics) {
+    let mut topics_guard = topics.write().await;
+    let topic_count = state.subscribed_topics.len();
+
+    for topic in state.subscribed_topics.drain() {
+        if let Some(subs) = topics_guard.get_mut(&topic) {
+            subs.remove(ws);
+            if subs.is_empty() {
+                topics_guard.remove(&topic);
+                debug!(topic = %topic, "Topic removed (no subscribers)");
+            }
+        }
+    }
+
+    if topic_count > 0 {
+        debug!(
+            topic_count = topic_count,
+            "Cleaned up topic subscriptions"
+        );
     }
 }
 
-const PONG_MSG: &'static str = r#"{"type":"pong"}"#;
+const PONG_MSG: &str = r#"{"type":"pong"}"#;
 
 async fn process_msg(
     msg: &str,
@@ -219,48 +354,103 @@ async fn process_msg(
     topics: &mut Topics,
     workers: &mut Workers,
 ) -> Result<(), Error> {
-    let signal = serde_json::from_str(msg).unwrap();
+    let signal: Signal = match serde_json::from_str(msg) {
+        Ok(s) => s,
+        Err(e) => {
+            warn!(
+                uuid = %state.token.uuid,
+                error = %e,
+                message_preview = %msg.chars().take(100).collect::<String>(),
+                "Failed to parse signaling message"
+            );
+            return Ok(()); // Don't disconnect on parse errors
+        }
+    };
+
     match signal {
-        Signal::Subscribe {
-            topics: topic_names,
-        } => {
-            if !topic_names.is_empty() {
-                let mut topics = topics.write().await;
-                for topic in topic_names {
-                    tracing::trace!("subscribing new client to '{topic}'");
-                    if let Some((key, _)) = topics.get_key_value(&topic) {
-                        state.subscribed_topics.insert(key.clone());
-                        let subs = topics.get_mut(&topic).unwrap();
-                        subs.insert(ws.clone());
-                    } else {
-                        state.subscribed_topics.insert(topic.clone());
-                        let mut subs = HashSet::new();
-                        subs.insert(ws.clone());
-                        topics.insert(topic, subs);
-                    };
-                }
+        Signal::Subscribe { topics: topic_names } => {
+            if topic_names.is_empty() {
+                return Ok(());
+            }
+
+            let topic_count = topic_names.len();
+            debug!(
+                uuid = %state.token.uuid,
+                topic_count = topic_count,
+                topics = ?topic_names,
+                "Subscribe request"
+            );
+
+            let mut topics_guard = topics.write().await;
+            for topic in topic_names {
+                if let Some((key, _)) = topics_guard.get_key_value(&topic) {
+                    state.subscribed_topics.insert(key.clone());
+                    let subs = topics_guard.get_mut(&topic).unwrap();
+                    let sub_count = subs.len();
+                    subs.insert(ws.clone());
+                    trace!(
+                        topic = %topic,
+                        existing_subscribers = sub_count,
+                        "Client joined existing topic"
+                    );
+                } else {
+                    state.subscribed_topics.insert(topic.clone());
+                    let mut subs = HashSet::new();
+                    subs.insert(ws.clone());
+                    topics_guard.insert(topic.clone(), subs);
+                    info!(
+                        topic = %topic,
+                        uuid = %state.token.uuid,
+                        "New topic created"
+                    );
+                };
             }
         }
-        Signal::Unsubscribe {
-            topics: topic_names,
-        } => {
-            if !topic_names.is_empty() {
-                let mut topics = topics.write().await;
-                for topic in topic_names {
-                    if let Some(subs) = topics.get_mut(&topic) {
-                        tracing::trace!("unsubscribing client from '{topic}'");
-                        subs.remove(ws);
+
+        Signal::Unsubscribe { topics: topic_names } => {
+            if topic_names.is_empty() {
+                return Ok(());
+            }
+
+            debug!(
+                uuid = %state.token.uuid,
+                topics = ?topic_names,
+                "Unsubscribe request"
+            );
+
+            let mut topics_guard = topics.write().await;
+            for topic in topic_names {
+                if let Some(subs) = topics_guard.get_mut(&topic) {
+                    subs.remove(ws);
+                    state.subscribed_topics.remove(&topic);
+
+                    if subs.is_empty() {
+                        topics_guard.remove(&topic);
+                        debug!(topic = %topic, "Topic removed (no subscribers)");
                     }
                 }
             }
         }
+
         Signal::Publish { topic, data, .. } => {
             let mut failed = Vec::new();
+            let msg_type = match &data {
+                MessageData::Announce { .. } => "announce",
+                MessageData::Signal { .. } => "signal",
+            };
+
+            trace!(
+                uuid = %state.token.uuid,
+                topic = %topic,
+                message_type = msg_type,
+                "Processing publish"
+            );
+
             {
-                let topics = topics.read().await;
-                if let Some(receivers) = topics.get(&topic) {
+                let topics_guard = topics.read().await;
+                if let Some(receivers) = topics_guard.get(&topic) {
                     let client_count = receivers.len();
-                    tracing::trace!("publishing on {client_count} clients at '{topic}': {msg}");
+
                     let out_msg = Signal::Publish {
                         topic: topic.clone(),
                         identity: Some(state.token.uuid.clone()),
@@ -268,51 +458,93 @@ async fn process_msg(
                         data: data.clone(),
                     };
 
-                    // Notify workers about the message
-                    if let PeerKind::Client = state.token.kind {
-                        match data {
-                            MessageData::Announce { .. } => {
-                                for receiver in workers.read().await.iter() {
-                                    if let Err(e) = receiver
-                                        .try_send(Message::text(&out_msg.to_json().unwrap()))
-                                        .await
-                                    {
-                                        tracing::info!(
-                                            "failed to publish message {msg} on '{topic}': {e}"
-                                        );
-                                        failed.push(receiver.clone());
-                                    }
+                    let out_json = match out_msg.to_json() {
+                        Ok(j) => j,
+                        Err(e) => {
+                            error!(error = %e, "Failed to serialize outgoing message");
+                            return Ok(());
+                        }
+                    };
+
+                    // Notify workers about announce messages from clients
+                    if matches!(state.token.kind, PeerKind::Client) {
+                        if let MessageData::Announce { .. } = data {
+                            let workers_guard = workers.read().await;
+                            let worker_count = workers_guard.len();
+
+                            if worker_count > 0 {
+                                debug!(
+                                    topic = %topic,
+                                    worker_count = worker_count,
+                                    "Broadcasting announce to workers"
+                                );
+                            }
+
+                            for receiver in workers_guard.iter() {
+                                if let Err(e) = receiver
+                                    .try_send(Message::text(&out_json))
+                                    .await
+                                {
+                                    warn!(
+                                        topic = %topic,
+                                        error = %e,
+                                        "Failed to notify worker"
+                                    );
+                                    failed.push(receiver.clone());
                                 }
                             }
-                            _ => {}
                         }
                     }
 
+                    // Send to all subscribers
+                    trace!(
+                        topic = %topic,
+                        subscriber_count = client_count,
+                        "Broadcasting to subscribers"
+                    );
+
                     for receiver in receivers.iter() {
                         if let Err(e) = receiver
-                            .try_send(Message::text(&out_msg.to_json().unwrap()))
+                            .try_send(Message::text(&out_json))
                             .await
                         {
-                            tracing::info!("failed to publish message {msg} on '{topic}': {e}");
+                            warn!(
+                                topic = %topic,
+                                error = %e,
+                                "Failed to send to subscriber"
+                            );
                             failed.push(receiver.clone());
                         }
                     }
                 }
             }
+
             if !failed.is_empty() {
-                let mut topics = topics.write().await;
-                if let Some(receivers) = topics.get_mut(&topic) {
+                let failed_count = failed.len();
+                let mut topics_guard = topics.write().await;
+                if let Some(receivers) = topics_guard.get_mut(&topic) {
                     for f in failed {
                         receivers.remove(&f);
                     }
                 }
+                warn!(
+                    topic = %topic,
+                    failed_count = failed_count,
+                    "Removed failed subscribers"
+                );
             }
         }
+
         Signal::Ping => {
+            trace!(uuid = %state.token.uuid, "Received application-level ping");
             ws.try_send(Message::text(PONG_MSG)).await?;
         }
-        Signal::Pong => {}
+
+        Signal::Pong => {
+            trace!(uuid = %state.token.uuid, "Received application-level pong");
+        }
     }
+
     Ok(())
 }
 
