@@ -14,6 +14,9 @@
 import { EventEmitter } from './EventEmitter'
 import { PeerManager, type PeerManagerOptions } from './PeerManager'
 import { SignalingClient, type PeerKind, type SignalingMessage } from './SignalingClient'
+import { createLogger } from '../../util/logger'
+
+const logger = createLogger('Topic')
 
 // ============================================================================
 // Types
@@ -132,7 +135,7 @@ export class Topic extends EventEmitter<TopicEvents> {
   connect(): void {
     if (this._destroyed) return
     
-    console.debug('[Topic] Connecting to:', this.name)
+    logger.log('Connecting to:', this.name)
     this.peerManager.connect()
     this.peerManager.subscribe(this.name)
   }
@@ -143,7 +146,7 @@ export class Topic extends EventEmitter<TopicEvents> {
   disconnect(): void {
     if (this._destroyed) return
     
-    console.debug('[Topic] Disconnecting from:', this.name)
+    logger.log('Disconnecting from:', this.name)
     this._destroyed = true
     
     // Unsubscribe from the topic

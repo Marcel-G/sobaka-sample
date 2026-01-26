@@ -125,7 +125,7 @@ export class VerifiedRTCProvider extends EventEmitter<VerifiedRTCProviderEvents>
     this.setupBeforeUnload()
     
     // Auto-connect (like the original y-webrtc)
-    console.debug('[VerifiedRTCProvider] Created for topic:', roomName, 'signaling:', options.signaling)
+    logger.log('Created for topic:', roomName, 'signaling:', options.signaling)
     this.connect()
   }
 

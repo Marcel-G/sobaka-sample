@@ -5,6 +5,9 @@ import { writable, type Readable } from 'svelte/store'
 import type { SubDocReference } from '../util/subdoc.ts'
 import { type PersistenceManager, type DocumentPersistence } from '../persistence/index.ts'
 import type { SignalingClient } from '../networking/webrtc/SignalingClient.ts'
+import { createLogger } from '../util/logger.ts'
+
+const logger = createLogger('SyncedDoc')
 
 /**
  * Well-known UUID for the global "Intro" workspace list.
@@ -82,7 +85,7 @@ export class SyncedDoc<K extends string> {
           
           // Check if the kind matches
           if (storedKind !== kind) {
-            console.error(`[SyncedDoc] Rejecting corrupt IndexedDB data for ${this.doc.guid}: stored kind="${storedKind}", expected="${kind}"`)
+            logger.error(`Rejecting corrupt IndexedDB data for ${this.doc.guid}: stored kind="${storedKind}", expected="${kind}"`)
             return false
           }
           
@@ -143,15 +146,15 @@ export class SyncedDoc<K extends string> {
         
         // Log detailed error information for debugging
         const storedKind = this.doc.getMap('meta').get('kind')
-        console.error(`[SyncedDoc] Invalid document ${this.doc.guid}:`, err)
-        console.error(`[SyncedDoc] Document details: expected kind="${kind}", got kind="${storedKind}"`)
+        logger.error(`Invalid document ${this.doc.guid}:`, err)
+        logger.error(`Document details: expected kind="${kind}", got kind="${storedKind}"`)
         
         // Destroy the storage to prevent persisting corrupt data
         // This forces a fresh sync from the network on next load
         if (this.storage) {
-          console.warn(`[SyncedDoc] Clearing potentially corrupt local storage for ${this.doc.guid}`)
+          logger.warn(`Clearing potentially corrupt local storage for ${this.doc.guid}`)
           this.storage.clearData().catch(clearErr => {
-            console.error(`[SyncedDoc] Failed to clear storage:`, clearErr)
+            logger.error('Failed to clear storage:', clearErr)
           })
           this.storage = null
         }

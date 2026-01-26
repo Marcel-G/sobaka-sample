@@ -260,15 +260,14 @@ export class UserDatabase {
       throw new Error('Database not open')
     }
     
-    // DIAGNOSTIC: Log store creation request
-    console.log(`[UserDatabase] getOrCreateDocumentStores: documentId=${documentId}`)
+    logger.log(`getOrCreateDocumentStores: documentId=${documentId}`)
     
     // Check if we already have stores for this document
     const existing = this.documentStores.get(documentId)
     if (existing) {
       // Update last accessed time
       await this.updateDocumentMeta(documentId, { lastAccessedAt: Date.now() })
-      console.log(`[UserDatabase] Found cached stores for: ${documentId}`)
+      logger.log(`Found cached stores for: ${documentId}`)
       return existing
     }
     
@@ -277,17 +276,17 @@ export class UserDatabase {
     const updatesExists = this.db ? idb.storeExists(this.db, storeNames.updates) : false
     const customExists = this.db ? idb.storeExists(this.db, storeNames.custom) : false
     
-    console.log(`[UserDatabase] Store check for ${documentId}: updates=${updatesExists}, custom=${customExists}, storeNames.updates=${storeNames.updates}`)
+    logger.log(`Store check for ${documentId}: updates=${updatesExists}, custom=${customExists}`)
     
     if (updatesExists && customExists) {
       // Stores exist, just register them
       const info = await this.registerExistingStores(documentId, storeNames)
-      console.log(`[UserDatabase] Registered existing stores for: ${documentId}`)
+      logger.log(`Registered existing stores for: ${documentId}`)
       return info
     }
     
     // Need to create new stores - requires version upgrade
-    console.log(`[UserDatabase] Creating new stores for: ${documentId}`)
+    logger.log(`Creating new stores for: ${documentId}`)
     await this.createDocumentStores(documentId, storeNames)
     
     const info = this.documentStores.get(documentId)
@@ -295,7 +294,7 @@ export class UserDatabase {
       throw new Error('Failed to create document stores')
     }
     
-    console.log(`[UserDatabase] Successfully created stores for: ${documentId}`)
+    logger.log(`Successfully created stores for: ${documentId}`)
     return info
   }
   
