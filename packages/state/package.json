@@ -9,24 +9,29 @@
     "./models/*": "./src/models/*.ts",
     "./util/*": "./src/util/*.ts",
     "./networking/*": "./src/networking/*.ts",
-    "./networking/webrtc": "./src/networking/webrtc/index.ts"
+    "./networking/webrtc": "./src/networking/webrtc/index.ts",
+    "./persistence": "./src/persistence/index.ts",
+    "./persistence/*": "./src/persistence/*.ts"
   },
   "files": [
     "src"
   ],
   "scripts": {
     "check": "tsc --noEmit",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@syncedstore/core": "^0.6.0",
     "@syncedstore/svelte": "^0.6.0",
     "lib0": "^0.2.108",
-    "y-indexeddb": "^9.0.9",
     "y-protocols": "^1.0.6",
     "yjs": "^13.5.48"
   },
   "devDependencies": {
-    "typescript": "^5.0.0"
+    "fake-indexeddb": "^6.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^2.0.0"
   }
 }

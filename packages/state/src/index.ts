@@ -12,3 +12,6 @@ export * from './util/subdoc.ts'
 // Export networking
 export * from './networking/provider.ts'
 export * as webrtc from './networking/webrtc/index.ts'
+
+// Export persistence
+export * from './persistence/index.ts'
