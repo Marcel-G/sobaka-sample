@@ -254,6 +254,8 @@ impl Client {
             "Peer discovered, joining topic"
         );
 
+        // Worker is passive - clients always initiate the WebRTC connection
+        // We just subscribe and announce, then wait for clients to send offers
         self.join_topic(topic);
     }
 

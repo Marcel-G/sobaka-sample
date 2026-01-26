@@ -152,8 +152,11 @@ impl PeerConnection {
             return;
         }
 
-        // Update activity timestamp on any input (STUN, DTLS, SCTP, etc.)
-        self.last_activity = Instant::now();
+        // Only update activity timestamp on actual network input (STUN, DTLS, SCTP, etc.)
+        // NOT on timeout ticks, otherwise the timeout can never trigger
+        if matches!(input, Input::Receive(..)) {
+            self.last_activity = Instant::now();
+        }
 
         if let Err(e) = self.rtc.handle_input(input) {
             warn!(
