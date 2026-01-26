@@ -1,8 +1,9 @@
 <script lang="ts">
   import { getWorkspace } from '../context/workspace'
-  import { readable } from 'svelte/store'
+  import { derived, readable } from 'svelte/store'
   import Mixer from '@sobaka/ui/modules/Mixer'
   import type { MixerDSP } from '@sobaka/dsp'
+  import { provideConnectionContext } from '@sobaka/ui/context/connection'
 
   interface Props {
     moduleId: string
@@ -17,6 +18,18 @@
 
   // Static modules have a fixed position in the top-right
   const position = readable({ x: 0, y: 0 })
+
+  // Derive a function that checks if a plug is connected and provide via context
+  const isPlugConnected = derived(workspace.links, (links) => {
+    return (routeName: string) => {
+      return links.some(
+        link =>
+          (link.from.moduleId === moduleId && link.from.routeName === routeName) ||
+          (link.to.moduleId === moduleId && link.to.routeName === routeName)
+      )
+    }
+  })
+  provideConnectionContext(isPlugConnected)
 
   // Plug callbacks - get plug type and pass to tryMakeLink
   const handlePlugClick = (routeName: string) => {

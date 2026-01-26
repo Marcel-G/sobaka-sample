@@ -25,6 +25,7 @@
     "./components/*": "./src/components/*.svelte",
     "./actions/*": "./src/actions/*.ts",
     "./context/global": "./src/context/global.ts",
+    "./context/connection": "./src/context/connection.ts",
     "./range": "./src/range/index.ts",
     "./range/range": "./src/range/range.ts",
     "./range/rangeFunctions": "./src/range/rangeFunctions.ts",

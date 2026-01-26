@@ -1,7 +1,9 @@
 <script lang="ts">
+  import { derived } from 'svelte/store'
   import { type Module } from '@sobaka/state/models/workspace'
   import { getWorkspace } from '../context/workspace'
   import { pluginRegistry } from '../plugins'
+  import { provideConnectionContext } from '@sobaka/ui/context/connection'
 
   export let module: Module
   export let disabled = false
@@ -14,6 +16,18 @@
 
   // Get component from plugin registry
   const component = pluginRegistry.getComponent(module.type)
+
+  // Derive a function that checks if a plug is connected and provide via context
+  const isPlugConnected = derived(workspace.links, (links) => {
+    return (routeName: string) => {
+      return links.some(
+        link =>
+          (link.from.moduleId === module.id && link.from.routeName === routeName) ||
+          (link.to.moduleId === module.id && link.to.routeName === routeName)
+      )
+    }
+  })
+  provideConnectionContext(isPlugConnected)
 
   // Callback handlers - bridge between dumb UI and smart workspace
   // Panel callbacks - these already know the moduleId from closure

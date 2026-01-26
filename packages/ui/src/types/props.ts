@@ -27,6 +27,7 @@ export interface PanelProps {
 
 /**
  * Props for Plug component - handles individual plug connections
+ * Connection state is read from context automatically
  */
 export interface PlugProps {
   ctx: import('@sobaka/dsp').RouteInfo
@@ -37,6 +38,7 @@ export interface PlugProps {
 /**
  * Common props shared across all module components
  * Each module should extend this with their specific props (like `node`)
+ * Note: Plug connection state is provided via context, not props
  */
 export interface BaseModuleProps {
   disabled?: boolean

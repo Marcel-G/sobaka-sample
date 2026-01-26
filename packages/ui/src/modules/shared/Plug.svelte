@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { onDestroy } from 'svelte'
   import Tooltip from '../../components/Tooltip.svelte'
   import { twMerge } from 'tailwind-merge'
   import { PlugType } from '@sobaka/state/models/links'
   import type { PlugProps } from '../../types/props'
+  import { getConnectionContext } from '../../context/connection'
 
   let {
     ctx,
@@ -13,9 +13,17 @@
 
   let element: HTMLElement
 
+  // Get connection state from context - Plug checks its own status using ctx.name
+  const connectionContext = getConnectionContext()
+  const isPlugConnected = connectionContext?.isPlugConnected
+  
+  // Derive connected state reactively
+  const connected = $derived($isPlugConnected?.(ctx.name) ?? false)
+
   const classes = {
-    plug: 'cursor-pointer w-3 h-3 pointer-events-auto transition-colors duration-200 rounded-full bg-darker border-2 border-module-accent',
-    hover: 'hover:border-zinc-900 dark:hover:border-zinc-100'
+    plug: 'cursor-pointer w-3 h-3 pointer-events-auto transition-colors duration-200 rounded-full bg-darker border-2 border-module-accent relative flex items-center justify-center',
+    hover: 'hover:border-zinc-900 dark:hover:border-zinc-100',
+    connected: 'w-1.5 h-1.5 rounded-full bg-orange'
   }
   
   const handleClick = (event: MouseEvent) => {
@@ -42,5 +50,9 @@
     bind:this={element}
     onclick={handleClick}
     onkeydown={(e) => e.key === 'Enter' && handleClick(e as unknown as MouseEvent)}
-  ></div>
+  >
+    {#if connected}
+      <div class={classes.connected}></div>
+    {/if}
+  </div>
 </Tooltip>
