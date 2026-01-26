@@ -105,8 +105,9 @@ export class SignalingClient extends EventEmitter<SignalingClientEvents> {
       logger.log('Cannot connect - destroyed')
       return
     }
-    if (this.ws?.readyState === WebSocket.OPEN) {
-      logger.log('Already connected')
+    // Check both OPEN and CONNECTING states to prevent duplicate connections
+    if (this.ws?.readyState === WebSocket.OPEN || this.ws?.readyState === WebSocket.CONNECTING) {
+      logger.log('Already connected or connecting')
       return
     }
     
