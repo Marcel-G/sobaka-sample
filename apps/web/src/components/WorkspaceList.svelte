@@ -18,8 +18,9 @@
   // For user lists: use normal isEditable (collaborator check)
   $: canEdit = isGlobalList ? $isAdmin : $isEditable
   
-  // Show "+ Add Workspace" only on global lists for admins, or on user lists
-  $: showAddButton = (isGlobalList && $isAdmin) || (!isGlobalList && $isEditable)
+  // Show "+ Add Workspace" only on global lists for admins
+  // Users create workspaces via the "New Workspace" page instead
+  $: showAddButton = isGlobalList && $isAdmin
   
   $: workspaces = $workspaceRefs.map(ref => global.workspaces.get(ref))
   $: listName = workspaceList.meta.name ?? 'Workspaces'
