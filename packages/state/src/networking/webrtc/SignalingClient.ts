@@ -26,12 +26,12 @@ export interface SignalData {
 }
 
 export interface SignalingMessage {
-  type: 'publish' | 'subscribe' | 'unsubscribe' | 'ping' | 'pong'
+  type: 'publish' | 'subscribe' | 'unsubscribe' | 'ping' | 'pong' | 'welcome'
   topic?: string
   topics?: string[]
   data?: MessageData
   identity?: string
-  kind?: 'client' | 'worker'
+  kind?: 'client' | 'worker' | 'admin'
 }
 
 export interface MessageData {

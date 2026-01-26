@@ -13,7 +13,7 @@
 
 import { EventEmitter } from './EventEmitter'
 import { PeerManager, type PeerManagerOptions } from './PeerManager'
-import type { PeerKind, SignalingMessage } from './SignalingClient'
+import { SignalingClient, type PeerKind, type SignalingMessage } from './SignalingClient'
 
 // ============================================================================
 // Types
@@ -24,6 +24,8 @@ export interface TopicOptions {
   name: string
   /** PeerManager options (only needed if PeerManager not yet initialized) */
   peerManager?: PeerManagerOptions
+  /** Pre-created SignalingClient instance(s) to use - takes precedence */
+  signalingClients?: SignalingClient[]
   /** Maximum connections (for compatibility, not enforced at topic level) */
   maxConns?: number
   /** Filter function for incoming messages */
@@ -69,6 +71,20 @@ export class Topic extends EventEmitter<TopicEvents> {
   private readonly topicPeers = new Map<string, TopicPeer>()
   private _synced = false
   private _destroyed = false
+  
+  // Store bound handlers for cleanup
+  private readonly boundHandlers: {
+    onSignalingConnect: () => void
+    onSignalingDisconnect: () => void
+    onSignalingMessage: (message: SignalingMessage) => void
+    onWelcome: (identity: string, kind: PeerKind) => void
+    onIdentity: (identity: string) => void
+    onPeerIdentity: (peerId: string, identity: string, kind: PeerKind) => void
+    onChannelOpen: (topic: string, peerId: string) => void
+    onChannelClose: (topic: string, peerId: string) => void
+    onChannelData: (topic: string, peerId: string, data: Uint8Array) => void
+    onError: (error: Error) => void
+  }
 
   constructor(options: TopicOptions) {
     super()
@@ -77,10 +93,30 @@ export class Topic extends EventEmitter<TopicEvents> {
     this.filterMessage = options.filterMessage
     
     // Get or create PeerManager singleton
-    if (options.peerManager) {
+    // Priority: signalingClients > peerManager options > existing singleton
+    if (options.signalingClients) {
+      this.peerManager = PeerManager.getInstance({ 
+        signalingClients: options.signalingClients,
+        ...options.peerManager 
+      })
+    } else if (options.peerManager) {
       this.peerManager = PeerManager.getInstance(options.peerManager)
     } else {
       this.peerManager = PeerManager.getInstance()
+    }
+    
+    // Create bound handlers for later cleanup
+    this.boundHandlers = {
+      onSignalingConnect: this.handleSignalingConnect.bind(this),
+      onSignalingDisconnect: this.handleSignalingDisconnect.bind(this),
+      onSignalingMessage: this.handleSignalingMessage.bind(this),
+      onWelcome: this.handleWelcome.bind(this),
+      onIdentity: this.handleIdentity.bind(this),
+      onPeerIdentity: this.handlePeerIdentity.bind(this),
+      onChannelOpen: this.handleChannelOpen.bind(this),
+      onChannelClose: this.handleChannelClose.bind(this),
+      onChannelData: this.handleChannelData.bind(this),
+      onError: this.handleError.bind(this)
     }
     
     this.setupPeerManager()
@@ -102,13 +138,33 @@ export class Topic extends EventEmitter<TopicEvents> {
   }
 
   /**
-   * Disconnect from the topic
+   * Disconnect from the topic and clean up event listeners
    */
   disconnect(): void {
+    if (this._destroyed) return
+    
     console.debug('[Topic] Disconnecting from:', this.name)
+    this._destroyed = true
+    
+    // Unsubscribe from the topic
     this.peerManager.unsubscribe(this.name)
     this.topicPeers.clear()
-    this._destroyed = true
+    
+    // Remove all event listeners from PeerManager to prevent memory leaks
+    // and potential data routing issues during rapid reconnects
+    this.peerManager.off('signaling:connect', this.boundHandlers.onSignalingConnect)
+    this.peerManager.off('signaling:disconnect', this.boundHandlers.onSignalingDisconnect)
+    this.peerManager.off('signaling:message', this.boundHandlers.onSignalingMessage)
+    this.peerManager.off('welcome', this.boundHandlers.onWelcome)
+    this.peerManager.off('identity', this.boundHandlers.onIdentity)
+    this.peerManager.off('peer:identity', this.boundHandlers.onPeerIdentity)
+    this.peerManager.off('channel:open', this.boundHandlers.onChannelOpen)
+    this.peerManager.off('channel:close', this.boundHandlers.onChannelClose)
+    this.peerManager.off('channel:data', this.boundHandlers.onChannelData)
+    this.peerManager.off('error', this.boundHandlers.onError)
+    
+    // Clear our own listeners
+    this.removeAllListeners()
   }
 
   /**
@@ -165,83 +221,105 @@ export class Topic extends EventEmitter<TopicEvents> {
   // ============================================================================
 
   private setupPeerManager(): void {
-    // Signaling events
-    this.peerManager.on('signaling:connect', () => {
-      this.emit('signaling:connect')
-    })
+    // Use bound handlers so they can be removed on disconnect
+    this.peerManager.on('signaling:connect', this.boundHandlers.onSignalingConnect)
+    this.peerManager.on('signaling:disconnect', this.boundHandlers.onSignalingDisconnect)
+    this.peerManager.on('signaling:message', this.boundHandlers.onSignalingMessage)
+    this.peerManager.on('welcome', this.boundHandlers.onWelcome)
+    this.peerManager.on('identity', this.boundHandlers.onIdentity)
+    this.peerManager.on('peer:identity', this.boundHandlers.onPeerIdentity)
+    this.peerManager.on('channel:open', this.boundHandlers.onChannelOpen)
+    this.peerManager.on('channel:close', this.boundHandlers.onChannelClose)
+    this.peerManager.on('channel:data', this.boundHandlers.onChannelData)
+    this.peerManager.on('error', this.boundHandlers.onError)
+  }
+  
+  // ============================================================================
+  // Private: Event Handlers
+  // ============================================================================
+  
+  private handleSignalingConnect(): void {
+    if (this._destroyed) return
+    this.emit('signaling:connect')
+  }
+  
+  private handleSignalingDisconnect(): void {
+    if (this._destroyed) return
+    this.emit('signaling:disconnect')
+  }
+  
+  private handleSignalingMessage(message: SignalingMessage): void {
+    if (this._destroyed) return
+    this.emit('signaling:message', message)
+  }
+  
+  private handleWelcome(identity: string, kind: PeerKind): void {
+    if (this._destroyed) return
+    this.emit('welcome', identity, kind)
+  }
+  
+  private handleIdentity(identity: string): void {
+    if (this._destroyed) return
+    if (!this._synced) {
+      this._synced = true
+      this.emit('synced', identity)
+    }
+  }
+  
+  private handlePeerIdentity(peerId: string, identity: string, kind: PeerKind): void {
+    if (this._destroyed) return
+    const peer = this.topicPeers.get(peerId)
+    if (peer) {
+      peer.identity = identity
+      peer.kind = kind
+    }
+    this.emit('peer:identity', peerId, identity, kind)
+  }
+  
+  private handleChannelOpen(topic: string, peerId: string): void {
+    if (this._destroyed) return
+    if (topic !== this.name) return
     
-    this.peerManager.on('signaling:disconnect', () => {
-      this.emit('signaling:disconnect')
-    })
+    const identityInfo = this.peerManager.getPeerIdentity(peerId)
+    const peer: TopicPeer = {
+      peerId,
+      identity: identityInfo?.identity,
+      kind: identityInfo?.kind,
+      connected: true
+    }
     
-    this.peerManager.on('signaling:message', (message) => {
-      this.emit('signaling:message', message)
-    })
+    this.topicPeers.set(peerId, peer)
+    this.emit('peers', this.topicPeers)
+  }
+  
+  private handleChannelClose(topic: string, peerId: string): void {
+    if (this._destroyed) return
+    if (topic !== this.name) return
     
-    this.peerManager.on('welcome', (identity, kind) => {
-      this.emit('welcome', identity, kind)
-    })
+    this.topicPeers.delete(peerId)
+    this.emit('peers', this.topicPeers)
+  }
+  
+  private handleChannelData(topic: string, peerId: string, data: Uint8Array): void {
+    if (this._destroyed) return
+    if (topic !== this.name) return
     
-    // Identity events
-    this.peerManager.on('identity', (identity) => {
-      if (!this._synced) {
-        this._synced = true
-        this.emit('synced', identity)
-      }
-    })
+    const identityInfo = this.peerManager.getPeerIdentity(peerId)
+    const identity = identityInfo?.identity
     
-    this.peerManager.on('peer:identity', (peerId, identity, kind) => {
-      const peer = this.topicPeers.get(peerId)
-      if (peer) {
-        peer.identity = identity
-        peer.kind = kind
-      }
-      this.emit('peer:identity', peerId, identity, kind)
-    })
+    // Apply message filter
+    if (this.filterMessage && !this.filterMessage(peerId, identity, data)) {
+      return
+    }
     
-    // Channel events (filtered to this topic)
-    this.peerManager.on('channel:open', (topic, peerId) => {
-      if (topic !== this.name) return
-      
-      const identityInfo = this.peerManager.getPeerIdentity(peerId)
-      const peer: TopicPeer = {
-        peerId,
-        identity: identityInfo?.identity,
-        kind: identityInfo?.kind,
-        connected: true
-      }
-      
-      this.topicPeers.set(peerId, peer)
-      this.emit('peers', this.topicPeers)
-    })
-    
-    this.peerManager.on('channel:close', (topic, peerId) => {
-      if (topic !== this.name) return
-      
-      this.topicPeers.delete(peerId)
-      this.emit('peers', this.topicPeers)
-    })
-    
-    // Data events (filtered to this topic)
-    this.peerManager.on('channel:data', (topic, peerId, data) => {
-      if (topic !== this.name) return
-      
-      const identityInfo = this.peerManager.getPeerIdentity(peerId)
-      const identity = identityInfo?.identity
-      
-      // Apply message filter
-      if (this.filterMessage && !this.filterMessage(peerId, identity, data)) {
-        return
-      }
-      
-      this.emit('data', data, peerId, identity)
-    })
-    
-    // Error events
-    this.peerManager.on('error', (err) => {
-      this.emit('error', err)
-    })
+    this.emit('data', data, peerId, identity)
+  }
+  
+  private handleError(error: Error): void {
+    if (this._destroyed) return
+    this.emit('error', error)
   }
 }
+
 
 export default Topic

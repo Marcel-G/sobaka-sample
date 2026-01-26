@@ -38,8 +38,10 @@ const TX_CLEANUP_DELAY = 30_000 // 30 seconds
 // ============================================================================
 
 export interface PeerManagerOptions {
-  /** Signaling server URL(s) */
-  signaling: string[]
+  /** Signaling server URL(s) - used to create new SignalingClient instances */
+  signaling?: string[]
+  /** Pre-created SignalingClient instance(s) - takes precedence over signaling URLs */
+  signalingClients?: SignalingClient[]
   /** ICE servers for WebRTC */
   iceServers?: RTCIceServer[]
 }
@@ -63,6 +65,9 @@ export interface PeerInfo {
   // Per-topic packet storage to prevent cross-topic mixing
   // Key is "topic:txOrd" to isolate packets from different topics
   rxPackets: Map<string, DecodedPacket[]>
+  // Negotiation state - prevents concurrent offers
+  isNegotiating: boolean
+  pendingTopics: string[]  // Topics waiting to be included in next offer
 }
 
 export type PeerManagerEvents = {
@@ -115,11 +120,20 @@ export class PeerManager extends EventEmitter<PeerManagerEvents> {
     this.peerId = crypto.randomUUID()
     this.iceServers = options.iceServers ?? DEFAULT_ICE_SERVERS
     
-    // Create signaling clients
-    for (const url of options.signaling) {
-      const client = new SignalingClient({ url })
-      this.setupSignalingClient(client)
-      this.signalingClients.push(client)
+    // Use pre-created signaling clients if provided, otherwise create new ones
+    if (options.signalingClients && options.signalingClients.length > 0) {
+      for (const client of options.signalingClients) {
+        this.setupSignalingClient(client)
+        this.signalingClients.push(client)
+      }
+    } else if (options.signaling && options.signaling.length > 0) {
+      for (const url of options.signaling) {
+        const client = new SignalingClient({ url })
+        this.setupSignalingClient(client)
+        this.signalingClients.push(client)
+      }
+    } else {
+      throw new Error('PeerManager requires either signaling URLs or signalingClients')
     }
     
     logger.log('Created with peerId:', this.peerId)
@@ -453,8 +467,12 @@ export class PeerManager extends EventEmitter<PeerManagerEvents> {
   // ============================================================================
 
   private handlePeerAnnounce(topic: string, remotePeerId: string): void {
-    // Determine who initiates (higher peer ID initiates)
-    const shouldInitiate = this.peerId > remotePeerId
+    // Determine who initiates:
+    // - Always initiate to workers (they're passive with ICE-lite)
+    // - Otherwise, higher peer ID initiates
+    const peerInfo = this.peerIdentities.get(remotePeerId)
+    const isWorker = peerInfo?.kind === 'worker'
+    const shouldInitiate = isWorker || this.peerId > remotePeerId
     
     let peer = this.peers.get(remotePeerId)
     
@@ -533,7 +551,9 @@ export class PeerManager extends EventEmitter<PeerManagerEvents> {
       channels: new Map(),
       connected: false,
       txOrdinal: 0,
-      rxPackets: new Map()
+      rxPackets: new Map(),
+      isNegotiating: false,
+      pendingTopics: []
     }
     
     this.peers.set(remotePeerId, peer)
@@ -584,10 +604,33 @@ export class PeerManager extends EventEmitter<PeerManagerEvents> {
     const channel = peer.connection.createDataChannel(topic, { ordered: true })
     this.setupDataChannel(peer, topic, channel)
     
-    // Create offer after adding channel
-    this.createOffer(peer, topic)
+    // Queue offer creation - don't create immediately to batch multiple channels
+    this.queueNegotiation(peer, topic)
     
     return channel
+  }
+  
+  /**
+   * Queue a topic for negotiation. This batches multiple channel creations
+   * into a single offer to avoid m-line ordering issues.
+   */
+  private queueNegotiation(peer: PeerInfo, topic: string): void {
+    if (!peer.pendingTopics.includes(topic)) {
+      peer.pendingTopics.push(topic)
+    }
+    
+    // If already negotiating, the pending topics will be included when done
+    if (peer.isNegotiating) {
+      logger.log('Negotiation in progress, queued topic:', topic)
+      return
+    }
+    
+    // Debounce to batch multiple channel creations
+    setTimeout(() => {
+      if (!peer.isNegotiating && peer.pendingTopics.length > 0) {
+        this.createOffer(peer, peer.pendingTopics[0])
+      }
+    }, 10)
   }
 
   private setupDataChannel(peer: PeerInfo, topic: string, channel: RTCDataChannel): void {
@@ -643,11 +686,28 @@ export class PeerManager extends EventEmitter<PeerManagerEvents> {
   // ============================================================================
 
   private async createOffer(peer: PeerInfo, topic: string): Promise<void> {
+    // Check if already negotiating
+    if (peer.isNegotiating) {
+      logger.log('Already negotiating with peer:', peer.peerId)
+      return
+    }
+    
+    // Check signaling state
+    if (peer.connection.signalingState !== 'stable') {
+      logger.log('Cannot create offer in state:', peer.connection.signalingState)
+      return
+    }
+    
+    peer.isNegotiating = true
+    
     try {
       const offer = await peer.connection.createOffer()
       await peer.connection.setLocalDescription(offer)
       
       peer.glareToken = Date.now() + Math.random()
+      
+      // Clear pending topics since they're included in this offer
+      peer.pendingTopics = []
       
       this.sendSignal(peer.peerId, {
         type: 'offer',
@@ -656,11 +716,44 @@ export class PeerManager extends EventEmitter<PeerManagerEvents> {
       }, topic)
     } catch (err) {
       logger.error('Failed to create offer:', err)
+      peer.isNegotiating = false
+    }
+  }
+  
+  /**
+   * Mark negotiation as complete and trigger any pending negotiations
+   */
+  private completeNegotiation(peer: PeerInfo): void {
+    peer.isNegotiating = false
+    
+    // If there are pending topics, start a new negotiation
+    if (peer.pendingTopics.length > 0) {
+      logger.log('Starting queued negotiation for topics:', peer.pendingTopics)
+      setTimeout(() => {
+        if (!peer.isNegotiating && peer.pendingTopics.length > 0) {
+          this.createOffer(peer, peer.pendingTopics[0])
+        }
+      }, 50)
     }
   }
 
   private async handleOffer(peer: PeerInfo, topic: string, offer: RTCSessionDescriptionInit): Promise<void> {
     try {
+      const signalingState = peer.connection.signalingState
+      
+      // Handle offer in stable or have-local-offer (rollback) states
+      if (signalingState !== 'stable' && signalingState !== 'have-local-offer') {
+        logger.log('Ignoring offer in state:', signalingState, 'for peer:', peer.peerId)
+        return
+      }
+      
+      // If we have a local offer pending, we need to rollback (glare case)
+      if (signalingState === 'have-local-offer') {
+        logger.log('Rolling back local offer for peer:', peer.peerId)
+        peer.isNegotiating = false
+        await peer.connection.setLocalDescription({ type: 'rollback' })
+      }
+      
       await peer.connection.setRemoteDescription(offer)
       const answer = await peer.connection.createAnswer()
       await peer.connection.setLocalDescription(answer)
@@ -669,16 +762,32 @@ export class PeerManager extends EventEmitter<PeerManagerEvents> {
         type: 'answer',
         sdp: answer.sdp
       }, topic)
+      
+      // Check for any pending negotiations on our side
+      this.completeNegotiation(peer)
     } catch (err) {
       logger.error('Failed to handle offer:', err)
+      peer.isNegotiating = false
     }
   }
 
   private async handleAnswer(peer: PeerInfo, answer: RTCSessionDescriptionInit): Promise<void> {
     try {
+      // Only set remote answer if we're in the correct state (have-local-offer)
+      // This prevents errors when answers arrive late or after the connection is already stable
+      const signalingState = peer.connection.signalingState
+      if (signalingState !== 'have-local-offer') {
+        logger.log('Ignoring answer in state:', signalingState, 'for peer:', peer.peerId)
+        return
+      }
+      
       await peer.connection.setRemoteDescription(answer)
+      
+      // Negotiation complete - check for pending topics
+      this.completeNegotiation(peer)
     } catch (err) {
       logger.error('Failed to handle answer:', err)
+      peer.isNegotiating = false
     }
   }
 

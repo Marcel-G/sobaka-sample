@@ -20,7 +20,7 @@ import * as decoding from 'lib0/decoding'
 import { EventEmitter } from './webrtc/EventEmitter.ts'
 import { Topic, type TopicPeer } from './webrtc/Topic.ts'
 import { PeerManager } from './webrtc/PeerManager.ts'
-import type { PeerKind, SignalingMessage } from './webrtc/SignalingClient.ts'
+import { SignalingClient, type PeerKind, type SignalingMessage } from './webrtc/SignalingClient.ts'
 import { createLogger } from '../util/logger'
 
 const logger = createLogger('VerifiedRTCProvider')
@@ -40,14 +40,18 @@ const MESSAGE_QUERY_AWARENESS = 2
 export interface VerifiedRTCProviderOptions {
   /** Maximum number of WebRTC connections */
   maxConns?: number
-  /** Signaling server URL(s) */
-  signaling: string[]
+  /** Signaling server URL(s) - used to create new SignalingClient instances */
+  signaling?: string[]
+  /** Pre-created SignalingClient instance(s) - takes precedence over signaling URLs */
+  signalingClients?: SignalingClient[]
   /** ICE servers for WebRTC */
   iceServers?: RTCIceServer[]
   /** Optional existing awareness instance */
   awareness?: awarenessProtocol.Awareness
   /** Filter for incoming messages based on verified identity */
   filterIncomingMessage?: (identity: string, data: Uint8Array) => boolean
+  /** Callback to check if the document is valid before applying updates */
+  isDocumentValid?: () => boolean
 }
 
 export type VerifiedRTCProviderEvents = {
@@ -85,6 +89,7 @@ export class VerifiedRTCProvider extends EventEmitter<VerifiedRTCProviderEvents>
   private verifiedWorkerIdentities = new Map<string, string>()
   
   private readonly _filterIncomingMessage: VerifiedRTCProviderOptions['filterIncomingMessage']
+  private readonly _isDocumentValid: VerifiedRTCProviderOptions['isDocumentValid']
   
   // Track which peers we've synced with
   private syncedPeers = new Set<string>()
@@ -100,14 +105,17 @@ export class VerifiedRTCProvider extends EventEmitter<VerifiedRTCProviderEvents>
     this.doc = doc
     this.awareness = options.awareness ?? new awarenessProtocol.Awareness(doc)
     this._filterIncomingMessage = options.filterIncomingMessage
+    this._isDocumentValid = options.isDocumentValid
     
     // Create topic using shared PeerManager
+    // Pass pre-created signalingClients if provided, otherwise use signaling URLs
     this.topic = new Topic({
       name: roomName,
-      peerManager: {
+      signalingClients: options.signalingClients,
+      peerManager: options.signaling ? {
         signaling: options.signaling,
         iceServers: options.iceServers
-      },
+      } : undefined,
       filterMessage: this.createMessageFilter()
     })
     
@@ -393,6 +401,13 @@ export class VerifiedRTCProvider extends EventEmitter<VerifiedRTCProviderEvents>
   }
 
   private handleSyncMessage(decoder: decoding.Decoder, peerId: string): void {
+    // Check if document is valid before applying sync messages
+    // Invalid documents should not receive more potentially corrupt data
+    if (this._isDocumentValid && !this._isDocumentValid()) {
+      logger.warn(`Rejecting sync message for invalid document: ${this.roomName}`)
+      return
+    }
+    
     const encoder = encoding.createEncoder()
     encoding.writeVarUint(encoder, MESSAGE_SYNC)
     
