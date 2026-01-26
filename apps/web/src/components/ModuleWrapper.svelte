@@ -9,6 +9,7 @@
   const { workspace, dsp, positions } = getWorkspace()
 
   const position = workspace.modulePosition(module.id)
+  const layer = workspace.moduleLayer(module.id)
   const node = dsp.moduleNode(module.id)
 
   // Get component from plugin registry
@@ -51,6 +52,7 @@
     node,
     disabled,
     position,
+    layer,
     onClose: handleClose,
     onClone: handleClone,
     onDrag: handleDrag,

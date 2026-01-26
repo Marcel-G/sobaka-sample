@@ -28,6 +28,7 @@ export interface Module {
     x: number
     y: number
   }
+  layer: number // Z-index layer for rendering order
 }
 type WorkspaceInfo = {
   title: string
@@ -96,6 +97,16 @@ export class Workspace extends SyncedDoc<'workspace'> {
 
   migrate() {
     this.store.info.title ??= 'Untitled Workspace'
+    
+    // Migrate modules without layer property
+    const { modules } = this.store
+    if (modules) {
+      modules.forEach((module, index) => {
+        if (module.layer === undefined) {
+          module.layer = index
+        }
+      })
+    }
   }
 
   private get storeReactive() {
@@ -147,11 +158,15 @@ export class Workspace extends SyncedDoc<'workspace'> {
     const initialState = this.config.getInitialState?.(type)
 
     if (modules && initialState) {
+      // Set layer to max + 1 so new modules appear on top
+      const maxLayer = modules.reduce((max, m) => Math.max(max, m.layer ?? 0), 0)
+      
       modules.push({
         id,
         type,
         state: initialState,
-        position
+        position,
+        layer: maxLayer + 1
       })
     }
 
@@ -166,15 +181,11 @@ export class Workspace extends SyncedDoc<'workspace'> {
       module.position.x = x
       module.position.y = y
 
-      // Make the module the last in the list so that it's rendered on top.
-      const index = modules.indexOf(module)
-      if (index !== modules.length - 1) {
-        // clone the module so it can be re-inserted without "Not supported: reassigning object that already occurs in the tree."
-        // https://github.com/YousefED/SyncedStore/issues/87#issue-1487084868
-        const copy = cloneDeep(module)
-
-        modules.splice(index, 1)
-        modules.push(copy)
+      // Bring module to front by setting layer to max + 1
+      // This preserves the Yjs object reference (unlike the previous splice+push approach)
+      const maxLayer = modules.reduce((max, m) => Math.max(max, m.layer ?? 0), 0)
+      if ((module.layer ?? 0) < maxLayer) {
+        module.layer = maxLayer + 1
       }
     }
 
@@ -201,13 +212,17 @@ export class Workspace extends SyncedDoc<'workspace'> {
     const module = modules.find(byModuleId(id))
 
     if (module) {
+      // Set layer to max + 1 so cloned module appears on top
+      const maxLayer = modules.reduce((max, m) => Math.max(max, m.layer ?? 0), 0)
+      
       modules.push({
         ...cloneDeep(module),
         id: crypto.randomUUID(),
         position: {
           x: module.position.x + 1,
           y: module.position.y + 1
-        }
+        },
+        layer: maxLayer + 1
       })
     }
   }
@@ -226,6 +241,13 @@ export class Workspace extends SyncedDoc<'workspace'> {
       } else {
         return { x: 0, y: 0 }
       }
+    })
+  }
+
+  moduleLayer(id: string): Readable<number> {
+    return derived(intoReadable(this.store.modules), modules => {
+      const mod = modules.find(byModuleId(id))
+      return mod?.layer ?? 0
     })
   }
 

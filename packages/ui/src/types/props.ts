@@ -11,6 +11,7 @@ export interface PanelProps {
   height?: number
   width?: number
   position: Readable<{ x: number; y: number }>
+  layer?: Readable<number>
   
   // Callbacks
   onClose?: (() => void) | null
@@ -40,6 +41,7 @@ export interface PlugProps {
 export interface BaseModuleProps {
   disabled?: boolean
   position: Readable<{ x: number; y: number }>
+  layer?: Readable<number>
   
   // Panel callbacks
   onClose?: (() => void) | null

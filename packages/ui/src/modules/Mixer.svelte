@@ -16,6 +16,7 @@
     node,
     disabled = false,
     position,
+    layer,
     onPlugClick,
     bindPlugElement,
     bindElement
@@ -36,6 +37,7 @@
 <Panel
   name="Output"
   {position}
+  {layer}
   {disabled}
   {bindElement}
   height={10}

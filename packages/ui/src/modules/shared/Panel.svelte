@@ -27,6 +27,7 @@
     height = 0,
     width = 0,
     position = writable({ x: 0, y: 0 }),
+    layer = writable(0),
     onClose = null,
     onClone = null,
     onDrag = null,
@@ -40,6 +41,7 @@
 
   const col = $derived(`${$position.x + 1} / span ${width}`)
   const row = $derived(`${$position.y + 1} / span ${height}`)
+  const zIndex = $derived($layer + 5) // Base z-index of 5 + layer
 
   // Bind element and get cleanup function
   $effect(() => {
@@ -94,7 +96,7 @@
   use:useDrag={{ onDrag: handleDrag }}
   bind:this={element}
   class={twMerge('panel', classes.panel, disabled && classes.disabled)}
-  style={`grid-column: ${col}; grid-row: ${row};`}
+  style={`grid-column: ${col}; grid-row: ${row}; z-index: ${zIndex};`}
   data-kind="module"
 >
   <div class={classes.bar}>

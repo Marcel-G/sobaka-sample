@@ -17,6 +17,7 @@
     node,
     disabled = false,
     position,
+    layer,
     onClose,
     onClone,
     onDrag,
@@ -36,6 +37,7 @@
 <Panel
   {name}
   {position}
+  {layer}
   {disabled}
   {onClose}
   {onClone}
