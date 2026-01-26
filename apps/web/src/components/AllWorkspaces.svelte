@@ -1,38 +1,28 @@
 <script lang="ts">
-  import WorkspaceList from '../components/WorkspaceList.svelte'
+  import { GLOBAL_INTRO_LIST_UUID } from '@sobaka/state'
+  import WorkspaceListComponent from '../components/WorkspaceList.svelte'
   import { getGlobalCtx } from '../context/global'
 
   const global = getGlobalCtx()
 
-  // Global root lists (Intro, etc) - readonly for non-admins
-  const globalListRefs = global.globalRoot.workspaceLists()
-  $: globalLists = $globalListRefs.map(ref => global.lists.get(ref))
-
-  // User's personal lists (My Workspaces) - editable
-  const userListRefs = global.root.workspaceLists()
-  $: userLists = $userListRefs.map(ref => global.lists.get(ref))
+  // Get all workspace list refs reactively
+  const listRefs = global.root.workspaceLists()
+  
+  // Map refs to WorkspaceList instances
+  $: lists = $listRefs.map(ref => ({
+    list: global.lists.get(ref),
+    isGlobal: ref.guid === GLOBAL_INTRO_LIST_UUID
+  }))
 </script>
 
 <div>
-  <!-- Global workspace lists (Intro) - admins can edit -->
-  {#if $globalListRefs.length}
-    {#each globalLists as list (list.id)}
-      {#await list.load()}
-        <!-- TODO: skeleton loading UI -->
-      {:then}
-        <WorkspaceList workspaceList={list} isGlobalList={true} />
-      {/await}
-    {/each}
-  {/if}
-
-  <!-- User's workspace lists (My Workspaces) -->
-  {#if $userListRefs.length}
-    {#each userLists as list (list.id)}
-      {#await list.load()}
-        <!-- TODO: skeleton loading UI -->
-      {:then}
-        <WorkspaceList workspaceList={list} />
-      {/await}
-    {/each}
-  {/if}
+  {#each lists as { list, isGlobal } (list.id)}
+    {#await list.load()}
+      <div class="mb-6 animate-pulse bg-dark h-24 rounded-md"></div>
+    {:then}
+      <WorkspaceListComponent workspaceList={list} isGlobalList={isGlobal} />
+    {:catch}
+      <!-- List failed to load - skip it -->
+    {/await}
+  {/each}
 </div>

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { getGlobalCtx } from '../context/global'
   import { WorkspaceList } from '@sobaka/state/models/workspaceList'
+  import { InvalidDocument } from '@sobaka/state/models/docMeta'
   import WorkspaceSummary from './WorkspaceSummary.svelte'
 
   const global = getGlobalCtx()
@@ -17,8 +18,8 @@
   // For user lists: use normal isEditable (collaborator check)
   $: canEdit = isGlobalList ? $isAdmin : $isEditable
   
-  // Show "+ Add Workspace" only on global lists for admins
-  $: showAddButton = isGlobalList && $isAdmin
+  // Show "+ Add Workspace" only on global lists for admins, or on user lists
+  $: showAddButton = (isGlobalList && $isAdmin) || (!isGlobalList && $isEditable)
   
   $: workspaces = $workspaceRefs.map(ref => global.workspaces.get(ref))
   $: listName = workspaceList.meta.name ?? 'Workspaces'
@@ -27,6 +28,14 @@
     const workspace = global.workspaces.get()
     workspace.create(global.user.uuid)
     workspaceList.add(workspace)
+  }
+  
+  /**
+   * Handle load errors - returns true if the error is an invalid document
+   * (wrong kind, corrupt) that should be silently skipped.
+   */
+  function isInvalidDocError(error: unknown): boolean {
+    return error instanceof InvalidDocument
   }
 </script>
 
@@ -57,6 +66,24 @@
             </button>
           {/if}
         </WorkspaceSummary>
+      {:catch error}
+        {#if isInvalidDocError(error)}
+          <!-- Skip invalid documents silently (wrong kind, corrupt) -->
+          <!-- Optionally show a small indicator for admins -->
+          {#if $isAdmin}
+            <li class="text-xs text-red-400/50 italic">
+              Invalid: {workspace.id.slice(0, 8)}...
+              <button
+                class="ml-2 underline"
+                on:click={() => workspaceList.remove(workspace.intoRef())}
+              >
+                remove
+              </button>
+            </li>
+          {/if}
+        {:else}
+          <li class="text-red-400 text-sm">Failed to load workspace</li>
+        {/if}
       {/await}
     {/each}
   </ul>

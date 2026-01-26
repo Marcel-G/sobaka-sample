@@ -1,6 +1,5 @@
-import * as Y from 'yjs'
-import { VerifiedRTCProvider } from '@sobaka/state/networking/provider'
-import { uuidv4 } from 'lib0/random'
+import { SignalingClient } from '@sobaka/state/networking/webrtc'
+import { UserSession } from '@sobaka/state/persistence'
 import { writable, type Readable } from 'svelte/store'
 import { getContext, setContext } from 'svelte'
 import type { SubDocReference } from '@sobaka/state/util/subdoc'
@@ -10,7 +9,7 @@ import { WorkspaceList } from '@sobaka/state/models/workspaceList'
 import { EmptyDocument } from '@sobaka/state/models/docMeta'
 import { load } from './audio'
 import type { Config as ConfigApi } from '../routes/proxy+layout.server'
-import { SyncedDocFactory, GLOBAL_ROOT_UUID, type Config } from '@sobaka/state/models/syncedDoc'
+import { SyncedDocFactory, type Config } from '@sobaka/state/models/syncedDoc'
 import { pluginRegistry } from '../plugins'
 
 // TODO: this is more like a context
@@ -28,10 +27,10 @@ export const getGlobalCtx = () => {
 const PING_INTERVAL = 30e3
 
 export class Global {
-  private rtc: VerifiedRTCProvider
-  private _user: User | null = readLocalUser()
+  /** Signaling client - created directly for identity verification, then shared with providers */
+  private signalingClient: SignalingClient
+  private session: UserSession
   private _root: Root | null = null
-  private _globalRoot: Root | null = null
   private _isOnline = writable(false)
   private _isAdmin = writable(false)
   private lastPong: number = 0
@@ -43,57 +42,70 @@ export class Global {
   )
 
   constructor(private _config: ConfigApi) {
-    // TODO: hack just to get verified user uuid from signaling server
-    //       refactor so that signaling can be initialized on it's own
-    this.rtc = new VerifiedRTCProvider(uuidv4(), new Y.Doc(), {
-      maxConns: 0,
-      signaling: _config.signaling
+    // Initialize user session (manages identity + persistence)
+    this.session = new UserSession()
+    
+    // Create signaling client directly for identity verification
+    // This client will be shared with PeerManager once identity is verified
+    this.signalingClient = new SignalingClient({ 
+      url: _config.signaling[0] 
     })
 
-    this.rtc.once('user', (uuid: string) => {
-      this.handleIdentityChange(uuid)
+    // Handle welcome message with verified identity and role
+    this.signalingClient.on('welcome', (identity: string, kind) => {
+      const role = kind as 'client' | 'worker' | 'admin'
+      this._isAdmin.set(role === 'admin')
+      
+      // Update session with verified identity (handles conflicts with localStorage)
+      this.session.handleWelcome(identity, role).catch(err => {
+        console.error('Failed to handle welcome:', err)
+      })
     })
 
-    this.rtc.once('welcome', (_identity: string, kind: string) => {
-      this._isAdmin.set(kind === 'admin')
+    this.signalingClient.on('connect', () => {
+      this._isOnline.set(true)
     })
 
-    for (const signal of this.rtc.signalingConns) {
-      signal.on('connect', () => {
-        this._isOnline.set(true)
-      })
+    this.signalingClient.on('disconnect', () => {
+      this._isOnline.set(false)
+    })
 
-      signal.on('disconnect', () => {
-        this._isOnline.set(false)
-      })
-
-      signal.on('message', (message: unknown) => {
-        if (
-          typeof message == 'object' &&
-          message !== null &&
-          'type' in message &&
-          message.type === 'pong'
-        ) {
-          this.handlePong()
-        }
-      })
-    }
+    this.signalingClient.on('message', (message) => {
+      if (message.type === 'pong') {
+        this.handlePong()
+      }
+    })
+    
+    // Connect immediately to start identity verification
+    this.signalingClient.connect()
+  }
+  
+  /**
+   * Get the signaling clients to share with VerifiedRTCProvider instances
+   * This allows all providers to share the same signaling connection
+   */
+  getSignalingClients(): SignalingClient[] {
+    return [this.signalingClient]
   }
 
   get config(): Config {
     return {
       ...this._config,
       currentUser: this.user.uuid,
-      getInitialState: (type: string) => pluginRegistry.getInitialState(type)
+      // Share the signaling client with all VerifiedRTCProvider instances
+      signalingClients: this.getSignalingClients(),
+      persistence: this.session.persistenceOrNull ?? undefined,
+      getInitialState: (type: string) => pluginRegistry.getInitialState(type),
+      isAdmin: this._isAdmin
     }
   }
 
   get user(): User {
-    const user = this._user
-    if (!user) {
+    const userId = this.session.userId
+    if (!userId) {
       throw new Error('User not initialized')
     }
-    return user
+    return { uuid: userId }
   }
 
   get root(): Root {
@@ -102,14 +114,6 @@ export class Global {
       throw new Error('Root not initialized')
     }
     return root
-  }
-
-  get globalRoot(): Root {
-    const globalRoot = this._globalRoot
-    if (!globalRoot) {
-      throw new Error('Global root not initialized')
-    }
-    return globalRoot
   }
 
   get isOnline(): Readable<boolean> {
@@ -124,27 +128,33 @@ export class Global {
     onStatusChange?.('Initializing audio...')
     await load(this.audio)
 
-    if (!this._user) {
+    // Try to restore session from localStorage (instant if available)
+    onStatusChange?.('Restoring session...')
+    const restored = await this.session.restore()
+    
+    if (!restored) {
+      // No stored session - wait for welcome message from signaling
       onStatusChange?.('Connecting to network...')
-      await new Promise<void>(resolve => {
-        // @ts-expect-error - TODO: user event isn't part of type definition
-        this.rtc.once('user', resolve)
-      })
+      await this.session.whenReady()
     }
 
     onStatusChange?.('Verifying identity...')
 
-    // Load user's personal root
+    // Load user's root document
+    // The root contains references to:
+    // - workspaceLists[0]: Global intro list (well-known UUID, readonly for non-admins)
+    // - workspaceLists[1]: User's "My Workspaces" list
     this._root = Root.fromRef(
       { guid: this.user.uuid } as SubDocReference<Root>,
       this.config
     )
 
     this.root.synced(() => {
+      // Ensure root has required structure
       this.root.migrate({
         workspaces: this.workspaces,
         lists: this.lists
-      }, 'My Workspaces')
+      })
     })
 
     onStatusChange?.('Loading your data...')
@@ -156,35 +166,6 @@ export class Global {
         this._root.create(this.user.uuid)
       } else {
         throw error
-      }
-    }
-
-    // Load global root (readonly for non-admins, contains "Intro" list)
-    onStatusChange?.('Loading shared workspaces...')
-    
-    this._globalRoot = Root.fromRef(
-      { guid: GLOBAL_ROOT_UUID } as SubDocReference<Root>,
-      this.config
-    )
-
-    // Don't migrate global root - only admins can do that
-    // Just load it and display whatever is there
-    // Use a timeout to prevent hanging if persistence hasn't created it yet
-    try {
-      await Promise.race([
-        this._globalRoot.load({ localOnly: false }),
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Global root load timeout')), 5000)
-        )
-      ])
-    } catch (error: unknown) {
-      // Global root may not exist yet or timed out - that's OK
-      if (error instanceof EmptyDocument) {
-        console.debug('Global root is empty, waiting for admin to populate')
-      } else if (error instanceof Error && error.message === 'Global root load timeout') {
-        console.debug('Global root load timed out, continuing without it')
-      } else {
-        console.warn('Failed to load global root:', error)
       }
     }
   }
@@ -213,9 +194,10 @@ export class Global {
   cleanup() {
     this.audio.close()
     this._root?.destroy()
-    this._globalRoot?.destroy()
     this.workspaces.clear()
     this.lists.clear()
+    this.session.destroy()
+    this.signalingClient.disconnect()
   }
 
   private handlePong() {
@@ -227,24 +209,4 @@ export class Global {
       }, PING_INTERVAL)
     )
   }
-
-  private handleIdentityChange(uuid: string) {
-    const user = { uuid }
-    writeLocalUser(user)
-    this._user = user
-  }
-}
-
-const SOBAKA_USER = 'sobaka-user'
-
-const readLocalUser = (): User | null => {
-  try {
-    return JSON.parse(localStorage.getItem(SOBAKA_USER)!) as User
-  } catch {
-    return null
-  }
-}
-
-const writeLocalUser = (user: User) => {
-  localStorage.setItem(SOBAKA_USER, JSON.stringify(user))
 }

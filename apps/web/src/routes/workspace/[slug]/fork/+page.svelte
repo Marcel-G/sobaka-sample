@@ -15,9 +15,13 @@
       guid: data.workspace.id
     } as SubDocReference<Workspace>)
 
-    await workspace.load()
-    const forked = context.createFork(workspace)
-
-    await goto(`/workspace/${forked.id}`, { replaceState: true })
+    try {
+      await workspace.load()
+      const forked = context.createFork(workspace)
+      await goto(`/workspace/${forked.id}`, { replaceState: true })
+    } catch {
+      // Invalid document type or load failure - redirect home
+      await goto('/')
+    }
   })
 </script>

@@ -22,14 +22,16 @@
   // Track if loaded
   let isLoaded = $state(false)
   
-  // Load workspace - redirects home on timeout (30s)
+  // Load workspace - validation will catch invalid document types
   $effect(() => {
+    if (!workspace) return
+    
     workspace.load()
       .then(() => {
         isLoaded = true
       })
       .catch(() => {
-        // Timeout hit - redirect to homepage
+        // Timeout hit or invalid document - redirect to homepage
         goto('/')
       })
   })
@@ -37,7 +39,7 @@
 
 <AppLayout>
   <svelte:fragment slot="sidebar-top">
-    {#if isLoaded}
+    {#if isLoaded && workspace}
       <div class="mb-6 border-b border-dark pb-4">
         <CurrentWorkspaceSummary {workspace} />
       </div>
@@ -54,7 +56,7 @@
     {/if}
   </svelte:fragment>
 
-  {#if isLoaded}
+  {#if isLoaded && workspace}
     {#key workspace.id}
       <WorkspaceContainer {workspace} />
     {/key}
