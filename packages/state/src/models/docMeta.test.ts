@@ -1,8 +1,6 @@
 import * as Y from 'yjs'
-
-import { describe, it } from 'node:test'
-import { DocMeta } from './docMeta'
-import assert from 'node:assert'
+import { describe, it, expect } from 'vitest'
+import { DocMeta } from './docMeta.ts'
 
 const kind = 'test-doc'
 
@@ -12,7 +10,7 @@ describe('DocMeta', () => {
     const _meta = doc.getMap('meta')
     const meta = new DocMeta(kind, _meta)
 
-    assert.equal(meta.isEmpty, true)
+    expect(meta.isEmpty).toBe(true)
   })
 
   it('should not add duplicate collaborator to meta', () => {
@@ -23,7 +21,7 @@ describe('DocMeta', () => {
 
     meta.populate()
 
-    assert.equal(meta.isEmpty, false)
+    expect(meta.isEmpty).toBe(false)
   })
 
   it('should throw `InvalidDocument` when kind does not match', () => {
@@ -38,9 +36,7 @@ describe('DocMeta', () => {
     _meta.set('updatedAt', Number(new Date()))
     _meta.set('collaborators', Y.Array.from([]))
 
-    assert.throws(() => meta.kind, {
-      message: "Invalid document: 'kind' invalid but expected test-doc"
-    })
+    expect(() => meta.kind).toThrow("Invalid document: 'kind' invalid but expected test-doc")
   })
 
   it('should throw `InvalidDocument` if date is invalid', () => {
@@ -55,13 +51,8 @@ describe('DocMeta', () => {
     _meta.set('kind', kind)
     _meta.set('collaborators', Y.Array.from([]))
 
-    assert.throws(() => meta.createdAt, {
-      message: "Invalid document: 'createdAt' is not a valid date"
-    })
-
-    assert.throws(() => meta.updatedAt, {
-      message: "Invalid document: 'updatedAt' is not a valid date"
-    })
+    expect(() => meta.createdAt).toThrow("Invalid document: 'createdAt' is not a valid date")
+    expect(() => meta.updatedAt).toThrow("Invalid document: 'updatedAt' is not a valid date")
   })
 
   it('should throw `InvalidDocument` if collaborators is invalid', () => {
@@ -76,9 +67,7 @@ describe('DocMeta', () => {
     _meta.set('createdAt', Number(new Date()))
     _meta.set('updatedAt', Number(new Date()))
 
-    assert.throws(() => meta.collaborators, {
-      message: "Invalid document: 'collaborators' is not a valid array of strings"
-    })
+    expect(() => meta.collaborators).toThrow("Invalid document: 'collaborators' is not a valid array of strings")
   })
 
   it('should return `DocMeta` when document is valid', () => {
@@ -93,10 +82,10 @@ describe('DocMeta', () => {
     _meta.set('updatedAt', Number(now))
     _meta.set('collaborators', Y.Array.from(['user1', 'user2']))
 
-    assert.equal(meta.kind, kind)
-    assert.deepEqual(meta.createdAt, now)
-    assert.deepEqual(meta.updatedAt, now)
-    assert.deepEqual(meta.collaborators.toArray(), ['user1', 'user2'])
+    expect(meta.kind).toBe(kind)
+    expect(meta.createdAt).toEqual(now)
+    expect(meta.updatedAt).toEqual(now)
+    expect(meta.collaborators.toArray()).toEqual(['user1', 'user2'])
   })
 
   it('should fill in empty meta when populate is called', () => {
@@ -106,8 +95,8 @@ describe('DocMeta', () => {
 
     meta.populate()
 
-    assert.equal(meta.kind, kind)
-    assert.deepEqual(meta.collaborators.toArray(), [])
+    expect(meta.kind).toBe(kind)
+    expect(meta.collaborators.toArray()).toEqual([])
   })
 
   it('should add collaborator to meta', () => {
@@ -120,7 +109,7 @@ describe('DocMeta', () => {
 
     meta.addCollaborator('user1')
 
-    assert.deepEqual(meta.collaborators.toArray(), ['user1'])
+    expect(meta.collaborators.toArray()).toEqual(['user1'])
   })
 
   it('should not add duplicate collaborator to meta', () => {
@@ -134,7 +123,7 @@ describe('DocMeta', () => {
     meta.addCollaborator('user1')
     meta.addCollaborator('user1')
 
-    assert.deepEqual(meta.collaborators.toArray(), ['user1'])
+    expect(meta.collaborators.toArray()).toEqual(['user1'])
   })
 
   it('should remove collaborator from meta', () => {
@@ -147,11 +136,11 @@ describe('DocMeta', () => {
 
     meta.addCollaborator('user1')
 
-    assert.deepEqual(meta.collaborators.toArray(), ['user1'])
+    expect(meta.collaborators.toArray()).toEqual(['user1'])
 
     meta.removeCollaborator('user1')
 
-    assert.deepEqual(meta.collaborators.toArray(), [])
+    expect(meta.collaborators.toArray()).toEqual([])
   })
 
   it('should report if someone is a collaborator', () => {
@@ -164,6 +153,6 @@ describe('DocMeta', () => {
 
     meta.addCollaborator('user1')
 
-    assert.equal(meta.isCollaborator('user1'), true)
+    expect(meta.isCollaborator('user1')).toBe(true)
   })
 })
