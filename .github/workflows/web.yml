@@ -91,14 +91,19 @@ jobs:
             --metadata-directive REPLACE \
             --cache-control 'max-age=31104000'
           
-           aws s3 cp apps/web/build/index.html s3://${{ needs.infrastructure.outputs.deploy_bucket }} \
+          # HTML files get shorter cache to allow faster updates
+          aws s3 cp apps/web/build/index.html s3://${{ needs.infrastructure.outputs.deploy_bucket }} \
+            --metadata-directive REPLACE \
+            --cache-control 'max-age=3600'
+          
+          aws s3 cp apps/web/build/404.html s3://${{ needs.infrastructure.outputs.deploy_bucket }} \
             --metadata-directive REPLACE \
             --cache-control 'max-age=3600'
       - name: "Invalidate CloudFront Cache"
         run: |
           aws cloudfront create-invalidation \
             --distribution-id ${{ needs.infrastructure.outputs.cdn_distribution_id }} \
-            --paths "/index.html"
+            --paths "/index.html" "/404.html"
 
 
 concurrency: 
