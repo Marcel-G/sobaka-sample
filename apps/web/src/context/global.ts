@@ -1,5 +1,6 @@
 import { SignalingClient } from '@sobaka/state/networking/webrtc'
 import { UserSession } from '@sobaka/state/persistence'
+import { createLogger } from '@sobaka/state'
 import { writable, type Readable } from 'svelte/store'
 import { getContext, setContext } from 'svelte'
 import type { SubDocReference } from '@sobaka/state/util/subdoc'
@@ -11,6 +12,8 @@ import { load } from './audio'
 import type { Config as ConfigApi } from '../routes/proxy+layout.server'
 import { SyncedDocFactory, type Config } from '@sobaka/state/models/syncedDoc'
 import { pluginRegistry } from '../plugins'
+
+const logger = createLogger('Global')
 
 // TODO: this is more like a context
 export const createGlobalCtx = async (config: ConfigApi) => {
@@ -58,7 +61,7 @@ export class Global {
       
       // Update session with verified identity (handles conflicts with localStorage)
       this.session.handleWelcome(identity, role).catch(err => {
-        console.error('Failed to handle welcome:', err)
+        logger.error('Failed to handle welcome:', err)
       })
     })
 

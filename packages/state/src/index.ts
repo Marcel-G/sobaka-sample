@@ -8,6 +8,7 @@ export * from './models/docMeta.ts'
 
 // Export utilities
 export * from './util/subdoc.ts'
+export * from './util/logger.ts'
 
 // Export networking
 export * from './networking/provider.ts'

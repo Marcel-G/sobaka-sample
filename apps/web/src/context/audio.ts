@@ -1,5 +1,8 @@
 import init, { registerContext } from '@sobaka/dsp/wasm'
 import shimUrl from '@sobaka/dsp/wasm?url'
+import { createLogger } from '@sobaka/state'
+
+const logger = createLogger('Audio')
 
 /**
  * Initialize audio context and WASM module
@@ -15,7 +18,7 @@ export const load = async (ctx: AudioContext) => {
   const handleInteraction = () => {
     if (ctx.state === 'suspended') {
       void ctx.resume().catch(err => {
-        console.warn('[Audio] Failed to resume context:', err)
+        logger.warn('Failed to resume context:', err)
       })
     }
   }
@@ -31,7 +34,7 @@ export const load = async (ctx: AudioContext) => {
   document?.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible' && ctx.state === 'suspended') {
       void ctx.resume().catch(err => {
-        console.warn('[Audio] Failed to resume context on visibility change:', err)
+        logger.warn('Failed to resume context on visibility change:', err)
       })
     }
   })
@@ -39,11 +42,11 @@ export const load = async (ctx: AudioContext) => {
   // Monitor audio context state changes
   ctx.addEventListener('statechange', () => {
     if (ctx.state === 'suspended') {
-      console.info('[Audio] Context suspended by browser')
+      logger.info('Context suspended by browser')
     } else if (ctx.state === 'running') {
-      console.info('[Audio] Context running')
+      logger.info('Context running')
     } else if (ctx.state === 'closed') {
-      console.warn('[Audio] Context closed')
+      logger.warn('Context closed')
     }
   })
 
@@ -57,17 +60,17 @@ export const load = async (ctx: AudioContext) => {
  */
 export const resumeAudio = async (ctx: AudioContext): Promise<boolean> => {
   if (ctx.state === 'closed') {
-    console.error('[Audio] Cannot resume closed context')
+    logger.error('Cannot resume closed context')
     return false
   }
 
   if (ctx.state === 'suspended') {
     try {
       await ctx.resume()
-      console.info('[Audio] Context resumed successfully')
+      logger.info('Context resumed successfully')
       return true
     } catch (err) {
-      console.error('[Audio] Failed to resume:', err)
+      logger.error('Failed to resume:', err)
       return false
     }
   }

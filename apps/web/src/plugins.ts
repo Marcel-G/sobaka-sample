@@ -1,5 +1,8 @@
 import type { ModuleDSP, ModuleFactory } from '@sobaka/dsp'
 import type { ModuleComponent } from '@sobaka/ui/types'
+import { createLogger } from '@sobaka/state'
+
+const logger = createLogger('PluginRegistry')
 
 import {
   ClockNode,
@@ -83,7 +86,7 @@ export class PluginRegistry implements ModuleFactory {
     plugin: ModulePlugin<T, S, N>
   ): this {
     if (this.plugins.has(plugin.type)) {
-      console.warn(`Plugin "${plugin.type}" already registered, overwriting`)
+      logger.warn(`Plugin "${plugin.type}" already registered, overwriting`)
     }
     this.plugins.set(plugin.type, plugin as unknown as ModulePlugin)
     return this
