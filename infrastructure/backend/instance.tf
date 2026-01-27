@@ -146,7 +146,7 @@ module "security_groups" {
 
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
-  version = "~> 5.0"
+  version = "~> 5.19"
 
   name = "${local.name}-vpc"
   cidr = "10.0.0.0/16"
@@ -185,9 +185,20 @@ resource "aws_iam_policy" "ecr_login" {
   policy = data.aws_iam_policy_document.ecr_login.json
 }
 
-resource "aws_iam_role_policy_attachment" "deploy_ecr" {
-  role       = data.aws_iam_role.deploy.name
-  policy_arn = aws_iam_policy.ecr_login.arn
+resource "aws_iam_role_policy" "deploy_ecr_login" {
+  name = "${local.name}-deploy-ecr-login-policy"
+  role = data.aws_iam_role.deploy.name
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = ["ecr:GetAuthorizationToken"]
+        Resource = ["*"]
+      }
+    ]
+  })
 }
 
 output "instance" {

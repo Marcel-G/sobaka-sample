@@ -34,22 +34,20 @@ data "aws_iam_role" "deploy" {
   name = var.global_deploy_role
 }
 
-data "aws_iam_policy_document" "ecr_login" {
-  statement {
-    effect    = "Allow"
-    actions   = ["ecr:GetAuthorizationToken"]
-    resources = ["*"]
-  }
-}
+resource "aws_iam_role_policy" "ecr_login" {
+  name = "${var.name}-ecr-login-policy"
+  role = data.aws_iam_role.deploy.name
 
-resource "aws_iam_policy" "ecr_login" {
-  name   = "${var.name}-ecr-login-policy"
-  policy = data.aws_iam_policy_document.ecr_login.json
-}
-
-resource "aws_iam_role_policy_attachment" "deploy_ecr" {
-  role       = data.aws_iam_role.deploy.name
-  policy_arn = aws_iam_policy.ecr_login.arn
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = ["ecr:GetAuthorizationToken"]
+        Resource = ["*"]
+      }
+    ]
+  })
 }
 
 output "ecr_url" {

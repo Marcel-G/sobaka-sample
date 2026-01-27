@@ -20,8 +20,8 @@ module "cdn" {
 
   create_origin_access_control = true
   origin_access_control = {
-    storage = {
-      description      = "CloudFront access to storage S3"
+    "${terraform.workspace}-storage" = {
+      description      = "CloudFront access to storage S3 (${terraform.workspace})"
       origin_type      = "s3"
       signing_behavior = "always"
       signing_protocol = "sigv4"
@@ -31,7 +31,7 @@ module "cdn" {
   origin = {
     storage = {
       domain_name           = module.web.deploy_bucket_domain
-      origin_access_control = "storage"
+      origin_access_control = "${terraform.workspace}-storage"
     }
     websocket = {
       domain_name = module.backend.instance.public_dns
@@ -151,20 +151,18 @@ resource "aws_cloudfront_response_headers_policy" "cross_origin_isolation" {
   }
 }
 
-data "aws_iam_policy_document" "this" {
-  statement {
-    actions   = ["cloudfront:CreateInvalidation"]
-    resources = [module.cdn.cloudfront_distribution_arn]
-    effect    = "Allow"
-  }
-}
+resource "aws_iam_role_policy" "cdn_deploy_policy" {
+  name = "${terraform.workspace}-cdn-deploy-policy"
+  role = module.global.global_deploy_role.name
 
-resource "aws_iam_policy" "deploy_policy" {
-  name   = "${terraform.workspace}-deploy-policy"
-  policy = data.aws_iam_policy_document.this.json
-}
-
-resource "aws_iam_role_policy_attachment" "s3_bucket_policy_attachment" {
-  policy_arn = aws_iam_policy.deploy_policy.arn
-  role       = module.global.global_deploy_role.name
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = ["cloudfront:CreateInvalidation"]
+        Resource = [module.cdn.cloudfront_distribution_arn]
+      }
+    ]
+  })
 }

@@ -134,25 +134,23 @@ data "aws_iam_role" "deploy" {
   name = var.global_deploy_role
 }
 
-data "aws_iam_policy_document" "deploy_ssm" {
-  statement {
-    effect  = "Allow"
-    actions = ["ssm:SendCommand"]
-    resources = [
-      resource.aws_ssm_document.deploy.arn,
-      var.instance.arn
+resource "aws_iam_role_policy" "deploy_ssm" {
+  name = "${var.name}-deploy-ssm-policy"
+  role = data.aws_iam_role.deploy.name
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = ["ssm:SendCommand"]
+        Resource = [
+          resource.aws_ssm_document.deploy.arn,
+          var.instance.arn
+        ]
+      }
     ]
-  }
-}
-
-resource "aws_iam_policy" "deploy_ssm" {
-  name   = "${var.name}-deploy-ssm-policy"
-  policy = data.aws_iam_policy_document.deploy_ssm.json
-}
-
-resource "aws_iam_role_policy_attachment" "deploy_ssm" {
-  role       = data.aws_iam_role.deploy.name
-  policy_arn = aws_iam_policy.deploy_ssm.arn
+  })
 }
 
 output "deploy_doc" {

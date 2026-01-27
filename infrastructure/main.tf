@@ -42,6 +42,12 @@ module "global" {
   github_repo        = var.github_repo
 
   subdomain = var.subdomain
+
+  # Only sobaka-prod manages shared resources (IAM role)
+  manage_shared_resources = terraform.workspace == "sobaka-prod"
+  
+  # Role name for non-primary workspaces to reference
+  deploy_role_name = "github-actions-32602335e8a5d3f5d1531471d5a77f10"
 }
 
 module "backend" {

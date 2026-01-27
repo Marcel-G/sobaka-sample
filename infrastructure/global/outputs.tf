@@ -5,7 +5,7 @@ output "global_acm_certificate_arn" {
 
 output "global_deploy_role" {
   description = "Global deploy role for Github Actions"
-  value       = module.iam_role.this
+  value       = local.deploy_role
 }
 
 output "global_zone_id" {
