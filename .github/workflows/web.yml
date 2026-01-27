@@ -19,7 +19,7 @@ jobs:
     name: "🧦 Build"
     runs-on: macos-latest
     environment:
-      name: next # TODO: move to cf function
+      name: ${{ fromJSON('{"refs/heads/master":"production","refs/heads/next":"next"}')[github.ref] }}
     defaults:
       run:
         working-directory: apps/web
