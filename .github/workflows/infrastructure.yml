@@ -36,13 +36,10 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'push'
     environment: 
-      name: next
-      url: https://next.sobaka.marcelgleeson.com
-      # name: ${{ fromJSON('{"refs/heads/master":"production","refs/heads/next":"next"}')[github.ref] }}
-      # url: ${{ fromJSON('{"refs/heads/master":"https://sobaka.marcelgleeson.com","refs/heads/next":"https://next.sobaka.marcelgleeson.com"}')[github.ref] }}
+      name: ${{ fromJSON('{"refs/heads/master":"production","refs/heads/next":"next"}')[github.ref] }}
+      url: ${{ fromJSON('{"refs/heads/master":"https://sobaka.marcelgleeson.com","refs/heads/next":"https://next.sobaka.marcelgleeson.com"}')[github.ref] }}
     env:
-      # TF_WORKSPACE: ${{ fromJSON('{"refs/heads/master":"sobaka-prod","refs/heads/next":"sobaka-next"}')[github.ref] }}
-      TF_WORKSPACE: sobaka-next
+      TF_WORKSPACE: ${{ fromJSON('{"refs/heads/master":"sobaka-prod","refs/heads/next":"sobaka-next"}')[github.ref] }}
     outputs:
       deploy_bucket: ${{ steps.collect-outputs.outputs.deploy_bucket }}
       deploy_role: ${{ steps.collect-outputs.outputs.deploy_role }}
