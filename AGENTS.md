@@ -8,7 +8,7 @@ Sobaka is a real-time collaborative modular synthesizer that runs in the browser
 
 2. **Plugin Architecture** — New synth modules are added by registering a plugin that couples a DSP node (`ModuleDSP` interface from `packages/dsp`) with a UI component (`BaseModuleProps` from `packages/ui`). The system handles state persistence, network sync, audio graph reconciliation, and rendering automatically.
 
-3. **CRDT-First Collaboration** — All mutable state flows through Yjs documents (`SyncedDoc<K>` base class in `packages/state/src/models/syncedDoc.ts`). Never mutate state outside of Yjs. Conflicts are resolved automatically by the CRDT.
+3. **CRDT-First Collaboration** — All mutable state flows through Yjs documents (`SyncedDoc<K>` base class in `packages/state/src/models/syncedDoc.ts`). State is accessed via SyncedStore, which provides a proxy that looks like normal mutable JavaScript objects — mutating these properties directly is correct and idiomatic, as the proxy applies changes to the underlying Yjs CRDT automatically. Don't create separate state stores that bypass this proxy.
 
 4. **Reactive Reconciliation** — The audio graph (`packages/dsp/src/graph.ts`) reconciles declaratively from state. When Yjs state changes, a derived store triggers `AudioGraph.reconcile(modules, links)` which diffs and applies changes with crossfades to prevent audio artifacts.
 
@@ -18,7 +18,7 @@ Sobaka is a real-time collaborative modular synthesizer that runs in the browser
 
 7. **Svelte 5 Exclusively** — Uses runes API only: `$props()`, `$state()`, `$derived()`, `$effect()`. No Svelte 4 patterns: no `export let` for props, no `<slot>` (use `{#snippet}`/`{@render}`), no `$:` reactive statements.
 
-8. **Graceful Audio Lifecycle** — Modules fade in after connecting and fade out before disconnecting. The reconcile order is: create → connect → fade in new; fade out old → disconnect → destroy. Never abruptly connect/disconnect audio nodes.
+8. **Graceful Audio Lifecycle** — Modules fade in after connecting and fade out before disconnecting. The reconcile order is: create new (muted) → disconnect old links → connect new links → fade in new → fade out old → destroy old. Never abruptly connect/disconnect audio nodes.
 
 ## Prerequisites
 
@@ -48,9 +48,9 @@ npm run dev                # Web dev server at localhost:5173
 npm run build              # Build all workspaces (WASM + TS)
 npm run build:wasm         # Build only the WASM package
 npm run check              # Type check all workspaces
-npm run lint               # Lint all workspaces
-npm run format             # Format all workspaces
-npm run test               # Run JS/TS tests across workspaces
+npm run lint               # Lint (apps/web only — other workspaces skipped)
+npm run format             # Format (apps/web only — other workspaces skipped)
+npm run test               # Run JS/TS tests (apps/web + packages/state; Rust tests need cargo — see checklist)
 ```
 
 Rust servers (run from their directories):
@@ -96,9 +96,9 @@ The plugin registry then handles state persistence, network sync, audio graph wi
 
 ## Key Gotchas
 
-- **WASM before web:** WASM must build before the web app. `npm run build` handles ordering automatically.
+- **WASM before web:** WASM must build before the web app. `npm run build` builds `packages/*` before `apps/web` (workspace array order in root package.json), so this works correctly.
 - **Rust nightly required:** The DSP package requires Rust nightly for WASM compilation. Stable will fail.
 - **Rust apps aren't npm workspaces:** `apps/signaling` and `apps/persistence` have no `package.json`. Use `cargo` directly.
 - **Default branch:** `master` (not `main`). `next` is the staging branch.
-- **State access:** Use `intoReadable(node.state)` for Svelte store compatibility. Don't create parallel state outside Yjs.
+- **State access:** Use `intoReadable(node.state)` for Svelte store compatibility. Mutate SyncedStore proxy objects directly — the proxy handles Yjs updates. Don't create separate state stores that bypass the proxy.
 - **Connection rules:** Audio graph connections must be Output → {Input, Param, Mixer}. Validated by `AudioGraph`.
